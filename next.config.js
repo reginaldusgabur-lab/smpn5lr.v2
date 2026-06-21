@@ -48,6 +48,36 @@ const nextConfig = {
       },
     ],
   },
+  // Tambahkan konfigurasi webpack berikut
+  webpack: (config, { isServer }) => {
+    // Abaikan modul-modul yang tidak tersedia di browser
+    if (!isServer) {
+      config.resolve.fallback = {
+        net: false,
+        fs: false,
+      };
+       config.ignoreWarnings = [
+         ...(config.ignoreWarnings || []),
+         {
+           module: /node_modules\/@grpc\/grpc-js\/build\/src\/index\.js/,
+         },
+         {
+           module: /node_modules\/@opentelemetry\/otlp-grpc-exporter-base\/build\/src\/util\.js/,
+         },
+         {
+           module: /node_modules\/@opentelemetry\/otlp-grpc-exporter-base\/build\/src\/index\.js/,
+         },
+         {
+           module: /node_modules\/@opentelemetry\/exporter-trace-otlp-grpc\/build\/src\/OTLPTraceExporter\.js/,
+         },
+         {
+           module: /node_modules\/@opentelemetry\/sdk-node\/build\/src\/TracerProviderWithEnvExporter\.js/,
+         },
+       ];
+    }
+
+    return config;
+  },
 };
 
 module.exports = withPWA(nextConfig);
