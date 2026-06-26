@@ -53,7 +53,6 @@ export default function LoginPage() {
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -62,14 +61,11 @@ export default function LoginPage() {
   const appLogo = PlaceHolderImages.find(p => p.id === 'app-logo');
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isMounted && !isUserLoading && user) {
+    // Jika status user selesai dimuat dan user sudah login, arahkan ke dasbor.
+    if (!isUserLoading && user) {
       router.replace('/dashboard');
     }
-  }, [user, isUserLoading, router, isMounted]);
+  }, [user, isUserLoading, router]);
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -89,12 +85,13 @@ export default function LoginPage() {
       return;
     }
     try {
+      // Proses login akan memicu useEffect di atas untuk mengarahkan pengguna
       await signInWithEmailAndPassword(auth, values.email, values.password);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Login Gagal", description: "Email atau password salah." });
-    } finally {
-      setIsLoginLoading(false);
+      setIsLoginLoading(false); // Pastikan loading berhenti jika gagal
     }
+    // Tidak perlu setIsLoginLoading(false) di sini karena halaman akan berganti
   };
 
   const handlePasswordReset = async (values: z.infer<typeof resetPasswordSchema>) => {
@@ -114,13 +111,13 @@ export default function LoginPage() {
       setIsResetLoading(false);
     }
   };
-
-  if (!isMounted || isUserLoading || (isMounted && user)) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+  
+  // Mencegah "kedipan" dengan tidak menampilkan loader layar penuh.
+  // Jika pengguna sudah login, useEffect akan menangani pengalihan.
+  if (isUserLoading || user) {
+      // Saat memeriksa status user atau jika user sudah ada, tampilkan halaman kosong minimalis
+      // Ini mencegah form login muncul sekejap sebelum dialihkan.
+      return <div className="h-screen w-full bg-background" />;
   }
 
   return (
@@ -130,7 +127,7 @@ export default function LoginPage() {
           <CardHeader className="text-center space-y-2">
             <div className="flex justify-center mb-2">
               <Image
-                src={appLogo?.imageUrl || "/logofix.png"}
+                src={appLogo?.imageUrl || "/logo-3d-v2.png"}
                 alt="Logo SMPN 5 Langke Rembong"
                 width={80}
                 height={80}

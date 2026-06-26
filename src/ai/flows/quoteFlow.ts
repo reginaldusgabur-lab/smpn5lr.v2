@@ -1,15 +1,11 @@
 'use server';
 /**
  * @fileOverview Flow untuk menghasilkan kutipan motivasi/lucu.
- *
- * - getQuote - Fungsi untuk mendapatkan kutipan berdasarkan kategori dan jenis absensi.
- * - QuoteInput - Tipe input untuk flow.
- * - QuoteOutput - Tipe output untuk flow.
  */
 
-import { defineFlow, definePrompt } from '@genkit-ai/core';
-import { model } from '@/ai/genkit'; // Mengimpor model yang sudah dikonfigurasi
 import { z } from 'zod';
+import { generate } from '@genkit-ai/ai';
+import { model } from '@/ai/genkit'; // Mengimpor model yang sudah dikonfigurasi
 
 const QuoteInputSchema = z.object({
   category: z
@@ -31,20 +27,17 @@ const QuoteOutputSchema = z.object({
 });
 export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
+/**
+ * Menghasilkan kutipan menggunakan model AI Genkit.
+ * Ini adalah implementasi AI yang sebenarnya, menggantikan bypass sementara.
+ */
 export async function getQuote(input: QuoteInput): Promise<QuoteOutput> {
-  const flow = await quoteFlow.run(input);
-  return flow.output();
-}
-
-const quotePrompt = definePrompt(
-  {
-    name: 'quotePrompt',
-    input: { schema: QuoteInputSchema },
-    output: { schema: QuoteOutputSchema },
+  const llmResponse = await generate({
+    model: model,
     prompt: `Anda adalah seorang penulis kreatif yang ahli membuat kutipan singkat untuk para pendidik.
 
-Audiens: {{category}}
-Jenis Absensi: {{attendanceType}}
+Audiens: ${input.category}
+Jenis Absensi: ${input.attendanceType}
 
 # Tugas Utama:
 1.  Buatlah **satu kutipan orisinal dalam Bahasa Indonesia yang terdiri dari TEPAT SATU KALIMAT**.
@@ -52,7 +45,7 @@ Jenis Absensi: {{attendanceType}}
     *   **Lucu & Asik:** Ringan, jenaka, dan membuat tersenyum.
     *   **Penyemangat:** Memberikan motivasi dan energi positif.
     *   **Reflektif:** Penuh makna dan mengajak merenung sejenak.
-3.  Sesuaikan kutipan dengan audiens ({{category}}) dan jenis absensi ({{attendanceType}}):
+3.  Sesuaikan kutipan dengan audiens (${input.category}) dan jenis absensi (${input.attendanceType}):
     *   Absensi **'in'**: Fokus pada semangat memulai hari, energi pagi, atau humor ringan seputar sekolah.
     *   Absensi **'out'**: Fokus pada istirahat, pencapaian, atau humor tentang akhir hari mengajar.
 4.  Buat juga **satu nama penulis fiktif** yang unik dan cocok dengan gaya kutipan yang Anda buat.
@@ -67,21 +60,18 @@ Jenis Absensi: {{attendanceType}}
 
 Pastikan output Anda selalu dalam format JSON yang valid tanpa tambahan karakter atau penjelasan.
 `,
-  },
-  model // Menentukan model yang akan digunakan untuk prompt ini
-);
+    output: {
+      schema: QuoteOutputSchema,
+    },
+  });
 
-export const quoteFlow = defineFlow(
-  {
-    name: 'quoteFlow',
-    inputSchema: QuoteInputSchema,
-    outputSchema: QuoteOutputSchema,
-  },
-  async (input) => {
-    const llmResponse = await model.generate({ 
-        prompt: { text: await quotePrompt.renderText(input) },
-        output: { schema: QuoteOutputSchema },
-    });
-    return llmResponse.output()!;
+  const output = llmResponse.output();
+  if (!output) {
+    // Jika AI gagal memberikan output, kembalikan kutipan darurat
+    return {
+      quote: "Apapun hasilnya, tetaplah bangga pada usahamu hari ini.",
+      author: "Sistem E-Spenli",
+    };
   }
-);
+  return output;
+}

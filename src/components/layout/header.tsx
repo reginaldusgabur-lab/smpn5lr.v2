@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -30,6 +31,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const firestore = useFirestore();
   const { user } = useUser();
   const auth = useAuth();
+  const router = useRouter();
 
   const appLogo = PlaceHolderImages.find(p => p.id === 'app-logo');
 
@@ -41,10 +43,15 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const { data: userData } = useDoc<{ name: string, role: string, photoURL?: string }>(user, userDocRef);
 
   const handleLogout = async () => {
-    if(!auth) return;
-    await signOut(auth);
-    // PERBAIKAN: Menggunakan window.location.href untuk full page reload
-    window.location.href = '/'; 
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      // Gunakan router.push untuk navigasi sisi klien yang mulus
+      router.push('/');
+    } catch (error) {
+      console.error("Gagal melakukan logout:", error);
+      // Opsional: tambahkan toast atau notifikasi error di sini
+    }
   };
 
   const getInitials = (name: string | undefined | null) => {
@@ -118,7 +125,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
         <DialogTrigger asChild>
           <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full">
             <Image
-              src={appLogo?.imageUrl || '/logofix.png'}
+              src={appLogo?.imageUrl || '/logo-3d.png'}
               alt="App Logo"
               width={36}
               height={36}

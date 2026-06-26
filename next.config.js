@@ -2,7 +2,7 @@
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  aggressiveFrontEndNavCaching: false, // Dinonaktifkan untuk mencegah masalah cache korup saat update
   reloadOnOnline: true,
   swcMinify: true,
   disable: false,
@@ -55,6 +55,7 @@ const nextConfig = {
       config.resolve.fallback = {
         net: false,
         fs: false,
+        tls: false,
       };
        config.ignoreWarnings = [
          ...(config.ignoreWarnings || []),

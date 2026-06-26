@@ -11,25 +11,25 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#3F51B5',
     icons: [
       {
-        src: '/logofix.png',
+        src: '/logo-3d-v2.png',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: '/logofix.png',
+        src: '/logo-3d-v2.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any',
       },
        {
-        src: '/logofix.png',
+        src: '/logo-3d-v2.png',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'maskable',
       },
       {
-        src: '/logofix.png',
+        src: '/logo-3d-v2.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',

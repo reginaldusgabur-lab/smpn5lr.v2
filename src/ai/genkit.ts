@@ -1,14 +1,13 @@
-import "server-only";
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 
-import { configure } from '@genkit-ai/core';
-import { googleAI, gemini15Flash } from '@genkit-ai/google-genai';
-
-configure({
+export const ai = genkit({
   plugins: [
-    googleAI(),
+    googleAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    }),
   ],
-  logLevel: 'debug',
-  enableTracingAndMetrics: true,
 });
 
-export const model = gemini15Flash;
+// Definisikan model menggunakan factory untuk stabilitas
+export const model = googleAI.model('gemini-pro');

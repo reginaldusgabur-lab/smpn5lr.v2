@@ -19,8 +19,8 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: '/logofix.png',
-    apple: '/logofix.png',
+    icon: '/logo-3d-v2.png',
+    apple: '/logo-3d-v2.png',
   }
 };
 
