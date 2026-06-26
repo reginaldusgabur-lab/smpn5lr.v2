@@ -2,7 +2,7 @@
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: false, // Dinonaktifkan untuk mencegah masalah cache korup saat update
+  aggressiveFrontEndNavCaching: true, // Diaktifkan sementara untuk memaksa pembaruan PWA
   reloadOnOnline: true,
   swcMinify: true,
   disable: false,
