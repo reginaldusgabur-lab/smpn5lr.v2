@@ -1,4 +1,4 @@
-'''
+
 import { getQuote, QuoteInput } from '@/ai/flows/quoteFlow';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -63,5 +63,3 @@ export async function POST(request: NextRequest) {
     });
   }
 }
-
-'''
