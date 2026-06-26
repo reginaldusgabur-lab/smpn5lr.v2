@@ -10,4 +10,5 @@ export const ai = genkit({
 });
 
 // Definisikan model menggunakan factory untuk stabilitas
-export const model = googleAI.model('gemini-pro');
+// Menggunakan model yang lebih baru dan efisien untuk kompatibilitas yang lebih baik.
+export const model = googleAI.model('gemini-1.5-flash');
