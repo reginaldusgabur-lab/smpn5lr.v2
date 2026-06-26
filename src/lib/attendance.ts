@@ -56,7 +56,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const leaveInfo = leaveStatusByUserId.get(user.id);
         if (leaveInfo) {
             if (leaveInfo.status === 'approved') {
-                // Pulang Cepat is not an absence, so it shouldn't be counted here.
                 if (leaveInfo.type === 'Pulang Cepat') return;
                 
                 if (leaveInfo.type === 'Sakit') {
@@ -101,12 +100,11 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         where('startDate', '<=', end)
     );
 
-    // --- FIX: Corrected variable from leaveSnap to leaveQuery ---
     const [schoolConfigSnap, monthlyConfigSnap, attendanceSnap, leaveSnap] = await Promise.all([
         getDoc(schoolConfigRef),
         getDoc(monthlyConfigRef),
         getDocs(attendanceQuery),
-        getDocs(leaveQuery), // Corrected this line
+        getDocs(leaveQuery),
     ]);
 
     const schoolConfig = schoolConfigSnap.data();
@@ -169,10 +167,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         return !anyAttendanceDates.has(dayStr) && !leaveDates.has(dayStr);
     }).length;
     
-    const totalWorkingDaysForPercentage = effectiveWorkingDays.length;
-    
-    const percentageRaw = totalWorkingDaysForPercentage > 0 ? (hadirScore / totalWorkingDaysForPercentage) * 100 : 0;
-    
+    const totalWorkingDays = effectiveWorkingDays.length;
+    const adjustedWorkingDays = totalWorkingDays - (izinCount + sakitCount);
+
+    const percentageRaw = adjustedWorkingDays > 0 ? (hadirScore / adjustedWorkingDays) * 100 : 0;
     const finalPercentage = Math.min(percentageRaw, 100);
 
     return {
@@ -238,7 +236,12 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             let description;
 
             if (attendanceRecord.manualEntry) {
-                description = 'Kehadiran Penuh';
+                const rawReason = attendanceRecord.reasonForUpdate;
+                if (rawReason && (rawReason.includes('Alpa') || rawReason.includes('Input oleh Admin'))) {
+                    description = 'Kehadiran Penuh';
+                } else {
+                    description = rawReason || 'Kehadiran Penuh';
+                }
             } else { 
                 if (checkOutTime) {
                     if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
@@ -265,19 +268,28 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 checkOutTime: checkOutTime || null,
                 status: 'Hadir',
                 description: description,
+                manualEntry: attendanceRecord.manualEntry || false,
             };
         }
 
         const leaveRecord = leaveMap.get(dayStr);
         const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
         if (leaveRecord && isWorkingDay && leaveRecord.type !== 'Pulang Cepat') {
+            let cleanDescription = leaveRecord.reason || leaveRecord.type;
+            if (typeof cleanDescription === 'string') {
+                cleanDescription = cleanDescription.replace('(diubah oleh Admin)', '').trim();
+                if (!cleanDescription) {
+                    cleanDescription = leaveRecord.type;
+                }
+            }
+            
             return {
                 id: `${leaveRecord.id}-${dayStr}`,
                 date: day,
                 checkInTime: null,
                 checkOutTime: null,
                 status: leaveRecord.type, 
-                description: leaveRecord.reason,
+                description: cleanDescription,
             };
         }
 

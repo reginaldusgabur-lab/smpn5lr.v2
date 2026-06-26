@@ -20,7 +20,7 @@ const LaporanGuruListPage = () => {
         [firestore]
     );
 
-    const { data: usersData, isLoading: isUsersLoading } = useCollection(null, usersQuery);
+    const { data: usersData, isLoading: isUsersLoading } = useCollection(usersQuery);
 
     if (isUsersLoading) {
         return (

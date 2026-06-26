@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useFirestore } from '@/firebase';
-import { doc, getDoc, writeBatch, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, Timestamp, collection, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { fetchUserMonthlyReportData } from '@/lib/attendance';
 import { 
     Dialog, 
@@ -18,8 +18,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, isValid } from 'date-fns';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { format, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { MoreVertical } from 'lucide-react';
 
 const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string): Date => {
     const [startH, startM] = startTimeStr.split(':').map(Number);
@@ -37,7 +39,6 @@ const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string)
     return randomDate;
 };
 
-// Helper to convert various date types to a JS Date object
 const toDate = (dateInput: any): Date | null => {
     if (!dateInput) return null;
     if (dateInput instanceof Date) return dateInput;
@@ -45,9 +46,7 @@ const toDate = (dateInput: any): Date | null => {
         const parsed = parseISO(dateInput);
         if (isValid(parsed)) return parsed;
     }
-    if (typeof dateInput.toDate === 'function') { // Firebase Timestamp
-        return dateInput.toDate();
-    }
+    if (typeof dateInput.toDate === 'function') { return dateInput.toDate(); }
     return null;
 };
 
@@ -71,85 +70,107 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 const config = schoolConfigSnap.data() || {};
                 setSchoolConfig(config);
                 const reportData = await fetchUserMonthlyReportData(firestore, user.uid, month, config);
-                const problems = reportData.filter(d => 
-                    (d.status === 'Alpa' && d.description === 'Tidak Ada Keterangan') || 
-                    (d.description === 'Tidak Absen Pulang')
-                );
+                const problems = reportData.filter(d => (d.status === 'Alpa' && d.description === 'Tidak Ada Keterangan') || (d.description === 'Tidak Absen Pulang'));
                 setProblematicDays(problems);
                 setSelectedDays({});
-            } catch (err) {
-                console.error("Error fetching problematic days:", err);
-                setError('Gagal memuat data kehadiran. Silakan coba lagi.');
-            } finally {
-                setIsLoading(false);
-            }
+            } catch (err) { console.error("Error fetching problematic days:", err); setError('Gagal memuat data.'); }
+            finally { setIsLoading(false); }
         };
         getProblematicDays();
     }, [isOpen, firestore, user, month]);
 
-    const handleSelectDay = (dayId: string) => {
-        setSelectedDays(prev => ({ ...prev, [dayId]: !prev[dayId] }));
+    const handleSelectDay = (dayId: string) => setSelectedDays(prev => ({ ...prev, [dayId]: !prev[dayId] }));
+
+    const handleAlpaConversionToLeave = async (day: any, newStatus: 'Sakit' | 'Izin' | 'Dinas') => {
+        if (!currentUser?.uid || !firestore) return setError("Admin tidak teridentifikasi.");
+        setIsSaving(true);
+        try {
+            const targetDate = parseISO(day.date);
+            const batch = writeBatch(firestore);
+            const leaveRef = collection(firestore, 'users', user.uid, 'leaveRequests');
+            const newLeaveDoc = doc(leaveRef);
+            batch.set(newLeaveDoc, {
+                userId: user.uid, type: newStatus, status: 'approved',
+                startDate: Timestamp.fromDate(startOfDay(targetDate)),
+                endDate: Timestamp.fromDate(endOfDay(targetDate)),
+                createdAt: serverTimestamp(), approvedBy: currentUser.uid, approvedAt: serverTimestamp(), createdBy: currentUser.uid,
+            });
+            await batch.commit();
+            setProblematicDays(prev => prev.filter(p => p.id !== day.id));
+        } catch (err) { console.error(err); setError("Gagal mengubah status."); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleAlpaConversionToAttendance = async (day: any, type: 'hadir' | 'terlambat') => {
+        if (!currentUser?.uid || !firestore) return setError("Admin tidak teridentifikasi.");
+        if (!schoolConfig) return setError("Konfigurasi sekolah tidak termuat.");
+        const { checkInEndTime, checkOutStartTime, checkOutEndTime } = schoolConfig;
+        if (!checkInEndTime || !checkOutStartTime || !checkOutEndTime) return setError("Konfigurasi jam masuk/pulang tidak lengkap.");
+
+        setIsSaving(true); setError(null);
+        try {
+            const batch = writeBatch(firestore);
+            const recordDate = parseISO(day.date);
+            const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
+
+            let checkInTime: Date;
+            let checkOutTime: Date;
+            let reasonForUpdate: string;
+
+            if (type === 'hadir') {
+                checkInTime = getRandomTime(recordDate, '07:15', checkInEndTime);
+                reasonForUpdate = 'Kehadiran Penuh';
+            } else { // 'terlambat'
+                const [lateH, lateM] = checkInEndTime.split(':').map(Number);
+                const lateEndDate = new Date(recordDate); lateEndDate.setHours(lateH + 1, lateM);
+                const lateEndTimeStr = `${String(lateEndDate.getHours()).padStart(2, '0')}:${String(lateEndDate.getMinutes()).padStart(2, '0')}`;
+                checkInTime = getRandomTime(recordDate, checkInEndTime, lateEndTimeStr);
+                reasonForUpdate = 'Terlambat';
+            }
+            checkOutTime = getRandomTime(recordDate, checkOutStartTime, checkOutEndTime);
+            if (checkOutTime.getTime() <= checkInTime.getTime()) {
+                checkOutTime = new Date(checkInTime.getTime() + (4 * 60 * 60 * 1000));
+            }
+
+            batch.set(recordRef, {
+                userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
+                checkInTime: Timestamp.fromDate(checkInTime), checkOutTime: Timestamp.fromDate(checkOutTime),
+                updatedBy: currentUser.uid, updatedAt: Timestamp.now(), reasonForUpdate: reasonForUpdate, manualEntry: true
+            });
+
+            await batch.commit();
+            setProblematicDays(prev => prev.filter(p => p.id !== day.id));
+        } catch (err) { console.error("Error converting Alpa status:", err); setError("Gagal menyimpan perubahan."); }
+        finally { setIsSaving(false); }
     };
 
     const handleSaveChanges = async () => {
         const selectedIds = Object.keys(selectedDays).filter(id => selectedDays[id]);
         if (selectedIds.length === 0) return setError("Tidak ada tanggal yang dipilih.");
-        if (!currentUser?.uid) return setError("Gagal mengidentifikasi admin. Silakan muat ulang halaman.");
-        if (!schoolConfig) return setError("Konfigurasi sekolah tidak termuat. Tidak dapat memproses.");
+        if (!currentUser?.uid || !schoolConfig) return setError("Konfigurasi tidak lengkap.");
+        const { checkOutStartTime, checkOutEndTime } = schoolConfig;
+        if (!checkOutStartTime || !checkOutEndTime) return setError("Konfigurasi jam pulang tidak lengkap.");
 
-        const { checkInEndTime, checkOutStartTime, checkOutEndTime } = schoolConfig;
-        if (!checkInEndTime || !checkOutStartTime || !checkOutEndTime) {
-            return setError("Konfigurasi jam masuk/pulang tidak lengkap. Harap periksa pengaturan sekolah.");
-        }
-
-        setIsSaving(true);
-        setError(null);
-
+        setIsSaving(true); setError(null);
         try {
             const batch = writeBatch(firestore);
             const daysToUpdate = problematicDays.filter(day => selectedDays[day.id]);
-
             for (const day of daysToUpdate) {
-                const recordDate = parseISO(day.date);
-                if (day.status === 'Alpa') {
+                if (day.description === 'Tidak Absen Pulang') {
                     const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
-                    const checkInTime = getRandomTime(recordDate, '07:15', checkInEndTime);
-                    let checkOutTime = getRandomTime(recordDate, checkOutStartTime, checkOutEndTime);
-                    if (checkOutTime.getTime() <= checkInTime.getTime()) {
-                        checkOutTime = new Date(checkInTime.getTime() + (6 * 60 * 60 * 1000));
-                    }
-                    batch.set(recordRef, { userId: user.uid, date: day.id, checkInTime: Timestamp.fromDate(checkInTime), checkOutTime: Timestamp.fromDate(checkOutTime), checkInLatitude: null, checkInLongitude: null, checkOutLatitude: null, checkOutLongitude: null, updatedBy: currentUser.uid, updatedAt: Timestamp.now(), reasonForUpdate: 'Input oleh Admin (Alpa)', manualEntry: true });
-                } 
-                else if (day.description === 'Tidak Absen Pulang') {
-                    const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
-                    
-                    // --- ROOT CAUSE FIX: Correctly convert Timestamp to Date before comparison ---
                     const originalCheckInTime = toDate(day.checkInTime);
-
-                    if (!originalCheckInTime || !isValid(originalCheckInTime)) {
-                        console.warn(`Skipping update for day ${day.id} due to invalid original check-in time.`);
-                        continue; // Skip this update if the original date is invalid
-                    }
-
-                    let checkOutTime = getRandomTime(recordDate, checkOutStartTime, checkOutEndTime);
-                    
+                    if (!originalCheckInTime || !isValid(originalCheckInTime)) continue;
+                    let checkOutTime = getRandomTime(parseISO(day.date), checkOutStartTime, checkOutEndTime);
                     if (checkOutTime.getTime() <= originalCheckInTime.getTime()) {
-                         checkOutTime = new Date(originalCheckInTime.getTime() + (4 * 60 * 60 * 1000));
+                        checkOutTime = new Date(originalCheckInTime.getTime() + (4 * 60 * 60 * 1000));
                     }
-                    
-                    batch.update(recordRef, { checkOutTime: Timestamp.fromDate(checkOutTime), updatedBy: currentUser.uid, updatedAt: Timestamp.now(), reasonForUpdate: 'Input oleh Admin (Absen Pulang)', manualEntry: true });
+                    batch.update(recordRef, { checkOutTime: Timestamp.fromDate(checkOutTime), updatedBy: currentUser.uid, updatedAt: Timestamp.now(), reasonForUpdate: 'Kehadiran Penuh', manualEntry: true });
                 }
             }
-
             await batch.commit();
-            onClose(); // Close the modal, which triggers the parent page to refetch.
-
-        } catch (err) {
-            console.error("Error saving attendance:", err);
-            setError("Gagal menyimpan perubahan. Silakan coba lagi.");
-        } finally {
-            setIsSaving(false); // Ensure saving state is always reset
-        }
+            onClose();
+        } catch (err) { console.error(err); setError("Gagal menyimpan perubahan."); }
+        finally { setIsSaving(false); }
     };
 
     const hasSelection = useMemo(() => Object.values(selectedDays).some(Boolean), [selectedDays]);
@@ -159,51 +180,42 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>Perbaiki Kehadiran</DialogTitle>
-                    {error && (
-                        <Alert variant="destructive" className="mt-4">
-                            <AlertTitle>Terjadi Kesalahan</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
+                    {error && <Alert variant="destructive" className="mt-4"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
                 </DialogHeader>
-
                 {isLoading ? (
-                    <div className="py-4 space-y-2">
-                        <Skeleton className="h-8 w-full" />
-                        <Skeleton className="h-8 w-full" />
-                        <Skeleton className="h-8 w-3/4" />
-                    </div>
+                    <div className="py-4 space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div>
                 ) : problematicDays.length > 0 ? (
                     <div className="py-4">
-                        <DialogDescription className="mb-4">
-                           Pilih data untuk diperbaiki. Waktu yang kosong akan diisi secara acak sesuai rentang jam kerja yang berlaku.
-                        </DialogDescription>
+                        <DialogDescription className="mb-4">Pilih data untuk diperbaiki atau ubah status Alpa secara langsung.</DialogDescription>
                         <div className="max-h-[300px] overflow-y-auto -mr-2 pr-2 space-y-1">
                             {problematicDays.map(day => (
-                                <div 
-                                    key={day.id} 
-                                    className="flex items-center gap-3 p-2 rounded-md transition-colors hover:bg-muted/50 cursor-pointer"
-                                    onClick={() => handleSelectDay(day.id)}
-                                >
-                                    <Checkbox id={day.id} checked={!!selectedDays[day.id]} className="w-5 h-5 shrink-0" />
-                                    <label htmlFor={day.id} className="text-sm font-medium cursor-pointer grow">
-                                        {format(parseISO(day.date), 'eeee, dd MMMM yyyy', { locale: id })}
-                                    </label>
-                                    <Badge variant={day.status === 'Alpa' ? "destructive" : "secondary"} className="whitespace-nowrap">
-                                        {day.status === 'Alpa' ? 'Alpa' : 'Tidak Absen Pulang'}
-                                    </Badge>
+                                <div key={day.id} className="flex items-center gap-3 p-2 rounded-md transition-colors hover:bg-muted/50">
+                                    {day.status === 'Alpa' ? <div className="w-5 h-5 shrink-0" /> : <Checkbox id={day.id} checked={!!selectedDays[day.id]} onCheckedChange={() => handleSelectDay(day.id)} className="w-5 h-5 shrink-0" />}
+                                    <label htmlFor={day.id} className="text-sm font-medium grow">{format(parseISO(day.date), 'eeee, dd MMMM yyyy', { locale: id })}</label>
+                                    {day.status === 'Alpa' ? (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Badge variant="destructive" className="cursor-pointer hover:bg-destructive/80 flex items-center">Alpa <MoreVertical className="h-3 w-3 ml-1" /></Badge>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'hadir')}>Jadikan Hadir</DropdownMenuItem>
+                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Sakit')}>Ubah ke Sakit</DropdownMenuItem>
+                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Izin')}>Ubah ke Izin</DropdownMenuItem>
+                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Dinas')}>Ubah ke Dinas</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    ) : <Badge variant="secondary" className="whitespace-nowrap">Tidak Absen Pulang</Badge>}
                                 </div>
                             ))}
                         </div>
                     </div>
-                ) : (
-                    <p className="py-8 text-center text-sm text-muted-foreground">Tidak ada data yang perlu diperbaiki pada periode ini.</p>
-                )}
-                
+                ) : <p className="py-8 text-center text-sm text-muted-foreground">Tidak ada data yang perlu diperbaiki.</p>}
                 <DialogFooter className="pt-4">
                     <DialogClose asChild><Button variant="ghost" disabled={isSaving}>Batal</Button></DialogClose>
-                    <Button onClick={handleSaveChanges} disabled={isLoading || isSaving || problematicDays.length === 0 || !hasSelection}>
-                        {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    <Button onClick={handleSaveChanges} disabled={isLoading || isSaving || !hasSelection}>
+                        {isSaving ? 'Menyimpan...' : 'Perbaiki yang Dipilih'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
