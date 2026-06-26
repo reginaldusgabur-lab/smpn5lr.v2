@@ -61,7 +61,6 @@ export default function LoginPage() {
   const appLogo = PlaceHolderImages.find(p => p.id === 'app-logo');
 
   useEffect(() => {
-    // Jika status user selesai dimuat dan user sudah login, arahkan ke dasbor.
     if (!isUserLoading && user) {
       router.replace('/dashboard');
     }
@@ -85,13 +84,11 @@ export default function LoginPage() {
       return;
     }
     try {
-      // Proses login akan memicu useEffect di atas untuk mengarahkan pengguna
       await signInWithEmailAndPassword(auth, values.email, values.password);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Login Gagal", description: "Email atau password salah." });
-      setIsLoginLoading(false); // Pastikan loading berhenti jika gagal
+      setIsLoginLoading(false);
     }
-    // Tidak perlu setIsLoginLoading(false) di sini karena halaman akan berganti
   };
 
   const handlePasswordReset = async (values: z.infer<typeof resetPasswordSchema>) => {
@@ -102,21 +99,25 @@ export default function LoginPage() {
       return;
     }
     try {
+      auth.languageCode = 'id'; // Set language to Indonesian
       await sendPasswordResetEmail(auth, values.email);
-      toast({ title: "Link Reset Terkirim", description: `Periksa email ${values.email} untuk instruksi.` });
+      toast({
+        title: "Link Reset Terkirim",
+        description: `Periksa kotak masuk & spam di ${values.email} untuk instruksi.`
+      });
       setIsResetDialogOpen(false);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Gagal", description: "Gagal mengirim email reset. Pastikan email benar." });
+      toast({
+        variant: "destructive",
+        title: "Gagal",
+        description: "Gagal mengirim email reset. Pastikan email terdaftar dan coba lagi."
+      });
     } finally {
       setIsResetLoading(false);
     }
   };
   
-  // Mencegah "kedipan" dengan tidak menampilkan loader layar penuh.
-  // Jika pengguna sudah login, useEffect akan menangani pengalihan.
   if (isUserLoading || user) {
-      // Saat memeriksa status user atau jika user sudah ada, tampilkan halaman kosong minimalis
-      // Ini mencegah form login muncul sekejap sebelum dialihkan.
       return <div className="h-screen w-full bg-background" />;
   }
 
