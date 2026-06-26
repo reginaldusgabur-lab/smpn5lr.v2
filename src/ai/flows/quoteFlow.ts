@@ -29,25 +29,53 @@ export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
 /**
  * Menghasilkan kutipan menggunakan model AI Genkit.
- * Ini adalah implementasi AI yang sebenarnya, menggantikan bypass sementara.
  */
 export async function getQuote(input: QuoteInput): Promise<QuoteOutput> {
-  // [DIAGNOSTIC] Menggunakan prompt statis untuk mengisolasi masalah
-  const llmResponse = await generate({
-    model: model,
-    prompt: `Buat satu kutipan motivasi singkat dalam Bahasa Indonesia dalam format JSON. Contoh: {"quote": "Semangat!", "author": "AI"}`,
-    output: {
-      schema: QuoteOutputSchema,
-    },
-  });
 
-  const output = llmResponse.output();
-  if (!output) {
-    // Jika AI gagal memberikan output, kembalikan kutipan darurat
+  // Membuat prompt dinamis berdasarkan input
+  const dynamicPrompt = `Buat satu kutipan motivasi singkat (tidak lebih dari 20 kata) dalam Bahasa Indonesia untuk seorang ${input.category} yang sedang melakukan absensi ${input.attendanceType === 'in' ? 'masuk' : 'pulang'}. Kutipan harus dalam format JSON yang bisa di-parse. Pastikan tidak ada formatting markdown, hanya JSON mentah.
+
+Contoh format yang benar:
+{
+  "quote": "Selamat datang! Semoga harimu penuh inspirasi.",
+  "author": "Penyambut Pagi"
+}
+
+Contoh format lain:
+{
+  "quote": "Terima kasih untuk kerja kerasmu hari ini. Selamat beristirahat.",
+  "author": "Sang Penutup Hari"
+}
+`;
+
+  try {
+    const llmResponse = await generate({
+      model: model,
+      messages: [{ role: 'user', content: dynamicPrompt }], // Menggunakan format `messages` yang benar
+      output: {
+        schema: QuoteOutputSchema,
+        format: 'json', // Memastikan output adalah JSON
+      },
+      config: {
+        temperature: 0.8, // Sedikit lebih kreatif
+      }
+    });
+
+    const output = llmResponse.output();
+    if (!output) {
+      throw new Error("AI response was empty but no error was thrown.");
+    }
+    return output;
+
+  } catch (error) {
+    console.error("---!!! TERJADI ERROR DI FUNGSI getQuote !!!---");
+    console.error("[PESAN ERROR ASLI DARI AI]:", error);
+    console.error("------------------------------------------");
+
+    // Jika AI gagal karena alasan apa pun, kembalikan kutipan darurat
     return {
       quote: "Apapun hasilnya, tetaplah bangga pada usahamu hari ini.",
       author: "Sistem E-Spenli",
     };
   }
-  return output;
 }
