@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import { getFromCache, setInCache } from '@/lib/cache';
 import { calculateAttendanceStats, getDailyStaffAttendanceStats } from '@/lib/attendance'; 
 import { cn } from '@/lib/utils';
+import { PageWrapper } from '@/components/layout/page-wrapper';
 
 import TodaysActivityTable from '@/components/dashboard/RecentAttendanceTable';
 import AbsentUsersTable from '@/components/dashboard/AbsentUsersTable';
@@ -106,7 +107,7 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
                 <CardTitle className="text-lg font-bold">Kehadiran Anda Hari Ini</CardTitle>
                 <CardDescription>Status kehadiran dan jam absensi Anda.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col flex-grow items-stretch justify-center space-y-8 pb-8 pt-6 w-full">
+            <CardContent className="flex flex-col items-stretch space-y-8 pb-8 pt-6 w-full">
                 {isLoading ? (
                     <div className="w-full space-y-6">
                         <div className="flex flex-col items-center gap-2">
@@ -126,7 +127,7 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
                             <p className="text-sm font-medium text-muted-foreground mt-2">{format(currentTime, 'eeee, d MMMM yyyy', { locale: id })}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4 w-full">
-                            <div className="flex flex-col items-center p-4 rounded-xl bg-muted/30 border shadow-sm transition-colors">
+                            <div className="flex flex-col items-center p-4 rounded-xl bg-muted/30 border shadow-sm">
                                 <div className="flex items-center gap-1.5 mb-2">
                                     <LogIn size={16} className="text-muted-foreground" />
                                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Masuk</span>
@@ -135,7 +136,7 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
                                     {checkInTime ? format(checkInTime, 'HH:mm') : '--:--'}
                                 </p>
                             </div>
-                            <div className="flex flex-col items-center p-4 rounded-xl bg-muted/30 border shadow-sm transition-colors">
+                            <div className="flex flex-col items-center p-4 rounded-xl bg-muted/30 border shadow-sm">
                                 <div className="flex items-center gap-1.5 mb-2">
                                     <LogOut size={16} className="text-muted-foreground" />
                                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Pulang</span>
@@ -270,11 +271,11 @@ export default function DashboardPage() {
   const isGuruOrPegawai = role === 'guru' || role === 'pegawai';
 
   return (
-    <div className="w-full space-y-6">
+    <PageWrapper>
         <WelcomeCard user={user} isLoading={isUserLoading} />
 
         {isGuruOrPegawai && (
-            <div className="w-full space-y-6 flex flex-col items-stretch">
+            <div className="w-full space-y-6">
                 <PersonalAttendanceCardUI 
                     attendanceData={todaysAttendance} 
                     schoolConfig={schoolConfig} 
@@ -288,7 +289,7 @@ export default function DashboardPage() {
         )}
 
         {isAdminOrKepsek && (
-            <div className="grid grid-cols-1 gap-6 w-full">
+            <div className="w-full space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
                     <StatCard 
                         title="Hadir Hari Ini" 
@@ -317,6 +318,6 @@ export default function DashboardPage() {
                 <div className="w-full"><AbsentUsersTable /></div>
             </div>
         )}
-    </div>
+    </PageWrapper>
   );
 }
