@@ -271,7 +271,7 @@ const AdminTable = ({ data, canManage, onEdit, onToggleStatus, onDelete }: Table
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost" disabled={user.email === 'admin@sekolah.sch.id'}><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
+                                            <DropdownMenuContent align="end" className="w-[160px]">
                                                 <DropdownMenuLabel>Aksi</DropdownMenuLabel>
                                                 <DropdownMenuItem onClick={() => onEdit(user)}>Edit Pengguna</DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => onToggleStatus(user)} disabled={user.email === 'admin@sekolah.sch.id'}>{user.status === 'Aktif' ? 'Non-aktifkan' : 'Aktifkan'}</DropdownMenuItem>
@@ -603,14 +603,14 @@ function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: bo
 
     return (
         <>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Manajemen Pengguna</h1>
-                    <p className="text-muted-foreground">Kelola data Guru, Pegawai, dan Kepala Sekolah.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Manajemen Pengguna</h1>
+                    <p className="text-muted-foreground mt-1">Kelola data Guru, Pegawai, dan Kepala Sekolah.</p>
                 </div>
                 {canManage && (
                     <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
-                        <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4" />Tambah Pengguna</Button></DialogTrigger>
+                        <DialogTrigger asChild><Button size="lg" className="w-full sm:w-auto font-semibold"><PlusCircle className="mr-2 h-5 w-5" />Tambah Pengguna</Button></DialogTrigger>
                         <DialogContent className="sm:max-w-[480px]">
                             <DialogHeader><DialogTitle>Tambah Pengguna Baru</DialogTitle><DialogDescription>Isi detail di bawah untuk membuat akun baru.</DialogDescription></DialogHeader>
                             <Form {...addForm}>
@@ -666,9 +666,9 @@ function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: bo
                 )}
             </div>
 
-            <Card className="w-full overflow-hidden border-0 md:border shadow-none md:shadow-sm">
-                <CardContent className="p-4 md:p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <Card className="w-full overflow-hidden border-0 md:border shadow-none md:shadow-sm rounded-none md:rounded-lg">
+                <CardContent className="py-6 px-0 md:p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 md:px-0">
                         <div className="flex-1">
                             <Select value={userFilter} onValueChange={(value) => setUserFilter(value as UserFilter)}>
                                 <SelectTrigger className="w-full sm:w-[240px]">
@@ -693,27 +693,27 @@ function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: bo
                             <Input type="search" placeholder="Cari nama pengguna..." className="w-full rounded-lg bg-background pl-8 sm:w-[250px] md:w-[300px]" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
                         </div>
                     </div>
-                    <div className="mt-4">
-                        {isUsersLoading ? <TableSkeleton cols={canManage ? 8 : 7} /> : <UserTable data={filteredUserData} canManage={canManage} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} onDelete={openDeleteDialog} />}
+                    <div className="mt-6">
+                        {isUsersLoading ? <div className="px-4 md:px-0"><TableSkeleton cols={canManage ? 8 : 7} /></div> : <UserTable data={filteredUserData} canManage={canManage} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} onDelete={openDeleteDialog} />}
                     </div>
                 </CardContent>
             </Card>
 
-            <div className="mt-8">
-                <Card className="w-full overflow-hidden border-0 md:border shadow-none md:shadow-sm">
-                    <CardHeader className="px-4 py-6 md:p-6">
-                        <CardTitle>Manajemen Admin</CardTitle>
-                        <CardDescription>Kelola pengguna dengan peran admin.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 md:p-6">
-                        <div className="flex justify-end">
-                             <div className="relative sm:flex-initial sm:w-auto">
+            <div className="mt-12">
+                <div className="mb-4">
+                    <h2 className="text-xl font-bold tracking-tight">Manajemen Admin</h2>
+                    <p className="text-sm text-muted-foreground">Kelola pengguna dengan peran admin.</p>
+                </div>
+                <Card className="w-full overflow-hidden border-0 md:border shadow-none md:shadow-sm rounded-none md:rounded-lg">
+                    <CardContent className="py-6 px-0 md:p-6">
+                        <div className="flex justify-end px-4 md:px-0">
+                             <div className="relative w-full sm:w-auto">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input type="search" placeholder="Cari nama admin..." className="w-full rounded-lg bg-background pl-8 sm:w-[250px] md:w-[300px]" value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
                             </div>
                         </div>
-                        <div className="mt-4">
-                            {isUsersLoading ? <TableSkeleton cols={canManage ? 5 : 4} /> : <AdminTable data={filteredAdminData} canManage={canManage} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} onDelete={openDeleteDialog} />}
+                        <div className="mt-6">
+                            {isUsersLoading ? <div className="px-4 md:px-0"><TableSkeleton cols={canManage ? 5 : 4} /></div> : <AdminTable data={filteredAdminData} canManage={canManage} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} onDelete={openDeleteDialog} />}
                         </div>
                     </CardContent>
                 </Card>
@@ -738,7 +738,7 @@ function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: bo
                                     </RadioGroup></FormControl>{selectedUser?.email === 'admin@sekolah.sch.id' && <FormDescription className="text-xs">Peran admin utama tidak dapat diubah.</FormDescription>}</FormItem>)}/>
                                 <FormField control={editForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nama Lengkap (dengan gelar)</FormLabel><FormControl><Input placeholder="Contoh: Budi Santoso, S.Pd" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                 {(selectedRoleForEdit === 'guru' || selectedRoleForEdit === 'kepala_sekolah') && <FormField control={editForm.control} name="sequenceNumber" render={({ field }) => (<FormItem><FormLabel>Nomor Urut</FormLabel><FormControl><Input placeholder="Nomor untuk pengurutan daftar" {...field} /></FormControl><FormDescription className="text-xs">Sesuai nomor urut pada SK.</FormDescription><FormMessage /></FormItem>)}/>}
-                                {selectedRoleForEdit === 'pegawai' && <FormField control={editForm.control} name="skNumber" render={({ field }) => (<FormItem><FormLabel>Nomor Urut (dari SK)</FormLabel><FormControl><Input placeholder="Masukkan nomor urut dari SK" {...field} /></FormControl><FormMessage /></FormItem>)}/>}
+                                {(selectedRoleForEdit === 'pegawai') && <FormField control={editForm.control} name="skNumber" render={({ field }) => (<FormItem><FormLabel>Nomor Urut (dari SK)</FormLabel><FormControl><Input placeholder="Masukkan nomor urut dari SK" {...field} /></FormControl><FormMessage /></FormItem>)}/>}
                                 {(selectedRoleForEdit === 'guru' || selectedRoleForEdit === 'kepala_sekolah' || selectedRoleForEdit === 'pegawai') && <FormField control={editForm.control} name="identifier" render={({ field }) => (<FormItem><FormLabel>{roleConfig[selectedRoleForEdit as Role]?.label || "Identifier"}<span className="text-muted-foreground ml-1">(Opsional)</span></FormLabel><FormControl><Input placeholder={roleConfig[selectedRoleForEdit as Role]?.placeholder} {...field} /></FormControl><FormMessage /></FormItem>)}/>}
                                 
                                 {(selectedRoleForEdit === 'guru' || selectedRoleForEdit === 'kepala_sekolah' || selectedRoleForEdit === 'pegawai') && (
@@ -816,7 +816,7 @@ export default function AdminUsersPage() {
   }
   
   return (
-    <div className="flex-1 min-w-0 p-2 pt-0 pb-24 md:p-6 md:pt-8 space-y-8">
+    <div className="flex-1 min-w-0 px-4 pt-4 pb-24 md:p-6 md:pt-8 space-y-8">
         <UsersView isAllowed={canView} canManage={canManage} />
     </div>
   );
