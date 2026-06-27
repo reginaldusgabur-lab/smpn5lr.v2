@@ -150,29 +150,14 @@ export default function IzinPage() {
         
         if (values.type === 'Pulang Cepat') {
             if (!hasCheckedIn) {
-                toast({ variant: 'destructive', title: 'Gagal Mengirim Pengajuan', description: 'Anda harus absen masuk terlebih dahulu untuk mengajukan izin pulang cepat.' });
-                return;
-            }
-            if (hasCheckedOut) {
-                toast({ variant: 'destructive', title: 'Gagal Mengirim Pengajuan', description: 'Anda sudah absen pulang. Tidak dapat mengajukan izin pulang cepat.' });
+                toast({ variant: 'destructive', title: 'Gagal', description: 'Anda harus absen masuk terlebih dahulu.' });
                 return;
             }
         } else {
             if (hasCheckedIn) {
-                toast({ variant: 'destructive', title: 'Gagal Mengirim Pengajuan', description: `Anda sudah melakukan absensi hari ini. Tidak dapat mengajukan izin sakit/dinas.` });
+                toast({ variant: 'destructive', title: 'Gagal', description: `Anda sudah melakukan absensi hari ini.` });
                 return;
             }
-        }
-
-        if (values.leaveDate === 'today' && isPastCheckoutTime && values.type !== 'Pulang Cepat') {
-            toast({ variant: 'destructive', title: 'Waktu Pengajuan Habis', description: 'Anda tidak dapat mengajukan izin untuk hari ini setelah jam kerja berakhir.' });
-            return;
-        }
-
-        if (targetDateLeave && targetDateLeave.length > 0) {
-            const existingLeaveType = targetDateLeave[0].type;
-            toast({ variant: 'destructive', title: 'Gagal Mengirim Pengajuan', description: `Anda sudah pernah mengajukan '${existingLeaveType}' untuk ${format(targetDate, 'd MMMM yyyy', { locale: id })}.` });
-            return;
         }
 
         setIsSubmitting(true);
@@ -192,75 +177,45 @@ export default function IzinPage() {
         
         addDoc(leaveCollectionRef, dataToSave)
             .then(() => {
-                toast({ title: 'Pengajuan Terkirim', description: 'Pengajuan Anda telah berhasil dikirim dan menunggu persetujuan.' });
+                toast({ title: 'Terkirim', description: 'Pengajuan Anda telah dikirim.' });
                 router.push('/dashboard/laporan');
             })
             .catch((error) => {
-                console.error('Failed to submit leave request:', error);
                 const contextualError = new FirestorePermissionError({ operation: 'create', path: leaveCollectionRef.path, requestResourceData: dataToSave });
                 errorEmitter.emit('permission-error', contextualError);
-                toast({ title: 'Gagal Mengirim Pengajuan', description: error.message || 'Terjadi kesalahan. Periksa koneksi Anda dan coba lagi.', variant: 'destructive' });
+                toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
             })
             .finally(() => setIsSubmitting(false));
     }
 
     const isChecking = isAttendanceLoading || isLeaveLoading || isSchoolConfigLoading;
-    const isTodayAndPastCheckout = selectedDateValue === 'today' && isPastCheckoutTime;
-
-    const todayFormatted = format(new Date(), 'eeee, d MMMM yyyy', { locale: id });
-    const tomorrowFormatted = format(addDays(new Date(), 1), 'eeee, d MMMM yyyy', { locale: id });
-
-    const getSubmitButtonText = () => {
-      if (isChecking) return 'Memeriksa data...';
-      return 'Kirim Pengajuan';
-    }
 
     return (
         <PageWrapper>
-            <Card className="w-full overflow-hidden border shadow-xl rounded-3xl">
+            <Card className="w-full overflow-hidden border shadow-sm rounded-3xl">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-                            <CardTitle className="font-black text-xs uppercase tracking-widest">Formulir Pengajuan Izin</CardTitle>
-                            <CardDescription className="text-muted-foreground font-medium pt-1">Isi formulir untuk mengajukan ketidakhadiran atau izin pulang cepat. Pengajuan akan ditinjau oleh Kepala Sekolah.</CardDescription>
+                            <CardTitle className="font-bold text-sm tracking-tight">Formulir Pengajuan Izin</CardTitle>
+                            <CardDescription className="text-muted-foreground font-medium pt-1">Isi formulir untuk mengajukan ketidakhadiran atau izin pulang cepat.</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
-                             {isTodayAndPastCheckout && !hasCheckedIn && (
-                                <Alert variant="destructive" className="rounded-2xl">
-                                    <Info className="h-4 w-4" />
-                                    <AlertTitle className="font-bold">Waktu Pengajuan Izin Hari Ini Telah Berakhir</AlertTitle>
-                                    <AlertDescription className="text-xs">
-                                        Anda tidak dapat lagi mengajukan Izin/Sakit/Dinas untuk hari ini karena telah melewati jam kerja. Silakan pilih "Besok".
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                            
-                            {!hasCheckedIn && selectedDateValue === 'today' && (
-                                <Alert variant="default" className="bg-primary/5 border-primary/20 rounded-2xl">
-                                    <Info className="h-4 w-4 text-primary" />
-                                    <AlertTitle className="text-primary font-bold">Info: Izin Pulang Cepat</AlertTitle>
-                                    <AlertDescription className="text-xs text-muted-foreground">
-                                        Opsi "Izin Pulang Cepat" akan aktif setelah Anda melakukan absensi masuk hari ini.
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="leaveDate"
                                     render={({ field }) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Pilih Tanggal Pengajuan</FormLabel>
+                                            <FormLabel className="text-xs font-bold ml-1">Pilih Tanggal</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
-                                                        <SelectValue placeholder="Pilih tanggal pengajuan" />
+                                                        <SelectValue placeholder="Pilih tanggal" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-none shadow-2xl">
-                                                    <SelectItem value="today" className="rounded-lg">Hari Ini ({todayFormatted})</SelectItem>
-                                                    <SelectItem value="tomorrow" className="rounded-lg">Besok ({tomorrowFormatted})</SelectItem>
+                                                    <SelectItem value="today" className="rounded-lg">Hari Ini</SelectItem>
+                                                    <SelectItem value="tomorrow" className="rounded-lg">Besok</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage className="text-[10px] font-bold" />
@@ -276,7 +231,7 @@ export default function IzinPage() {
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
-                                                        <SelectValue placeholder="Pilih jenis pengajuan" />
+                                                        <SelectValue placeholder="Pilih jenis" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-none shadow-2xl">
@@ -299,20 +254,7 @@ export default function IzinPage() {
                                     <FormItem className="space-y-1.5">
                                         <FormLabel className="text-xs font-bold ml-1">Alasan</FormLabel>
                                         <FormControl>
-                                            <Textarea placeholder="Contoh: Demam, Kegiatan Keluarga, atau Keperluan mendesak lainnya..." {...field} className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all" />
-                                        </FormControl>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="proofUrl"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1">Link Bukti (Opsional)</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="https://... (contoh: link surat dokter)" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all" />
+                                            <Textarea placeholder="Contoh: Demam, Kegiatan Keluarga..." {...field} className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all" />
                                         </FormControl>
                                         <FormMessage className="text-[10px] font-bold" />
                                     </FormItem>
@@ -320,9 +262,9 @@ export default function IzinPage() {
                             />
                         </CardContent>
                         <CardFooter className="border-t p-6 bg-muted/5">
-                            <Button type="submit" disabled={isSubmitting || isChecking} className="w-full sm:w-auto h-11 rounded-xl font-black uppercase tracking-normal shadow-lg shadow-primary/20 active:scale-95 transition-all bg-primary">
+                            <Button type="submit" disabled={isSubmitting || isChecking} className="w-full sm:w-auto h-11 rounded-xl font-bold tracking-normal shadow-sm active:scale-95 transition-all bg-primary">
                                {(isSubmitting || isChecking) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                               {getSubmitButtonText()}
+                               Kirim Pengajuan
                             </Button>
                         </CardFooter>
                     </form>

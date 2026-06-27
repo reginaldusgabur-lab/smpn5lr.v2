@@ -18,7 +18,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 
 export default function PengaturanPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -120,7 +119,7 @@ export default function PengaturanPage() {
       if (file.size > 750 * 1024) {
           toast({
               variant: 'destructive',
-              title: 'File Terlalu Besar',
+              title: 'File terlalu besar',
               description: 'Ukuran foto profil tidak boleh melebihi 750KB.',
           });
           return;
@@ -168,15 +167,10 @@ export default function PengaturanPage() {
       
       setPhotoPreview(null);
     } catch (error: any) {
-      console.error("Profile update error", error);
-      let description = 'Terjadi kesalahan. Ukuran file foto mungkin terlalu besar atau format tidak didukung.';
-      if (error.code === 'auth/requires-recent-login') {
-          description = 'Sesi Anda sudah terlalu lama. Untuk keamanan, silakan logout dan login kembali.';
-      }
       toast({
         variant: 'destructive',
-        title: 'Gagal Memperbarui Profil',
-        description: description,
+        title: 'Gagal',
+        description: 'Terjadi kesalahan saat memperbarui profil.',
       });
     } finally {
       setIsProfileLoading(false);
@@ -190,27 +184,21 @@ export default function PengaturanPage() {
       return;
     }
     if (newPassword.length < 6) {
-        toast({ variant: 'destructive', title: 'Gagal', description: 'Password baru minimal harus 6 karakter.' });
+        toast({ variant: 'destructive', title: 'Gagal', description: 'Password minimal harus 6 karakter.' });
         return;
     }
     setIsPasswordLoading(true);
     if (user) {
       try {
         await updatePassword(user, newPassword);
-        toast({ title: 'Berhasil', description: 'Password Anda telah berhasil diubah.' });
+        toast({ title: 'Berhasil', description: 'Password telah berhasil diubah.' });
         setNewPassword('');
         setConfirmPassword('');
       } catch (error: any) {
-        console.error("Password change error", error);
-        let description = 'Terjadi kesalahan yang tidak diketahui. Coba lagi nanti.';
-        if (error.code === 'auth/requires-recent-login') {
-            description = 'Sesi Anda sudah terlalu lama. Untuk keamanan, silakan logout dan login kembali sebelum mencoba mengubah password.';
-        }
         toast({ 
             variant: 'destructive', 
-            title: 'Gagal Mengubah Password', 
-            description: description,
-            duration: 9000,
+            title: 'Gagal', 
+            description: 'Sesi Anda mungkin sudah berakhir. Silakan login ulang.',
         });
       } finally {
         setIsPasswordLoading(false);
@@ -232,8 +220,8 @@ export default function PengaturanPage() {
       academicYear,
     }, { merge: true });
     toast({
-      title: 'Pengaturan Disimpan',
-      description: 'Informasi laporan PDF telah berhasil diperbarui.',
+      title: 'Disimpan',
+      description: 'Data laporan PDF telah diperbarui.',
     });
     setIsReportSaving(false);
   };
@@ -259,9 +247,9 @@ export default function PengaturanPage() {
   return (
     <div className="grid gap-6">
       <form onSubmit={handleProfileUpdate}>
-        <Card className="overflow-hidden bg-card border shadow-xl rounded-3xl">
+        <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
           <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
-            <CardTitle className="font-black text-xs uppercase tracking-widest">PROFIL PENGGUNA</CardTitle>
+            <CardTitle className="font-bold text-sm tracking-tight">Profil Pengguna</CardTitle>
             <CardDescription className="text-muted-foreground font-medium">
               Informasi dasar akun yang ditampilkan di aplikasi.
             </CardDescription>
@@ -269,15 +257,15 @@ export default function PengaturanPage() {
           <CardContent className="grid gap-6 pt-6">
             <div className="flex items-center gap-4 sm:gap-6">
                 <div className="relative shrink-0">
-                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-primary/20 shadow-lg">
-                    <AvatarImage src={currentPhoto ?? undefined} alt="User Avatar" />
+                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-primary/20 shadow-sm">
+                    <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" />
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
                   </Avatar>
                   <Button
                     type="button"
                     size="icon"
                     variant="outline"
-                    className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 border-2 bg-background hover:bg-muted shadow-md"
+                    className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 border-2 bg-background hover:bg-muted shadow-sm"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Camera className="h-4 w-4" />
@@ -292,10 +280,9 @@ export default function PengaturanPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                   <Label className="font-black text-sm uppercase tracking-wider text-primary">Foto Profil</Label>
+                   <Label className="font-bold text-sm tracking-tight text-primary">Foto Profil</Label>
                    <p className="text-[10px] font-bold text-muted-foreground">
-                      PNG, JPG, GIF (Maks 750KB). <br className="hidden sm:block" />
-                      Klik kamera untuk ubah.
+                      PNG, JPG, GIF (Maks 750KB).
                   </p>
                 </div>
               </div>
@@ -324,10 +311,10 @@ export default function PengaturanPage() {
             </div>
           </CardContent>
           <CardFooter className="border-t px-6 py-4 bg-muted/5">
-            <Button type="submit" className="font-black rounded-xl h-11 shadow-lg" disabled={isProfileLoading}>
+            <Button type="submit" className="font-bold rounded-xl h-11 shadow-sm" disabled={isProfileLoading}>
               <span className="flex items-center justify-center">
                 {isProfileLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                SIMPAN PROFIL
+                Simpan Profil
               </span>
             </Button>
           </CardFooter>
@@ -335,42 +322,42 @@ export default function PengaturanPage() {
       </form>
       
       {isAdmin && (
-         <Card className="overflow-hidden bg-card border shadow-xl rounded-3xl">
+         <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
             <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
-                <CardTitle className="font-black text-xs uppercase tracking-widest">PENGATURAN LAPORAN PDF</CardTitle>
+                <CardTitle className="font-bold text-sm tracking-tight">Pengaturan Laporan PDF</CardTitle>
                 <CardDescription className="text-muted-foreground font-medium">Informasi resmi untuk kop dan footer laporan PDF.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 pt-6">
                 <div className="space-y-2">
                     <Label htmlFor="government-agency" className="text-xs font-bold ml-1">Instansi Pemerintah</Label>
-                    <Input id="government-agency" className="h-11 rounded-xl bg-muted/30" value={governmentAgency} onChange={e => setGovernmentAgency(e.target.value)} placeholder="PEMERINTAH KABUPATEN MANGGARAI" />
+                    <Input id="government-agency" className="h-11 rounded-xl bg-muted/30" value={governmentAgency} onChange={e => setGovernmentAgency(e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="education-agency" className="text-xs font-bold ml-1">Dinas Pendidikan</Label>
-                    <Input id="education-agency" className="h-11 rounded-xl bg-muted/30" value={educationAgency} onChange={e => setEducationAgency(e.target.value)} placeholder="DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA" />
+                    <Input id="education-agency" className="h-11 rounded-xl bg-muted/30" value={educationAgency} onChange={e => setEducationAgency(e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="school-name" className="text-xs font-bold ml-1">Nama Sekolah</Label>
-                    <Input id="school-name" className="h-11 rounded-xl bg-muted/30" value={schoolName} onChange={e => setSchoolName(e.target.value)} placeholder="SMP NEGERI 5 LANGKE REMBONG" />
+                    <Input id="school-name" className="h-11 rounded-xl bg-muted/30" value={schoolName} onChange={e => setSchoolName(e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="address" className="text-xs font-bold ml-1">Alamat Sekolah</Label>
-                    <Input id="address" className="h-11 rounded-xl bg-muted/30" value={address} onChange={e => setAddress(e.target.value)} placeholder="Jl. Ranaka, Karot, Langke Rembong..." />
+                    <Input id="address" className="h-11 rounded-xl bg-muted/30" value={address} onChange={e => setAddress(e.target.value)} />
                 </div>
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="report-city" className="text-xs font-bold ml-1">Kota Laporan</Label>
-                        <Input id="report-city" className="h-11 rounded-xl bg-muted/30" value={reportCity} onChange={e => setReportCity(e.target.value)} placeholder="Contoh: Mando" />
+                        <Input id="report-city" className="h-11 rounded-xl bg-muted/30" value={reportCity} onChange={e => setReportCity(e.target.value)} />
                     </div>
                     <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="headmaster-name" className="text-xs font-bold ml-1">Nama Kepala Sekolah</Label>
-                        <Input id="headmaster-name" className="h-11 rounded-xl bg-muted/30" value={headmasterName} onChange={e => setHeadmasterName(e.target.value)} placeholder="Fransiskus Sales, S.Pd" />
+                        <Input id="headmaster-name" className="h-11 rounded-xl bg-muted/30" value={headmasterName} onChange={e => setHeadmasterName(e.target.value)} />
                     </div>
                  </div>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="headmaster-nip" className="text-xs font-bold ml-1">NIP Kepala Sekolah</Label>
-                        <Input id="headmaster-nip" className="h-11 rounded-xl bg-muted/30" value={headmasterNip} onChange={e => setHeadmasterNip(e.target.value)} placeholder="196805121994121004" />
+                        <Input id="headmaster-nip" className="h-11 rounded-xl bg-muted/30" value={headmasterNip} onChange={e => setHeadmasterNip(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="academic-year" className="text-xs font-bold ml-1">Tahun Ajaran</Label>
@@ -379,19 +366,19 @@ export default function PengaturanPage() {
                  </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4 bg-muted/5">
-                <Button onClick={handleReportSettingsSave} className="font-black rounded-xl h-11 shadow-lg" disabled={isReportSaving}>
+                <Button onClick={handleReportSettingsSave} className="font-bold rounded-xl h-11 shadow-sm" disabled={isReportSaving}>
                   <span className="flex items-center justify-center">
                     {isReportSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    SIMPAN DATA LAPORAN
+                    Simpan Data Laporan
                   </span>
                 </Button>
             </CardFooter>
         </Card>
       )}
 
-      <Card className="overflow-hidden bg-card border shadow-xl rounded-3xl">
+      <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
         <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
-          <CardTitle className="font-black text-xs uppercase tracking-widest">GANTI KATA SANDI</CardTitle>
+          <CardTitle className="font-bold text-sm tracking-tight">Ganti Kata Sandi</CardTitle>
           <CardDescription className="text-muted-foreground font-medium">
             Gunakan kombinasi password yang kuat untuk keamanan akun.
           </CardDescription>
@@ -432,10 +419,10 @@ export default function PengaturanPage() {
               </div>
           </CardContent>
           <CardFooter className="border-t px-6 py-4 bg-muted/5">
-            <Button type="submit" className="font-black rounded-xl h-11 shadow-lg" disabled={isPasswordLoading}>
+            <Button type="submit" className="font-bold rounded-xl h-11 shadow-sm" disabled={isPasswordLoading}>
               <span className="flex items-center justify-center">
                 {isPasswordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                SIMPAN PASSWORD
+                Simpan Password
               </span>
             </Button>
           </CardFooter>

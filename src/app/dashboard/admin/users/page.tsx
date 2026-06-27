@@ -186,7 +186,7 @@ export default function AdminUsersPage() {
         try {
             const userRef = doc(firestore, "users", targetUser.id);
             await updateDocumentNonBlocking(userRef, { status: newStatus });
-            toast({ title: 'Status Diperbarui', description: `${targetUser.name} sekarang ${newStatus}.` });
+            toast({ title: 'Status diperbarui', description: `${targetUser.name} sekarang ${newStatus}.` });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal mengubah status.' });
         }
@@ -198,7 +198,7 @@ export default function AdminUsersPage() {
         try {
             const userRef = doc(firestore, "users", userToDelete.id);
             await deleteDocumentNonBlocking(userRef);
-            toast({ title: 'Berhasil', description: 'Data pengguna telah dihapus dari database.' });
+            toast({ title: 'Berhasil', description: 'Data pengguna telah dihapus.' });
             setIsDeleteDialogOpen(false);
             setUserToDelete(null);
         } catch (e: any) {
@@ -216,15 +216,15 @@ export default function AdminUsersPage() {
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">Manajemen Pengguna</h1>
                         <p className="text-muted-foreground mt-1 font-medium">Kelola data personil sekolah dengan mudah.</p>
                     </div>
-                    <Button size="lg" className="font-black rounded-xl h-12 shadow-lg active:scale-95 transition-all bg-primary hover:bg-primary/90" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
+                    <Button size="lg" className="font-bold rounded-xl h-12 shadow-sm active:scale-95 transition-all bg-primary hover:bg-primary/90" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
                         <PlusCircle className="mr-2 h-5 w-5" />
-                        TAMBAH PERSONIL
+                        Tambah Personil
                     </Button>
                 </div>
 
-                <Card className="w-full border shadow-xl rounded-3xl overflow-hidden bg-card">
+                <Card className="w-full border shadow-sm rounded-3xl overflow-hidden bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
-                        <CardTitle className="font-black text-xs uppercase tracking-widest">DAFTAR PENGGUNA SISTEM</CardTitle>
+                        <CardTitle className="font-bold text-sm tracking-tight">Daftar Pengguna Sistem</CardTitle>
                         <CardDescription className="text-muted-foreground font-medium">Informasi akun dan hak akses pengguna aktif.</CardDescription>
                     </CardHeader>
                     <CardContent className="py-6 min-h-[400px]">
@@ -254,16 +254,16 @@ export default function AdminUsersPage() {
                             </div>
                         </div>
 
-                        <div className="border rounded-2xl overflow-hidden border-muted-foreground/5 shadow-inner">
+                        <div className="border rounded-2xl overflow-hidden border-muted-foreground/5">
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[80px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
-                                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Nama & Email</TableHead>
-                                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Peran</TableHead>
-                                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Identitas</TableHead>
-                                        <TableHead className="text-center font-black text-[10px] uppercase tracking-widest text-primary/80">Status</TableHead>
-                                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-primary/80 pr-6">Aksi</TableHead>
+                                        <TableHead className="w-[80px] text-center font-bold text-xs text-muted-foreground">No</TableHead>
+                                        <TableHead className="font-bold text-xs text-primary/80">Nama & Email</TableHead>
+                                        <TableHead className="font-bold text-xs text-primary/80">Peran</TableHead>
+                                        <TableHead className="font-bold text-xs text-primary/80">Identitas</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-primary/80">Status</TableHead>
+                                        <TableHead className="text-right font-bold text-xs text-primary/80 pr-6">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -280,26 +280,26 @@ export default function AdminUsersPage() {
                                         ))
                                     ) : filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
                                         <TableRow key={u.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
-                                            <TableCell className="text-center font-black text-muted-foreground/60">{u.sequenceNumber ?? i + 1}</TableCell>
+                                            <TableCell className="text-center font-bold text-muted-foreground/60">{u.sequenceNumber ?? i + 1}</TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
-                                                    <span className="font-black text-sm text-foreground">{u.name}</span>
+                                                    <span className="font-bold text-sm text-foreground">{u.name}</span>
                                                     <span className="text-[10px] font-bold text-muted-foreground">{u.email}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="secondary" className="text-[9px] font-black capitalize py-0.5 px-3">
+                                                <Badge variant="secondary" className="text-[9px] font-bold capitalize py-0.5 px-3">
                                                     {u.role.replace('_', ' ')}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[10px] font-black text-foreground">{u.nip || '-'}</span>
+                                                    <span className="text-[10px] font-bold text-foreground">{u.nip || '-'}</span>
                                                     <span className="text-[9px] font-bold text-primary uppercase tracking-tight">{u.position || '-'}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant={u.status === 'Aktif' ? 'default' : 'destructive'} className="text-[9px] font-black px-3 py-0.5">
+                                                <Badge variant={u.status === 'Aktif' ? 'default' : 'destructive'} className="text-[9px] font-bold px-3 py-0.5">
                                                     {u.status}
                                                 </Badge>
                                             </TableCell>
@@ -311,7 +311,7 @@ export default function AdminUsersPage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-2xl border-none">
-                                                        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 mb-1">Aksi Pengguna</DropdownMenuLabel>
+                                                        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 mb-1">Aksi Pengguna</DropdownMenuLabel>
                                                         <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}>
                                                             <Edit2 className="mr-3 h-4 w-4 text-primary" />
                                                             <span className="text-xs font-bold">Ubah Data</span>
@@ -347,7 +347,7 @@ export default function AdminUsersPage() {
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
                 <DialogContent className="rounded-3xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh]">
                     <DialogHeader className="p-6 pb-2 border-b border-muted-foreground/5">
-                        <DialogTitle className="text-xl font-black uppercase tracking-widest text-primary">
+                        <DialogTitle className="text-xl font-bold text-primary">
                             {editingUser ? 'Perbarui Data' : 'Tambah Personil'}
                         </DialogTitle>
                         <DialogDescription className="text-xs font-medium text-muted-foreground">
@@ -432,7 +432,7 @@ export default function AdminUsersPage() {
                                 )}
 
                                 <div className="pt-4 sticky bottom-0 bg-card/80 backdrop-blur-sm">
-                                    <Button type="submit" className="w-full h-12 rounded-xl font-black uppercase tracking-widest bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-all" disabled={isSaving}>
+                                    <Button type="submit" className="w-full h-12 rounded-xl font-bold shadow-sm shadow-primary/20 active:scale-95 transition-all" disabled={isSaving}>
                                         {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : (editingUser ? 'Perbarui Data' : 'Buat Akun Sekarang')}
                                     </Button>
                                 </div>
@@ -448,10 +448,10 @@ export default function AdminUsersPage() {
                     <AlertDialogHeader>
                         <div className="flex items-center gap-3 text-destructive mb-2">
                             <AlertCircle className="h-6 w-6" />
-                            <AlertDialogTitle className="text-xl font-black uppercase tracking-widest">Hapus Pengguna?</AlertDialogTitle>
+                            <AlertDialogTitle className="text-xl font-bold">Hapus Pengguna?</AlertDialogTitle>
                         </div>
                         <AlertDialogDescription className="text-sm font-medium">
-                            Tindakan ini akan menghapus data <span className="font-bold text-foreground">{userToDelete?.name}</span> secara permanen dari database. Riwayat kehadiran yang terkait mungkin tidak dapat diakses lagi.
+                            Tindakan ini akan menghapus data <span className="font-bold text-foreground">{userToDelete?.name}</span> secara permanen dari database.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-4 gap-2">

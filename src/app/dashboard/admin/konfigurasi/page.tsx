@@ -29,7 +29,7 @@ import { Switch } from '@/components/ui/switch';
 import { Download, Loader2, RefreshCw, LocateFixed, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format, getDaysInMonth, startOfMonth, eachDayOfInterval } from 'date-fns';
@@ -109,8 +109,8 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
     if (manualWorkDaysValue !== null && (isNaN(manualWorkDaysValue) || manualWorkDaysValue < 0 || manualWorkDaysValue > totalDaysInMonth)) {
         toast({
             variant: 'destructive',
-            title: 'Input Tidak Valid',
-            description: `Jumlah hari kerja harus berupa angka antara 0 dan ${totalDaysInMonth}. Kosongkan untuk menggunakan perhitungan otomatis.`
+            title: 'Input tidak valid',
+            description: `Jumlah hari kerja harus berupa angka antara 0 dan ${totalDaysInMonth}.`
         });
         setIsSaving(false);
         return;
@@ -142,9 +142,9 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   };
   
   return (
-    <Card className="lg:col-span-3 overflow-hidden">
+    <Card className="lg:col-span-3 overflow-hidden shadow-sm">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-            <CardTitle className="font-black text-sm uppercase tracking-widest">HARI KERJA & LIBUR BULANAN</CardTitle>
+            <CardTitle className="font-bold text-sm tracking-tight">Hari Kerja & Libur Bulanan</CardTitle>
             <CardDescription className="text-muted-foreground font-medium">
                 Tandai hari libur spesifik atau tentukan jumlah hari kerja efektif.
             </CardDescription>
@@ -194,7 +194,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                                                     />
                                                 </TableCell>
                                                 <TableCell className="py-2">
-                                                    <Label htmlFor={dayString} className="font-bold text-sm cursor-pointer w-full block">
+                                                    <Label htmlFor={dayString} className="font-medium text-sm cursor-pointer w-full block">
                                                         {format(day, 'eeee, d MMMM yyyy', { locale: id })}
                                                     </Label>
                                                 </TableCell>
@@ -208,7 +208,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                 )}
             </div>
             <div className="md:col-span-1 space-y-4 border-l-0 md:border-l md:pl-6 border-muted-foreground/10">
-                <h3 className="font-bold text-sm uppercase tracking-wider text-primary">Status Bulan Ini</h3>
+                <h3 className="font-bold text-sm tracking-tight text-primary">Status Bulan Ini</h3>
                  <p className="text-xs text-muted-foreground leading-relaxed">
                     Jumlah hari kerja efektif di bulan <span className="font-bold">{format(currentMonth, 'MMMM', { locale: id })}</span> digunakan untuk hitung persentase kehadiran.
                 </p>
@@ -229,9 +229,9 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
             </div>
         </CardContent>
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
-            <Button onClick={handleSave} className="w-full sm:w-auto font-black rounded-xl h-11 shadow-lg" disabled={isSaving}>
+            <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 shadow-sm" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                SIMPAN PENGATURAN BULAN INI
+                Simpan Pengaturan Bulan Ini
             </Button>
         </CardFooter>
     </Card>
@@ -329,8 +329,8 @@ export default function KonfigurasiAbsenPage() {
           console.error('QR Code generation failed:', err);
           toast({
             variant: 'destructive',
-            title: 'Gagal Membuat QR Code',
-            description: 'Terjadi kesalahan saat menyiapkan QR Code.',
+            title: 'Gagal membuat kode QR',
+            description: 'Terjadi kesalahan saat menyiapkan kode QR.',
           });
         } finally {
           setIsQrLoading(false);
@@ -344,33 +344,25 @@ export default function KonfigurasiAbsenPage() {
   }, [qrCodeValue, toast, isConfigLoading]);
 
 
-  const downloadQRCode = async (format: 'png' | 'pdf') => {
+  const downloadQRCode = async () => {
     if (!qrCodeDataUrl) {
       toast({
         variant: 'destructive',
-        title: 'Gagal Mengunduh',
-        description: 'QR Code belum siap. Mohon tunggu sejenak dan coba lagi.',
+        title: 'Gagal mengunduh',
+        description: 'Kode QR belum siap. Mohon tunggu sejenak.',
       });
       return;
     }
-
-    if (format === 'png') {
-      const downloadLink = document.createElement('a');
-      downloadLink.href = qrCodeDataUrl;
-      downloadLink.download = 'absensi-qrcode.png';
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-    } else { // pdf
-      const { jsPDF } = await import('jspdf');
-      const pdfDoc = new jsPDF();
-      pdfDoc.setFontSize(20);
-      pdfDoc.text('QR Code Absensi E-SPENLI', 105, 20, { align: 'center' });
-      pdfDoc.addImage(qrCodeDataUrl, 'PNG', 65, 30, 80, 80);
-      pdfDoc.save('absensi-qrcode.pdf');
-    }
+    const downloadLink = document.createElement('a');
+    downloadLink.href = qrCodeDataUrl;
+    downloadLink.download = 'absensi-qrcode.png';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    
     toast({
       title: 'Berhasil',
-      description: `QR Code berhasil diunduh sebagai ${format.toUpperCase()}.`,
+      description: `Kode QR berhasil diunduh sebagai PNG.`,
     });
   };
   
@@ -381,8 +373,8 @@ export default function KonfigurasiAbsenPage() {
     updateDocumentNonBlocking(schoolConfigRef, { qrCodeValue: newQrValue });
     setQrCodeValue(newQrValue);
     toast({
-      title: 'QR Code Diperbarui',
-      description: 'QR Code absensi baru telah berhasil dibuat.',
+      title: 'Kode QR diperbarui',
+      description: 'Kode QR absensi baru telah berhasil dibuat.',
     });
   };
 
@@ -390,7 +382,7 @@ export default function KonfigurasiAbsenPage() {
     if (!navigator.geolocation) {
       toast({
         variant: 'destructive',
-        title: 'Geolocation Tidak Didukung',
+        title: 'Layanan tidak didukung',
         description: 'Browser Anda tidak mendukung pengambilan lokasi.',
       });
       return;
@@ -403,23 +395,19 @@ export default function KonfigurasiAbsenPage() {
         setLongitude(position.coords.longitude.toFixed(6));
         setIsLocating(false);
         toast({
-          title: 'Lokasi Ditemukan',
-          description: 'Koordinat Latitude dan Longitude telah diperbarui.',
+          title: 'Lokasi ditemukan',
+          description: 'Koordinat latitude dan longitude telah diperbarui.',
         });
       },
       (error) => {
         setIsLocating(false);
         let description = 'Terjadi kesalahan saat mengambil lokasi.';
-        if (error.code === 1) { // PERMISSION_DENIED
-          description = 'Akses lokasi ditolak. Aktifkan izin lokasi di pengaturan browser.';
-        } else if (error.code === 2) { // POSITION_UNAVAILABLE
-          description = 'Lokasi tidak tersedia. Pastikan GPS dan koneksi internet Anda aktif.';
-        } else if (error.code === 3) { // TIMEOUT
-          description = 'Waktu permintaan habis saat mencoba mendapatkan lokasi.';
+        if (error.code === 1) {
+          description = 'Akses lokasi ditolak. Aktifkan izin lokasi di browser.';
         }
         toast({
           variant: 'destructive',
-          title: 'Gagal Mendapatkan Lokasi',
+          title: 'Gagal mendapatkan lokasi',
           description,
         });
       },
@@ -446,7 +434,7 @@ export default function KonfigurasiAbsenPage() {
       checkOutEndTime: checkOutEnd,
     }, { merge: true });
     toast({
-      title: 'Pengaturan Disimpan',
+      title: 'Pengaturan disimpan',
       description: 'Konfigurasi absensi telah berhasil diperbarui.',
     });
     setIsSaving(false);
@@ -466,10 +454,10 @@ export default function KonfigurasiAbsenPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-1 overflow-hidden shadow-xl rounded-3xl">
+      <Card className="lg:col-span-1 overflow-hidden shadow-sm">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-          <CardTitle className="font-black text-xs uppercase tracking-widest">QR CODE ABSENSI</CardTitle>
-          <CardDescription className="text-muted-foreground font-medium">Gunakan QR Code ini untuk absensi harian.</CardDescription>
+          <CardTitle className="font-bold text-sm tracking-tight">Kode QR Absensi</CardTitle>
+          <CardDescription className="text-muted-foreground font-medium">Gunakan Kode QR ini untuk absensi harian.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center gap-4 p-4 sm:p-6">
           <div className="p-4 border rounded-2xl bg-white aspect-square w-full max-w-[256px] relative shadow-inner">
@@ -478,7 +466,7 @@ export default function KonfigurasiAbsenPage() {
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : (
-              <Image src={qrCodeDataUrl} alt="QR Code Absensi" width={224} height={224} className="w-full h-full" />
+              <Image src={qrCodeDataUrl} alt="Kode QR Absensi" width={224} height={224} className="w-full h-full" />
             )}
           </div>
 
@@ -486,12 +474,12 @@ export default function KonfigurasiAbsenPage() {
             <AlertDialogTrigger asChild>
                 <Button variant="outline" className="w-full max-w-[256px] rounded-xl font-bold" disabled={isQrLoading}>
                     {isQrLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    BUAT QR BARU
+                    Buat QR Baru
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="rounded-3xl border-none">
                 <AlertDialogHeader>
-                    <AlertDialogTitle className="font-black text-xl">Perbarui Kode QR?</AlertDialogTitle>
+                    <AlertDialogTitle className="font-bold text-xl">Perbarui Kode QR?</AlertDialogTitle>
                     <AlertDialogDescription className="font-medium text-sm">
                         Kode QR lama tidak akan bisa digunakan lagi setelah Anda membuat yang baru. Apakah Anda yakin ingin membuat kode QR baru?
                     </AlertDialogDescription>
@@ -504,20 +492,20 @@ export default function KonfigurasiAbsenPage() {
           </AlertDialog>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 border-t p-4 sm:p-6 bg-muted/5">
-          <Button variant="outline" className="w-full rounded-xl font-black h-11" onClick={() => downloadQRCode('png')} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />UNDUH PNG</Button>
+          <Button variant="outline" className="w-full rounded-xl font-bold h-11" onClick={downloadQRCode} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />Unduh PNG</Button>
         </CardFooter>
       </Card>
 
-      <Card className="lg:col-span-2 overflow-hidden shadow-xl rounded-3xl">
+      <Card className="lg:col-span-2 overflow-hidden shadow-sm">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-          <CardTitle className="font-black text-xs uppercase tracking-widest">PENGATURAN UMUM</CardTitle>
+          <CardTitle className="font-bold text-sm tracking-tight">Pengaturan Umum</CardTitle>
           <CardDescription className="text-muted-foreground font-medium">Atur parameter sistem absensi sekolah.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 p-4 sm:p-6">
           <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
               <div className="flex items-center justify-between">
                   <div>
-                      <Label htmlFor="holiday-mode" className="font-black text-sm">MODE LIBUR MANUAL</Label>
+                      <Label htmlFor="holiday-mode" className="font-bold text-sm">Mode Libur Manual</Label>
                       <p className="text-xs text-muted-foreground">Menonaktifkan sistem absensi untuk sementara.</p>
                   </div>
                   <Switch
@@ -527,7 +515,7 @@ export default function KonfigurasiAbsenPage() {
                   />
               </div>
               <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
-                  <Label className='text-xs font-black uppercase tracking-wider opacity-70'>Hari Libur Rutin</Label>
+                  <Label className='text-xs font-bold opacity-70'>Hari Libur Rutin</Label>
                   <p className="text-xs text-muted-foreground">
                     Pilih hari libur mingguan tetap.
                   </p>
@@ -550,7 +538,7 @@ export default function KonfigurasiAbsenPage() {
           <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="use-location" className="font-black text-sm">VALIDASI LOKASI (GPS)</Label>
+                <Label htmlFor="use-location" className="font-bold text-sm">Validasi Lokasi (GPS)</Label>
                 <p className="text-xs text-muted-foreground">Wajibkan pengguna berada di area sekolah.</p>
               </div>
               <Switch id="use-location" checked={useLocationValidation} onCheckedChange={setUseLocationValidation} disabled={holidayMode} />
@@ -560,24 +548,24 @@ export default function KonfigurasiAbsenPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-4">
                     <Label className="text-xs font-bold">Koordinat Sekolah</Label>
-                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-black" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
+                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-bold" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
                       {isLocating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <LocateFixed className="mr-2 h-3 w-3" />}
-                      DAPATKAN LOKASI
+                      Dapatkan Lokasi
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <Label htmlFor="latitude" className="text-[10px] font-bold text-muted-foreground">LATITUDE</Label>
+                        <Label htmlFor="latitude" className="text-[10px] font-bold text-muted-foreground">Latitude</Label>
                         <Input id="latitude" type="text" className="h-10 rounded-xl bg-muted/30" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="-8.58333" disabled={holidayMode || isLocating} />
                     </div>
                     <div>
-                        <Label htmlFor="longitude" className="text-[10px] font-bold text-muted-foreground">LONGITUDE</Label>
+                        <Label htmlFor="longitude" className="text-[10px] font-bold text-muted-foreground">Longitude</Label>
                         <Input id="longitude" type="text" className="h-10 rounded-xl bg-muted/30" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="120.46667" disabled={holidayMode || isLocating} />
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="radius" className="text-xs font-bold">RADIUS SEKOLAH (METER)</Label>
+                  <Label htmlFor="radius" className="text-xs font-bold">Radius Sekolah (Meter)</Label>
                   <Input id="radius" type="number" className="h-10 rounded-xl bg-muted/30" value={radius} onChange={(e) => setRadius(Number(e.target.value))} placeholder="100" disabled={holidayMode} />
                 </div>
                 <div className="aspect-video w-full overflow-hidden rounded-2xl border shadow-inner">
@@ -597,7 +585,7 @@ export default function KonfigurasiAbsenPage() {
           <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
               <div className="flex items-center justify-between">
                   <div>
-                      <Label htmlFor="use-time" className="font-black text-sm">VALIDASI JAM KERJA</Label>
+                      <Label htmlFor="use-time" className="font-bold text-sm">Validasi Jam Kerja</Label>
                       <p className="text-xs text-muted-foreground">Wajibkan pengguna absen sesuai jadwal.</p>
                   </div>
                   <Switch id="use-time" checked={useTimeValidation} onCheckedChange={setUseTimeValidation} disabled={holidayMode} />
@@ -606,25 +594,25 @@ export default function KonfigurasiAbsenPage() {
                   <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
                       <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1.5">
-                              <Label htmlFor="checkin-start" className="text-[10px] font-bold">MULAI MASUK</Label>
+                              <Label htmlFor="checkin-start" className="text-[10px] font-bold">Mulai Masuk</Label>
                               <Input id="checkin-start" type="time" className="rounded-xl h-10 bg-muted/30" value={checkInStart} onChange={e => setCheckInStart(e.target.value)} disabled={holidayMode} />
                           </div>
                           <div className="space-y-1.5">
-                              <Label htmlFor="checkin-end" className="text-[10px] font-bold">SELESAI MASUK</Label>
+                              <Label htmlFor="checkin-end" className="text-[10px] font-bold">Selesai Masuk</Label>
                               <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
                           </div>
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="late-tolerance" className="text-xs font-bold">TOLERANSI TERLAMBAT (MENIT)</Label>
+                          <Label htmlFor="late-tolerance" className="text-xs font-bold">Toleransi Terlambat (Menit)</Label>
                           <Input id="late-tolerance" type="number" className="rounded-xl h-10 bg-muted/30" value={lateTolerance} onChange={e => setLateTolerance(Number(e.target.value))} placeholder="15" disabled={holidayMode} />
                       </div>
                       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-muted-foreground/10">
                           <div className="space-y-1.5">
-                              <Label htmlFor="checkout-start" className="text-[10px] font-bold">MULAI PULANG</Label>
+                              <Label htmlFor="checkout-start" className="text-[10px] font-bold">Mulai Pulang</Label>
                               <Input id="checkout-start" type="time" className="rounded-xl h-10 bg-muted/30" value={checkOutStart} onChange={e => setCheckOutStart(e.target.value)} disabled={holidayMode} />
                           </div>
                           <div className="space-y-1.5">
-                              <Label htmlFor="checkout-end" className="text-[10px] font-bold">SELESAI PULANG</Label>
+                              <Label htmlFor="checkout-end" className="text-[10px] font-bold">Selesai Pulang</Label>
                               <Input id="checkout-end" type="time" className="rounded-xl h-10 bg-muted/30" value={checkOutEnd} onChange={e => setCheckOutEnd(e.target.value)} disabled={holidayMode} />
                           </div>
                       </div>
@@ -633,9 +621,9 @@ export default function KonfigurasiAbsenPage() {
           </div>
         </CardContent>
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
-           <Button onClick={handleSave} className="w-full sm:w-auto font-black rounded-xl h-11 shadow-lg" disabled={isSaving}>
+           <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 shadow-sm" disabled={isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              SIMPAN PENGATURAN UMUM
+              Simpan Pengaturan Umum
           </Button>
         </CardFooter>
       </Card>
