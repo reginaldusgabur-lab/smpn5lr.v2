@@ -5,11 +5,33 @@ import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfD
 import type { Firestore } from 'firebase/firestore';
 import { id } from 'date-fns/locale';
 
-// --- DASHBOARD STATS FUNCTION (No Change Needed) ---
+// --- DASHBOARD STATS FUNCTION ---
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const startOfToday = startOfDay(today);
     const endOfToday = endOfDay(today);
+
+    // 1. Fetch Configs to check for Holiday
+    const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
+    const monthlyConfigId = format(today, 'yyyy-MM');
+    const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthlyConfigId);
+
+    const [schoolConfigSnap, monthlyConfigSnap] = await Promise.all([
+        getDoc(schoolConfigRef),
+        getDoc(monthlyConfigRef)
+    ]);
+
+    const schoolConfig = schoolConfigSnap.data();
+    const monthlyConfig = monthlyConfigSnap.data();
+
+    const isHoliday = (() => {
+        if (!schoolConfig) return false;
+        if (schoolConfig.isAttendanceActive === false) return true;
+        const todayStr = format(today, 'yyyy-MM-dd');
+        if (monthlyConfig?.holidays?.includes(todayStr)) return true;
+        const offDays: number[] = schoolConfig.offDays ?? [0, 6];
+        return offDays.includes(today.getDay());
+    })();
 
     const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']));
     const usersSnap = await getDocs(usersQuery);
@@ -69,7 +91,10 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                  }
             }
         } else {
-            alpaCount++;
+            // Only count as Alpa if it's NOT a holiday
+            if (!isHoliday) {
+                alpaCount++;
+            }
         }
     });
 
@@ -80,6 +105,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         sakit: sakitCount,
         alpa: alpaCount,
         pending: pendingCount,
+        isHoliday: isHoliday
     };
 }
 

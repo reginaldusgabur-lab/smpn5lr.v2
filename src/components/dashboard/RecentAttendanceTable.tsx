@@ -21,7 +21,7 @@ import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, collectionGroup, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
-import { Loader2, WifiOff, AlertCircle } from 'lucide-react';
+import { Loader2, WifiOff, AlertCircle, CalendarOff } from 'lucide-react';
 
 interface Activity {
   no: number;
@@ -37,6 +37,7 @@ interface Activity {
 const RecentAttendanceTable = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHoliday, setIsHoliday] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const firestore = useFirestore();
 
@@ -53,6 +54,31 @@ const RecentAttendanceTable = () => {
         const today = new Date();
         const startOfToday = startOfDay(today);
         const endOfToday = endOfDay(today);
+
+        // 1. Fetch Configs to check for Holiday
+        const schoolConfigSnap = await getDoc(doc(firestore, 'schoolConfig', 'default'));
+        const schoolConfig = schoolConfigSnap.data();
+        
+        const monthlyConfigId = format(today, 'yyyy-MM');
+        const monthlyConfigSnap = await getDoc(doc(firestore, 'monthlyConfigs', monthlyConfigId));
+        const monthlyConfig = monthlyConfigSnap.data();
+
+        const isHolidayToday = (() => {
+            if (!schoolConfig) return false;
+            if (schoolConfig.isAttendanceActive === false) return true;
+            const todayStr = format(today, 'yyyy-MM-dd');
+            if (monthlyConfig?.holidays?.includes(todayStr)) return true;
+            const offDays: number[] = schoolConfig.offDays ?? [0, 6];
+            return offDays.includes(today.getDay());
+        })();
+
+        setIsHoliday(isHolidayToday);
+
+        if (isHolidayToday) {
+            setActivities([]);
+            setIsLoading(false);
+            return;
+        }
 
         const attendanceQuery = query(
           collectionGroup(firestore, 'attendanceRecords'),
@@ -119,13 +145,24 @@ const RecentAttendanceTable = () => {
 
   const todayFormatted = format(new Date(), "d MMMM yyyy", { locale: indonesiaLocale });
 
-  const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-center px-4">
-        <WifiOff className="w-12 h-12 mb-4" />
-        <h3 className="text-xl font-semibold">Belum Ada Aktivitas</h3>
-        <p>Belum ada staf yang melakukan absensi masuk hari ini.</p>
-    </div>
-  );
+  const EmptyState = () => {
+    if (isHoliday) {
+        return (
+            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-center px-4">
+                <CalendarOff className="w-12 h-12 mb-4" />
+                <h3 className="text-xl font-semibold">Hari Libur</h3>
+                <p>Sistem absensi tidak aktif pada hari libur.</p>
+            </div>
+        );
+    }
+    return (
+        <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-center px-4">
+            <WifiOff className="w-12 h-12 mb-4" />
+            <h3 className="text-xl font-semibold">Belum Ada Aktivitas</h3>
+            <p>Belum ada staf yang melakukan absensi masuk hari ini.</p>
+        </div>
+    );
+  }
 
   return (
     <Card>
@@ -158,9 +195,9 @@ const RecentAttendanceTable = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activities.map((activity) => (
-                <TableRow key={activity.no}>
-                  <TableCell className="font-medium">{activity.no}</TableCell>
+              {activities.map((activity, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell>
                      <div className="font-medium">{activity.name}</div>
                     <div className="text-sm text-muted-foreground">NIP: {activity.nip}</div>

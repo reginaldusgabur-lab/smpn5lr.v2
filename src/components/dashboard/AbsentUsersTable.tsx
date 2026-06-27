@@ -18,9 +18,9 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, collectionGroup, Timestamp } from 'firebase/firestore';
-import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { Loader2, UserCheck, AlertCircle } from 'lucide-react';
+import { collection, query, where, getDocs, collectionGroup, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { isWithinInterval, startOfDay, endOfDay, format } from 'date-fns';
+import { Loader2, UserCheck, AlertCircle, CalendarOff } from 'lucide-react';
 
 interface AbsentUser {
   no: number;
@@ -41,6 +41,7 @@ interface UserData {
 const AbsentUsersTable = () => {
   const [absentUsers, setAbsentUsers] = useState<AbsentUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHoliday, setIsHoliday] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const firestore = useFirestore();
 
@@ -57,6 +58,31 @@ const AbsentUsersTable = () => {
         const today = new Date();
         const startOfToday = startOfDay(today);
         const endOfToday = endOfDay(today);
+
+        // 1. Fetch Configs to check for Holiday
+        const schoolConfigSnap = await getDoc(doc(firestore, 'schoolConfig', 'default'));
+        const schoolConfig = schoolConfigSnap.data();
+        
+        const monthlyConfigId = format(today, 'yyyy-MM');
+        const monthlyConfigSnap = await getDoc(doc(firestore, 'monthlyConfigs', monthlyConfigId));
+        const monthlyConfig = monthlyConfigSnap.data();
+
+        const isHolidayToday = (() => {
+            if (!schoolConfig) return false;
+            if (schoolConfig.isAttendanceActive === false) return true;
+            const todayStr = format(today, 'yyyy-MM-dd');
+            if (monthlyConfig?.holidays?.includes(todayStr)) return true;
+            const offDays: number[] = schoolConfig.offDays ?? [0, 6];
+            return offDays.includes(today.getDay());
+        })();
+
+        setIsHoliday(isHolidayToday);
+
+        if (isHolidayToday) {
+            setAbsentUsers([]);
+            setIsLoading(false);
+            return;
+        }
 
         const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']));
         const usersSnap = await getDocs(usersQuery);
@@ -141,6 +167,7 @@ const AbsentUsersTable = () => {
   const EmptyState = () => {
       if(isLoading) return <div className="flex flex-col items-center justify-center h-40 text-muted-foreground"><Loader2 className="h-8 w-8 animate-spin mb-3" /><span>Mencari data pengguna...</span></div>;
       if(error) return <div className="flex flex-col items-center justify-center h-40 text-destructive text-center px-4"><AlertCircle className="h-8 w-8 mb-3" /><span>{error}</span></div>
+      if(isHoliday) return <div className="flex flex-col items-center justify-center h-40 text-muted-foreground"><CalendarOff className="h-8 w-8 mb-3" /><span>Hari ini adalah hari libur. Sistem absensi tidak aktif.</span></div>;
       return <div className="flex flex-col items-center justify-center h-40 text-muted-foreground"><UserCheck className="h-8 w-8 mb-3" /><span>Semua staf hadir atau memiliki izin yang disetujui.</span></div>;
   }
 
@@ -161,7 +188,7 @@ const AbsentUsersTable = () => {
         <CardDescription>Staf yang tidak memiliki catatan kehadiran dan izinnya belum disetujui.</CardDescription>
       </CardHeader>
       <CardContent>
-        {absentUsers.length > 0 ? (
+        {!isHoliday && absentUsers.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -172,9 +199,9 @@ const AbsentUsersTable = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {absentUsers.map((user) => (
-                <TableRow key={user.no}>
-                  <TableCell className="font-medium">{user.no}</TableCell>
+              {absentUsers.map((user, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell>
                     <div className="font-medium">{user.name}</div>
                     <div className="text-sm text-muted-foreground">NIP: {user.nip}</div>
