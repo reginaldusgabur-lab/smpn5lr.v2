@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -242,15 +243,14 @@ export default function AbsenPage() {
           <h1 className="text-2xl font-bold tracking-tight">Pindai QR Code</h1>
       </div>
 
-      <Card className="w-full overflow-hidden border-none shadow-xl bg-card">
+      <Card className="w-full overflow-hidden">
           <CardHeader className="pb-4">
               <CardTitle className="text-center text-lg">Arahkan Kamera</CardTitle>
               <CardDescription className="text-center">Pastikan QR Code berada di dalam kotak pemindaian.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-              {/* Camera Container with proper aspect ratio and centered max-width */}
               <div className="bg-black w-full flex items-center justify-center overflow-hidden">
-                <div className="relative aspect-video w-full max-w-md sm:aspect-square">
+                <div className="relative aspect-video w-full max-w-xl sm:aspect-square">
                     {(showScanner || isCameraInitializing) && (
                         <div className="absolute inset-0 z-0">
                         <div id={readerId} className="w-full h-full" />
@@ -262,7 +262,7 @@ export default function AbsenPage() {
                     )}
 
                     <div className="absolute inset-0 z-10 flex items-center justify-center p-8 pointer-events-none">
-                        <div className="relative w-full h-full aspect-square">
+                        <div className="relative w-full h-full max-w-sm aspect-square mx-auto">
                             {/* Corner Borders */}
                             <div className={cn("absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
                             <div className={cn("absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 rounded-tr-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />

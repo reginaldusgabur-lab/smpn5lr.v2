@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -49,7 +50,7 @@ const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => 
 );
 
 const StatCard = ({ title, value, icon: Icon, description, isLoading, className, onClick }: any) => (
-    <Card className={`h-full flex flex-col transition-all duration-200 border-none shadow-sm ${className || ''}`} onClick={onClick}>
+    <Card className={cn("h-full flex flex-col transition-all duration-200", className)} onClick={onClick}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
             {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
@@ -100,12 +101,12 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
     const hasFinished = !!(checkInTime && checkOutTime);
 
     return (
-        <Card className="h-full w-full flex flex-col border-none shadow-md overflow-hidden bg-gradient-to-br from-card to-muted/30">
+        <Card className="w-full flex flex-col overflow-hidden bg-gradient-to-br from-card to-muted/20">
             <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-bold">Kehadiran Anda Hari Ini</CardTitle>
                 <CardDescription>Status kehadiran dan jam absensi Anda.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col flex-grow items-center justify-center space-y-6 pb-6 pt-4">
+            <CardContent className="flex flex-col flex-grow items-center justify-center space-y-8 pb-8 pt-6">
                 {isLoading ? (
                     <div className="w-full space-y-6">
                         <div className="flex flex-col items-center gap-2">
@@ -121,25 +122,25 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
                 ) : (
                     <>
                         <div className="text-center">
-                            <p className="text-5xl font-bold tracking-tighter tabular-nums text-primary">{format(currentTime, 'HH:mm:ss')}</p>
-                            <p className="text-sm font-medium text-muted-foreground mt-1">{format(currentTime, 'eeee, d MMMM yyyy', { locale: id })}</p>
+                            <p className="text-6xl font-bold tracking-tighter tabular-nums text-primary">{format(currentTime, 'HH:mm:ss')}</p>
+                            <p className="text-sm font-medium text-muted-foreground mt-2">{format(currentTime, 'eeee, d MMMM yyyy', { locale: id })}</p>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 w-full">
-                            <div className="flex flex-col items-center p-3 rounded-xl bg-background border shadow-sm transition-colors">
-                                <div className="flex items-center gap-1.5 mb-1">
-                                    <LogIn size={14} className="text-muted-foreground" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Masuk</span>
+                        <div className="grid grid-cols-2 gap-4 w-full">
+                            <div className="flex flex-col items-center p-4 rounded-xl bg-background border shadow-sm transition-colors">
+                                <div className="flex items-center gap-1.5 mb-2">
+                                    <LogIn size={16} className="text-muted-foreground" />
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Jam Masuk</span>
                                 </div>
-                                <p className={cn("text-xl font-bold tabular-nums", isLate ? "text-destructive" : "text-foreground")}>
+                                <p className={cn("text-2xl font-bold tabular-nums", isLate ? "text-destructive" : "text-foreground")}>
                                     {checkInTime ? format(checkInTime, 'HH:mm') : '--:--'}
                                 </p>
                             </div>
-                            <div className="flex flex-col items-center p-3 rounded-xl bg-background border shadow-sm transition-colors">
-                                <div className="flex items-center gap-1.5 mb-1">
-                                    <LogOut size={14} className="text-muted-foreground" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Pulang</span>
+                            <div className="flex flex-col items-center p-4 rounded-xl bg-background border shadow-sm transition-colors">
+                                <div className="flex items-center gap-1.5 mb-2">
+                                    <LogOut size={16} className="text-muted-foreground" />
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Jam Pulang</span>
                                 </div>
-                                <p className={cn("text-xl font-bold tabular-nums", isEarly ? "text-destructive" : "text-foreground")}>
+                                <p className={cn("text-2xl font-bold tabular-nums", isEarly ? "text-destructive" : "text-foreground")}>
                                     {checkOutTime ? format(checkOutTime, 'HH:mm') : '--:--'}
                                 </p>
                             </div>
@@ -147,18 +148,18 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
                     </>
                 )}
             </CardContent>
-            <CardFooter className="flex flex-col gap-2 pt-0 pb-6">
+            <CardFooter className="flex flex-col gap-3 pt-0 pb-8">
                 {!isLoading && (
                     <Button 
                         size="lg" 
-                        className={cn("w-full font-bold shadow-lg shadow-primary/20 transition-all active:scale-95", hasFinished && "opacity-50")}
+                        className={cn("w-full h-12 text-base font-bold shadow-lg shadow-primary/20 transition-all active:scale-[0.98]", hasFinished && "opacity-50")}
                         onClick={() => !hasFinished && router.push('/dashboard/absen')}
                         disabled={hasFinished}
                     >
                         {hasFinished ? 'Absensi Selesai' : 'Absen Sekarang'}
                     </Button>
                 )}
-                <Button variant="link" size="sm" asChild className="text-muted-foreground"><Link href="/dashboard/laporan">Lihat Riwayat Lengkap</Link></Button>
+                <Button variant="ghost" size="sm" asChild className="text-muted-foreground"><Link href="/dashboard/laporan">Lihat Riwayat Lengkap</Link></Button>
             </CardFooter>
         </Card>
     );
@@ -167,9 +168,9 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
 const MonthlyAttendanceChartUI = ({ summaryData, isLoading }: { summaryData: any, isLoading: boolean }) => {
     const now = new Date();
     return (
-        <Card className="h-full w-full flex flex-col border-none shadow-sm">
+        <Card className="w-full flex flex-col">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><TrendingUp size={18} className="text-primary" /> Riwayat Bulan {format(now, 'MMMM', { locale: id })}</CardTitle><CardDescription>Persentase kehadiran: {isLoading ? '...' : `${summaryData.percentage}%`}</CardDescription></CardHeader>
-            <CardContent className="flex-grow min-h-[250px] pt-4">
+            <CardContent className="flex-grow min-h-[300px] pt-4">
                 {isLoading ? 
                     <div className="flex flex-col gap-4 h-full">
                         <Skeleton className="h-full w-full" />
@@ -182,10 +183,10 @@ const MonthlyAttendanceChartUI = ({ summaryData, isLoading }: { summaryData: any
                             { name: 'Alpa', jumlah: summaryData.alpaCount, fill: '#ef4444' },
                         ]}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                            <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} width={20} />
+                            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
                             <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                            <Bar dataKey="jumlah" radius={[6, 6, 0, 0]} barSize={32} />
+                            <Bar dataKey="jumlah" radius={[6, 6, 0, 0]} barSize={40} />
                         </BarChart>
                     </ResponsiveContainer>
                 }
@@ -196,7 +197,7 @@ const MonthlyAttendanceChartUI = ({ summaryData, isLoading }: { summaryData: any
 
 function useMonthlyAttendanceSummary(user: any) {
     const firestore = useFirestore();
-    const cacheKey = useMemo(() => user ? `monthlySummary_v3_${user.uid}` : null, [user]);
+    const cacheKey = useMemo(() => user ? `monthlySummary_v4_${user.uid}` : null, [user]);
     const [summary, setSummary] = useState<any>(() => cacheKey ? getFromCache(cacheKey) || null : null);
     const [isLoading, setIsLoading] = useState(summary === null);
 
@@ -219,7 +220,7 @@ function useMonthlyAttendanceSummary(user: any) {
 }
 
 function useStaffDashboardStats(firestore: any, user: any) {
-  const cacheKey = 'staffDashboardStats_v2';
+  const cacheKey = 'staffDashboardStats_v3';
   const [stats, setStats] = useState<any>(() => getFromCache(cacheKey) || null);
   const [isLoading, setIsLoading] = useState(stats === null);
 
@@ -254,37 +255,55 @@ export default function DashboardPage() {
   const { data: schoolConfig, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
 
   const role = user?.role;
-  const showMonitoring = role === 'admin' || role === 'kepala_sekolah';
-  const showPersonal = role !== 'admin';
+  const isAdminOrKepsek = role === 'admin' || role === 'kepala_sekolah';
+  const isGuruOrPegawai = role === 'guru' || role === 'pegawai';
 
   return (
     <div className="w-full space-y-6">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <div className="col-span-full">
-                <WelcomeCard user={user} isLoading={isUserLoading} />
+        <WelcomeCard user={user} isLoading={isUserLoading} />
+
+        {isGuruOrPegawai && (
+            <div className="space-y-6">
+                <PersonalAttendanceCardUI 
+                    attendanceData={todaysAttendance} 
+                    schoolConfig={schoolConfig} 
+                    isLoading={isAttendanceLoading || isUserLoading || isConfigLoading} 
+                />
+                <MonthlyAttendanceChartUI 
+                    summaryData={personalSummary} 
+                    isLoading={isPersonalSummaryLoading || isUserLoading} 
+                />
             </div>
+        )}
 
-            {showPersonal && (
-                <>
-                    <div className="col-span-full">
-                        <PersonalAttendanceCardUI attendanceData={todaysAttendance} schoolConfig={schoolConfig} isLoading={isAttendanceLoading || isUserLoading || isConfigLoading} />
-                    </div>
-                    <div className="col-span-full">
-                        <MonthlyAttendanceChartUI summaryData={personalSummary} isLoading={isPersonalSummaryLoading || isUserLoading} />
-                    </div>
-                </>
-            )}
-
-            {showMonitoring && (
-                <>
-                    <StatCard title="Hadir Hari Ini" value={stats.hadir} icon={UserCheck} isLoading={isStatsLoading || isUserLoading} />
-                    <StatCard title="Izin/Sakit" value={stats.izin + stats.sakit} icon={BookUser} description={`${stats.izin} Izin, ${stats.sakit} Sakit`} isLoading={isStatsLoading || isUserLoading} />
-                    <StatCard title="Menunggu" value={stats.pending} icon={MailWarning} description="Pengajuan tertunda" isLoading={isStatsLoading || isUserLoading} className="cursor-pointer hover:bg-accent/10 border-accent/20" onClick={() => router.push('/dashboard/izin-kepala-sekolah')} />
-                    <div className="col-span-full"><TodaysActivityTable /></div>
-                    <div className="col-span-full"><AbsentUsersTable /></div>
-                </>
-            )}
-        </div>
+        {isAdminOrKepsek && (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <StatCard 
+                    title="Hadir Hari Ini" 
+                    value={stats.hadir} 
+                    icon={UserCheck} 
+                    isLoading={isStatsLoading || isUserLoading} 
+                />
+                <StatCard 
+                    title="Izin/Sakit" 
+                    value={stats.izin + stats.sakit} 
+                    icon={BookUser} 
+                    description={`${stats.izin} Izin, ${stats.sakit} Sakit`} 
+                    isLoading={isStatsLoading || isUserLoading} 
+                />
+                <StatCard 
+                    title="Menunggu" 
+                    value={stats.pending} 
+                    icon={MailWarning} 
+                    description="Pengajuan tertunda" 
+                    isLoading={isStatsLoading || isUserLoading} 
+                    className="cursor-pointer hover:bg-accent/10 border-accent/20" 
+                    onClick={() => router.push('/dashboard/izin-kepala-sekolah')} 
+                />
+                <div className="col-span-full"><TodaysActivityTable /></div>
+                <div className="col-span-full"><AbsentUsersTable /></div>
+            </div>
+        )}
     </div>
   );
 }
