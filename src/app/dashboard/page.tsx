@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@
 import { doc, collection, query, where, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { TrendingUp, Clock, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning } from 'lucide-react';
+import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock } from 'lucide-react';
 import { PageWrapper } from '@/components/layout/page-wrapper';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,7 +86,7 @@ function useMonthlyAttendanceSummary(user: any) {
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => {
     if (isLoading) return (
-        <div className="space-y-1 mb-2 px-0">
+        <div className="space-y-1 mb-3 px-0">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-4 w-64" />
@@ -93,9 +94,9 @@ const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => 
     );
     return (
         <div className="mb-4 px-0">
-            <p className="text-xs text-muted-foreground leading-none">Selamat Datang</p>
-            <h1 className="text-xl font-bold tracking-tight text-foreground mt-1">{user?.name || 'Pengguna'}</h1>
-            <p className="text-[10px] text-muted-foreground mt-1">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
+            <p className="text-sm text-muted-foreground leading-none">Selamat Datang</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground mt-1.5">{user?.name || 'Pengguna'}</h1>
+            <p className="text-xs text-muted-foreground mt-1">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
         </div>
     );
 };
@@ -113,7 +114,7 @@ const StatCard = ({ title, value, icon: Icon, description, isLoading, className,
     </Card>
 );
 
-const LiveClock = () => {
+const LiveClockUI = () => {
     const [time, setTime] = useState<Date | null>(null);
     useEffect(() => {
         setTime(new Date());
@@ -124,11 +125,11 @@ const LiveClock = () => {
     if (!time) return <div className="h-20" />;
 
     return (
-        <div className="flex flex-col items-center justify-center py-2 mb-4">
+        <div className="flex flex-col items-center justify-center py-2">
             <h2 className="text-5xl font-black tracking-tighter tabular-nums text-primary leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-sm font-medium text-muted-foreground mt-2">
+            <p className="text-sm font-medium text-muted-foreground mt-3">
                 {format(time, 'EEEE, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -167,22 +168,27 @@ export default function DashboardPage() {
             <WelcomeCard user={user} isLoading={isUserLoading} />
 
             {isGuruOrPegawai && (
-                <div className="w-full space-y-5">
-                    {/* AREA KEHADIRAN HARI INI */}
+                <div className="w-full space-y-6">
+                    {/* KARTU KEHADIRAN UTAMA - PRESISI DI SEMUA PERANGKAT */}
                     <Card className="w-full overflow-hidden shadow-md border-muted/50">
-                        <CardHeader className="p-4 pb-2 space-y-1">
-                            <CardTitle className="text-lg font-bold">
-                                Kehadiran Anda Hari Ini
-                            </CardTitle>
-                            <CardDescription className="text-xs">
+                        <CardHeader className="p-4 pb-0 space-y-1">
+                            <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-primary" />
+                                <CardTitle className="text-lg font-bold">
+                                    Kehadiran Anda Hari Ini
+                                </CardTitle>
+                            </div>
+                            <CardDescription className="text-[11px]">
                                 Status kehadiran dan jam absensi Anda.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="p-4 pt-2">
-                            <LiveClock />
+                        
+                        <CardContent className="p-4 pt-4">
+                            <LiveClockUI />
                             
-                            <div className="grid grid-cols-2 gap-3 mt-2">
-                                <div className="bg-background rounded-2xl p-4 text-center border border-border/60">
+                            {/* Grid 2 Kolom Fleksibel */}
+                            <div className="grid grid-cols-2 gap-3 mt-4 w-full">
+                                <div className="bg-background rounded-2xl p-4 text-center border border-border/60 flex flex-col items-center justify-center">
                                     <div className="flex items-center justify-center gap-2 mb-2">
                                         <LogIn className="w-3.5 h-3.5 text-muted-foreground" />
                                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Masuk</p>
@@ -191,7 +197,7 @@ export default function DashboardPage() {
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
-                                <div className="bg-background rounded-2xl p-4 text-center border border-border/60">
+                                <div className="bg-background rounded-2xl p-4 text-center border border-border/60 flex flex-col items-center justify-center">
                                     <div className="flex items-center justify-center gap-2 mb-2">
                                         <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
                                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Pulang</p>
@@ -202,6 +208,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </CardContent>
+                        
                         <CardFooter className="bg-muted/5 border-t p-4 flex flex-col items-center gap-3">
                             {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
                                 <Button asChild size="lg" className="w-full font-bold shadow-sm rounded-xl">
@@ -225,12 +232,12 @@ export default function DashboardPage() {
 
                     {/* AREA GRAFIK RIWAYAT */}
                     <div className="space-y-2 w-full">
-                        <div className="px-0">
+                        <div className="px-0 flex items-center justify-between">
                             <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
                                 <TrendingUp size={14} className="text-primary" /> Riwayat Bulan {format(new Date(), 'MMMM', { locale: id })}
                             </h2>
                             <p className="text-[10px] text-muted-foreground">
-                                Persentase kehadiran: <span className="font-bold text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>
+                                Kehadiran: <span className="font-bold text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>
                             </p>
                         </div>
                         <Card className="w-full shadow-md">
