@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { parse, format, startOfDay, endOfDay } from 'date-fns';
+import { parse, format, startOfDay, endOfDay, addMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +21,11 @@ const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string)
     startDate.setHours(startH, startM, 0, 0);
     const endDate = new Date(baseDate.getTime());
     endDate.setHours(endH, endM, 0, 0);
+    
+    if (endDate.getTime() <= startDate.getTime()) {
+        endDate.setDate(endDate.getDate() + 1);
+    }
+    
     const randomTimestamp = startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime());
     const res = new Date(randomTimestamp);
     res.setSeconds(Math.floor(Math.random() * 60));
@@ -108,12 +113,47 @@ export default function ManualAttendancePage() {
         checkAuthAndFetchData();
     }, [authUser, isAuthLoading, firestore, userId, date, router]);
 
-    const handleSetLate = () => {
-        if (schoolConfig?.checkInEndTime) {
-            setCheckIn(schoolConfig.checkInEndTime);
-            toast({ title: 'Sukses', description: 'Jam masuk diatur ke batas akhir, silakan simpan.' });
-        } else {
-            setError('Konfigurasi jam masuk belum diatur.');
+    const handleSetLate = async () => {
+        if (!schoolConfig || isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            const recordDate = startOfDay(date);
+            const inEnd = schoolConfig.checkInEndTime || '08:00';
+            
+            // Logic: checkInEndTime + random 1-10 mins
+            const [endH, endM] = inEnd.split(':').map(Number);
+            const baseLateTime = new Date(recordDate);
+            baseLateTime.setHours(endH, endM, 0);
+            const checkInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 10) + 1);
+
+            const outStart = schoolConfig.checkOutStartTime || '14:00';
+            const outEnd = schoolConfig.checkOutEndTime || '15:00';
+            const checkOutTime = getRandomTime(recordDate, outStart, outEnd);
+
+            const attendanceData = {
+                userId,
+                date: format(date, 'yyyy-MM-dd'),
+                checkInTime: Timestamp.fromDate(checkInTime),
+                checkOutTime: Timestamp.fromDate(checkOutTime),
+                manualEntry: true,
+                reasonForUpdate: 'Terlambat',
+                lastModifiedBy: authUser?.uid,
+                lastModifiedAt: serverTimestamp()
+            };
+
+            if (existingRecord) {
+                const recordRef = doc(firestore, 'users', userId, 'attendanceRecords', existingRecord.id);
+                await updateDoc(recordRef, attendanceData);
+            } else {
+                const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
+                await addDoc(attendanceRef, { ...attendanceData, createdAt: serverTimestamp(), createdBy: authUser?.uid });
+            }
+            toast({ title: 'Sukses', description: `Status Terlambat telah disimpan untuk ${userData.name}.` });
+            router.back();
+        } catch (err) {
+            setError('Gagal memproses keterlambatan.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 

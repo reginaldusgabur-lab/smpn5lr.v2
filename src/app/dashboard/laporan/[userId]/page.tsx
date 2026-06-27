@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, writeBatch, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { format, startOfMonth, isValid, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfMonth, isValid, parseISO, startOfDay, endOfDay, addMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -46,7 +46,12 @@ const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string)
     startDate.setHours(startH, startM, 0, 0);
     const endDate = new Date(baseDate.getTime());
     endDate.setHours(endH, endM, 0, 0);
-    const randomTimestamp = startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime());
+    
+    // Ensure endDate is after startDate for randomization
+    const startTs = startDate.getTime();
+    const endTs = endDate.getTime();
+    const randomTimestamp = startTs + Math.random() * (endTs - startTs);
+    
     const res = new Date(randomTimestamp);
     res.setSeconds(Math.floor(Math.random() * 60));
     return res;
@@ -106,12 +111,12 @@ export default function UserReportDetailPage() {
             
             if (newStatus === 'Pulang Cepat') {
                 const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
-                const newDoc = doc(attendanceRef);
+                const newDocRef = doc(attendanceRef);
                 const inStart = schoolConfigData?.checkInStartTime || '07:00';
                 const inEnd = schoolConfigData?.checkInEndTime || '07:30';
                 const realInTime = getRandomTime(targetDate, inStart, inEnd);
 
-                batch.set(newDoc, {
+                batch.set(newDocRef, {
                     userId,
                     date: dateStr,
                     checkInTime: Timestamp.fromDate(realInTime),
@@ -153,21 +158,26 @@ export default function UserReportDetailPage() {
         setIsMutating(true);
         try {
             const targetDate = parseISO(dateStr);
-            const [endH, endM] = (schoolConfigData.checkInEndTime || '08:00').split(':').map(Number);
-            const lateTime = new Date(targetDate);
-            lateTime.setHours(endH, endM + 15, 0);
+            const inEnd = schoolConfigData.checkInEndTime || '08:00';
+            
+            // Late logic: checkInEndTime + random 1-10 minutes
+            const [endH, endM] = inEnd.split(':').map(Number);
+            const baseLateTime = new Date(targetDate);
+            baseLateTime.setHours(endH, endM, 0);
+            const realInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 10) + 1);
 
-            const [outStart, outEnd] = [schoolConfigData.checkOutStartTime || '14:00', schoolConfigData.checkOutEndTime || '15:00'];
+            const outStart = schoolConfigData.checkOutStartTime || '14:00';
+            const outEnd = schoolConfigData.checkOutEndTime || '15:00';
             const realOutTime = getRandomTime(targetDate, outStart, outEnd);
 
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
-            const newDoc = doc(attendanceRef);
+            const newDocRef = doc(attendanceRef);
             
             await writeBatch(firestore)
-                .set(newDoc, {
+                .set(newDocRef, {
                     userId,
                     date: dateStr,
-                    checkInTime: Timestamp.fromDate(lateTime),
+                    checkInTime: Timestamp.fromDate(realInTime),
                     checkOutTime: Timestamp.fromDate(realOutTime),
                     manualEntry: true,
                     reasonForUpdate: 'Terlambat',
@@ -199,10 +209,10 @@ export default function UserReportDetailPage() {
             const checkOutTime = getRandomTime(targetDate, outStart, outEnd);
 
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
-            const newDoc = doc(attendanceRef);
+            const newDocRef = doc(attendanceRef);
             
             await writeBatch(firestore)
-                .set(newDoc, {
+                .set(newDocRef, {
                     userId,
                     date: dateStr,
                     checkInTime: Timestamp.fromDate(checkInTime),

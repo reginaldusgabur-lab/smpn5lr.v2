@@ -20,7 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { format, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
+import { format, parseISO, isValid, startOfDay, endOfDay, addMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { MoreVertical } from 'lucide-react';
 
@@ -31,9 +31,11 @@ const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string)
     startDate.setHours(startH, startM, 0, 0);
     const endDate = new Date(baseDate.getTime());
     endDate.setHours(endH, endM, 0, 0);
-    if (endDate < startDate) {
+    
+    if (endDate.getTime() <= startDate.getTime()) {
         endDate.setDate(endDate.getDate() + 1);
     }
+    
     const randomTimestamp = startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime());
     const randomDate = new Date(randomTimestamp);
     randomDate.setSeconds(Math.floor(Math.random() * 60));
@@ -105,8 +107,8 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
     const handleAlpaConversionToAttendance = async (day: any, type: 'hadir' | 'terlambat') => {
         if (!currentUser?.uid || !firestore) return setError("Admin tidak teridentifikasi.");
         if (!schoolConfig) return setError("Konfigurasi sekolah tidak termuat.");
-        const { checkInEndTime, checkOutStartTime, checkOutEndTime } = schoolConfig;
-        if (!checkInEndTime || !checkOutStartTime || !checkOutEndTime) return setError("Konfigurasi jam masuk/pulang tidak lengkap.");
+        const { checkInStartTime, checkInEndTime, checkOutStartTime, checkOutEndTime } = schoolConfig;
+        if (!checkInEndTime || !checkOutStartTime || !checkOutEndTime) return setError("Konfigurasi jam masuk/pulang belum lengkap.");
 
         setIsSaving(true); setError(null);
         try {
@@ -119,16 +121,20 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             let reasonForUpdate: string;
 
             if (type === 'hadir') {
-                checkInTime = getRandomTime(recordDate, '07:15', checkInEndTime);
+                checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime);
                 reasonForUpdate = 'Kehadiran Penuh';
             } else { // 'terlambat'
-                const [lateH, lateM] = checkInEndTime.split(':').map(Number);
-                const lateEndDate = new Date(recordDate); lateEndDate.setHours(lateH + 1, lateM);
-                const lateEndTimeStr = `${String(lateEndDate.getHours()).padStart(2, '0')}:${String(lateEndDate.getMinutes()).padStart(2, '0')}`;
-                checkInTime = getRandomTime(recordDate, checkInEndTime, lateEndTimeStr);
+                // Logic: checkInEndTime + random 1-10 minutes
+                const [endH, endM] = checkInEndTime.split(':').map(Number);
+                const baseLateTime = new Date(recordDate);
+                baseLateTime.setHours(endH, endM, 0);
+                checkInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 10) + 1);
                 reasonForUpdate = 'Terlambat';
             }
+            
             checkOutTime = getRandomTime(recordDate, checkOutStartTime, checkOutEndTime);
+            
+            // Validation to ensure checkout is after check-in
             if (checkOutTime.getTime() <= checkInTime.getTime()) {
                 checkOutTime = new Date(checkInTime.getTime() + (4 * 60 * 60 * 1000));
             }
@@ -161,11 +167,21 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                     const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
                     const originalCheckInTime = toDate(day.checkInTime);
                     if (!originalCheckInTime || !isValid(originalCheckInTime)) continue;
+                    
                     let checkOutTime = getRandomTime(parseISO(day.date), checkOutStartTime, checkOutEndTime);
+                    
+                    // Safety check
                     if (checkOutTime.getTime() <= originalCheckInTime.getTime()) {
                         checkOutTime = new Date(originalCheckInTime.getTime() + (4 * 60 * 60 * 1000));
                     }
-                    batch.update(recordRef, { checkOutTime: Timestamp.fromDate(checkOutTime), updatedBy: currentUser.uid, updatedAt: Timestamp.now(), reasonForUpdate: 'Kehadiran Penuh', manualEntry: true });
+                    
+                    batch.update(recordRef, { 
+                        checkOutTime: Timestamp.fromDate(checkOutTime), 
+                        updatedBy: currentUser.uid, 
+                        updatedAt: Timestamp.now(), 
+                        reasonForUpdate: 'Kehadiran Penuh', 
+                        manualEntry: true 
+                    });
                 }
             }
             await batch.commit();
