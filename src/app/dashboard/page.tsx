@@ -3,12 +3,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, limit, getDocs, collectionGroup, Timestamp } from 'firebase/firestore';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isBefore, isSameDay } from 'date-fns';
+import { doc, collection, query, where, limit } from 'firebase/firestore';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { TrendingUp, UserCheck, BookUser, MailWarning, Loader2, Sparkles, Clock, Calendar, LogIn, LogOut } from 'lucide-react';
+import { TrendingUp, UserCheck, BookUser, MailWarning, Clock, LogIn, LogOut, Sparkles } from 'lucide-react';
 import { PageWrapper } from '@/components/layout/page-wrapper';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -79,9 +80,9 @@ function useMonthlyAttendanceSummary(user: any) {
 // --- Sub Components ---
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => {
-    if (isLoading) return <Skeleton className="h-14 w-full mb-2" />;
+    if (isLoading) return <Skeleton className="h-10 w-full mb-2" />;
     return (
-        <div className="mb-2 space-y-0 px-1">
+        <div className="mb-1 space-y-0 px-1">
             <h1 className="text-xl font-bold tracking-tight">Selamat Datang,</h1>
             <p className="text-sm text-muted-foreground">{user?.name || 'Pengguna'}</p>
         </div>
@@ -113,14 +114,14 @@ const LiveClock = () => {
         return () => clearInterval(timer);
     }, []);
 
-    if (!time) return <div className="h-16" />;
+    if (!time) return <div className="h-14" />;
 
     return (
         <div className="flex flex-col items-center justify-center py-1 mb-2">
-            <h2 className="text-4xl font-black tracking-tighter tabular-nums text-foreground">
+            <h2 className="text-4xl font-black tracking-tighter tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-0.5">
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1">
                 {format(time, 'EEEE, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -148,8 +149,6 @@ export default function DashboardPage() {
   const role = user?.role;
   const isAdminOrKepsek = role === 'admin' || role === 'kepala_sekolah';
   const isGuruOrPegawai = role === 'guru' || role === 'pegawai';
-
-  const isDataLoading = isUserLoading || isConfigLoading;
 
   return (
     <PageWrapper>
