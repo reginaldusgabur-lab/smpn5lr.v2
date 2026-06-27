@@ -6,13 +6,11 @@ import { useUser, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 
 /**
- * MODIFIED AND FINAL VERSION
- * This hook is now the single source of truth for the attendance window status.
- * It reads from the centralized 'schoolConfig/default' document and respects
- * the 'useTimeValidation' setting controlled by the admin.
+ * Hook ini adalah sumber kebenaran tunggal untuk status jendela absensi.
+ * Membaca dari dokumen 'schoolConfig/default' dan menghormati pengaturan
+ * 'useTimeValidation' yang dikendalikan oleh admin.
  */
 
-// Interface for the centralized school configuration.
 export interface SchoolConfig {
   isAttendanceActive?: boolean;
   useTimeValidation?: boolean;
@@ -23,18 +21,17 @@ export interface SchoolConfig {
 }
 
 export type AttendanceWindowStatus =
-  | "LOADING"          // Initial state, waiting for config.
-  | "SESSION_INACTIVE" // Attendance system is manually disabled by admin (e.g., holiday mode).
-  | "CHECK_IN_OPEN"    // Check-in window is currently open.
-  | "CHECK_OUT_OPEN"   // Check-out window is currently open.
-  | "CLOSED";          // Outside of any defined time windows.
+  | "LOADING"          // Keadaan awal, menunggu konfigurasi.
+  | "SESSION_INACTIVE" // Sistem absensi dinonaktifkan secara manual oleh admin.
+  | "CHECK_IN_OPEN"    // Jendela absen masuk sedang terbuka.
+  | "CHECK_OUT_OPEN"   // Jendela absen pulang sedang terbuka.
+  | "CLOSED";          // Di luar jendela waktu yang ditentukan.
 
 export const useAttendanceWindow = () => {
   const [status, setStatus] = useState<AttendanceWindowStatus>("LOADING");
   const { user } = useUser();
   const firestore = useFirestore();
 
-  // Point to the single, correct configuration document.
   const configRef = useMemo(() => 
     firestore ? doc(firestore, "schoolConfig/default") : null,
     [firestore]
@@ -51,19 +48,14 @@ export const useAttendanceWindow = () => {
       return;
     }
 
-    // Case 1: Configuration document doesn't exist at all.
+    // Kasus 1: Dokumen konfigurasi tidak ada sama sekali.
     if (!config) {
-      // This is a permanent state until config is created. No need for an interval.
       setStatus("SESSION_INACTIVE"); 
-      console.warn(
-        "Dokumen '/schoolConfig/default' tidak ditemukan. Buat konfigurasi di halaman Pengaturan Admin."
-      );
       return;
     }
 
-    // Case 2: Admin has manually disabled the attendance system via 'Mode Libur'.
+    // Kasus 2: Admin telah menonaktifkan sistem absensi secara manual.
     if (config.isAttendanceActive === false) {
-      // This is also a permanent state until re-enabled.
       setStatus("SESSION_INACTIVE");
       return;
     }
@@ -78,22 +70,20 @@ export const useAttendanceWindow = () => {
     const checkStatus = () => {
         const now = new Date();
 
-        // Case 3: Admin has turned OFF time validation.
-        // The session is considered perpetually open. The UI will decide whether to show
-        // Check-In or Check-Out based on the user's attendance record for the day.
-        // For the window status itself, we can default to CHECK_IN_OPEN as a general open state.
+        // Kasus 3: Admin mematikan validasi waktu. Sesi dianggap selalu terbuka.
         if (config.useTimeValidation === false) {
-            setStatus("CHECK_IN_OPEN"); // Or a new more general 'ALWAYS_OPEN' status if needed.
+            setStatus("CHECK_IN_OPEN");
             return;
         }
 
-        // Case 4: Time validation is ON. Check against the schedule.
+        // Kasus 4: Validasi waktu aktif. Periksa jadwal.
         if (
             !config.checkInStartTime || !config.checkInEndTime ||
             !config.checkOutStartTime || !config.checkOutEndTime
         ) {
-            setStatus("CLOSED"); // Mark as closed if time settings are incomplete.
-            console.error("Konfigurasi jam absen (schoolConfig) tidak lengkap.");
+            setStatus("CLOSED");
+            // Menggunakan warn agar tidak memicu overlay error di Next.js
+            console.warn("Konfigurasi jam absen (schoolConfig) belum lengkap di database.");
             return;
         }
 
@@ -111,17 +101,12 @@ export const useAttendanceWindow = () => {
         }
     };
 
-    checkStatus(); // Run once immediately.
+    checkStatus();
+    const intervalId = setInterval(checkStatus, 60000); // Periksa setiap menit.
 
-    // Set up an interval to re-check the status periodically.
-    // This is important for transitions between check-in, closed, and check-out states.
-    const intervalId = setInterval(checkStatus, 60000); // Check every minute.
-
-    // Cleanup the interval when the component unmounts or dependencies change.
     return () => clearInterval(intervalId);
     
-  }, [config, configLoading]); // Effect dependencies.
+  }, [config, configLoading]);
 
-  // Return the calculated status and the original config for other components to use.
   return { status, config };
 };
