@@ -106,6 +106,7 @@ export default function DashboardPage() {
   }
 
   const role = user?.role;
+  const isAdmin = role === 'admin';
   const isAdminOrKepsek = role === 'admin' || role === 'kepala_sekolah';
   const isGuruOrPegawai = role === 'guru' || role === 'pegawai' || role === 'siswa' || role === 'kepala_sekolah';
 
@@ -117,7 +118,7 @@ export default function DashboardPage() {
                 {user?.name || 'Pengguna'}
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">
-                {role === 'admin' 
+                {isAdmin 
                   ? 'Pantau aktivitas kehadiran dan kelola data sekolah hari ini.' 
                   : 'Lakukan absensi dan lihat riwayat kehadiran Anda hari ini.'}
             </p>
@@ -237,7 +238,7 @@ export default function DashboardPage() {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">Izin / Sakit</p>
                                 <BookUser className="h-4 w-4 text-blue-500" />
                             </div>
-                            <div className="text-2xl font-black text-blue-700 dark:text-blue-400">{isStatsLoading ? '...' : stats.izin + stats.sakit}</div>
+                            <div className="text-2xl font-black text-blue-700 dark:text-green-400">{isStatsLoading ? '...' : stats.izin + stats.sakit}</div>
                         </CardContent>
                     </Card>
 
