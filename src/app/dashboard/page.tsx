@@ -84,10 +84,18 @@ function useMonthlyAttendanceSummary(user: any) {
 // --- Sub Components ---
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => {
-    if (isLoading) return <Skeleton className="h-6 w-32 mb-2" />;
+    if (isLoading) return (
+        <div className="space-y-1 mb-4 px-1">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+        </div>
+    );
     return (
-        <div className="mb-2 px-1">
-            <h1 className="text-lg font-bold tracking-tight">Halo, <span className="text-primary">{user?.name?.split(' ')[0] || 'Pengguna'}</span></h1>
+        <div className="mb-4 px-1">
+            <p className="text-sm text-muted-foreground leading-relaxed">Selamat Datang</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground -mt-1">{user?.name || 'Pengguna'}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
         </div>
     );
 };
@@ -113,14 +121,14 @@ const LiveClock = () => {
         return () => clearInterval(timer);
     }, []);
 
-    if (!time) return <div className="h-20" />;
+    if (!time) return <div className="h-24" />;
 
     return (
         <div className="flex flex-col items-center justify-center py-2 mb-4 animate-in fade-in duration-500">
             <h2 className="text-5xl font-black tracking-tighter tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-2 bg-muted/40 px-3 py-1 rounded-full">
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-3 bg-muted/40 px-3 py-1 rounded-full">
                 {format(time, 'EEEE, d MMMM yyyy', { locale: id })}
             </p>
         </div>
