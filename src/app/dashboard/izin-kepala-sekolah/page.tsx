@@ -165,15 +165,19 @@ export default function IzinKepalaSekolahPage() {
             <div className="max-w-7xl mx-auto space-y-6">
                 
                 <div className="px-4 md:px-0">
-                    <h1 className="text-3xl font-bold tracking-tight">Persetujuan Izin</h1>
-                    <p className="text-muted-foreground mt-1">Tinjau dan proses permintaan izin atau sakit yang diajukan oleh guru dan pegawai.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Persetujuan Izin</h1>
+                    <p className="text-muted-foreground mt-1 font-medium">Tinjau dan proses permintaan izin atau sakit yang diajukan oleh guru dan pegawai.</p>
                 </div>
 
-                <Card className="overflow-hidden border shadow-sm border-t-4 border-t-amber-500">
-                    <CardContent className="p-0 sm:p-6">
+                <Card className="overflow-hidden border shadow-xl rounded-3xl bg-card">
+                    <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
+                        <CardTitle className="font-black text-xs uppercase tracking-widest">DAFTAR PENGAJUAN IZIN</CardTitle>
+                        <CardDescription className="text-muted-foreground font-medium pt-1">Menunggu peninjauan dan persetujuan Kepala Sekolah.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0 sm:p-6 min-h-[400px]">
                         {error ? (
                             <div className="p-8 text-center">
-                                <Alert variant="destructive">
+                                <Alert variant="destructive" className="rounded-2xl">
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Error</AlertTitle>
                                     <AlertDescription>{error}</AlertDescription>
@@ -190,8 +194,8 @@ export default function IzinKepalaSekolahPage() {
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center py-20 px-4 text-muted-foreground">
                                 <Inbox className="h-12 w-12 mb-4 opacity-20" />
-                                <h3 className="text-lg font-semibold text-foreground">Tidak Ada Permintaan</h3>
-                                <p className="text-sm">Semua permintaan izin dan sakit telah diproses.</p>
+                                <h3 className="text-lg font-bold text-foreground">Tidak Ada Permintaan</h3>
+                                <p className="text-xs font-medium">Semua permintaan izin dan sakit telah diproses.</p>
                             </div>
                         )}
                     </CardContent>

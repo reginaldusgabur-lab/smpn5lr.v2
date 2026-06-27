@@ -218,89 +218,91 @@ export default function IzinPage() {
 
     return (
         <PageWrapper>
-            <Card className="w-full border-t-4 border-t-primary">
+            <Card className="w-full overflow-hidden border shadow-xl rounded-3xl">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
-                        <CardHeader>
-                            <CardTitle>Formulir Pengajuan Izin</CardTitle>
-                            <CardDescription>Isi formulir untuk mengajukan ketidakhadiran atau izin pulang cepat. Pengajuan akan ditinjau oleh Kepala Sekolah.</CardDescription>
+                        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+                            <CardTitle className="font-black text-xs uppercase tracking-widest">Formulir Pengajuan Izin</CardTitle>
+                            <CardDescription className="text-muted-foreground font-medium pt-1">Isi formulir untuk mengajukan ketidakhadiran atau izin pulang cepat. Pengajuan akan ditinjau oleh Kepala Sekolah.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
+                        <CardContent className="p-6 space-y-6">
                              {isTodayAndPastCheckout && !hasCheckedIn && (
-                                <Alert variant="destructive">
+                                <Alert variant="destructive" className="rounded-2xl">
                                     <Info className="h-4 w-4" />
-                                    <AlertTitle>Waktu Pengajuan Izin Hari Ini Telah Berakhir</AlertTitle>
-                                    <AlertDescription>
+                                    <AlertTitle className="font-bold">Waktu Pengajuan Izin Hari Ini Telah Berakhir</AlertTitle>
+                                    <AlertDescription className="text-xs">
                                         Anda tidak dapat lagi mengajukan Izin/Sakit/Dinas untuk hari ini karena telah melewati jam kerja. Silakan pilih "Besok".
                                     </AlertDescription>
                                 </Alert>
                             )}
                             
                             {!hasCheckedIn && selectedDateValue === 'today' && (
-                                <Alert variant="default">
-                                    <Info className="h-4 w-4" />
-                                    <AlertTitle>Info: Izin Pulang Cepat</AlertTitle>
-                                    <AlertDescription>
+                                <Alert variant="default" className="bg-primary/5 border-primary/20 rounded-2xl">
+                                    <Info className="h-4 w-4 text-primary" />
+                                    <AlertTitle className="text-primary font-bold">Info: Izin Pulang Cepat</AlertTitle>
+                                    <AlertDescription className="text-xs text-muted-foreground">
                                         Opsi "Izin Pulang Cepat" akan aktif setelah Anda melakukan absensi masuk hari ini.
                                     </AlertDescription>
                                 </Alert>
                             )}
 
-                            <FormField
-                                control={form.control}
-                                name="leaveDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Pilih Tanggal Pengajuan</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih tanggal pengajuan" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="today">Hari Ini ({todayFormatted})</SelectItem>
-                                                <SelectItem value="tomorrow">Besok ({tomorrowFormatted})</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="type"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Jenis Pengajuan</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih jenis pengajuan" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {availableLeaveTypes.map(type => (
-                                                    <SelectItem key={type.value} value={type.value} disabled={type.disabled}>
-                                                        {type.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="leaveDate"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">Pilih Tanggal Pengajuan</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
+                                                        <SelectValue placeholder="Pilih tanggal pengajuan" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                    <SelectItem value="today" className="rounded-lg">Hari Ini ({todayFormatted})</SelectItem>
+                                                    <SelectItem value="tomorrow" className="rounded-lg">Besok ({tomorrowFormatted})</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="type"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">Jenis Pengajuan</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
+                                                        <SelectValue placeholder="Pilih jenis pengajuan" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                    {availableLeaveTypes.map(type => (
+                                                        <SelectItem key={type.value} value={type.value} disabled={type.disabled} className="rounded-lg">
+                                                            {type.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                             <FormField
                                 control={form.control}
                                 name="reason"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Alasan</FormLabel>
+                                    <FormItem className="space-y-1.5">
+                                        <FormLabel className="text-xs font-bold ml-1">Alasan</FormLabel>
                                         <FormControl>
-                                            <Textarea placeholder="Jelaskan alasan Anda..." {...field} />
+                                            <Textarea placeholder="Jelaskan alasan Anda..." {...field} className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all" />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-[10px] font-bold" />
                                     </FormItem>
                                 )}
                             />
@@ -308,18 +310,18 @@ export default function IzinPage() {
                                 control={form.control}
                                 name="proofUrl"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Link Bukti (Opsional)</FormLabel>
+                                    <FormItem className="space-y-1.5">
+                                        <FormLabel className="text-xs font-bold ml-1">Link Bukti (Opsional)</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="https://... (contoh: link surat dokter)" {...field} />
+                                            <Input placeholder="https://... (contoh: link surat dokter)" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all" />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-[10px] font-bold" />
                                     </FormItem>
                                 )}
                             />
                         </CardContent>
-                        <CardFooter className="border-t pt-6">
-                            <Button type="submit" disabled={isSubmitting || isChecking}>
+                        <CardFooter className="border-t p-6 bg-muted/5">
+                            <Button type="submit" disabled={isSubmitting || isChecking} className="w-full sm:w-auto h-11 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all bg-primary">
                                {(isSubmitting || isChecking) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                {getSubmitButtonText()}
                             </Button>

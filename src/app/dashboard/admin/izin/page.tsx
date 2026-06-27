@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -215,54 +214,54 @@ export default function PersetujuanIzinPage() {
 
   return (
     <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Permintaan Izin Tertunda</CardTitle>
-          <CardDescription>Tinjau dan proses permintaan izin atau sakit yang menunggu persetujuan.</CardDescription>
+      <Card className="overflow-hidden border shadow-xl rounded-3xl bg-card">
+        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+          <CardTitle className="font-black text-xs uppercase tracking-widest">Permintaan Izin Tertunda</CardTitle>
+          <CardDescription className="text-muted-foreground font-medium pt-1">Tinjau dan proses permintaan izin atau sakit yang menunggu persetujuan.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
           {isDataLoading ? (
             <ApprovalTableSkeleton cols={5} />
           ) : pendingRequests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-10">
-                <Inbox className="h-12 w-12 mb-4" />
-                <p className="font-medium">Tidak Ada Permintaan Tertunda</p>
-                <p className="text-sm">Semua permintaan izin dan sakit telah diproses.</p>
+            <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
+                <Inbox className="h-12 w-12 mb-4 opacity-20" />
+                <p className="font-bold text-foreground">Tidak Ada Permintaan Tertunda</p>
+                <p className="text-xs">Semua permintaan izin dan sakit telah diproses.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama Pengguna</TableHead>
-                    <TableHead>Jenis</TableHead>
-                    <TableHead>Tanggal</TableHead>
-                    <TableHead>Alasan</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
+                <TableHeader className="bg-muted/30">
+                  <TableRow className="border-none">
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Nama Pengguna</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Jenis</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Tanggal</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Alasan</TableHead>
+                    <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-primary/80 pr-6">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingRequests.map(req => {
                     const isCurrentUpdating = updatingId === req.id;
                     return (
-                      <TableRow key={req.id}>
-                        <TableCell className="font-medium">{req.userName}</TableCell>
+                      <TableRow key={req.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
+                        <TableCell className="font-black text-sm text-foreground">{req.userName}</TableCell>
                         <TableCell>
-                          <Badge variant={req.type === 'Sakit' ? 'destructive' : 'secondary'}>
+                          <Badge variant={req.type === 'Sakit' ? 'destructive' : 'secondary'} className="text-[9px] font-black uppercase px-3 py-0.5">
                             {req.type}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-[10px] font-bold text-muted-foreground">
                           {req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''} - {req.endDate?.toDate ? format(req.endDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate" title={req.reason}>{req.reason}</TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button size="sm" variant="outline" onClick={() => handleUpdateRequestStatus(req, 'approved')} disabled={isCurrentUpdating}>
-                            {isCurrentUpdating && updatingId === req.id ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
+                        <TableCell className="max-w-xs truncate text-[11px] font-medium" title={req.reason}>{req.reason}</TableCell>
+                        <TableCell className="text-right space-x-2 pr-4">
+                          <Button size="sm" variant="outline" className="h-8 rounded-xl font-bold text-xs" onClick={() => handleUpdateRequestStatus(req, 'approved')} disabled={isCurrentUpdating}>
+                            {isCurrentUpdating && updatingId === req.id ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5 text-green-500" />}
                             Setujui
                           </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleUpdateRequestStatus(req, 'rejected')} disabled={isCurrentUpdating}>
-                            {isCurrentUpdating && updatingId === req.id ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <X className="mr-1 h-4 w-4" />}
+                          <Button size="sm" variant="destructive" className="h-8 rounded-xl font-bold text-xs" onClick={() => handleUpdateRequestStatus(req, 'rejected')} disabled={isCurrentUpdating}>
+                            {isCurrentUpdating && updatingId === req.id ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <X className="mr-1 h-3.5 w-3.5" />}
                             Tolak
                           </Button>
                         </TableCell>
@@ -276,43 +275,43 @@ export default function PersetujuanIzinPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Riwayat Persetujuan</CardTitle>
-          <CardDescription>Riwayat permintaan izin atau sakit yang telah diproses dalam 6 hari terakhir.</CardDescription>
+      <Card className="overflow-hidden border shadow-xl rounded-3xl bg-card">
+        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+          <CardTitle className="font-black text-xs uppercase tracking-widest">Riwayat Persetujuan</CardTitle>
+          <CardDescription className="text-muted-foreground font-medium pt-1">Riwayat permintaan izin atau sakit yang telah diproses dalam 6 hari terakhir.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
           {isDataLoading ? (
             <ApprovalTableSkeleton cols={4} />
           ) : recentHistory.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-10">
-              <p>Tidak ada riwayat untuk ditampilkan.</p>
+            <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
+              <p className="text-xs font-medium">Tidak ada riwayat untuk ditampilkan.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama Pengguna</TableHead>
-                    <TableHead>Jenis</TableHead>
-                    <TableHead>Tanggal</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
+                <TableHeader className="bg-muted/30">
+                  <TableRow className="border-none">
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Nama Pengguna</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Jenis</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Tanggal</TableHead>
+                    <TableHead className="text-center font-black text-[10px] uppercase tracking-widest text-primary/80">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {recentHistory.map(req => (
-                    <TableRow key={req.id}>
-                      <TableCell className="font-medium">{req.userName}</TableCell>
+                    <TableRow key={req.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
+                      <TableCell className="font-black text-sm text-foreground">{req.userName}</TableCell>
                       <TableCell>
-                        <Badge variant={req.type === 'Sakit' ? 'destructive' : 'secondary'}>
+                        <Badge variant={req.type === 'Sakit' ? 'destructive' : 'secondary'} className="text-[9px] font-black uppercase px-3 py-0.5">
                           {req.type}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-[10px] font-bold text-muted-foreground">
                         {req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''} - {req.endDate?.toDate ? format(req.endDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={approvalStatusVariant[req.status] || 'secondary'} className="capitalize">
+                        <Badge variant={approvalStatusVariant[req.status] || 'secondary'} className="text-[9px] font-black uppercase px-3 py-0.5">
                             {req.status}
                         </Badge>
                       </TableCell>
