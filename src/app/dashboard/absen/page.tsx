@@ -235,7 +235,7 @@ export default function AbsenPage() {
   }, [effectiveStatus, handleCloseRedirect]);
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 flex flex-col items-stretch">
       <div className="flex items-center gap-2 mb-2 px-1">
           <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
               <ArrowLeft className="h-5 w-5" />
@@ -243,14 +243,14 @@ export default function AbsenPage() {
           <h1 className="text-2xl font-bold tracking-tight">Pindai QR Code</h1>
       </div>
 
-      <Card className="w-full overflow-hidden border-border">
+      <Card className="w-full overflow-hidden border-border shadow-sm">
           <CardHeader className="pb-4">
               <CardTitle className="text-center text-lg">Arahkan Kamera</CardTitle>
               <CardDescription className="text-center">Pastikan QR Code berada di dalam kotak pemindaian.</CardDescription>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 w-full">
               <div className="bg-black w-full flex items-center justify-center overflow-hidden">
-                <div className="relative aspect-video w-full">
+                <div className="relative aspect-video w-full max-w-full">
                     {(showScanner || isCameraInitializing) && (
                         <div className="absolute inset-0 z-0">
                         <div id={readerId} className="w-full h-full" />
@@ -261,13 +261,13 @@ export default function AbsenPage() {
                         </div>
                     )}
 
-                    <div className="absolute inset-0 z-10 flex items-center justify-center p-8 pointer-events-none">
-                        <div className="relative w-full h-full max-w-2xl aspect-square mx-auto">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center p-4 pointer-events-none">
+                        <div className="relative w-full h-full max-w-lg aspect-square mx-auto">
                             {/* Corner Borders */}
-                            <div className={cn("absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
-                            <div className={cn("absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 rounded-tr-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
-                            <div className={cn("absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 rounded-bl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
-                            <div className={cn("absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 rounded-br-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
+                            <div className={cn("absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 rounded-tl-xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
+                            <div className={cn("absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 rounded-tr-xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
+                            <div className={cn("absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 rounded-bl-xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
+                            <div className={cn("absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 rounded-br-xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
 
                             {showLoader && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-xl">
@@ -284,7 +284,7 @@ export default function AbsenPage() {
                 </div>
               </div>
           </CardContent>
-          <CardFooter className="bg-muted/30 p-6 flex flex-col items-center gap-2">
+          <CardFooter className="bg-muted/30 p-6 flex flex-col items-center gap-2 w-full">
                <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest italic flex items-center gap-2">
                  <Sparkles className="w-3 h-3" /> E-SPENLI Digital Attendance
                </p>
