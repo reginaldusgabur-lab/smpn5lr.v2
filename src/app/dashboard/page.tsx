@@ -11,14 +11,13 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFirestore, useUser, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import {
   collection,  query,  where,  Timestamp,  getDocs, getCountFromServer, collectionGroup, orderBy, limit, doc
 } from 'firebase/firestore';
 import { startOfMonth, endOfMonth, startOfDay, endOfDay, format, isWithinInterval, addDays, subDays, setHours, setMinutes, eachDayOfInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useRouter } from 'next/navigation';
 import { getFromCache, setInCache } from '@/lib/cache';
 import { calculateAttendanceStats, getDailyStaffAttendanceStats } from '@/lib/attendance'; 
@@ -28,10 +27,10 @@ import TodaysActivityTable from '@/components/dashboard/RecentAttendanceTable';
 import AbsentUsersTable from '@/components/dashboard/AbsentUsersTable';
 
 const roleDescriptions: { [key: string]: string } = {
-  admin: 'Anda dapat mengelola pengguna, konfigurasi, dan memantau semua aktivitas.',
-  kepala_sekolah: 'Anda dapat memantau aktivitas guru & pegawai, serta memproses pengajuan izin.',
-  guru: 'Lakukan absensi, ajukan izin, dan lihat riwayat kehadiran Anda di sini.',
-  pegawai: 'Lakukan absensi, ajukan izin, dan lihat riwayat kehadiran Anda di sini.',
+  admin: 'Kelola pengguna, konfigurasi, dan pantau aktivitas.',
+  kepala_sekolah: 'Pantau aktivitas guru & pegawai, serta proses izin.',
+  guru: 'Lakukan absensi dan lihat riwayat kehadiran Anda.',
+  pegawai: 'Lakukan absensi dan lihat riwayat kehadiran Anda.',
 };
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => (
@@ -69,7 +68,7 @@ const StatCard = ({ title, value, icon: Icon, description, isLoading, className,
     </Card>
 );
 
-const PersonalAttendanceCardUI = ({ attendanceData, schoolConfigData, isLoading }: { attendanceData: any, schoolConfigData: any, isLoading: boolean }) => {
+const PersonalAttendanceCardUI = ({ attendanceData, isLoading }: { attendanceData: any, isLoading: boolean }) => {
     const router = useRouter();
     const [currentTime, setCurrentTime] = useState(new Date());
     const { status: attendanceWindowStatus } = useAttendanceWindow();
@@ -82,16 +81,6 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfigData, isLoading 
     const attendanceRecord = attendanceData?.[0];
     const checkInTime = attendanceRecord?.checkInTime ? format(attendanceRecord.checkInTime.toDate(), 'HH:mm') : '--:--';
     const checkOutTime = attendanceRecord?.checkOutTime ? format(attendanceRecord.checkOutTime.toDate(), 'HH:mm') : '--:--';
-
-    const reminder = useMemo(() => {
-        const hasCheckedIn = !!attendanceRecord?.checkInTime;
-        const hasCheckedOut = !!attendanceRecord?.checkOutTime;
-        if (isLoading || hasCheckedOut) return null;
-        if (!hasCheckedIn && attendanceWindowStatus === 'CHECK_IN_OPEN') {
-            return { variant: 'default', title: 'Saatnya Absen Masuk', description: 'Sesi absensi masuk sedang berlangsung.' };
-        }
-        return null;
-    }, [attendanceRecord, isLoading, attendanceWindowStatus]);
 
     return (
         <Card className="h-full flex flex-col">
@@ -160,29 +149,6 @@ const MonthlyAttendanceChartUI = ({ summaryData, isLoading }: { summaryData: any
     );
 };
 
-// --- Dashboard Skeleton Layout (THE LUXURY LOOK) ---
-const DashboardSkeletonLayout = () => (
-    <div className="flex-1 pt-4 pb-24 md:p-8">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:col-span-4 md:gap-6">
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4">
-                <WelcomeCard user={null} isLoading={true} />
-            </div>
-            <div className="md:col-span-2 lg:col-span-2 xl:col-span-2">
-                <PersonalAttendanceCardUI attendanceData={null} schoolConfigData={null} isLoading={true} />
-            </div>
-            <div className="md:col-span-2 lg:col-span-1 xl:col-span-2">
-                <MonthlyAttendanceChartUI summaryData={{}} isLoading={true} />
-            </div>
-            {[...Array(4)].map((_, i) => (
-                <StatCard key={i} title="Memuat..." isLoading={true} />
-            ))}
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4">
-                <Card><CardHeader><Skeleton className="h-6 w-48" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
-            </div>
-        </div>
-    </div>
-);
-
 function useMonthlyAttendanceSummary(user: any) {
     const firestore = useFirestore();
     const cacheKey = useMemo(() => user ? `monthlySummary_v3_${user.uid}` : null, [user]);
@@ -228,85 +194,20 @@ function useStaffDashboardStats(firestore: any, user: any) {
   return { stats: stats || { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, alpa: 0, pending: 0 }, isLoading };
 }
 
-const HeadmasterDashboard = ({ user, router, firestore }: any) => {
-    const { stats, isLoading: isStatsLoading } = useStaffDashboardStats(firestore, user);
-    const { summary: personalSummary, isLoading: isPersonalSummaryLoading } = useMonthlyAttendanceSummary(user);
-    const todaysAttendanceQuery = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('checkInTime', '>=', startOfDay(new Date())), limit(1)) : null, [firestore, user]);
-    const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
-    const schoolConfigRef = useMemoFirebase(() => user ? doc(firestore, 'schoolConfig', 'default') : null, [firestore, user]);
-    const { data: schoolConfig, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
-
-    return (
-        <>
-            <div className="md:col-span-2 lg:col-span-2 xl:col-span-2">
-                <PersonalAttendanceCardUI attendanceData={todaysAttendance} schoolConfigData={schoolConfig} isLoading={isAttendanceLoading || isConfigLoading} />
-            </div>
-            <div className="md:col-span-2 lg:col-span-1 xl:col-span-2">
-                <MonthlyAttendanceChartUI summaryData={personalSummary} isLoading={isPersonalSummaryLoading} />
-            </div>
-            <StatCard title="Hadir Hari Ini" value={stats.hadir} icon={UserCheck} isLoading={isStatsLoading} />
-            <StatCard title="Izin/Sakit" value={stats.izin + stats.sakit} icon={BookUser} description={`${stats.izin} Izin, ${stats.sakit} Sakit`} isLoading={isStatsLoading} />
-            <StatCard title="Menunggu Persetujuan" value={stats.pending} icon={MailWarning} description="Pengajuan tertunda" isLoading={isStatsLoading} className="cursor-pointer hover:bg-muted" onClick={() => router.push('/dashboard/izin-kepala-sekolah')} />
-            <StatCard title="Alpa" value={stats.alpa} icon={UserX} isLoading={isStatsLoading} />
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4"><TodaysActivityTable /></div>
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4"><AbsentUsersTable /></div>
-        </>
-    );
-};
-
-const AdminDashboard = ({ user, router, firestore }: any) => {
-    const { stats, isLoading: isStatsLoading } = useStaffDashboardStats(firestore, user);
-    return (
-        <>
-            <StatCard title="Total Hadir" value={stats.hadir} icon={UserCheck} isLoading={isStatsLoading} />
-            <StatCard title="Izin/Sakit" value={stats.izin + stats.sakit} icon={BookUser} description={`${stats.izin} Izin, ${stats.sakit} Sakit`} isLoading={isStatsLoading} />
-            <StatCard title="Pending Izin" value={stats.pending} icon={MailWarning} isLoading={isStatsLoading} className="cursor-pointer hover:bg-muted" onClick={() => router.push('/dashboard/izin-kepala-sekolah')} />
-            <StatCard title="Alpa" value={stats.alpa} icon={UserX} isLoading={isStatsLoading} />
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4"><TodaysActivityTable /></div>
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4"><AbsentUsersTable /></div>
-        </> 
-    );
-};
-
-const StaffDashboard = ({ user, firestore }: any) => {
-    const { summary, isLoading: isSummaryLoading } = useMonthlyAttendanceSummary(user);
-    const todaysAttendanceQuery = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('checkInTime', '>=', startOfDay(new Date())), limit(1)) : null, [firestore, user]);
-    const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
-    const schoolConfigRef = useMemoFirebase(() => user ? doc(firestore, 'schoolConfig', 'default') : null, [firestore, user]);
-    const { data: schoolConfig, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
-
-    return (
-        <>
-            <div className="md:col-span-2 lg:col-span-2 xl:col-span-2">
-                <PersonalAttendanceCardUI attendanceData={todaysAttendance} schoolConfigData={schoolConfig} isLoading={isAttendanceLoading || isConfigLoading} />
-            </div>
-            <div className="md:col-span-2 lg:col-span-1 xl:col-span-2">
-                <MonthlyAttendanceChartUI summaryData={summary} isLoading={isSummaryLoading} />
-            </div>
-        </> 
-    );
-};
-
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
 
-  // Jika otentikasi awal sedang diproses, tampilkan skeleton dashboard langsung (mewah!)
-  if (isUserLoading && !user) {
-    return <DashboardSkeletonLayout />;
-  }
+  const { stats, isLoading: isStatsLoading } = useStaffDashboardStats(firestore, user);
+  const { summary: personalSummary, isLoading: isPersonalSummaryLoading } = useMonthlyAttendanceSummary(user);
 
-  // Jika tidak loading tapi user tidak ada, ditangani oleh layout redirect
+  const todaysAttendanceQuery = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('checkInTime', '>=', startOfDay(new Date())), limit(1)) : null, [firestore, user]);
+  const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
 
-  const renderDashboardContent = () => {
-    if (!user) return null;
-    const role = user.role;
-    if (role === 'kepala_sekolah') return <HeadmasterDashboard user={user} router={router} firestore={firestore} />;
-    if (role === 'admin') return <AdminDashboard user={user} router={router} firestore={firestore} />;
-    if (['guru', 'pegawai', 'siswa'].includes(role)) return <StaffDashboard user={user} firestore={firestore} />;
-    return null;
-  };
+  const role = user?.role;
+  const showMonitoring = role === 'admin' || role === 'kepala_sekolah';
+  const showPersonal = role !== 'admin';
 
   return (
     <div className="flex-1 pt-4 pb-24 md:p-8">
@@ -314,7 +215,33 @@ export default function DashboardPage() {
             <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4">
                 <WelcomeCard user={user} isLoading={isUserLoading} />
             </div>
-            {renderDashboardContent()}
+
+            {showPersonal && (
+                <>
+                    <div className="md:col-span-2 lg:col-span-2 xl:col-span-2">
+                        <PersonalAttendanceCardUI attendanceData={todaysAttendance} isLoading={isAttendanceLoading || isUserLoading} />
+                    </div>
+                    <div className="md:col-span-2 lg:col-span-1 xl:col-span-2">
+                        <MonthlyAttendanceChartUI summaryData={personalSummary} isLoading={isPersonalSummaryLoading || isUserLoading} />
+                    </div>
+                </>
+            )}
+
+            {showMonitoring && (
+                <>
+                    <StatCard title="Hadir Hari Ini" value={stats.hadir} icon={UserCheck} isLoading={isStatsLoading || isUserLoading} />
+                    <StatCard title="Izin/Sakit" value={stats.izin + stats.sakit} icon={BookUser} description={`${stats.izin} Izin, ${stats.sakit} Sakit`} isLoading={isStatsLoading || isUserLoading} />
+                    <StatCard title="Menunggu" value={stats.pending} icon={MailWarning} description="Pengajuan tertunda" isLoading={isStatsLoading || isUserLoading} className="cursor-pointer hover:bg-muted" onClick={() => router.push('/dashboard/izin-kepala-sekolah')} />
+                    <StatCard title="Alpa" value={stats.alpa} icon={UserX} isLoading={isStatsLoading || isUserLoading} />
+                </>
+            )}
+
+            {showMonitoring && (
+                <>
+                    <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4"><TodaysActivityTable /></div>
+                    <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4"><AbsentUsersTable /></div>
+                </>
+            )}
         </div>
     </div>
   );

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -89,7 +90,7 @@ export default function LaporanPage() {
   const isLoading = isAuthLoading || isHistoryLoading || isLeaveLoading || isConfigLoading || isMonthlyConfigLoading;
   
   const monthlyReportData = useMemo(() => {
-    if (isLoading || !attendanceHistory || !leaveHistory || !schoolConfig) {
+    if (!attendanceHistory || !leaveHistory || !schoolConfig) {
       return [];
     }
 
@@ -117,7 +118,7 @@ export default function LaporanPage() {
                 dateString: format(day, 'eee, dd/MM/yy', { locale: id }),
                 checkIn: '-',
                 checkOut: '-',
-                status: leaveRecord.type, // e.g., 'Sakit', 'Izin'
+                status: leaveRecord.type,
                 description: leaveRecord.reason,
                 approvalStatus: leaveRecord.status,
             };
@@ -193,14 +194,11 @@ export default function LaporanPage() {
 
     return report.filter((record): record is ReportItem => record !== null).sort((a, b) => b.date.getTime() - a.date.getTime());
 
-  }, [attendanceHistory, leaveHistory, schoolConfig, monthlyConfig, currentMonth, isLoading]);
+  }, [attendanceHistory, leaveHistory, schoolConfig, monthlyConfig, currentMonth]);
 
   const handlePrevMonth = () => {
     if (isStaff) {
-        toast({ 
-            title: 'Akses Terbatas', 
-            description: 'Silahkan hubungi admin untuk melihat laporan kehadiran sebelumnya.' 
-        });
+        toast({ title: 'Akses Terbatas', description: 'Gunakan versi web untuk melihat riwayat lama.' });
         return;
     }
     setCurrentMonth(prev => subMonths(prev, 1));
@@ -214,21 +212,13 @@ export default function LaporanPage() {
     <Card>
       <CardHeader className="p-4 md:p-6">
         <CardTitle>Riwayat Absensi & Izin</CardTitle>
-        <CardDescription>
-            Berikut adalah catatan kehadiran dan pengajuan izin Anda.
-        </CardDescription>
+        <CardDescription>Catatan kehadiran dan pengajuan izin Anda.</CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0 md:p-6 md:pt-0 min-h-96">
+      <CardContent className="p-4 pt-0 md:p-6 md:pt-0 min-h-[400px]">
         <div className="flex items-center gap-2 mb-4">
-            <Button variant="outline" size="icon" onClick={handlePrevMonth}>
-                <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="font-semibold text-center w-32 capitalize">
-                {format(currentMonth, 'MMMM yyyy', { locale: id })}
-            </span>
-            <Button variant="outline" size="icon" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}>
-                <ChevronRight className="h-4 w-4" />
-            </Button>
+            <Button variant="outline" size="icon" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+            <span className="font-semibold text-center w-32 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+            <Button variant="outline" size="icon" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4" /></Button>
         </div>
         <div className="border rounded-md overflow-x-auto">
             <Table className="min-w-[720px]">
@@ -236,8 +226,8 @@ export default function LaporanPage() {
                     <TableRow>
                         <TableHead className="w-[50px] text-center">No.</TableHead>
                         <TableHead className="w-[150px]">Tanggal</TableHead>
-                        <TableHead className="w-[120px] text-center">Jam Masuk</TableHead>
-                        <TableHead className="w-[120px] text-center">Jam Pulang</TableHead>
+                        <TableHead className="w-[120px] text-center">Masuk</TableHead>
+                        <TableHead className="w-[120px] text-center">Pulang</TableHead>
                         <TableHead className="w-[120px] text-center">Status</TableHead>
                         <TableHead>Keterangan</TableHead>
                     </TableRow>
@@ -254,9 +244,9 @@ export default function LaporanPage() {
                                 <TableCell><Skeleton className="h-4 w-full" /></TableCell>
                             </TableRow>
                         ))
-                    ) : monthlyReportData && monthlyReportData.length > 0 ? (
+                    ) : monthlyReportData.length > 0 ? (
                         monthlyReportData.map((record, index) => (
-                            <TableRow key={`${record.id}-${index}`}>
+                            <TableRow key={record.id}>
                                 <TableCell className="text-center">{index + 1}</TableCell>
                                 <TableCell className="font-medium whitespace-nowrap">{record.dateString}</TableCell>
                                 <TableCell className="text-center">{record.checkIn}</TableCell>
@@ -269,14 +259,12 @@ export default function LaporanPage() {
                                         </Badge>
                                     )}
                                 </TableCell>
-                                <TableCell title={record.description}>{record.description}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground truncate max-w-[200px]" title={record.description}>{record.description}</TableCell>
                             </TableRow>
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
-                                Tidak ada riwayat absensi atau izin untuk bulan ini.
-                            </TableCell>
+                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">Tidak ada riwayat untuk bulan ini.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>

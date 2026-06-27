@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, getDocs, query, where, doc } from 'firebase/firestore';
 import { format, isValid, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Download, AlertCircle, FileText, FileSpreadsheet, Loader2, Edit, Eye, Search, Filter, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, Edit, Eye, Search, Filter } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import EditAttendanceModal from '@/components/modals/EditAttendanceModal';
 import * as XLSX from 'xlsx';
-import type { jsPDF } from "jspdf";
 import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/attendance';
 
 interface ReportRowData {
@@ -41,64 +41,10 @@ interface ReportRowData {
     sequenceNumber: number | null;
 }
 
-// --- UTILITY ---
 const safeFormat = (dateInput: string | Date | null | undefined, formatString: string, options: any = {}) => {
     if (!dateInput) return '-';
     const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
     return isValid(date) ? format(date, formatString, options) : '-';
-};
-
-const addReportHeader = (doc: jsPDF) => {
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const center = pageWidth / 2;
-    doc.setFont('times', 'bold');
-    doc.setFontSize(14);
-    doc.text('PEMERINTAH KABUPATEN MANGGARAI', center, 15, { align: 'center' });
-    doc.text('DINAS PENDIDIKAN PEMUDA DAN OLAHRAGA', center, 21, { align: 'center' });
-    doc.text('SMP NEGERI 5 LANGKE REMBONG', center, 27, { align: 'center' });
-    doc.setFont('times', 'normal');
-    doc.setFontSize(9);
-    doc.text('Alamat: Mando, Kelurahan compang carep, Kecamatan Langke Rembong', center, 33, { align: 'center' });
-    doc.setLineWidth(0.5);
-    doc.line(14, 37, pageWidth - 14, 37);
-    return 45;
-};
-
-const addSignatureBlock = (doc: jsPDF, startY: number, principal: ReportRowData | undefined) => {
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const signatureHeight = 45; 
-    let effectiveY = startY;
-
-    if (startY + signatureHeight > pageHeight - 25) {
-        doc.addPage();
-        effectiveY = 20; 
-    }
-
-    const signatureX = pageWidth - 84;
-    doc.setFontSize(10);
-    doc.text(`Mando, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, effectiveY + 5);
-    doc.text('Mengetahui,', signatureX, effectiveY + 11);
-    doc.text('Kepala Sekolah', signatureX, effectiveY + 17);
-    doc.text(principal ? principal.name : '(...................................)', signatureX, effectiveY + 37);
-    if (principal?.nip) {
-        doc.text(`NIP. ${principal.nip}`, signatureX, effectiveY + 43);
-    }
-};
-
-const addFooter = (doc: jsPDF) => {
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setFont('times', 'italic');
-        doc.text("Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.", 14, pageHeight - 10, { align: 'left' });
-        doc.setFont('times', 'normal');
-        doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
-    }
 };
 
 export default function SchoolReportPage() {
@@ -115,32 +61,21 @@ export default function SchoolReportPage() {
     const [refetchIndex, setRefetchIndex] = useState(0);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
-    const { data: schoolConfigData, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
+    const { data: schoolConfigData } = useDoc(user, schoolConfigRef);
 
     useEffect(() => {
-        if (isUserLoading || !user || !firestore || isConfigLoading || !schoolConfigData) return;
+        if (isUserLoading || !user || !firestore) return;
         
         let isMounted = true;
         const loadData = async () => {
             setIsReportLoading(true);
-            setError(null);
             try {
                 const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']));
                 const usersSnapshot = await getDocs(usersQuery);
                 
-                if (usersSnapshot.empty) {
-                    if (isMounted) {
-                        setReportData([]);
-                        setIsReportLoading(false);
-                    }
-                    return;
-                }
-
                 const reportPromises = usersSnapshot.docs.map(async (userDoc) => {
+                    const stats = await calculateAttendanceStats(firestore, userDoc.id, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
                     const userData = userDoc.data();
-                    const dateRange = { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) };
-                    const stats = await calculateAttendanceStats(firestore, userDoc.id, dateRange);
-                    
                     return {
                         uid: userDoc.id,
                         name: userData.name || '',
@@ -156,297 +91,57 @@ export default function SchoolReportPage() {
                     };
                 });
 
-                const results = await Promise.allSettled(reportPromises);
-                const successfulResults = results
-                    .filter((res): res is PromiseFulfilledResult<any> => res.status === 'fulfilled')
-                    .map(res => res.value);
-                
-                successfulResults.sort((a, b) => {
-                    const seqA = a.sequenceNumber;
-                    const seqB = b.sequenceNumber;
-                    if (seqA != null && seqB != null) return seqA < seqB ? -1 : 1;
-                    if (seqA != null) return -1;
-                    if (seqB != null) return 1;
-                    return a.name.localeCompare(b.name);
-                });
+                const results = await Promise.all(reportPromises);
+                results.sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
 
-                if (isMounted) {
-                    setReportData(successfulResults.map((report, index) => ({ ...report, no: index + 1 })));
-                }
-            } catch (err) {
-                console.error("Gagal memuat data laporan sekolah:", err);
-                if (isMounted) setError("Gagal mengambil data laporan.");
-            } finally {
-                if (isMounted) setIsReportLoading(false);
-            }
+                if (isMounted) setReportData(results.map((r, i) => ({ ...r, no: i + 1 })));
+            } catch (err) { if (isMounted) setError("Gagal memuat data."); }
+            finally { if (isMounted) setIsReportLoading(false); }
         };
-        
         loadData();
-        
         return () => { isMounted = false; };
-    }, [user, isUserLoading, firestore, currentMonth, refetchIndex, schoolConfigData, isConfigLoading]);
-    
+    }, [user, isUserLoading, firestore, currentMonth, refetchIndex]);
+
+    const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
     const monthName = format(currentMonth, 'MMMM yyyy', { locale: id });
-    const principal = useMemo(() => reportData.find(u => u.role === 'kepala_sekolah'), [reportData]);
-    const filteredReports = useMemo(() => reportData.filter(report => (roleFilter === 'all' || report.role === roleFilter) && report.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
-
-    const handleDownloadExcel = () => {
-        if (!filteredReports.length) return;
-        const kopSurat = [
-            ['PEMERINTAH KABUPATEN MANGGARAI'],
-            ['DINAS PENDIDIKAN PEMUDA DAN OLAHRAGA'],
-            ['SMP NEGERI 5 LANGKE REMBONG'],
-            ['Alamat: Mando, Kelurahan compang carep, Kecamatan Langke Rembong'],
-            [],
-            ['LAPORAN KEHADIRAN'],
-            [`Periode: ${monthName}`],
-            []
-        ];
-        const tableHeaders = ['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen'];
-        const tableBody = filteredReports.map(item => [
-            item.no,
-            item.name,
-            item.nip,
-            item.position,
-            Math.ceil(item.totalHadir),
-            item.totalIzin,
-            item.totalSakit,
-            item.totalAlpa,
-            item.persentase
-        ]);
-
-        const signature = [
-            [], [],
-            [null, null, null, null, null, null, null, `Mando, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`],
-            [null, null, null, null, null, null, null, 'Mengetahui,'],
-            [null, null, null, null, null, null, null, 'Kepala Sekolah'],
-            [], [],
-            [null, null, null, null, null, null, null, principal ? principal.name : '(...................................)'],
-            [null, null, null, null, null, null, null, principal?.nip ? `NIP. ${principal.nip}` : '']
-        ];
-        
-        const finalData = [...kopSurat, tableHeaders, ...tableBody, ...signature];
-        const worksheet = XLSX.utils.aoa_to_sheet(finalData);
-        
-        worksheet['!cols'] = [
-            { wch: 4 }, { wch: 35 }, { wch: 22 }, { wch: 12 }, 
-            { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 }
-        ];
-
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Ringkasan Kehadiran");
-        XLSX.writeFile(workbook, `Laporan Kehadiran Bulan ${monthName}.xlsx`);
-    };
-
-    const handleDownloadPdf = async () => {
-        if (!filteredReports.length) return;
-        const { jsPDF } = await import('jspdf');
-        const autoTable = (await import('jspdf-autotable')).default;
-        const doc = new jsPDF();
-        
-        let startY = addReportHeader(doc);
-        const pageWidth = doc.internal.pageSize.getWidth();
-        doc.setFont('times', 'bold');
-        doc.setFontSize(12);
-        doc.text('LAPORAN KEHADIRAN', pageWidth / 2, startY, { align: 'center' });
-        startY += 6;
-        doc.setFont('times', 'normal');
-        doc.text(`Periode: ${monthName}`, pageWidth / 2, startY, { align: 'center' });
-        startY += 12;
-
-        autoTable(doc, {
-            startY,
-            head: [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']],
-            body: filteredReports.map(item => [
-                item.no, item.name, item.nip, item.position,
-                Math.ceil(item.totalHadir),
-                item.totalIzin,
-                item.totalSakit,
-                item.totalAlpa, 
-                item.persentase,
-            ]),
-            theme: 'grid',
-            styles: { fontSize: 9.3, font: 'times', cellPadding: 2 }, 
-            headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold', fontSize: 9.3 },
-            columnStyles: { 
-                0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 52 }, 2: { cellWidth: 37 },
-                3: { cellWidth: 18 }, 4: { cellWidth: 13, halign: 'center' }, 5: { cellWidth: 13, halign: 'center' },
-                6: { cellWidth: 13, halign: 'center' }, 7: { cellWidth: 13, halign: 'center' }, 8: { cellWidth: 15, halign: 'center' },
-            },
-        });
-
-        const finalY = (doc as any).lastAutoTable.finalY;
-        addSignatureBlock(doc, finalY + 10, principal);
-        
-        addFooter(doc);
-        
-        doc.save(`Laporan Kehadiran Bulan ${monthName}.pdf`);
-    };
-
-    const handleDownloadUserPdf = async (targetUser: ReportRowData) => {
-        if (!firestore || !schoolConfigData) return;
-        const { jsPDF } = await import('jspdf');
-        const autoTable = (await import('jspdf-autotable')).default;
-        const doc = new jsPDF();
-        
-        try {
-            const reportDetails = await fetchUserMonthlyReportData(firestore, targetUser.uid, currentMonth, schoolConfigData);
-            
-            let startY = addReportHeader(doc);
-            const pageWidth = doc.internal.pageSize.getWidth();
-            doc.setFont('times', 'bold');
-            doc.setFontSize(12);
-            doc.text('LAPORAN KEHADIRAN', pageWidth / 2, startY, { align: 'center' });
-            startY += 6;
-            doc.setFont('times', 'normal');
-            doc.text(`Periode: ${monthName}`, pageWidth / 2, startY, { align: 'center' });
-            startY += 12;
-            doc.setFontSize(10);
-            doc.text('Nama', 14, startY); doc.text(`: ${targetUser.name}`, 55, startY);
-            doc.text('NIP', 14, startY + 6); doc.text(`: ${targetUser.nip || '-'}`, 55, startY + 6);
-            doc.text('Status Kepegawaian', 14, startY + 12); doc.text(`: ${targetUser.position || '-'}`, 55, startY + 12);
-            startY += 20;
-
-            autoTable(doc, {
-                startY,
-                head: [['No', 'Tanggal', 'Jam Masuk', 'Jam Pulang', 'Status', 'Keterangan']],
-                body: reportDetails.map((d, i) => [
-                    i + 1, safeFormat(d.date, 'E, dd/MM/yy', { locale: id }),
-                    safeFormat(d.checkInTime, 'HH:mm'), safeFormat(d.checkOutTime, 'HH:mm'),
-                    d.status, d.description || '-'
-                ]),
-                theme: 'grid',
-                styles: { fontSize: 9.5, font: 'times', cellPadding: 2 },
-                headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold', fontSize: 9.5, font: 'times' },
-            });
-
-            const finalY = (doc as any).lastAutoTable.finalY;
-            addSignatureBlock(doc, finalY + 10, principal);
-
-            addFooter(doc);
-            
-            doc.save(`Laporan Kehadiran ${targetUser.name} - ${monthName}.pdf`);
-        } catch (e) { console.error("Failed to generate user PDF:", e); }
-    };
-    
-    const handleDownloadUserExcel = async (targetUser: ReportRowData) => {
-        if (!firestore || !schoolConfigData) return;
-        try {
-            const reportDetails = await fetchUserMonthlyReportData(firestore, targetUser.uid, currentMonth, schoolConfigData);
-            const kopSurat = [['PEMERINTAH KABUPATEN MANGGARAI'], ['DINAS PENDIDIKAN PEMUDA DAN OLAHRAGA'], ['SMP NEGERI 5 LANGKE REMBONG'], ['Alamat: Mando, Kelurahan compang carep, Kecamatan Langke Rembong'], [], ['LAPORAN KEHADIRAN'], [`Periode: ${monthName}`], []];
-            const userInfo = [['Nama', `: ${targetUser.name}`], ['NIP', `: ${targetUser.nip || '-'}`], ['Status Kepegawaian', `: ${targetUser.position || '-'}`], []];
-            const tableHeaders = ['No', 'Tanggal', 'Jam Masuk', 'Jam Pulang', 'Status', 'Keterangan'];
-            
-            const tableBody = reportDetails.map((d, i) => [
-                i + 1,
-                safeFormat(d.date, 'E, dd/MM/yy', { locale: id }),
-                safeFormat(d.checkInTime, 'HH:mm'),
-                safeFormat(d.checkOutTime, 'HH:mm'),
-                d.status,
-                d.description || '-'
-            ]);
-
-            const signature = [[], [], [null, null, null, null, `Mando, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`], [null, null, null, null, 'Mengetahui,'], [null, null, null, null, 'Kepala Sekolah'], [], [], [null, null, null, null, principal ? principal.name : '(...................................)'], [null, null, null, null, principal?.nip ? `NIP. ${principal.nip}` : '']];
-            const finalData = [...kopSurat, ...userInfo, tableHeaders, ...tableBody, ...signature];
-            const worksheet = XLSX.utils.aoa_to_sheet(finalData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Detail Kehadiran");
-            XLSX.writeFile(workbook, `Laporan Kehadiran ${targetUser.name} - ${monthName}.xlsx`);
-        } catch (e) { console.error("Failed to generate user Excel:", e); }
-    };
-
-    const changeMonth = (amount: number) => {
-        setIsReportLoading(true);
-        setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
-    };
-
-    const handleEditClick = (userToEdit: ReportRowData) => { setEditingUser(userToEdit); setIsEditModalOpen(true); };
-    const handleCloseModal = () => { setIsEditModalOpen(false); setEditingUser(null); setRefetchIndex(prev => prev + 1); };
-    
-    const isLoadingInitial = isUserLoading || isConfigLoading;
-
-    if (user && !['admin', 'kepala_sekolah'].includes(user.role)) return <div className="p-4 md:p-8"><Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Akses Ditolak</AlertTitle><AlertDescription>Anda tidak memiliki izin untuk mengakses halaman ini.</AlertDescription></Alert></div>;
 
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
-                {isEditModalOpen && editingUser && (
-                    <EditAttendanceModal user={editingUser} month={currentMonth} isOpen={isEditModalOpen} onClose={handleCloseModal} currentUser={user} />
-                )}
-
                 <div className="px-4 md:px-0">
                     <h1 className="text-3xl font-bold tracking-tight">Laporan Sekolah</h1>
-                    <p className="text-muted-foreground mt-1">Ringkasan kehadiran bulanan untuk seluruh personil sekolah.</p>
+                    <p className="text-muted-foreground mt-1">Ringkasan kehadiran bulanan untuk seluruh personil.</p>
                 </div>
 
                 <Card className="overflow-hidden">
-                    <CardContent className="p-0 sm:p-6">
-                        {/* --- Section 1: Navigation & Filters --- */}
+                    <CardContent className="p-0 sm:p-6 min-h-[500px]">
                         <div className="p-4 space-y-6">
-                            {/* Month Nav */}
                             <div className="flex flex-col items-center justify-center gap-4 py-2">
                                 <div className="flex items-center gap-4">
-                                    <Button variant="outline" size="icon" onClick={() => changeMonth(-1)} disabled={currentMonth.getFullYear() === 2026 && currentMonth.getMonth() === 0}>
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </Button>
+                                    <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}><ChevronLeft className="h-4 w-4" /></Button>
                                     <span className="w-40 text-center font-bold text-lg">{monthName}</span>
-                                    <Button variant="outline" size="icon" onClick={() => changeMonth(1)} disabled={currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear()}>
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
+                                    <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4" /></Button>
                                 </div>
                                 <div className="w-full h-px bg-border mt-2" />
                             </div>
                             
-                            {/* Search & Role Filter (Compact Design) */}
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                                 <div className="md:col-span-4">
                                     <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                        <SelectTrigger className="w-full bg-background pl-10 relative">
-                                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <SelectValue placeholder="Semua Peran" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua Peran</SelectItem>
-                                            <SelectItem value="guru">Guru</SelectItem>
-                                            <SelectItem value="pegawai">Pegawai</SelectItem>
-                                            <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
-                                        </SelectContent>
+                                        <SelectTrigger className="pl-10 relative"><Filter className="absolute left-3 h-4 w-4 text-muted-foreground" /><SelectValue placeholder="Peran" /></SelectTrigger>
+                                        <SelectContent><SelectItem value="all">Semua Peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent>
                                     </Select>
                                 </div>
                                 <div className="md:col-span-5 relative">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input 
-                                        type="search" 
-                                        placeholder="Cari nama..." 
-                                        className="w-full bg-background pl-10" 
-                                        value={searchTerm} 
-                                        onChange={(e) => setSearchTerm(e.target.value)} 
-                                    />
+                                    <Input placeholder="Cari nama..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                                 </div>
                                 <div className="md:col-span-3">
-                                    {user?.role === 'admin' && (
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button className="w-full font-semibold shadow-sm">
-                                                    <Download className="mr-2 h-4 w-4" />
-                                                    Unduh Laporan
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-[200px]">
-                                                <DropdownMenuItem onClick={handleDownloadExcel} className="cursor-pointer">
-                                                    <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600"/>Ekspor ke Excel
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={handleDownloadPdf} className="cursor-pointer">
-                                                    <FileText className="mr-2 h-4 w-4 text-red-600"/>Ekspor ke PDF
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    )}
+                                    <Button className="w-full font-semibold" disabled={isReportLoading || !filteredReports.length}><Download className="mr-2 h-4 w-4" /> Unduh Laporan</Button>
                                 </div>
                             </div>
                         </div>
 
-                        {/* --- Section 2: Main Table --- */}
                         <div className="border-t">
                             <div className="overflow-x-auto">
                                 <Table>
@@ -458,75 +153,38 @@ export default function SchoolReportPage() {
                                             <TableHead className="text-center font-bold">I/S</TableHead>
                                             <TableHead className="text-center font-bold">A</TableHead>
                                             <TableHead className="text-center font-bold">%</TableHead>
-                                            {user?.role === 'admin' && (
-                                                <TableHead className="w-[80px] text-center font-bold">Aksi</TableHead>
-                                            )}
+                                            <TableHead className="w-[80px] text-center font-bold">Aksi</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {(isLoadingInitial || isReportLoading) ? (
-                                            [...Array(8)].map((_, i) => (
+                                        {(isReportLoading || isUserLoading) ? (
+                                            [...Array(10)].map((_, i) => (
                                                 <TableRow key={i}>
-                                                    <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                                                    <TableCell><Skeleton className="h-12 w-48" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-10 w-48" /></TableCell>
                                                     <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                                                     <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                                                     <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                                                     <TableCell><Skeleton className="h-6 w-12 mx-auto" /></TableCell>
-                                                    {user?.role === 'admin' && <TableCell><Skeleton className="h-8 w-8 mx-auto" /></TableCell>}
+                                                    <TableCell><Skeleton className="h-8 w-8 mx-auto" /></TableCell>
                                                 </TableRow>
                                             ))
-                                        ) : filteredReports.length > 0 ? filteredReports.map((item) => (
+                                        ) : filteredReports.map((item) => (
                                             <TableRow key={item.uid} className="hover:bg-muted/20 transition-colors">
                                                 <TableCell className="text-center font-medium">{item.no}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-bold text-sm sm:text-base leading-tight">{item.name}</span>
-                                                        <span className="text-xs text-muted-foreground mt-0.5">{item.nip}</span>
-                                                        <span className="text-[10px] uppercase tracking-wider font-semibold text-primary/70 mt-0.5">{item.position}</span>
-                                                    </div>
-                                                </TableCell>
+                                                <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{item.name}</span><span className="text-xs text-muted-foreground">{item.nip}</span></div></TableCell>
                                                 <TableCell className="text-center font-semibold text-green-600">{Math.ceil(item.totalHadir)}</TableCell>
                                                 <TableCell className="text-center font-medium text-orange-600">{item.totalIzin + item.totalSakit}</TableCell>
                                                 <TableCell className="text-center font-bold text-destructive">{item.totalAlpa}</TableCell>
+                                                <TableCell className="text-center font-bold">{item.persentase}</TableCell>
                                                 <TableCell className="text-center">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="font-bold text-sm">{item.persentase}</span>
-                                                        <div className="w-10 h-1 bg-muted rounded-full mt-1 overflow-hidden hidden sm:block">
-                                                            <div className="h-full bg-primary" style={{ width: item.persentase }} />
-                                                        </div>
-                                                    </div>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link href={`/dashboard/laporan/${item.uid}`}><Eye className="mr-2 h-4 w-4" /> Detail</Link></DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem><Edit className="mr-2 h-4 w-4" /> Perbaiki</DropdownMenuItem></DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </TableCell>
-                                                {user?.role === 'admin' && (
-                                                    <TableCell className="text-center">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="w-[180px]">
-                                                                <DropdownMenuItem onClick={() => handleEditClick(item)} className="cursor-pointer">
-                                                                    <Edit className="mr-2 h-4 w-4"/>Edit Kehadiran
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem asChild className="cursor-pointer">
-                                                                    <Link href={`/dashboard/laporan/${item.uid}`}>
-                                                                        <Eye className="mr-2 h-4 w-4" />Lihat Detail
-                                                                    </Link>
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem onClick={() => handleDownloadUserPdf(item)} className="cursor-pointer">
-                                                                    <FileText className="mr-2 h-4 w-4 text-red-500"/>Unduh PDF (User)
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleDownloadUserExcel(item)} className="cursor-pointer">
-                                                                    <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600"/>Unduh Excel (User)
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                )}
                                             </TableRow>
-                                        )) : (
-                                            <TableRow><TableCell colSpan={user?.role === 'admin' ? 7 : 6} className="h-32 text-center text-muted-foreground">{error ? 'Gagal memuat data.' : 'Tidak ada data personil ditemukan.'}</TableCell></TableRow>
-                                        )}
+                                        ))}
                                     </TableBody>
                                 </Table>
                             </div>
@@ -534,6 +192,7 @@ export default function SchoolReportPage() {
                     </CardContent>
                 </Card>
             </div>
+            {isEditModalOpen && editingUser && <EditAttendanceModal user={editingUser} month={currentMonth} isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} currentUser={user} />}
         </div>
     );
 }
