@@ -109,7 +109,6 @@ export default function IzinPage() {
         return currentTime > checkOutStart;
     }, [currentTime, schoolConfig]);
     
-    // --- FIX: Logic changed to disable options instead of hiding them ---
     const availableLeaveTypes = useMemo(() => {
         const isToday = selectedDateValue === 'today';
         return [
@@ -136,7 +135,6 @@ export default function IzinPage() {
         ];
     }, [selectedDateValue, hasCheckedIn, hasCheckedOut, isPastCheckoutTime]);
 
-    // Reset leave type if it becomes disabled
     useEffect(() => {
         const selectedType = form.getValues('type');
         if (selectedType) {
@@ -220,7 +218,7 @@ export default function IzinPage() {
 
     return (
         <PageWrapper>
-            <Card className="w-full">
+            <Card className="w-full border-t-4 border-t-primary">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <CardHeader>
@@ -282,7 +280,6 @@ export default function IzinPage() {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {/* --- FIX: Render items with disabled prop --- */}
                                                 {availableLeaveTypes.map(type => (
                                                     <SelectItem key={type.value} value={type.value} disabled={type.disabled}>
                                                         {type.label}

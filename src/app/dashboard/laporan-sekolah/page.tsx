@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from '@/components/ui/card';
@@ -132,7 +132,6 @@ export default function SchoolReportPage() {
 
             const config = schoolConfigData || ({} as any);
 
-            // Kop Surat - HANYA DI HALAMAN PERTAMA
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, currentY, { align: 'center' });
             currentY += 7;
@@ -148,7 +147,6 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.2).line(margin, currentY + 0.8, pageWidth - margin, currentY + 0.8);
             currentY += 15;
 
-            // Judul Laporan
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text(`LAPORAN KEHADIRAN INDIVIDU BULAN ${monthName.toUpperCase()}`, centerX, currentY, { align: 'center' });
             if (config.academicYear) {
@@ -157,7 +155,6 @@ export default function SchoolReportPage() {
             }
             currentY += 12;
 
-            // Identitas Pegawai
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`Nama`, margin, currentY);
             doc.text(`: ${targetUser.name}`, margin + 40, currentY);
@@ -197,7 +194,6 @@ export default function SchoolReportPage() {
                 }
             });
 
-            // Tanda Tangan
             let finalTableY = (doc as any).lastAutoTable.finalY;
             if (finalTableY > pageHeight - 65) {
                 doc.addPage();
@@ -215,7 +211,6 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, signY + 44);
 
-            // Footer Otomatis
             const totalPages = doc.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
@@ -356,7 +351,7 @@ export default function SchoolReportPage() {
                     <p className="text-muted-foreground mt-1 font-medium">Ringkasan kehadiran bulanan untuk seluruh personil aktif.</p>
                 </div>
 
-                <Card className="overflow-hidden border-none shadow-xl rounded-3xl bg-card">
+                <Card className="overflow-hidden border shadow-xl rounded-3xl bg-card border-t-4 border-t-primary">
                     <CardContent className="p-0 sm:p-6 min-h-[500px]">
                         <div className="p-6 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">

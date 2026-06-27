@@ -212,7 +212,7 @@ export default function LaporanPage() {
   };
 
   return (
-    <Card>
+    <Card className="border-t-4 border-t-primary">
       <CardHeader className="p-4 md:p-6">
         <CardTitle>Riwayat Absensi & Izin</CardTitle>
         <CardDescription>Catatan kehadiran dan pengajuan izin Anda.</CardDescription>

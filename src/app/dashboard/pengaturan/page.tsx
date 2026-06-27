@@ -259,7 +259,7 @@ export default function PengaturanPage() {
   return (
     <div className="grid gap-6">
       <form onSubmit={handleProfileUpdate}>
-        <Card>
+        <Card className="border-t-4 border-t-primary">
           <CardHeader>
             <CardTitle>Profil Pengguna</CardTitle>
             <CardDescription>
@@ -335,7 +335,7 @@ export default function PengaturanPage() {
       </form>
       
       {isAdmin && (
-         <Card>
+         <Card className="border-t-4 border-t-primary">
             <CardHeader>
                 <CardTitle>Pengaturan Laporan PDF</CardTitle>
                 <CardDescription>Informasi ini akan digunakan pada kop dan footer laporan PDF.</CardDescription>
@@ -389,7 +389,7 @@ export default function PengaturanPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="border-t-4 border-t-primary">
         <CardHeader>
           <CardTitle>Ganti Password</CardTitle>
           <CardDescription>

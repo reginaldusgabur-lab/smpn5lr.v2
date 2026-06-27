@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// Skeleton untuk tabel persetujuan
 const ApprovalTableSkeleton = () => (
     <div className="rounded-md border">
         <Table>
@@ -58,7 +57,6 @@ export default function IzinKepalaSekolahPage() {
             setIsLoadingData(true);
             setError(null);
             try {
-                // 1. Get all staff (guru & pegawai)
                 const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai']));
                 const usersSnapshot = await getDocs(usersQuery);
 
@@ -70,7 +68,6 @@ export default function IzinKepalaSekolahPage() {
 
                 const allPendingRequests: any[] = [];
 
-                // 2. Loop through each user to find their pending leave requests
                 const promises = usersSnapshot.docs.map(async (userDoc) => {
                     const userData = userDoc.data();
                     const userId = userDoc.id;
@@ -92,10 +89,8 @@ export default function IzinKepalaSekolahPage() {
                     });
                 });
 
-                // 3. Wait for all queries to complete
                 await Promise.all(promises);
 
-                // Sort by date (newest first)
                 allPendingRequests.sort((a, b) => {
                     const dateA = a.startDate?.toDate ? a.startDate.toDate().getTime() : 0;
                     const dateB = b.startDate?.toDate ? b.startDate.toDate().getTime() : 0;
@@ -151,7 +146,6 @@ export default function IzinKepalaSekolahPage() {
 
     const columns = useMemo(() => createColumns(handleUpdateRequest), [handleUpdateRequest]);
 
-    // Handle unauthorized access
     if (!isUserLoading && user && user.role !== 'kepala_sekolah') {
         return (
             <div className="flex-1 pt-4 pb-24 md:p-8">
@@ -170,13 +164,12 @@ export default function IzinKepalaSekolahPage() {
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
                 
-                {/* Judul Halaman di Luar Kartu */}
                 <div className="px-4 md:px-0">
                     <h1 className="text-3xl font-bold tracking-tight">Persetujuan Izin</h1>
                     <p className="text-muted-foreground mt-1">Tinjau dan proses permintaan izin atau sakit yang diajukan oleh guru dan pegawai.</p>
                 </div>
 
-                <Card className="overflow-hidden border shadow-sm">
+                <Card className="overflow-hidden border shadow-sm border-t-4 border-t-amber-500">
                     <CardContent className="p-0 sm:p-6">
                         {error ? (
                             <div className="p-8 text-center">

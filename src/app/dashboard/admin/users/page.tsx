@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 
@@ -223,7 +222,7 @@ export default function AdminUsersPage() {
                     </Button>
                 </div>
 
-                <Card className="w-full border-none shadow-xl rounded-3xl overflow-hidden bg-card">
+                <Card className="w-full border shadow-xl rounded-3xl overflow-hidden bg-card border-t-4 border-t-primary">
                     <CardContent className="py-6 min-h-[400px]">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
                             <Select value={userFilter} onValueChange={setUserFilter}>
@@ -352,7 +351,6 @@ export default function AdminUsersPage() {
                         </DialogDescription>
                     </DialogHeader>
                     
-                    {/* --- KUNCI: Wrapper scrollable untuk isi form --- */}
                     <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar">
                         <Form {...userForm}>
                             <form onSubmit={userForm.handleSubmit(handleSaveUser)} className="space-y-4 py-4">

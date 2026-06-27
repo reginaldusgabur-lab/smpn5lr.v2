@@ -131,7 +131,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   };
   
   return (
-    <Card className="lg:col-span-3">
+    <Card className="lg:col-span-3 border-t-4 border-t-primary">
         <CardHeader>
             <CardTitle>Pengaturan Hari Kerja & Libur Bulanan</CardTitle>
             <CardDescription>
@@ -452,7 +452,7 @@ export default function KonfigurasiAbsenPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-1">
+      <Card className="lg:col-span-1 border-t-4 border-t-primary">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle>QR Code Absensi</CardTitle>
           <CardDescription>Gunakan QR Code ini untuk absensi.</CardDescription>
@@ -478,7 +478,7 @@ export default function KonfigurasiAbsenPage() {
         </CardFooter>
       </Card>
 
-      <Card className="lg:col-span-2">
+      <Card className="lg:col-span-2 border-t-4 border-t-primary">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle>Pengaturan Absensi Umum</CardTitle>
           <CardDescription>Atur parameter untuk sistem absensi di seluruh sekolah.</CardDescription>
