@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { UserCheck, Users, FileWarning, ShieldAlert, FileText } from 'lucide-react';
+import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ import { doc, collection, query, where, Timestamp, getDocs, type DocumentData, c
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -81,6 +81,8 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  const [isHoliday, setIsHoliday] = useState(false);
+
   // --- Data Fetching ---
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -117,6 +119,25 @@ export default function AdminDashboardPage() {
         setIsDashboardDataLoading(true);
         
         try {
+            const today = new Date();
+            // Cek Hari Libur
+            const schoolConfigSnap = await getDoc(doc(firestore, 'schoolConfig', 'default'));
+            const schoolConfig = schoolConfigSnap.data();
+            const monthlyConfigId = format(today, 'yyyy-MM');
+            const monthlyConfigSnap = await getDoc(doc(firestore, 'monthlyConfigs', monthlyConfigId));
+            const monthlyConfig = monthlyConfigSnap.data();
+
+            const isHolidayToday = (() => {
+                if (!schoolConfig) return false;
+                if (schoolConfig.isAttendanceActive === false) return true;
+                const todayStr = format(today, 'yyyy-MM-dd');
+                if (monthlyConfig?.holidays?.includes(todayStr)) return true;
+                const offDays: number[] = schoolConfig.offDays ?? [0, 6];
+                return offDays.includes(today.getDay());
+            })();
+
+            setIsHoliday(isHolidayToday);
+
             const attendanceQuery = collectionGroup(firestore, 'attendanceRecords');
             const leaveQuery = collectionGroup(firestore, 'leaveRequests');
             
@@ -268,6 +289,17 @@ export default function AdminDashboardPage() {
                 </AlertDescription>
             </Alert>
         )}
+        
+        {isHoliday && (
+            <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                <CalendarOff className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Hari Libur Terdeteksi</AlertTitle>
+                <AlertDescription className="text-blue-700 dark:text-blue-400">
+                    Sistem absensi dinonaktifkan hari ini. Tabel ketidakhadiran disembunyikan untuk menjaga akurasi data.
+                </AlertDescription>
+            </Alert>
+        )}
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Main Content: Recent Attendance Table */}
             <Card className="lg:col-span-2">
@@ -300,7 +332,9 @@ export default function AdminDashboardPage() {
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">Belum ada aktivitas kehadiran hari ini.</TableCell>
+                                        <TableCell colSpan={6} className="h-24 text-center">
+                                            {isHoliday ? "Tidak ada aktivitas pada hari libur." : "Belum ada aktivitas kehadiran hari ini."}
+                                        </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
