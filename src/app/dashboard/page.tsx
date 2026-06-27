@@ -80,9 +80,9 @@ function useMonthlyAttendanceSummary(user: any) {
 // --- Sub Components ---
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => {
-    if (isLoading) return <Skeleton className="h-10 w-full mb-2" />;
+    if (isLoading) return <Skeleton className="h-8 w-48 mb-4" />;
     return (
-        <div className="mb-1 space-y-0 px-1">
+        <div className="mb-4 space-y-0.5">
             <h1 className="text-xl font-bold tracking-tight">Selamat Datang,</h1>
             <p className="text-sm text-muted-foreground">{user?.name || 'Pengguna'}</p>
         </div>
@@ -114,14 +114,14 @@ const LiveClock = () => {
         return () => clearInterval(timer);
     }, []);
 
-    if (!time) return <div className="h-14" />;
+    if (!time) return <div className="h-16" />;
 
     return (
-        <div className="flex flex-col items-center justify-center py-1 mb-2">
-            <h2 className="text-4xl font-black tracking-tighter tabular-nums text-foreground leading-none">
+        <div className="flex flex-col items-center justify-center py-2 mb-4">
+            <h2 className="text-5xl font-black tracking-tighter tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1">
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-2">
                 {format(time, 'EEEE, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -152,60 +152,61 @@ export default function DashboardPage() {
 
   return (
     <PageWrapper>
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-2">
             <WelcomeCard user={user} isLoading={isUserLoading} />
 
             <LiveClock />
 
             {isGuruOrPegawai && (
-                <div className="w-full space-y-4">
-                    <Card className="w-full overflow-hidden shadow-md border-primary/5">
-                        <CardHeader className="pb-2">
+                <div className="w-full space-y-6">
+                    <Card className="w-full overflow-hidden shadow-sm border-muted/50">
+                        <CardHeader className="pb-3 space-y-1">
                             <CardTitle className="text-base font-bold flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-primary" /> Kehadiran Anda Hari Ini
+                                <div className="p-1.5 rounded-full bg-primary/10">
+                                    <Clock className="w-4 h-4 text-primary" />
+                                </div>
+                                Kehadiran Anda Hari Ini
                             </CardTitle>
-                            <CardDescription className="text-[10px]">Status kehadiran dan jam absensi harian Anda.</CardDescription>
+                            <CardDescription className="text-xs">Status kehadiran dan jam absensi harian Anda.</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-2">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-muted/30 rounded-lg p-3 text-center border border-border/40">
-                                    <p className="text-[9px] uppercase font-bold text-muted-foreground mb-1">Masuk</p>
-                                    <p className="text-xl font-black tabular-nums">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-muted/30 rounded-xl p-4 text-center border border-border/40">
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Masuk</p>
+                                    <p className="text-2xl font-black tabular-nums">
                                         {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
                                     </p>
                                 </div>
-                                <div className="bg-muted/30 rounded-lg p-3 text-center border border-border/40">
-                                    <p className="text-[9px] uppercase font-bold text-muted-foreground mb-1">Pulang</p>
-                                    <p className="text-xl font-black tabular-nums">
+                                <div className="bg-muted/30 rounded-xl p-4 text-center border border-border/40">
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Pulang</p>
+                                    <p className="text-2xl font-black tabular-nums">
                                         {todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}
                                     </p>
                                 </div>
                             </div>
                         </CardContent>
-                        <CardFooter className="bg-muted/5 border-t py-3">
+                        <CardFooter className="bg-muted/5 border-t py-4">
                             {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
-                                <Button asChild size="default" className="w-full font-bold shadow-sm">
+                                <Button asChild size="lg" className="w-full font-bold shadow-sm">
                                     <Link href="/dashboard/absen"><LogOut className="mr-2 w-4 h-4" /> Absen Pulang</Link>
                                 </Button>
                             ) : !todaysAttendance?.[0]?.checkInTime ? (
-                                <Button asChild size="default" className="w-full font-bold shadow-sm">
+                                <Button asChild size="lg" className="w-full font-bold shadow-sm">
                                     <Link href="/dashboard/absen"><LogIn className="mr-2 w-4 h-4" /> Absen Masuk</Link>
                                 </Button>
                             ) : (
-                                <Button disabled size="default" className="w-full bg-green-500/10 text-green-600 border-green-500/20 font-bold">
+                                <Button disabled size="lg" className="w-full bg-green-500/10 text-green-600 border-green-500/20 font-bold">
                                     <Sparkles className="mr-2 w-4 h-4" /> Absensi Selesai
                                 </Button>
                             )}
                         </CardFooter>
                     </Card>
 
-                    <div className="space-y-2">
-                        <div className="px-1 flex justify-between items-end">
-                            <div>
-                                <h2 className="flex items-center gap-2 text-xs font-black text-foreground uppercase tracking-tight">
-                                    <TrendingUp size={14} className="text-primary" /> Riwayat {format(new Date(), 'MMMM', { locale: id })}
-                                </h2>
-                            </div>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-end px-1">
+                            <h2 className="flex items-center gap-2 text-xs font-black text-foreground uppercase tracking-tight">
+                                <TrendingUp size={14} className="text-primary" /> RIWAYAT {format(new Date(), 'MMMM', { locale: id }).toUpperCase()}
+                            </h2>
                             <div className="text-right">
                                 <span className="text-xl font-black text-primary leading-none">
                                     {isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}
@@ -216,19 +217,19 @@ export default function DashboardPage() {
                         
                         <Card className="w-full shadow-sm">
                             <CardContent className="p-4">
-                                <div className="flex items-center justify-between gap-4">
-                                    <div className="flex-1 space-y-1">
-                                        <p className="text-[10px] font-bold">Hadir: {personalSummary.hadir} Hari</p>
-                                        <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-                                            <div 
-                                                className="bg-primary h-full transition-all duration-1000" 
-                                                style={{ width: `${personalSummary.percentage}%` }}
-                                            />
-                                        </div>
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Total Hadir: {personalSummary.hadir} Hari</p>
+                                    <div className="w-full bg-muted h-3 rounded-full overflow-hidden">
+                                        <div 
+                                            className="bg-primary h-full transition-all duration-1000 ease-in-out" 
+                                            style={{ width: `${personalSummary.percentage}%` }}
+                                        />
                                     </div>
-                                    <Button variant="outline" size="sm" asChild className="h-8 text-[10px]">
-                                        <Link href="/dashboard/laporan">Detail</Link>
-                                    </Button>
+                                    <div className="flex justify-end">
+                                        <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-bold text-primary">
+                                            <Link href="/dashboard/laporan">Lihat Detail Laporan</Link>
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -237,8 +238,8 @@ export default function DashboardPage() {
             )}
 
             {isAdminOrKepsek && (
-                <div className="w-full space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                <div className="w-full space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                         <StatCard 
                             title="Hadir Hari Ini" 
                             value={stats.hadir} 
@@ -258,7 +259,7 @@ export default function DashboardPage() {
                             icon={MailWarning} 
                             description="Pengajuan tertunda" 
                             isLoading={isStatsLoading || isUserLoading} 
-                            className="cursor-pointer hover:bg-accent/5 border-primary/5" 
+                            className="cursor-pointer hover:bg-accent/5 border-primary/10" 
                             onClick={() => router.push('/dashboard/izin-kepala-sekolah')} 
                         />
                     </div>
