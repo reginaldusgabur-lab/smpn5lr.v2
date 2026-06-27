@@ -1,13 +1,12 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, getDocs, query, where, doc } from 'firebase/firestore';
-import { format, isValid, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isValid, parseISO, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, Edit, Eye, Search, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, FileText, Eye, Search, Filter } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,10 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import EditAttendanceModal from '@/components/modals/EditAttendanceModal';
-import * as XLSX from 'xlsx';
-import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/attendance';
+import { calculateAttendanceStats } from '@/lib/attendance';
 
 interface ReportRowData {
     no: number;
@@ -41,12 +37,6 @@ interface ReportRowData {
     sequenceNumber: number | null;
 }
 
-const safeFormat = (dateInput: string | Date | null | undefined, formatString: string, options: any = {}) => {
-    if (!dateInput) return '-';
-    const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
-    return isValid(date) ? format(date, formatString, options) : '-';
-};
-
 export default function SchoolReportPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -56,8 +46,6 @@ export default function SchoolReportPage() {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState<ReportRowData | null>(null);
     const [refetchIndex, setRefetchIndex] = useState(0);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
@@ -113,7 +101,7 @@ export default function SchoolReportPage() {
                     <p className="text-muted-foreground mt-1">Ringkasan kehadiran bulanan untuk seluruh personil.</p>
                 </div>
 
-                <Card className="overflow-hidden">
+                <Card className="overflow-hidden border shadow-sm">
                     <CardContent className="p-0 sm:p-6 min-h-[500px]">
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">
@@ -126,14 +114,20 @@ export default function SchoolReportPage() {
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                                <div className="md:col-span-4">
+                                <div className="md:col-span-4 relative">
+                                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
                                     <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                        <SelectTrigger className="pl-10 relative"><Filter className="absolute left-3 h-4 w-4 text-muted-foreground" /><SelectValue placeholder="Peran" /></SelectTrigger>
-                                        <SelectContent><SelectItem value="all">Semua Peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent>
+                                        <SelectTrigger className="pl-10"><SelectValue placeholder="Peran" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Semua Peran</SelectItem>
+                                            <SelectItem value="guru">Guru</SelectItem>
+                                            <SelectItem value="pegawai">Pegawai</SelectItem>
+                                            <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                        </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="md:col-span-5 relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
                                     <Input placeholder="Cari nama..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                                 </div>
                                 <div className="md:col-span-3">
@@ -169,7 +163,7 @@ export default function SchoolReportPage() {
                                                     <TableCell><Skeleton className="h-8 w-8 mx-auto" /></TableCell>
                                                 </TableRow>
                                             ))
-                                        ) : filteredReports.map((item) => (
+                                        ) : filteredReports.length > 0 ? filteredReports.map((item) => (
                                             <TableRow key={item.uid} className="hover:bg-muted/20 transition-colors">
                                                 <TableCell className="text-center font-medium">{item.no}</TableCell>
                                                 <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{item.name}</span><span className="text-xs text-muted-foreground">{item.nip}</span></div></TableCell>
@@ -179,12 +173,28 @@ export default function SchoolReportPage() {
                                                 <TableCell className="text-center font-bold">{item.persentase}</TableCell>
                                                 <TableCell className="text-center">
                                                     <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link href={`/dashboard/laporan/${item.uid}`}><Eye className="mr-2 h-4 w-4" /> Detail</Link></DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem><Edit className="mr-2 h-4 w-4" /> Perbaiki</DropdownMenuItem></DropdownMenuContent>
+                                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Search className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem asChild>
+                                                                <Link href={`/dashboard/laporan/${item.uid}`} className="cursor-pointer flex items-center">
+                                                                    <Eye className="mr-2 h-4 w-4" /> Detail Kehadiran
+                                                                </Link>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem className="cursor-pointer flex items-center">
+                                                                <FileText className="mr-2 h-4 w-4 text-red-500" /> Unduh Laporan (PDF)
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
                                             </TableRow>
-                                        ))}
+                                        )) : (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                                                    Tidak ada data kehadiran untuk ditampilkan.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
                                     </TableBody>
                                 </Table>
                             </div>
@@ -192,7 +202,6 @@ export default function SchoolReportPage() {
                     </CardContent>
                 </Card>
             </div>
-            {isEditModalOpen && editingUser && <EditAttendanceModal user={editingUser} month={currentMonth} isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} currentUser={user} />}
         </div>
     );
 }
