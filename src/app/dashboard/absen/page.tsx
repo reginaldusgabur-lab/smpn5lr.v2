@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -246,14 +245,14 @@ export default function AbsenPage() {
             </div>
         )}
 
-        {/* Transparent Overlay Instructions - Presisi & Tinggi */}
-        <div className="absolute top-10 left-0 right-0 z-10 px-8 text-center pointer-events-none">
-            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Arahkan Kamera</h2>
-            <p className="text-white/80 text-xs drop-shadow-md">Pastikan QR Code berada di dalam kotak pemindaian.</p>
+        {/* Transparent Overlay Instructions - Posisi Atas & Presisi */}
+        <div className="absolute top-8 left-0 right-0 z-10 px-8 text-center pointer-events-none transition-all">
+            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-lg">Arahkan Kamera</h2>
+            <p className="text-white/90 text-xs drop-shadow-md max-w-[200px] mx-auto">Pastikan QR Code berada di dalam kotak pemindaian.</p>
         </div>
 
-        {/* Scan Guide UI */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center p-12 pointer-events-none pb-24">
+        {/* Scan Guide UI - Area Tengah */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">
             <div className="relative w-full aspect-square max-w-[280px]">
                 <div className={cn("absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
                 <div className={cn("absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 rounded-tr-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
@@ -273,7 +272,7 @@ export default function AbsenPage() {
         </div>
 
         {/* Branding Overlay */}
-        <div className="absolute bottom-24 left-0 right-0 z-10 text-center pointer-events-none">
+        <div className="absolute bottom-20 left-0 right-0 z-10 text-center pointer-events-none">
             <p className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-bold italic flex items-center justify-center gap-2">
                 <Sparkles className="w-3 h-3" /> E-SPENLI Digital Attendance
             </p>
