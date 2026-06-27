@@ -263,7 +263,7 @@ export default function UserReportDetailPage() {
         const margin = 14;
         const monthName = format(currentMonth, 'MMMM yyyy', { locale: id });
         const config = schoolConfigData || ({} as any);
-        const academicYearText = config.academicYear ? ` Tahun Ajaran ${config.academicYear}` : '';
+        const academicYearText = config.academicYear ? ` TAHUN AJARAN ${config.academicYear}` : '';
 
         // Kop Surat - HANYA DI HALAMAN PERTAMA
         doc.setFont('times', 'bold').setFontSize(14);
@@ -278,15 +278,14 @@ export default function UserReportDetailPage() {
         doc.setLineWidth(0.8).line(margin, 43, pageWidth - margin, 43);
         doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
 
-        // Judul Laporan
+        // Updated Title: Remove separate Periode line and merge into Title
         doc.setFont('times', 'bold').setFontSize(14);
-        doc.text('LAPORAN KEHADIRAN INDIVIDU', centerX, 58, { align: 'center' });
-        doc.setFontSize(12);
-        doc.text(`Periode: ${monthName}${academicYearText}`, centerX, 65, { align: 'center' });
+        const titleText = `LAPORAN KEHADIRAN INDIVIDU BULAN ${monthName.toUpperCase()}${academicYearText.toUpperCase()}`;
+        doc.text(titleText, centerX, 58, { align: 'center' });
 
         // Info User
         doc.setFontSize(10).setFont('times', 'normal');
-        let currentY = 78;
+        let currentY = 75; // Adjusted Y since Periode line is gone
         doc.text(`Nama`, margin, currentY);
         doc.text(`: ${userData.name}`, margin + 35, currentY);
         currentY += 6;

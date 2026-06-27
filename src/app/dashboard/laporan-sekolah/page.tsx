@@ -131,7 +131,7 @@ export default function SchoolReportPage() {
             let currentY = 20;
 
             const config = schoolConfigData || ({} as any);
-            const academicYearText = config.academicYear ? ` Tahun Ajaran ${config.academicYear}` : '';
+            const academicYearText = config.academicYear ? ` TAHUN AJARAN ${config.academicYear}` : '';
 
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, currentY, { align: 'center' });
@@ -148,11 +148,10 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.2).line(margin, currentY + 0.8, pageWidth - margin, currentY + 0.8);
             currentY += 15;
 
+            // Updated Title: Merge Periode and Academic Year
             doc.setFont('times', 'bold').setFontSize(14);
-            doc.text('LAPORAN KEHADIRAN INDIVIDU', centerX, currentY, { align: 'center' });
-            currentY += 7;
-            doc.setFontSize(12);
-            doc.text(`Periode: ${monthName}${academicYearText}`, centerX, currentY, { align: 'center' });
+            const titleText = `LAPORAN KEHADIRAN INDIVIDU BULAN ${monthName.toUpperCase()}${academicYearText.toUpperCase()}`;
+            doc.text(titleText, centerX, currentY, { align: 'center' });
             currentY += 12;
 
             doc.setFontSize(10).setFont('times', 'normal');
@@ -243,7 +242,7 @@ export default function SchoolReportPage() {
             let finalY = 20;
 
             const config = schoolConfigData || ({} as any);
-            const academicYearText = config.academicYear ? ` Tahun Ajaran ${config.academicYear}` : '';
+            const academicYearText = config.academicYear ? ` TAHUN AJARAN ${config.academicYear}` : '';
             const instansi = (config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase();
             const dinas = (config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase();
             const sekolah = (config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase();
@@ -264,11 +263,10 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.2).line(margin, finalY + 0.8, pageWidth - margin, finalY + 0.8);
             finalY += 15;
 
+            // Updated Title: Merge Periode and Academic Year
             doc.setFont('times', 'bold').setFontSize(14);
-            doc.text('LAPORAN KEHADIRAN', centerX, finalY, { align: 'center' });
-            finalY += 7;
-            doc.setFontSize(12);
-            doc.text(`Periode: ${monthName}${academicYearText}`, centerX, finalY, { align: 'center' });
+            const titleText = `LAPORAN KEHADIRAN BULAN ${monthName.toUpperCase()}${academicYearText.toUpperCase()}`;
+            doc.text(titleText, centerX, finalY, { align: 'center' });
             finalY += 12;
 
             const tableRows = filteredReports.map((item, index) => [
