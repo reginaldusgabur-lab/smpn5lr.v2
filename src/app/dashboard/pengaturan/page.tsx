@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, BellRing } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, BellRing, Sparkles } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -417,8 +417,8 @@ export default function PengaturanPage() {
             <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="font-bold text-sm tracking-tight">Pemberitahuan Sistem</CardTitle>
-                        <CardDescription className="text-muted-foreground font-medium">Buat pengumuman pop-up yang akan muncul di layar semua pengguna.</CardDescription>
+                        <CardTitle className="font-bold text-sm tracking-tight">Pengumuman & Kutipan Hari Ini</CardTitle>
+                        <CardDescription className="text-muted-foreground font-medium">Buat pesan khusus atau kutipan motivasi yang akan muncul di layar semua pengguna.</CardDescription>
                     </div>
                     <div className="flex items-center space-x-2">
                         <Label htmlFor="notification-active" className="text-xs font-bold">Aktifkan</Label>
@@ -428,18 +428,18 @@ export default function PengaturanPage() {
             </CardHeader>
             <CardContent className="grid gap-4 pt-6">
                 <div className="space-y-2">
-                    <Label htmlFor="notif-title" className="text-xs font-bold ml-1">Judul Pemberitahuan</Label>
-                    <Input id="notif-title" className="h-11 rounded-xl bg-muted/30" value={notificationTitle} onChange={e => setNotificationTitle(e.target.value)} placeholder="Contoh: Pengumuman Rapat Dinas" />
+                    <Label htmlFor="notif-title" className="text-xs font-bold ml-1">Judul Pesan</Label>
+                    <Input id="notif-title" className="h-11 rounded-xl bg-muted/30" value={notificationTitle} onChange={e => setNotificationTitle(e.target.value)} placeholder="Contoh: Kutipan Hari Ini / Pengumuman Penting" />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="notif-content" className="text-xs font-bold ml-1">Isi Pemberitahuan</Label>
-                    <Textarea id="notif-content" className="rounded-xl bg-muted/30 min-h-[100px]" value={notificationContent} onChange={e => setNotificationContent(e.target.value)} placeholder="Tuliskan isi pengumuman di sini..." />
+                    <Label htmlFor="notif-content" className="text-xs font-bold ml-1">Isi Pesan / Kutipan</Label>
+                    <Textarea id="notif-content" className="rounded-xl bg-muted/30 min-h-[100px]" value={notificationContent} onChange={e => setNotificationContent(e.target.value)} placeholder="Tuliskan isi pengumuman atau kutipan motivasi di sini..." />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="notif-interval" className="text-xs font-bold ml-1">Jeda Muncul (Detik)</Label>
                     <div className="flex items-center gap-4">
                         <Input id="notif-interval" type="number" min="0" max="60" className="h-11 rounded-xl bg-muted/30 w-32" value={notificationInterval} onChange={e => setNotificationInterval(Number(e.target.value))} />
-                        <p className="text-[10px] text-muted-foreground font-medium italic">Waktu tunggu notifikasi muncul setelah pengguna masuk ke dashboard.</p>
+                        <p className="text-[10px] text-muted-foreground font-medium italic">Waktu tunggu pesan muncul setelah pengguna masuk ke dashboard.</p>
                     </div>
                 </div>
             </CardContent>
@@ -447,7 +447,7 @@ export default function PengaturanPage() {
                 <Button onClick={handleNotificationSettingsSave} className="font-bold rounded-xl h-11 shadow-sm" disabled={isNotificationSaving}>
                   <span className="flex items-center justify-center">
                     {isNotificationSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Simpan Pemberitahuan
+                    Simpan & Aktifkan
                   </span>
                 </Button>
             </CardFooter>
