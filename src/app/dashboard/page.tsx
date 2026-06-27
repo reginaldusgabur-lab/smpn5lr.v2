@@ -112,7 +112,7 @@ export default function DashboardPage() {
   return (
     <div className="w-full space-y-6 pb-10 flex flex-col items-stretch">
         <div className="w-full px-0">
-            <p className="text-base text-muted-foreground font-medium">Selamat Datang</p>
+            <p className="text-base text-muted-foreground font-medium">Selamat datang</p>
             <h1 className="text-2xl font-black tracking-tight text-foreground mt-0.5 leading-tight">
                 {user?.name || 'Pengguna'}
             </h1>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
                     <CardHeader className="p-4 pb-0 flex flex-row items-center gap-2">
                         <Clock className="w-4 h-4 text-primary" />
                         <CardTitle className="text-xs font-bold text-muted-foreground">
-                            Kehadiran Anda Hari Ini
+                            Kehadiran Anda hari ini
                         </CardTitle>
                     </CardHeader>
                     
@@ -158,15 +158,15 @@ export default function DashboardPage() {
                         <div className="flex flex-col items-stretch gap-3">
                             {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
                                 <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-sm">
-                                    <Link href="/dashboard/absen">Absen Pulang Sekarang</Link>
+                                    <Link href="/dashboard/absen">Absen pulang sekarang</Link>
                                 </Button>
                             ) : !todaysAttendance?.[0]?.checkInTime ? (
                                 <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-sm">
-                                    <Link href="/dashboard/absen">Absen Masuk Sekarang</Link>
+                                    <Link href="/dashboard/absen">Absen masuk sekarang</Link>
                                 </Button>
                             ) : (
                                 <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm">
-                                    <Sparkles className="mr-2 w-4 h-4" /> Absensi Selesai
+                                    <Sparkles className="mr-2 w-4 h-4" /> Absensi selesai
                                 </div>
                             )}
 
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                     <CardHeader className="p-4 pb-0">
                         <div className="flex items-center justify-between">
                             <h2 className="flex items-center gap-2 text-xs font-bold text-foreground">
-                                <TrendingUp size={14} className="text-primary" /> Ringkasan Bulanan
+                                <TrendingUp size={14} className="text-primary" /> Ringkasan bulanan
                             </h2>
                             <p className="text-[10px] text-muted-foreground font-bold">
                                 Skor: <span className="text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>

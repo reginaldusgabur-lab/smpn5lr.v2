@@ -51,7 +51,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('Invalid Data Format');
         }
       } catch (e: any) {
-        // Silent error to prevent console spam as requested
+        // Silent error to prevent console spam
         setError(true);
       } finally {
         setIsLoading(false);
@@ -66,7 +66,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
     <div className="mt-6 pt-4 border-t border-primary/10">
       <div className="flex items-center justify-center text-xs font-bold mb-3 text-primary/70">
         <Sparkles className="h-3.5 w-3.5 mr-2" />
-        Motivasi Hari Ini
+        Motivasi hari ini
       </div>
       <div className="text-center text-sm min-h-[60px] flex items-center justify-center px-2">
         {isLoading ? (
