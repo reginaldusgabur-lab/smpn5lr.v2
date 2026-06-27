@@ -6,7 +6,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, getDocs, query, where, doc } from 'firebase/firestore';
 import { format, isValid, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Download, AlertCircle, FileText, FileSpreadsheet, Loader2, Edit, Eye, Search, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, AlertCircle, FileText, FileSpreadsheet, Loader2, Edit, Eye, Search, Filter, ChevronDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -378,22 +378,25 @@ export default function SchoolReportPage() {
                         {/* --- Section 1: Navigation & Filters --- */}
                         <div className="p-4 space-y-6">
                             {/* Month Nav */}
-                            <div className="flex items-center justify-center gap-4 py-2">
-                                <Button variant="outline" size="icon" onClick={() => changeMonth(-1)} disabled={currentMonth.getFullYear() === 2026 && currentMonth.getMonth() === 0}>
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <span className="w-40 text-center font-bold text-lg">{monthName}</span>
-                                <Button variant="outline" size="icon" onClick={() => changeMonth(1)} disabled={currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear()}>
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
+                            <div className="flex flex-col items-center justify-center gap-4 py-2">
+                                <div className="flex items-center gap-4">
+                                    <Button variant="outline" size="icon" onClick={() => changeMonth(-1)} disabled={currentMonth.getFullYear() === 2026 && currentMonth.getMonth() === 0}>
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <span className="w-40 text-center font-bold text-lg">{monthName}</span>
+                                    <Button variant="outline" size="icon" onClick={() => changeMonth(1)} disabled={currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear()}>
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <div className="w-full h-px bg-border mt-2" />
                             </div>
                             
-                            {/* Search & Role Filter */}
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                <div className="md:col-span-4 space-y-2">
-                                    <label className="text-sm font-medium flex items-center gap-2"><Filter className="h-4 w-4" />Filter Peran</label>
+                            {/* Search & Role Filter (Compact Design) */}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                <div className="md:col-span-4">
                                     <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                        <SelectTrigger className="w-full bg-background">
+                                        <SelectTrigger className="w-full bg-background pl-10 relative">
+                                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                             <SelectValue placeholder="Pilih Peran" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -404,9 +407,15 @@ export default function SchoolReportPage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="md:col-span-5 space-y-2">
-                                    <label className="text-sm font-medium flex items-center gap-2"><Search className="h-4 w-4" />Cari Nama</label>
-                                    <Input type="search" placeholder="Masukkan nama..." className="w-full bg-background" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                <div className="md:col-span-5 relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input 
+                                        type="search" 
+                                        placeholder="Cari nama..." 
+                                        className="w-full bg-background pl-10" 
+                                        value={searchTerm} 
+                                        onChange={(e) => setSearchTerm(e.target.value)} 
+                                    />
                                 </div>
                                 <div className="md:col-span-3">
                                     {user.role === 'admin' && (
