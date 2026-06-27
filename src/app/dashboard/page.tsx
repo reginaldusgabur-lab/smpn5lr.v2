@@ -6,7 +6,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock } from 'lucide-react';
+import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -117,26 +117,29 @@ export default function DashboardPage() {
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
 
+    // Disabled Blue style class
+    const disabledStyle = "w-full bg-primary/5 text-primary/40 border border-primary/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none";
+
     if (windowStatus === 'LOADING' || isAttendanceLoading) {
-        return <Button disabled className="w-full h-12 rounded-xl"><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat...</Button>;
+        return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat data...</div>;
     }
 
     if (windowStatus === 'SESSION_INACTIVE') {
-        return <Button disabled variant="secondary" className="w-full h-12 rounded-xl"><Lock className="mr-2 h-4 w-4" /> Sistem Nonaktif / Hari Libur</Button>;
+        return <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm"><Lock className="mr-2 h-4 w-4" /> Sistem nonaktif / Hari libur</div>;
     }
 
     if (isCheckedOut) {
-        return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-black rounded-xl h-12 flex items-center justify-center text-sm uppercase tracking-wide"><Sparkles className="mr-2 w-4 h-4" /> Absensi Selesai</div>;
+        return <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-black rounded-xl h-12 flex items-center justify-center text-sm uppercase tracking-wide"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
     }
 
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') {
-            return <Button disabled variant="outline" className="w-full h-12 rounded-xl"><Clock className="mr-2 h-4 w-4" /> Belum Waktu Jam Masuk</Button>;
+            return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
         }
         if (windowStatus === 'CHECK_IN_OPEN') {
             return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Masuk Sekarang</Link></Button>;
         }
-        return <Button disabled variant="destructive" className="w-full h-12 rounded-xl">Batas Jam Masuk Berakhir</Button>;
+        return <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
     }
 
     // Already checked in
@@ -144,10 +147,10 @@ export default function DashboardPage() {
         return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang Sekarang</Link></Button>;
     }
     if (windowStatus === 'AFTER_IN' || windowStatus === 'CHECK_IN_OPEN') {
-        return <Button disabled variant="outline" className="w-full h-12 rounded-xl"><Clock className="mr-2 h-4 w-4" /> Belum Waktu Jam Pulang</Button>;
+        return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam pulang</div>;
     }
     
-    return <Button disabled variant="destructive" className="w-full h-12 rounded-xl">Waktu Absen Pulang Berakhir</Button>;
+    return <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Waktu absen pulang berakhir</div>;
   };
 
   return (
