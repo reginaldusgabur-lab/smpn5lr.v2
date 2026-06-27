@@ -112,6 +112,7 @@ export default function SchoolReportPage() {
         try {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
             const centerX = pageWidth / 2;
             const margin = 14;
             let finalY = 20;
@@ -122,24 +123,21 @@ export default function SchoolReportPage() {
             const sekolah = (config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase();
             const alamat = config.address || 'Alamat Sekolah';
 
-            // Kop Surat - Instansi & Dinas (14pt Bold) - LEBIH BESAR
+            // Kop Surat - HANYA DI HALAMAN PERTAMA
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text(instansi, centerX, finalY, { align: 'center' });
             finalY += 7;
             doc.text(dinas, centerX, finalY, { align: 'center' });
             finalY += 7;
             
-            // Nama Sekolah (12pt Bold) - LEBIH KECIL
             doc.setFontSize(12);
             doc.text(sekolah, centerX, finalY, { align: 'center' });
             finalY += 5;
             
-            // Alamat (9pt Normal)
             doc.setFont('times', 'normal').setFontSize(9);
             doc.text(`Alamat: ${alamat}`, centerX, finalY, { align: 'center' });
             finalY += 4;
             
-            // Garis Ganda Pembatas Header
             doc.setLineWidth(0.8).line(margin, finalY, pageWidth - margin, finalY);
             doc.setLineWidth(0.2).line(margin, finalY + 0.8, pageWidth - margin, finalY + 0.8);
             finalY += 15;
@@ -183,23 +181,29 @@ export default function SchoolReportPage() {
                     halign: 'center', 
                     fontStyle: 'bold',
                     fontSize: 10,
-                    lineWidth: 0 // Menghilangkan garis batas di bagian judul
+                    lineWidth: 0
                 },
                 columnStyles: {
                     0: { halign: 'center', cellWidth: 10 },
                     1: { halign: 'left', cellWidth: 45 },
                     2: { halign: 'left', cellWidth: 35 },
                     3: { halign: 'center', cellWidth: 20 },
-                    4: { halign: 'center', cellWidth: 12 }, // H
-                    5: { halign: 'center', cellWidth: 12 }, // I
-                    6: { halign: 'center', cellWidth: 12 }, // S
-                    7: { halign: 'center', cellWidth: 12 }, // A
-                    8: { halign: 'center', cellWidth: 22 }, // Persen
+                    4: { halign: 'center', cellWidth: 12 },
+                    5: { halign: 'center', cellWidth: 12 },
+                    6: { halign: 'center', cellWidth: 12 },
+                    7: { halign: 'center', cellWidth: 12 },
+                    8: { halign: 'center', cellWidth: 22 },
                 }
             });
 
-            const finalTableY = (doc as any).lastAutoTable.finalY;
+            let finalTableY = (doc as any).lastAutoTable.finalY;
             
+            // Cek sisa ruang untuk catatan dan tanda tangan agar tidak terpotong
+            if (finalTableY > pageHeight - 60) {
+                doc.addPage();
+                finalTableY = 20; // Mulai dari atas di halaman baru
+            }
+
             // Bagian Catatan (Legenda)
             let currentY = finalTableY + 10;
             doc.setFontSize(9).setFont('times', 'bold');
@@ -222,6 +226,29 @@ export default function SchoolReportPage() {
             doc.text(config.headmasterName || 'Kepala Sekolah', signatureX, currentY + 38);
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, currentY + 44);
+
+            // TAMBAHKAN FOOTER DI SETIAP HALAMAN
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.setLineWidth(0.2);
+                doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+                
+                doc.setFontSize(8).setFont('times', 'italic');
+                doc.text(
+                    'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.',
+                    margin,
+                    pageHeight - 10
+                );
+                
+                doc.setFontSize(9).setFont('times', 'normal');
+                doc.text(
+                    `Halaman ${i} dari ${totalPages}`,
+                    pageWidth - margin,
+                    pageHeight - 10,
+                    { align: 'right' }
+                );
+            }
 
             doc.save(`Laporan_Sekolah_${monthName.replace(' ', '_')}.pdf`);
             toast({ title: "Berhasil", description: "Laporan PDF berhasil diunduh." });
