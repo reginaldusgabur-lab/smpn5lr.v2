@@ -235,7 +235,7 @@ export default function AbsenPage() {
 
   return (
     <div className="fixed inset-0 z-40 bg-black overflow-hidden">
-        {/* Fullscreen Scanner Container - Covers everything but Bottom Nav */}
+        {/* Fullscreen Scanner Container */}
         {(showScanner || isCameraInitializing) && (
             <div className="absolute inset-0">
                 <div id={readerId} className="w-full h-full" />
@@ -246,15 +246,15 @@ export default function AbsenPage() {
             </div>
         )}
 
-        {/* Transparent Overlay Instructions - Positioned higher, completely transparent bg */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-10 pt-16 text-center pointer-events-none bg-black/20">
-            <h2 className="text-white text-xl font-bold mb-2">Arahkan Kamera</h2>
-            <p className="text-white/80 text-sm">Pastikan QR Code berada di dalam kotak pemindaian.</p>
+        {/* Transparent Overlay Instructions - Presisi & Tinggi */}
+        <div className="absolute top-10 left-0 right-0 z-10 px-8 text-center pointer-events-none">
+            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Arahkan Kamera</h2>
+            <p className="text-white/80 text-xs drop-shadow-md">Pastikan QR Code berada di dalam kotak pemindaian.</p>
         </div>
 
         {/* Scan Guide UI */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center p-8 pointer-events-none pb-24">
-            <div className="relative w-full aspect-square max-w-[320px]">
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-12 pointer-events-none pb-24">
+            <div className="relative w-full aspect-square max-w-[280px]">
                 <div className={cn("absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
                 <div className={cn("absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 rounded-tr-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
                 <div className={cn("absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 rounded-bl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
