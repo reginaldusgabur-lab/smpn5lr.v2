@@ -5,6 +5,16 @@ import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfD
 import type { Firestore } from 'firebase/firestore';
 import { id } from 'date-fns/locale';
 
+export interface MonthlyReportData {
+    id: string;
+    date: string;
+    checkInTime: string | null;
+    checkOutTime: string | null;
+    status: string;
+    description: string;
+    manualEntry: boolean;
+}
+
 // --- DASHBOARD STATS FUNCTION ---
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
@@ -194,7 +204,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     }).length;
     
     const totalWorkingDays = effectiveWorkingDays.length;
-    const adjustedWorkingDays = totalWorkingDays - (izinCount + sakitCount);
+    const adjustedWorkingDays = totalWorkingDays > 0 ? (totalWorkingDays - (izinCount + sakitCount)) : 0;
 
     const percentageRaw = adjustedWorkingDays > 0 ? (hadirScore / adjustedWorkingDays) * 100 : 0;
     const finalPercentage = Math.min(percentageRaw, 100);
@@ -257,41 +267,25 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         
         const attendanceRecord = attendanceMap.get(dayStr);
         if (attendanceRecord) {
-            const checkInTime = attendanceRecord.checkInTime.toDate();
-            const checkOutTime = attendanceRecord.checkOutTime?.toDate();
-            let description;
+            let checkInTime = attendanceRecord.checkInTime.toDate();
+            let checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
+            let description = attendanceRecord.reasonForUpdate || 'Kehadiran Penuh';
 
-            if (attendanceRecord.manualEntry) {
-                const rawReason = attendanceRecord.reasonForUpdate;
-                if (rawReason && (rawReason.includes('Alpa') || rawReason.includes('Input oleh Admin'))) {
-                    description = 'Kehadiran Penuh';
-                } else {
-                    description = rawReason || 'Kehadiran Penuh';
-                }
-            } else { 
-                if (checkOutTime) {
-                    if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
-                        const [endH, endM] = schoolConfig.checkInEndTime.split(':').map(Number);
-                        const checkInDeadline = new Date(checkInTime); checkInDeadline.setHours(endH, endM, 0, 0);
-                        description = isBefore(checkInTime, checkInDeadline) ? 'Kehadiran Penuh' : 'Terlambat';
-                    } else {
-                        description = 'Kehadiran Penuh';
-                    }
-                } else {
-                    const leaveRecord = leaveMap.get(dayStr);
-                    if (leaveRecord && leaveRecord.type === 'Pulang Cepat') {
-                        description = 'Pulang Cepat (Disetujui)';
-                    } else {
-                        description = isBefore(day, today) ? 'Tidak Absen Pulang' : 'Belum Absen Pulang';
-                    }
-                }
+            // LOGIKA REEL: Jika status "Terlambat", Masuk dianggap tidak ada (instruksi: "hanya isi waktu jam pulang saja")
+            if (description === 'Terlambat') {
+                checkInTime = null; 
+            }
+
+            // LOGIKA REEL: Jika status "Pulang Cepat", Pulang dianggap tidak ada (instruksi: "jam pulang kosong")
+            if (description === 'Pulang Cepat') {
+                checkOutTime = null;
             }
 
             return {
                 id: attendanceRecord.id,
                 date: day,
                 checkInTime: checkInTime,
-                checkOutTime: checkOutTime || null,
+                checkOutTime: checkOutTime,
                 status: 'Hadir',
                 description: description,
                 manualEntry: attendanceRecord.manualEntry || false,
@@ -301,21 +295,13 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const leaveRecord = leaveMap.get(dayStr);
         const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
         if (leaveRecord && isWorkingDay && leaveRecord.type !== 'Pulang Cepat') {
-            let cleanDescription = leaveRecord.reason || leaveRecord.type;
-            if (typeof cleanDescription === 'string') {
-                cleanDescription = cleanDescription.replace('(diubah oleh Admin)', '').trim();
-                if (!cleanDescription) {
-                    cleanDescription = leaveRecord.type;
-                }
-            }
-            
             return {
                 id: `${leaveRecord.id}-${dayStr}`,
                 date: day,
                 checkInTime: null,
                 checkOutTime: null,
                 status: leaveRecord.type, 
-                description: cleanDescription,
+                description: leaveRecord.reason || leaveRecord.type,
             };
         }
 

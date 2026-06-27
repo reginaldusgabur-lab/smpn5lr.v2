@@ -38,6 +38,19 @@ const safeFormat = (dateInput: any, formatString: string): string => {
     return isValid(date) ? format(date, formatString, { locale: id }) : '-';
 };
 
+const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string): Date => {
+    const [startH, startM] = startTimeStr.split(':').map(Number);
+    const [endH, endM] = endTimeStr.split(':').map(Number);
+    const startDate = new Date(baseDate.getTime());
+    startDate.setHours(startH, startM, 0, 0);
+    const endDate = new Date(baseDate.getTime());
+    endDate.setHours(endH, endM, 0, 0);
+    const randomTimestamp = startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime());
+    const res = new Date(randomTimestamp);
+    res.setSeconds(Math.floor(Math.random() * 60));
+    return res;
+};
+
 export default function UserReportDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -83,7 +96,6 @@ export default function UserReportDetailPage() {
         setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
     };
 
-    // LOGIKA FITUR KEMBALI: Mengubah status Alpa
     const handleStatusChange = async (dateStr: string, newStatus: string, reason: string) => {
         if (!currentUser || !firestore || isMutating) return;
         setIsMutating(true);
@@ -91,25 +103,46 @@ export default function UserReportDetailPage() {
             const targetDate = parseISO(dateStr);
             const batch = writeBatch(firestore);
             
-            const leaveRef = collection(firestore, 'users', userId, 'leaveRequests');
-            const newLeaveDoc = doc(leaveRef);
-            
-            batch.set(newLeaveDoc, {
-                userId,
-                type: newStatus,
-                status: 'approved',
-                reason: `${reason} (diubah oleh Admin)`,
-                startDate: Timestamp.fromDate(startOfDay(targetDate)),
-                endDate: Timestamp.fromDate(endOfDay(targetDate)),
-                createdAt: serverTimestamp(),
-                approvedBy: currentUser.uid,
-                approvedAt: serverTimestamp(),
-                createdBy: currentUser.uid,
-            });
+            if (newStatus === 'Pulang Cepat') {
+                // Untuk Pulang Cepat, kita buat record kehadiran dengan Masuk reel tapi Pulang kosong
+                const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
+                const newDoc = doc(attendanceRef);
+                
+                const inStart = schoolConfigData?.checkInStartTime || '07:00';
+                const inEnd = schoolConfigData?.checkInEndTime || '07:30';
+                const realInTime = getRandomTime(targetDate, inStart, inEnd);
+
+                batch.set(newDoc, {
+                    userId,
+                    date: dateStr,
+                    checkInTime: Timestamp.fromDate(realInTime),
+                    checkOutTime: null, // Kosong sesuai instruksi
+                    manualEntry: true,
+                    reasonForUpdate: 'Pulang Cepat',
+                    updatedBy: currentUser.uid,
+                    updatedAt: serverTimestamp()
+                });
+            } else {
+                const leaveRef = collection(firestore, 'users', userId, 'leaveRequests');
+                const newLeaveDoc = doc(leaveRef);
+                
+                batch.set(newLeaveDoc, {
+                    userId,
+                    type: newStatus,
+                    status: 'approved',
+                    reason: reason,
+                    startDate: Timestamp.fromDate(startOfDay(targetDate)),
+                    endDate: Timestamp.fromDate(endOfDay(targetDate)),
+                    createdAt: serverTimestamp(),
+                    approvedBy: currentUser.uid,
+                    approvedAt: serverTimestamp(),
+                    createdBy: currentUser.uid,
+                });
+            }
 
             await batch.commit();
             toast({ title: 'Berhasil', description: `Status berhasil diubah menjadi ${newStatus}.` });
-            fetchData(); // Refresh data
+            fetchData();
         } catch (err) {
             toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan saat mengubah status.' });
         } finally {
@@ -117,7 +150,6 @@ export default function UserReportDetailPage() {
         }
     };
 
-    // LOGIKA FITUR KEMBALI: Jadikan Terlambat (Manual Entry)
     const handleSetLate = async (dateStr: string) => {
         if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
         setIsMutating(true);
@@ -125,7 +157,10 @@ export default function UserReportDetailPage() {
             const targetDate = parseISO(dateStr);
             const [endH, endM] = (schoolConfigData.checkInEndTime || '08:00').split(':').map(Number);
             const lateTime = new Date(targetDate);
-            lateTime.setHours(endH, endM + 5, 0); // Set 5 menit setelah jam masuk selesai
+            lateTime.setHours(endH, endM + 15, 0); // 15 menit terlambat
+
+            const [outStart, outEnd] = [schoolConfigData.checkOutStartTime || '14:00', schoolConfigData.checkOutEndTime || '15:00'];
+            const realOutTime = getRandomTime(targetDate, outStart, outEnd);
 
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const newDoc = doc(attendanceRef);
@@ -135,8 +170,9 @@ export default function UserReportDetailPage() {
                     userId,
                     date: dateStr,
                     checkInTime: Timestamp.fromDate(lateTime),
+                    checkOutTime: Timestamp.fromDate(realOutTime), // Terlambat tetap ada jam pulang agar reel
                     manualEntry: true,
-                    reasonForUpdate: 'Ditandai Terlambat oleh Admin',
+                    reasonForUpdate: 'Terlambat',
                     updatedBy: currentUser.uid,
                     updatedAt: serverTimestamp()
                 })
