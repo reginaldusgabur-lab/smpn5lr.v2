@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from "react";
-import { useDoc } from "../firebase/firestore/use-doc.tsx";
+import { useDoc } from "../firebase/firestore/use-doc";
 import { useUser, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 
@@ -20,14 +20,17 @@ export interface SchoolConfig {
   checkOutStartTime?: string;
   checkOutEndTime?: string;
   dailyCheckOutTimes?: Record<string, { start: string, end: string }>;
+  offDays?: number[];
 }
 
 export type AttendanceWindowStatus =
-  | "LOADING"          // Keadaan awal, menunggu konfigurasi.
-  | "SESSION_INACTIVE" // Sistem absensi dinonaktifkan secara manual oleh admin.
-  | "CHECK_IN_OPEN"    // Jendela absen masuk sedang terbuka.
-  | "CHECK_OUT_OPEN"   // Jendela absen pulang sedang terbuka.
-  | "CLOSED";          // Di luar jendela waktu yang ditentukan.
+  | "LOADING"          // Keadaan awal
+  | "SESSION_INACTIVE" // Dinonaktifkan manual atau hari libur
+  | "BEFORE_IN"        // Belum jam masuk
+  | "CHECK_IN_OPEN"    // Jendela masuk terbuka
+  | "AFTER_IN"         // Batas jam masuk berakhir (sebelum jam pulang)
+  | "CHECK_OUT_OPEN"   // Jendela pulang terbuka
+  | "CLOSED";          // Sesi hari ini berakhir
 
 export const useAttendanceWindow = () => {
   const [status, setStatus] = useState<AttendanceWindowStatus>("LOADING");
@@ -50,60 +53,47 @@ export const useAttendanceWindow = () => {
       return;
     }
 
-    // Kasus 1: Dokumen konfigurasi tidak ada sama sekali.
-    if (!config) {
+    if (!config || config.isAttendanceActive === false) {
       setStatus("SESSION_INACTIVE"); 
       return;
     }
 
-    // Kasus 2: Admin telah menonaktifkan sistem absensi secara manual.
-    if (config.isAttendanceActive === false) {
-      setStatus("SESSION_INACTIVE");
-      return;
-    }
-
-    const parseTime = (timeStr: string): Date => {
-      const now = new Date();
-      const [hours, minutes] = timeStr.split(":").map(Number);
-      now.setHours(hours, minutes, 0, 0);
-      return now;
-    };
-
     const checkStatus = () => {
         const now = new Date();
-        const dayOfWeek = now.getDay().toString();
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+        const dayOfWeek = now.getDay();
+        
+        // Cek hari libur rutin
+        const offDays = config.offDays ?? [0, 6];
+        if (offDays.includes(dayOfWeek)) {
+            setStatus("SESSION_INACTIVE");
+            return;
+        }
 
-        // Kasus 3: Admin mematikan validasi waktu. Sesi dianggap selalu terbuka.
         if (config.useTimeValidation === false) {
             setStatus("CHECK_IN_OPEN");
             return;
         }
 
-        // Kasus 4: Validasi waktu aktif. Periksa jadwal.
-        // Pick daily check-out time if available, otherwise global default
-        const dailyOut = config.dailyCheckOutTimes?.[dayOfWeek];
-        const checkinStartStr = config.checkInStartTime;
-        const checkinEndStr = config.checkInEndTime;
-        const checkoutStartStr = dailyOut?.start || config.checkOutStartTime;
-        const checkoutEndStr = dailyOut?.end || config.checkOutEndTime;
+        const parseToMinutes = (timeStr: string) => {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        };
 
-        if (
-            !checkinStartStr || !checkinEndStr ||
-            !checkoutStartStr || !checkoutEndStr
-        ) {
-            setStatus("CLOSED");
-            console.warn("Konfigurasi jam absen (schoolConfig) belum lengkap di database.");
-            return;
-        }
+        const inStart = parseToMinutes(config.checkInStartTime || "00:00");
+        const inEnd = parseToMinutes(config.checkInEndTime || "23:59");
+        
+        const dailyOut = config.dailyCheckOutTimes?.[dayOfWeek.toString()];
+        const outStart = parseToMinutes(dailyOut?.start || config.checkOutStartTime || "00:00");
+        const outEnd = parseToMinutes(dailyOut?.end || config.checkOutEndTime || "23:59");
 
-        const checkinStart = parseTime(checkinStartStr);
-        const checkinEnd = parseTime(checkinEndStr);
-        const checkoutStart = parseTime(checkoutStartStr);
-        const checkoutEnd = parseTime(checkoutEndStr);
-
-        if (now >= checkinStart && now <= checkinEnd) {
+        if (currentTime < inStart) {
+            setStatus("BEFORE_IN");
+        } else if (currentTime >= inStart && currentTime <= inEnd) {
             setStatus("CHECK_IN_OPEN");
-        } else if (now >= checkoutStart && now <= checkoutEnd) {
+        } else if (currentTime > inEnd && currentTime < outStart) {
+            setStatus("AFTER_IN");
+        } else if (currentTime >= outStart && currentTime <= outEnd) {
             setStatus("CHECK_OUT_OPEN");
         } else {
             setStatus("CLOSED");
@@ -111,7 +101,7 @@ export const useAttendanceWindow = () => {
     };
 
     checkStatus();
-    const intervalId = setInterval(checkStatus, 60000); // Periksa setiap menit.
+    const intervalId = setInterval(checkStatus, 30000); 
 
     return () => clearInterval(intervalId);
     

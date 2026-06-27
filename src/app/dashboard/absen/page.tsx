@@ -5,13 +5,14 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Html5Qrcode, Html5QrcodeCameraScanConfig } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
-import { X, Loader2, CameraOff, CalendarOff } from 'lucide-react';
+import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import QuoteOfTheDay from '@/components/layout/quote-of-the-day';
+import { useAttendanceWindow } from '@/hooks/use-attendance-window';
 
 // --- Helper Functions ---
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -37,6 +38,7 @@ export default function AbsenPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
+  const { status: windowStatus, config: schoolConfig } = useAttendanceWindow();
   
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isScannerReady, setIsScannerReady] = useState(false);
@@ -46,11 +48,6 @@ export default function AbsenPage() {
   // --- Firestore Data Hooks ---
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData } = useDoc(user, userDocRef);
-  const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
-  const { data: schoolConfig } = useDoc(user, schoolConfigRef);
-  const monthlyConfigId = useMemo(() => format(new Date(), 'yyyy-MM'), []);
-  const monthlyConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'monthlyConfigs', monthlyConfigId) : null, [firestore, monthlyConfigId]);
-  const { data: monthlyConfig } = useDoc(user, monthlyConfigRef);
   
   const todaysAttendanceQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -61,16 +58,9 @@ export default function AbsenPage() {
   const todaysRecord = useMemo(() => todaysAttendance?.[0], [todaysAttendance]);
 
   // --- Derived State ---
-  const isDataLoading = isUserLoading || isAttendanceLoading;
+  const isDataLoading = isUserLoading || isAttendanceLoading || windowStatus === 'LOADING';
   const isCameraInitializing = hasCameraPermission === null;
-  const isHoliday = useMemo(() => {
-    if (!schoolConfig) return false;
-    if (schoolConfig.isAttendanceActive === false) return true;
-    const today = new Date(), todayStr = format(today, 'yyyy-MM-dd');
-    if (monthlyConfig?.holidays?.includes(todayStr)) return true;
-    const offDays: number[] = schoolConfig.offDays ?? [0, 6];
-    return offDays.includes(today.getDay());
-  }, [schoolConfig, monthlyConfig]);
+  const isHoliday = windowStatus === 'SESSION_INACTIVE';
   const hasCompletedAttendance = useMemo(() => !!(todaysRecord?.checkInTime && todaysRecord?.checkOutTime), [todaysRecord]);
 
   const effectiveStatus: FeedbackStatus = useMemo(() => {
@@ -78,11 +68,12 @@ export default function AbsenPage() {
       if (isDataLoading) return 'idle';
       if (hasCompletedAttendance) return 'info_checked_out';
       if (isHoliday) return 'info_holiday';
+      if (windowStatus === 'BEFORE_IN' || windowStatus === 'AFTER_IN' || windowStatus === 'CLOSED') return 'error_time';
       if (hasCameraPermission === false) return 'info_no_camera';
       return 'idle';
-  }, [status, isDataLoading, hasCompletedAttendance, isHoliday, hasCameraPermission]);
+  }, [status, isDataLoading, hasCompletedAttendance, isHoliday, windowStatus, hasCameraPermission]);
 
-  const showScanner = !isDataLoading && hasCameraPermission && !isHoliday && !hasCompletedAttendance;
+  const showScanner = !isDataLoading && hasCameraPermission && !isHoliday && !hasCompletedAttendance && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
   const showLoader = isDataLoading || isCameraInitializing || (showScanner && !isScannerReady);
 
   // --- Core Functions ---
@@ -92,41 +83,13 @@ export default function AbsenPage() {
         setStatus('error_generic');
         return;
     }
-    setStatus('processing');
 
-    let isCheckInTime = false, isCheckOutTime = false;
-    if (schoolConfig.useTimeValidation) {
-        const now = new Date(), currentTime = now.getHours() * 60 + now.getMinutes();
-        const dayOfWeek = now.getDay().toString();
-        
-        // --- Schedule Windows ---
-        const inStart = schoolConfig.checkInStartTime || '00:00';
-        const inEnd = schoolConfig.checkInEndTime || '23:59';
-        
-        // Use daily check-out time if available, otherwise global default
-        const dailyOut = schoolConfig.dailyCheckOutTimes?.[dayOfWeek];
-        const outStart = dailyOut?.start || schoolConfig.checkOutStartTime || '00:00';
-        const outEnd = dailyOut?.end || schoolConfig.checkOutEndTime || '23:59';
-
-        const [inStartH, inStartM] = inStart.split(':').map(Number);
-        const checkInStartTime = inStartH * 60 + inStartM;
-        
-        const [inEndH, inEndM] = inEnd.split(':').map(Number);
-        const checkInEndTime = inEndH * 60 + inEndM;
-        
-        const [outStartH, outStartM] = outStart.split(':').map(Number);
-        const checkOutStartTime = outStartH * 60 + outStartM;
-        
-        const [outEndH, outEndM] = outEnd.split(':').map(Number);
-        const checkOutEndTime = outEndH * 60 + outEndM;
-
-        isCheckInTime = currentTime >= checkInStartTime && currentTime <= checkInEndTime;
-        isCheckOutTime = currentTime >= checkOutStartTime && currentTime <= checkOutEndTime;
-        
-        if (!isCheckInTime && !isCheckOutTime) return setStatus('error_time');
-    } else {
-        if (todaysRecord && !todaysRecord.checkOutTime) isCheckOutTime = true; else isCheckInTime = true;
+    if (windowStatus !== 'CHECK_IN_OPEN' && windowStatus !== 'CHECK_OUT_OPEN') {
+        setStatus('error_time');
+        return;
     }
+
+    setStatus('processing');
 
     try {
         let latitude: number | null = null, longitude: number | null = null;
@@ -149,9 +112,10 @@ export default function AbsenPage() {
         const now = new Date();
         const todayStr = format(now, 'yyyy-MM-dd');
 
-        if (isCheckInTime) {
+        if (windowStatus === 'CHECK_IN_OPEN') {
+            if (todaysRecord?.checkInTime) return setStatus('error_already_in');
+            
             if (todaysRecord) {
-                if (todaysRecord.checkInTime) return setStatus('error_already_in');
                 const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id);
                 await updateDoc(recordRef, { date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude });
                 setStatus('success_in');
@@ -159,14 +123,20 @@ export default function AbsenPage() {
                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
                 setStatus('success_in');
             }
-        } else if (isCheckOutTime) {
-            if (todaysRecord) {
-                if (todaysRecord.checkOutTime) return setStatus('error_already_out');
-                const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id);
-                await updateDoc(recordRef, { date: todayStr, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+        } else if (windowStatus === 'CHECK_OUT_OPEN') {
+            if (!todaysRecord?.checkInTime) {
+                // Allow check-out only if check-in exists OR if admin allows manual direct check-out (defaulting to error for accuracy)
+                if (!todaysRecord) {
+                    await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+                } else {
+                    const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id);
+                    await updateDoc(recordRef, { date: todayStr, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+                }
                 setStatus('success_out');
             } else {
-                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+                if (todaysRecord.checkOutTime) return setStatus('error_already_out');
+                const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id);
+                await updateDoc(recordRef, { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
                 setStatus('success_out');
             }
         }
@@ -174,7 +144,7 @@ export default function AbsenPage() {
         console.error("Attendance Error:", error);
         setStatus('error_generic');
     }
-}, [user, firestore, schoolConfig, todaysRecord]);
+}, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
   
   const statusRef = useRef(status); statusRef.current = status;
   const handleAttendanceRef = useRef(handleAttendance); handleAttendanceRef.current = handleAttendance;
@@ -235,7 +205,6 @@ export default function AbsenPage() {
 
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">
             <div className="relative w-full aspect-square max-w-[280px]">
-                {/* Gelombang Pemindai Gradasi Lembut (Soft Gradient Scan Wave) */}
                 {isScannerReady && (
                     <div className={cn(
                         "absolute left-1 right-1 h-20 transition-all duration-700 animate-scan-line z-20 pointer-events-none",
@@ -262,7 +231,7 @@ export default function AbsenPage() {
             <StatusFeedbackOverlay 
                 status={effectiveStatus} 
                 locationError={locationError} 
-                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') ? router.push('/dashboard') : setStatus('idle')} 
+                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') || effectiveStatus === 'error_time' || effectiveStatus === 'info_holiday' ? router.push('/dashboard') : setStatus('idle')} 
                 userData={userData} 
             />
         )}
@@ -303,13 +272,3 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData }: { s
         </div>
     );
 };
-
-const CheckCircle = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-);
-const MapPin = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-);
-const ClockIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock } from 'lucide-react';
+import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,6 +14,7 @@ import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 import { calculateAttendanceStats, getDailyStaffAttendanceStats } from '@/lib/attendance';
+import { useAttendanceWindow } from '@/hooks/use-attendance-window';
 import AbsentUsersTable from '@/components/dashboard/AbsentUsersTable';
 import RecentAttendanceTable from '@/components/dashboard/RecentAttendanceTable';
 
@@ -41,6 +43,7 @@ const LiveClockUI = () => {
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { status: windowStatus } = useAttendanceWindow();
 
   const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0 });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
@@ -106,9 +109,46 @@ export default function DashboardPage() {
   }
 
   const role = user?.role;
-  const isAdmin = role === 'admin';
   const isAdminOrKepsek = role === 'admin' || role === 'kepala_sekolah';
-  const isGuruOrPegawai = role === 'guru' || role === 'pegawai' || role === 'siswa' || role === 'kepala_sekolah';
+  const isStaff = role === 'guru' || role === 'pegawai' || role === 'siswa' || role === 'kepala_sekolah';
+
+  const renderAttendanceButton = () => {
+    const record = todaysAttendance?.[0];
+    const isCheckedIn = !!record?.checkInTime;
+    const isCheckedOut = !!record?.checkOutTime;
+
+    if (windowStatus === 'LOADING' || isAttendanceLoading) {
+        return <Button disabled className="w-full h-12 rounded-xl"><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat...</Button>;
+    }
+
+    if (windowStatus === 'SESSION_INACTIVE') {
+        return <Button disabled variant="secondary" className="w-full h-12 rounded-xl"><Lock className="mr-2 h-4 w-4" /> Sistem Nonaktif / Hari Libur</Button>;
+    }
+
+    if (isCheckedOut) {
+        return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-black rounded-xl h-12 flex items-center justify-center text-sm uppercase tracking-wide"><Sparkles className="mr-2 w-4 h-4" /> Absensi Selesai</div>;
+    }
+
+    if (!isCheckedIn) {
+        if (windowStatus === 'BEFORE_IN') {
+            return <Button disabled variant="outline" className="w-full h-12 rounded-xl"><Clock className="mr-2 h-4 w-4" /> Belum Waktu Jam Masuk</Button>;
+        }
+        if (windowStatus === 'CHECK_IN_OPEN') {
+            return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Masuk Sekarang</Link></Button>;
+        }
+        return <Button disabled variant="destructive" className="w-full h-12 rounded-xl">Batas Jam Masuk Berakhir</Button>;
+    }
+
+    // Already checked in
+    if (windowStatus === 'CHECK_OUT_OPEN') {
+        return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang Sekarang</Link></Button>;
+    }
+    if (windowStatus === 'AFTER_IN' || windowStatus === 'CHECK_IN_OPEN') {
+        return <Button disabled variant="outline" className="w-full h-12 rounded-xl"><Clock className="mr-2 h-4 w-4" /> Belum Waktu Jam Pulang</Button>;
+    }
+    
+    return <Button disabled variant="destructive" className="w-full h-12 rounded-xl">Waktu Absen Pulang Berakhir</Button>;
+  };
 
   return (
     <div className="w-full space-y-6 pb-10 flex flex-col items-stretch">
@@ -118,13 +158,13 @@ export default function DashboardPage() {
                 {user?.name || 'Pengguna'}
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">
-                {isAdmin 
+                {role === 'admin' 
                   ? 'Pantau aktivitas kehadiran dan kelola data sekolah hari ini.' 
                   : 'Lakukan absensi dan lihat riwayat kehadiran Anda hari ini.'}
             </p>
         </div>
 
-        {isGuruOrPegawai && (
+        {isStaff && (
             <div className="w-full space-y-6 flex flex-col items-stretch">
                 <Card className="w-full border shadow-xl rounded-3xl overflow-hidden bg-card">
                     <CardHeader className="p-6 text-primary border-b border-muted-foreground/5">
@@ -161,20 +201,7 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="flex flex-col items-stretch gap-3">
-                            {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
-                                <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all">
-                                    <Link href="/dashboard/absen">Absen pulang sekarang</Link>
-                                </Button>
-                            ) : !todaysAttendance?.[0]?.checkInTime ? (
-                                <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all">
-                                    <Link href="/dashboard/absen">Absen masuk sekarang</Link>
-                                </Button>
-                            ) : (
-                                <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-black rounded-xl h-12 flex items-center justify-center text-sm uppercase tracking-wide">
-                                    <Sparkles className="mr-2 w-4 h-4" /> Absensi selesai
-                                </div>
-                            )}
-
+                            {renderAttendanceButton()}
                             <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
                                 <Link href="/dashboard/laporan">Lihat riwayat lengkap</Link>
                             </Button>
