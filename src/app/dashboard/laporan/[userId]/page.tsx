@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, writeBatch, collection, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
-import { format, startOfMonth, isValid, parseISO, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes } from 'date-fns';
+import { format, isValid, parseISO, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -12,7 +12,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchUserMonthlyReportData, type MonthlyReportData } from '@/lib/attendance';
 import { Download, ChevronLeft, ChevronRight, AlertCircle, ArrowLeft, Loader2, MoreVertical } from 'lucide-react';
 import {
@@ -59,7 +58,7 @@ const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string)
 export default function UserReportDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const { user: currentUser, isUserLoading } = useUser();
+    const { user: currentUser } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     const userId = params.userId as string;
@@ -72,7 +71,7 @@ export default function UserReportDetailPage() {
     const [error, setError] = useState<string | null>(null);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
-    const { data: schoolConfigData, isLoading: isConfigLoading } = useDoc(currentUser, schoolConfigRef);
+    const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
 
     const fetchData = async () => {
         if (!firestore || !userId || !schoolConfigData || !currentUser) return;
@@ -273,11 +272,10 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'normal').setFontSize(9);
         doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 39, { align: 'center' });
         
-        // Garis Ganda Header
         doc.setLineWidth(0.8).line(margin, 43, pageWidth - margin, 43);
         doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
 
-        // Updated Title: Two lines (Report Month and Academic Year)
+        // Judul
         doc.setFont('times', 'bold').setFontSize(14);
         let currentY = 58;
         doc.text(`LAPORAN KEHADIRAN INDIVIDU BULAN ${monthName.toUpperCase()}`, centerX, currentY, { align: 'center' });
@@ -286,21 +284,20 @@ export default function UserReportDetailPage() {
             doc.text(`TAHUN AJARAN ${config.academicYear.toUpperCase()}`, centerX, currentY, { align: 'center' });
         }
 
-        // Info User
+        // Info Identitas
         doc.setFontSize(10).setFont('times', 'normal');
         currentY += 15;
         doc.text(`Nama`, margin, currentY);
-        doc.text(`: ${userData.name}`, margin + 35, currentY);
+        doc.text(`: ${userData.name}`, margin + 40, currentY);
         currentY += 6;
         doc.text(`NIP`, margin, currentY);
-        doc.text(`: ${userData.nip || '-'}`, margin + 35, currentY);
+        doc.text(`: ${userData.nip || '-'}`, margin + 40, currentY);
         currentY += 6;
         doc.text(`Jabatan / Status`, margin, currentY);
         
-        // Format Role and Position for Jabatan / Status display
         const displayRole = userData.role.replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         const jabStat = `${displayRole} / ${userData.position || '-'}`;
-        doc.text(`: ${jabStat}`, margin + 35, currentY);
+        doc.text(`: ${jabStat}`, margin + 40, currentY);
         currentY += 10;
 
         const tableRows = monthlyReportData.map((item, index) => [
@@ -328,7 +325,7 @@ export default function UserReportDetailPage() {
             }
         });
 
-        // Tanda Tangan Kepala Sekolah (Hanya di halaman terakhir)
+        // Tanda Tangan
         let finalTableY = (doc as any).lastAutoTable.finalY;
         if (finalTableY > pageHeight - 65) {
             doc.addPage();
@@ -346,8 +343,8 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, signY + 44);
 
-        // Footer Otomatis di Setiap Halaman
-        const totalPages = (doc as any).internal.getNumberOfPages();
+        // Footer di Setiap Halaman
+        const totalPages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             doc.setLineWidth(0.2);
@@ -374,7 +371,7 @@ export default function UserReportDetailPage() {
                         <h1 className="text-3xl font-bold tracking-tight">Detail Laporan Kehadiran</h1>
                     </div>
                     <div className="h-6 flex items-center">
-                        {!userData && (isUserLoading || isConfigLoading || isLoading) ? (
+                        {!userData ? (
                             <Skeleton className="h-4 w-64 ml-8 sm:ml-0" />
                         ) : (
                             <p className="text-muted-foreground ml-8 sm:ml-0">

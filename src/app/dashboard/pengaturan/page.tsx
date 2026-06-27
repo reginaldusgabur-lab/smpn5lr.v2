@@ -18,7 +18,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 
 export default function PengaturanPage() {
@@ -106,6 +105,7 @@ export default function PengaturanPage() {
     if (!userData) return null;
     switch(userData.role) {
       case 'guru':
+      case 'kepala_sekolah':
         return { label: 'NIP', value: userData.nip };
       case 'siswa':
         return { label: 'NISN', value: userData.nisn };
@@ -307,7 +307,7 @@ export default function PengaturanPage() {
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="role">Peran</Label>
-                    <Input id="role" value={userData?.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : ''} readOnly />
+                    <Input id="role" value={userData?.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1).replace('_', ' ') : ''} readOnly />
                 </div>
             </div>
             <div className={`grid grid-cols-1 ${identifierInfo ? 'sm:grid-cols-2' : ''} gap-4`}>

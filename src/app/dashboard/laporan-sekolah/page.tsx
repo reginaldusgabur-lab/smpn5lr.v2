@@ -2,13 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
-import { collection, query, where, getDocs, doc, collectionGroup } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, isBefore, eachDayOfInterval, startOfDay, isWithinInterval, setHours, setMinutes, isSameDay } from 'date-fns';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, getDocs, doc } from 'firebase/firestore';
+import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, Filter, Eye, FileText } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, Filter, Eye, FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -132,6 +132,7 @@ export default function SchoolReportPage() {
 
             const config = schoolConfigData || ({} as any);
 
+            // Kop Surat - HANYA DI HALAMAN PERTAMA
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, currentY, { align: 'center' });
             currentY += 7;
@@ -147,7 +148,7 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.2).line(margin, currentY + 0.8, pageWidth - margin, currentY + 0.8);
             currentY += 15;
 
-            // Updated Title: Two lines (Report Month and Academic Year)
+            // Judul Laporan
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text(`LAPORAN KEHADIRAN INDIVIDU BULAN ${monthName.toUpperCase()}`, centerX, currentY, { align: 'center' });
             if (config.academicYear) {
@@ -156,19 +157,19 @@ export default function SchoolReportPage() {
             }
             currentY += 12;
 
+            // Identitas Pegawai
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`Nama`, margin, currentY);
-            doc.text(`: ${targetUser.name}`, margin + 35, currentY);
+            doc.text(`: ${targetUser.name}`, margin + 40, currentY);
             currentY += 6;
             doc.text(`NIP`, margin, currentY);
-            doc.text(`: ${targetUser.nip}`, margin + 35, currentY);
+            doc.text(`: ${targetUser.nip}`, margin + 40, currentY);
             currentY += 6;
             doc.text(`Jabatan / Status`, margin, currentY);
             
-            // Format Role and Position for Jabatan / Status display
             const displayRole = targetUser.role.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             const jabStat = `${displayRole} / ${targetUser.position}`;
-            doc.text(`: ${jabStat}`, margin + 35, currentY);
+            doc.text(`: ${jabStat}`, margin + 40, currentY);
             currentY += 10;
 
             const tableRows = detailData.map((item, index) => [
@@ -196,6 +197,7 @@ export default function SchoolReportPage() {
                 }
             });
 
+            // Tanda Tangan
             let finalTableY = (doc as any).lastAutoTable.finalY;
             if (finalTableY > pageHeight - 65) {
                 doc.addPage();
@@ -213,7 +215,8 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, signY + 44);
 
-            const totalPages = (doc as any).internal.getNumberOfPages();
+            // Footer Otomatis
+            const totalPages = doc.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
                 doc.setLineWidth(0.2);
@@ -248,27 +251,22 @@ export default function SchoolReportPage() {
             let finalY = 20;
 
             const config = schoolConfigData || ({} as any);
-            const instansi = (config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase();
-            const dinas = (config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase();
-            const sekolah = (config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase();
-            const alamat = config.address || 'Alamat Sekolah';
 
             doc.setFont('times', 'bold').setFontSize(14);
-            doc.text(instansi, centerX, finalY, { align: 'center' });
+            doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, finalY, { align: 'center' });
             finalY += 7;
-            doc.text(dinas, centerX, finalY, { align: 'center' });
+            doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, finalY, { align: 'center' });
             finalY += 7;
             doc.setFontSize(12);
-            doc.text(sekolah, centerX, finalY, { align: 'center' });
+            doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, finalY, { align: 'center' });
             finalY += 5;
             doc.setFont('times', 'normal').setFontSize(9);
-            doc.text(`Alamat: ${alamat}`, centerX, finalY, { align: 'center' });
+            doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, finalY, { align: 'center' });
             finalY += 4;
             doc.setLineWidth(0.8).line(margin, finalY, pageWidth - margin, finalY);
             doc.setLineWidth(0.2).line(margin, finalY + 0.8, pageWidth - margin, finalY + 0.8);
             finalY += 15;
 
-            // Updated Title: Two lines (Report Month and Academic Year)
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text(`LAPORAN KEHADIRAN BULAN ${monthName.toUpperCase()}`, centerX, finalY, { align: 'center' });
             if (config.academicYear) {
