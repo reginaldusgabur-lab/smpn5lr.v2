@@ -33,7 +33,7 @@ const roleDescriptions: { [key: string]: string } = {
 };
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => (
-    <div className="space-y-1">
+    <div className="space-y-1 mb-2">
         <p className="text-base text-muted-foreground leading-none">Selamat Datang</p>
         {isLoading ? (
             <Skeleton className="h-7 w-48 mt-1" />
@@ -100,7 +100,7 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
     const hasFinished = !!(checkInTime && checkOutTime);
 
     return (
-        <Card className="h-full flex flex-col border-none shadow-md overflow-hidden bg-gradient-to-br from-card to-muted/30">
+        <Card className="h-full w-full flex flex-col border-none shadow-md overflow-hidden bg-gradient-to-br from-card to-muted/30">
             <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-bold">Kehadiran Anda Hari Ini</CardTitle>
                 <CardDescription>Status kehadiran dan jam absensi Anda.</CardDescription>
@@ -167,7 +167,7 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
 const MonthlyAttendanceChartUI = ({ summaryData, isLoading }: { summaryData: any, isLoading: boolean }) => {
     const now = new Date();
     return (
-        <Card className="h-full flex flex-col border-none shadow-sm">
+        <Card className="h-full w-full flex flex-col border-none shadow-sm">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><TrendingUp size={18} className="text-primary" /> Riwayat Bulan {format(now, 'MMMM', { locale: id })}</CardTitle><CardDescription>Persentase kehadiran: {isLoading ? '...' : `${summaryData.percentage}%`}</CardDescription></CardHeader>
             <CardContent className="flex-grow min-h-[250px] pt-4">
                 {isLoading ? 
@@ -258,18 +258,18 @@ export default function DashboardPage() {
   const showPersonal = role !== 'admin';
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:col-span-4">
+    <div className="w-full space-y-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4">
                 <WelcomeCard user={user} isLoading={isUserLoading} />
             </div>
 
             {showPersonal && (
                 <>
-                    <div className="md:col-span-2 lg:col-span-2 xl:col-span-2">
+                    <div className="col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2">
                         <PersonalAttendanceCardUI attendanceData={todaysAttendance} schoolConfig={schoolConfig} isLoading={isAttendanceLoading || isUserLoading || isConfigLoading} />
                     </div>
-                    <div className="md:col-span-2 lg:col-span-1 xl:col-span-2">
+                    <div className="col-span-1 md:col-span-2 lg:col-span-1 xl:col-span-2">
                         <MonthlyAttendanceChartUI summaryData={personalSummary} isLoading={isPersonalSummaryLoading || isUserLoading} />
                     </div>
                 </>

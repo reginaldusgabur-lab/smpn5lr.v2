@@ -242,7 +242,7 @@ export default function AbsenPage() {
           <h1 className="text-2xl font-bold tracking-tight">Pindai QR Code</h1>
       </div>
 
-      <Card className="overflow-hidden border-none shadow-xl bg-card">
+      <Card className="w-full overflow-hidden border-none shadow-xl bg-card">
           <CardHeader className="pb-4">
               <CardTitle className="text-center text-lg">Arahkan Kamera</CardTitle>
               <CardDescription className="text-center">Pastikan QR Code berada di dalam kotak pemindaian.</CardDescription>
