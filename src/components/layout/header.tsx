@@ -1,4 +1,3 @@
-
 'use client';
 import React from 'react';
 import Link from 'next/link';
@@ -100,7 +99,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                         </Avatar>
                         <div className="hidden sm:flex flex-col justify-center text-left">
                             <p className="text-sm font-medium leading-none">{displayName || 'Pengguna'}</p>
-                            <p className="text-[10px] uppercase tracking-wider leading-none text-muted-foreground mt-1 font-semibold">{displayRole || 'User'}</p>
+                            <p className="text-[10px] tracking-wide leading-none text-muted-foreground mt-1 font-semibold">{displayRole || 'User'}</p>
                         </div>
                     </button>
                 </DropdownMenuTrigger>
