@@ -505,8 +505,8 @@ export default function KonfigurasiAbsenPage() {
           <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
               <div className="flex items-center justify-between">
                   <div>
-                      <Label htmlFor="holiday-mode" className="font-bold text-sm">Mode Libur Manual</Label>
-                      <p className="text-xs text-muted-foreground">Menonaktifkan sistem absensi untuk sementara.</p>
+                      <Label htmlFor="holiday-mode" className="font-bold text-sm">Nonaktifkan Absensi</Label>
+                      <p className="text-xs text-muted-foreground">Sistem absensi akan dinonaktifkan sementara untuk semua.</p>
                   </div>
                   <Switch
                       id="holiday-mode"
