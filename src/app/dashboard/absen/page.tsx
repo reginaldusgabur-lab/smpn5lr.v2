@@ -44,12 +44,12 @@ export default function AbsenPage() {
 
   // --- Firestore Data Hooks ---
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-  const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
+  const { data: userData } = useDoc(user, userDocRef);
   const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
-  const { data: schoolConfig, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
+  const { data: schoolConfig } = useDoc(user, schoolConfigRef);
   const monthlyConfigId = useMemo(() => format(new Date(), 'yyyy-MM'), []);
   const monthlyConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'monthlyConfigs', monthlyConfigId) : null, [firestore, monthlyConfigId]);
-  const { data: monthlyConfig, isLoading: isMonthlyConfigLoading } = useDoc(user, monthlyConfigRef);
+  const { data: monthlyConfig } = useDoc(user, monthlyConfigRef);
   
   const todaysAttendanceQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -60,7 +60,7 @@ export default function AbsenPage() {
   const todaysRecord = useMemo(() => todaysAttendance?.[0], [todaysAttendance]);
 
   // --- Derived State ---
-  const isDataLoading = isUserLoading || isUserDataLoading || isConfigLoading || isAttendanceLoading || isMonthlyConfigLoading;
+  const isDataLoading = isUserLoading || isAttendanceLoading;
   const isCameraInitializing = hasCameraPermission === null;
   const isHoliday = useMemo(() => {
     if (!schoolConfig) return false;
@@ -89,7 +89,7 @@ export default function AbsenPage() {
     setLocationError(null);
     if (!user || !firestore || !schoolConfig) {
         setStatus('error_generic');
-        return toast({ title: 'Gagal', description: 'Data pengguna atau konfigurasi tidak siap.', variant: 'destructive' });
+        return;
     }
     setStatus('processing');
 
@@ -118,8 +118,8 @@ export default function AbsenPage() {
                     if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) return setStatus('error_radius');
                 }
             } catch (error: any) {
-                let specificError = 'Gagal mendapatkan lokasi. Pastikan GPS dan izin lokasi aktif.';
-                if (error.code === 1) specificError = 'Akses lokasi ditolak. Izinkan di pengaturan perangkat.';
+                let specificError = 'Gagal mendapatkan lokasi.';
+                if (error.code === 1) specificError = 'Akses lokasi ditolak.';
                 setLocationError(specificError); return setStatus('error_location');
             }
         }
@@ -141,38 +141,11 @@ export default function AbsenPage() {
         } else if (isCheckOutTime) {
             if (todaysRecord) {
                 if (todaysRecord.checkOutTime) return setStatus('error_already_out');
-                
                 const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id);
-                const updateData: any = {
-                    date: todayStr,
-                    checkOutTime: now,
-                    checkOutLatitude: latitude,
-                    checkOutLongitude: longitude
-                };
-
-                if (!todaysRecord.checkInTime) {
-                    const [inEndH, inEndM] = schoolConfig.checkInEndTime.split(':').map(Number);
-                    const lateCheckInTime = new Date();
-                    lateCheckInTime.setHours(inEndH, inEndM, 0, 0);
-                    updateData.checkInTime = lateCheckInTime;
-                }
-
-                await updateDoc(recordRef, updateData);
+                await updateDoc(recordRef, { date: todayStr, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
                 setStatus('success_out');
-
             } else {
-                const [inEndH, inEndM] = schoolConfig.checkInEndTime.split(':').map(Number);
-                const lateCheckInTime = new Date();
-                lateCheckInTime.setHours(inEndH, inEndM, 0, 0);
-
-                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), {
-                    userId: user.uid,
-                    date: todayStr,
-                    checkInTime: lateCheckInTime,
-                    checkOutTime: now,
-                    checkOutLatitude: latitude,
-                    checkOutLongitude: longitude,
-                });
+                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
                 setStatus('success_out');
             }
         }
@@ -180,14 +153,10 @@ export default function AbsenPage() {
         console.error("Attendance Error:", error);
         setStatus('error_generic');
     }
-}, [user, firestore, schoolConfig, todaysRecord, toast]);
+}, [user, firestore, schoolConfig, todaysRecord]);
   
   const statusRef = useRef(status); statusRef.current = status;
   const handleAttendanceRef = useRef(handleAttendance); handleAttendanceRef.current = handleAttendance;
-
-  const handleCloseRedirect = useCallback(() => {
-    router.push('/dashboard'); 
-  }, [router]);
 
   useEffect(() => {
     let isMounted = true;
@@ -198,7 +167,6 @@ export default function AbsenPage() {
   const onScanSuccess = useCallback((decodedText: string) => {
     if (statusRef.current === 'idle' && schoolConfig?.qrCodeValue) {
         if (decodedText === schoolConfig.qrCodeValue) {
-            toast({ title: 'QR Code Terdeteksi' });
             handleAttendanceRef.current();
         } else {
             toast({ variant: 'destructive', title: 'QR Code Tidak Valid' });
@@ -216,25 +184,19 @@ export default function AbsenPage() {
             const config: Html5QrcodeCameraScanConfig = { fps: 10 };
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
-            .catch(err => console.error('Gagal memulai QR scanner', err));
+            .catch(err => console.error('Scanner error', err));
         }
     } 
     return () => {
         if (html5QrCodeRef.current?.isScanning) {
-            html5QrCodeRef.current.stop().then(() => setIsScannerReady(false)).catch(err => console.warn("Gagal menghentikan QR scanner.", err));
+            html5QrCodeRef.current.stop().then(() => setIsScannerReady(false)).catch(err => console.warn("Stop error", err));
             html5QrCodeRef.current = null;
         }
     };
   }, [showScanner, status, onScanSuccess]);
 
-  const handleOnClose = useMemo(() => {
-    const isSuccessOrFinished = ['success_in', 'success_out', 'info_checked_out', 'info_holiday'].includes(effectiveStatus);
-    return isSuccessOrFinished ? handleCloseRedirect : () => setStatus('idle');
-  }, [effectiveStatus, handleCloseRedirect]);
-
   return (
     <div className="fixed inset-0 z-40 bg-black overflow-hidden">
-        {/* Fullscreen Scanner Container */}
         {(showScanner || isCameraInitializing) && (
             <div className="absolute inset-0">
                 <div id={readerId} className="w-full h-full" />
@@ -245,13 +207,11 @@ export default function AbsenPage() {
             </div>
         )}
 
-        {/* Transparent Overlay Instructions - Posisi Tetap di Atas */}
         <div className="absolute top-8 left-0 right-0 z-50 px-8 text-center pointer-events-none transition-all">
-            <h2 className="text-white text-2xl font-black mb-1 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Arahkan Kamera</h2>
-            <p className="text-white/90 text-xs font-bold drop-shadow-[0_1px_5px_rgba(0,0,0,0.8)] max-w-[200px] mx-auto uppercase tracking-wider">Dekatkan QR Code ke dalam kotak pemindaian.</p>
+            <h2 className="text-white text-2xl font-black mb-1 drop-shadow-md">Arahkan Kamera</h2>
+            <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest">Dekatkan QR Code ke area pemindaian</p>
         </div>
 
-        {/* Scan Guide UI - Area Tengah */}
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">
             <div className="relative w-full aspect-square max-w-[280px]">
                 <div className={cn("absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
@@ -264,25 +224,14 @@ export default function AbsenPage() {
                         <Loader2 className="h-10 w-10 animate-spin text-white" />
                     </div>
                 )}
-
-                {isScannerReady && !showLoader && (
-                    <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 h-0.5 bg-primary shadow-[0_0_15px_2px_theme(colors.primary.DEFAULT)] animate-scan-line" />
-                )}
             </div>
-        </div>
-
-        {/* Branding Overlay */}
-        <div className="absolute bottom-20 left-0 right-0 z-10 text-center pointer-events-none">
-            <p className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-bold italic flex items-center justify-center gap-2">
-                <Sparkles className="w-3 h-3" /> E-SPENLI Digital Attendance
-            </p>
         </div>
 
         {effectiveStatus !== 'idle' && (
             <StatusFeedbackOverlay 
                 status={effectiveStatus} 
                 locationError={locationError} 
-                onClose={handleOnClose} 
+                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') ? router.push('/dashboard') : setStatus('idle')} 
                 userData={userData} 
             />
         )}
@@ -290,7 +239,6 @@ export default function AbsenPage() {
   );
 }
 
-// --- UI Sub-Components ---
 const StatusFeedbackOverlay = ({ status, locationError, onClose, userData }: { status: FeedbackStatus, locationError: string | null, onClose: () => void, userData: any }) => {
     const feedback = useMemo(() => {
         switch (status) {
@@ -306,39 +254,25 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData }: { s
             case 'info_holiday': return { icon: <CalendarOff className="h-16 w-16 text-blue-500" />, title: 'Hari Libur', desc: 'Sistem absensi tidak aktif hari ini.', cardClass: 'bg-blue-50 dark:bg-blue-950/50' };
             case 'info_checked_out': return { icon: <CheckCircle className="h-16 w-16 text-green-500" />, title: 'Absensi Selesai', desc: 'Anda telah menyelesaikan absensi untuk hari ini.', cardClass: 'bg-green-50 dark:bg-green-950/50' };
             case 'info_no_camera': return { icon: <CameraOff className="h-16 w-16 text-destructive" />, title: 'Kamera Tidak Tersedia', desc: 'Izinkan akses kamera di pengaturan browser.', cardClass: 'bg-destructive/10' };
-            default: return { icon: <AlertTriangle className="h-16 w-16 text-destructive" />, title: 'Terjadi Kesalahan', desc: 'Silakan coba lagi beberapa saat.', cardClass: 'bg-destructive/10' };
+            default: return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Gagal', desc: 'Terjadi kesalahan sistem. Silakan coba lagi.', cardClass: 'bg-destructive/10' };
         }
     }, [status, locationError]);
 
-    const showQuote = useMemo(() => (status === 'success_in' || status === 'success_out') && userData?.role !== 'admin', [status, userData]);
-    const attendanceType = useMemo(() => {
-        if (status === 'success_in') return 'in';
-        if (status === 'success_out') return 'out';
-        return null;
-    }, [status]);
-
-    if (status === 'idle') return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
             <div className={cn("w-full max-w-sm text-center p-8 rounded-3xl shadow-2xl relative", feedback.cardClass)} onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="absolute top-4 right-4 opacity-50 hover:opacity-100" onClick={onClose}>
-                    <X className="h-5 w-5" />
-                    <span className="sr-only">Tutup</span>
-                </Button>
                 <div className="flex flex-col items-center gap-4">
                     <div className="mb-2">{feedback.icon}</div>
                     <h3 className="text-2xl font-bold">{feedback.title}</h3>
-                    <p className="text-muted-foreground">{feedback.desc}</p>
-                    {showQuote && attendanceType && <QuoteOfTheDay category={userData?.role} attendanceType={attendanceType} />}
-                    <Button className="mt-4 w-full" onClick={onClose}>Tutup</Button>
+                    <p className="text-muted-foreground text-sm">{feedback.desc}</p>
+                    {(status.startsWith('success')) && <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_in' ? 'in' : 'out'} />}
+                    <Button className="mt-6 w-full font-bold" onClick={onClose}>Tutup</Button>
                 </div>
             </div>
         </div>
     );
 };
 
-// Simple icons logic to avoid missing imports
 const CheckCircle = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
 );
@@ -347,7 +281,4 @@ const MapPin = ({ className }: { className?: string }) => (
 );
 const ClockIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-);
-const AlertTriangle = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
 );
