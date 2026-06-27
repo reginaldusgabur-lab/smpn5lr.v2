@@ -29,6 +29,8 @@ interface UserData {
   nip: string;
   role: string;
   position: string;
+  status: string;
+  sequenceNumber: number | null;
 }
 
 const AbsentUsersTable = () => {
@@ -76,7 +78,12 @@ const AbsentUsersTable = () => {
             return;
         }
 
-        const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']));
+        // FILTER: Only fetch ACTIVE staff
+        const usersQuery = query(
+            collection(firestore, 'users'), 
+            where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
+            where('status', '==', 'Aktif')
+        );
         const usersSnap = await getDocs(usersQuery);
         const allStaff: UserData[] = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserData));
 
@@ -116,6 +123,7 @@ const AbsentUsersTable = () => {
 
         const usersToDisplay = allStaff
           .filter(user => !presentUserIds.has(user.id))
+          .sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999)) // SORT: Use sequenceNumber
           .map((user, index) => {
             const leaveInfo = onLeaveOrPendingUserIds.get(user.id);
             let status: AbsentUser['status'] = 'Alpa';
@@ -135,8 +143,7 @@ const AbsentUsersTable = () => {
                 position: user.position || 'Staf',
                 status: status,
             };
-          })
-          .sort((a, b) => a.name.localeCompare(b.name));
+          });
 
         setAbsentUsers(usersToDisplay);
 

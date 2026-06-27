@@ -15,10 +15,8 @@ export interface MonthlyReportData {
     manualEntry: boolean;
 }
 
-// Helper to clean descriptions from legacy suffixes
 const cleanDesc = (desc: string) => desc ? desc.replace(/\s?\(diubah oleh Admin\)/g, '').replace(/\(✓\)/g, '').trim() : '';
 
-// --- DASHBOARD STATS FUNCTION ---
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const startOfToday = startOfDay(today);
@@ -45,7 +43,12 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         return offDays.includes(today.getDay());
     })();
 
-    const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']));
+    // ONLY fetch ACTIVE staff
+    const usersQuery = query(
+        collection(firestore, 'users'), 
+        where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
+        where('status', '==', 'Aktif')
+    );
     const usersSnap = await getDocs(usersQuery);
     const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
@@ -112,7 +115,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     };
 }
 
-// --- CORE LOGIC: calculateAttendanceStats --- 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
     const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
@@ -146,13 +148,11 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const holidays: string[] = monthlyConfig?.holidays ?? [];
     const today = startOfDay(new Date());
 
-    // Filter ONLY working days
     const effectiveWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
         !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd'))
     );
 
     const workingDaysSet = new Set(effectiveWorkingDays.map(day => format(day, 'yyyy-MM-dd')));
-
     const pastEffectiveWorkingDays = effectiveWorkingDays.filter(day => isBefore(day, today) || isSameDay(day, today));
     
     const approvedEarlyLeaveDates = new Set<string>();
@@ -162,10 +162,9 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         }
     });
 
-    // ONLY count attendance on working days
     const hadirScore = attendanceData.reduce((total, att) => {
         const attDateStr = format(att.checkInTime.toDate(), 'yyyy-MM-dd');
-        if (!workingDaysSet.has(attDateStr)) return total; // SKIP HOLIDAYS
+        if (!workingDaysSet.has(attDateStr)) return total;
 
         if (att.checkInTime && att.checkOutTime) {
             return total + 1;
@@ -192,7 +191,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
-            if (workingDaysSet.has(dayStr)) { // ONLY count if it's a working day
+            if (workingDaysSet.has(dayStr)) {
                 if (leave.type === 'Izin' || leave.type === 'Dinas') izinCount++;
                 else if (leave.type === 'Sakit') sakitCount++;
                 leaveDates.add(dayStr);
@@ -220,7 +219,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     };
 }
 
-// --- DETAILED REPORT FUNCTION --- 
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -270,8 +268,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const isToday = isSameDay(day, todayStart);
         const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
 
-        // --- STRICT FILTER ---
-        // If it's a holiday, hide it completely regardless of data
         if (!isWorkingDay) {
             return null;
         }
@@ -329,7 +325,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             };
         }
 
-        // Handle Today or Past Working Days with no data
         if (isToday || (isWorkingDay && isBefore(day, todayStart))) {
             return {
                 id: dayStr,

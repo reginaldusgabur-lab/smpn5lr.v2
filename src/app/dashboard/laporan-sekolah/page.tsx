@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from '@/components/ui/card';
@@ -58,7 +58,12 @@ export default function SchoolReportPage() {
         const loadData = async () => {
             setIsReportLoading(true);
             try {
-                const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']));
+                // FILTER: Only fetch ACTIVE staff
+                const usersQuery = query(
+                    collection(firestore, 'users'), 
+                    where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
+                    where('status', '==', 'Aktif')
+                );
                 const usersSnapshot = await getDocs(usersQuery);
                 
                 const reportPromises = usersSnapshot.docs.map(async (userDoc) => {
@@ -80,6 +85,7 @@ export default function SchoolReportPage() {
                 });
 
                 const results = await Promise.all(reportPromises);
+                // SORT: Ensure sequenceNumber is the primary sorting criteria
                 results.sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
 
                 if (isMounted) setReportData(results.map((r, i) => ({ ...r, no: i + 1 })));

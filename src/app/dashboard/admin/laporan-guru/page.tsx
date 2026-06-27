@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,15 +12,25 @@ import { Loader2, Eye } from 'lucide-react';
 const LaporanGuruListPage = () => {
     const firestore = useFirestore();
 
+    // FILTER: Only fetch ACTIVE staff and order by sequenceNumber
     const usersQuery = useMemo(
         () =>
             firestore
-                ? query(collection(firestore, 'users'), where('role', 'in', ['guru', 'kepala_sekolah', 'pegawai']))
+                ? query(
+                    collection(firestore, 'users'), 
+                    where('role', 'in', ['guru', 'kepala_sekolah', 'pegawai']),
+                    where('status', '==', 'Aktif')
+                )
                 : null,
         [firestore]
     );
 
     const { data: usersData, isLoading: isUsersLoading } = useCollection(usersQuery);
+
+    const sortedUsers = useMemo(() => {
+        if (!usersData) return [];
+        return [...usersData].sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
+    }, [usersData]);
 
     if (isUsersLoading) {
         return (
@@ -49,10 +59,10 @@ const LaporanGuruListPage = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {usersData && usersData.length > 0 ? (
-                                usersData.map((user, index) => (
+                            {sortedUsers && sortedUsers.length > 0 ? (
+                                sortedUsers.map((user, index) => (
                                     <TableRow key={user.id}>
-                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>{user.sequenceNumber || index + 1}</TableCell>
                                         <TableCell className="font-medium">{user.name}</TableCell>
                                         <TableCell>{user.nip || '-'}</TableCell>
                                         <TableCell>{user.position || '-'}</TableCell>

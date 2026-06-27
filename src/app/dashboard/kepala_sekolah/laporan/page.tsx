@@ -41,8 +41,13 @@ function useStaffAttendanceSummary(currentMonth: Date) {
     const [summary, setSummary] = useState<{ [key: string]: any[] }>({});
     const [isLoading, setIsLoading] = useState(true);
 
+    // FILTER: Only fetch ACTIVE users
     const usersQuery = useMemoFirebase(() => 
-        query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']))
+        query(
+            collection(firestore, 'users'), 
+            where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
+            where('status', '==', 'Aktif')
+        )
     , [firestore]);
     const { data: users, isLoading: isUsersLoading } = useCollection(user, usersQuery);
 
@@ -79,7 +84,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             const holidays: string[] = monthlyConfig?.holidays ?? [];
             const today = startOfDay(new Date());
 
-            // WORKING DAYS ONLY
             const workingDaysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(workingDaysInMonth.map(d => format(d, 'yyyy-MM-dd')));
             
@@ -88,7 +92,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             const totalPastWorkingDays = pastWorkingDaysInMonth.length;
 
             const attendanceByUser = allAttendance.reduce((acc: any, record: any) => { 
-                // Only count attendance on working days
                 if (workingDaysSet.has(format(record.checkInTime, 'yyyy-MM-dd'))) {
                     (acc[record.userId] = acc[record.userId] || []).push(record); 
                 }
@@ -138,6 +141,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                 return acc;
             }, {});
             
+            // SORT: Ensure sequenceNumber is used
             if(groupedByRole.guru) groupedByRole.guru.sort((a:any,b:any) => (a.sequenceNumber || 999) - (b.sequenceNumber || 999));
             if(groupedByRole.pegawai) groupedByRole.pegawai.sort((a:any,b:any) => (a.sequenceNumber || 999) - (b.sequenceNumber || 999));
             if(groupedByRole.kepala_sekolah) groupedByRole.kepala_sekolah.sort((a:any,b:any) => (a.sequenceNumber || 999) - (b.sequenceNumber || 999));
