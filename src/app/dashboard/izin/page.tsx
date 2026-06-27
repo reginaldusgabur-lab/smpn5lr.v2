@@ -39,7 +39,7 @@ const leaveRequestSchema = z.object({
   type: z.enum(['Sakit', 'Izin', 'Dinas', 'Pulang Cepat'], {
     required_error: 'Jenis pengajuan wajib dipilih.',
   }),
-  reason: z.string().min(10, { message: 'Alasan harus diisi minimal 10 karakter.' }),
+  reason: z.string().min(5, { message: 'Alasan terlalu singkat.' }),
   proofUrl: z.string().url({ message: 'URL bukti tidak valid.' }).optional().or(z.literal('')),
 });
 
@@ -299,7 +299,7 @@ export default function IzinPage() {
                                     <FormItem className="space-y-1.5">
                                         <FormLabel className="text-xs font-bold ml-1">Alasan</FormLabel>
                                         <FormControl>
-                                            <Textarea placeholder="Jelaskan alasan Anda..." {...field} className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all" />
+                                            <Textarea placeholder="Contoh: Demam, Kegiatan Keluarga, atau Keperluan mendesak lainnya..." {...field} className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all" />
                                         </FormControl>
                                         <FormMessage className="text-[10px] font-bold" />
                                     </FormItem>
