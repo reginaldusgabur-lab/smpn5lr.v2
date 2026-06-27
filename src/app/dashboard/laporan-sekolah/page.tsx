@@ -106,7 +106,6 @@ export default function SchoolReportPage() {
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
     const monthName = format(currentMonth, 'MMMM yyyy', { locale: id });
 
-    // Utility to format date safely
     const safeFormat = (dateInput: any, formatString: string): string => {
         if (!dateInput) return '-';
         const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
@@ -130,7 +129,7 @@ export default function SchoolReportPage() {
 
             const config = schoolConfigData || {};
 
-            // Kop Surat - HANYA DI HALAMAN PERTAMA
+            // Kop Surat - HANYA DI HALAMAN PERTAMA (Sama dengan Laporan Sekolah)
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, currentY, { align: 'center' });
             currentY += 7;
@@ -142,11 +141,12 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal').setFontSize(9);
             doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, currentY, { align: 'center' });
             currentY += 4;
+            // Garis Ganda Header
             doc.setLineWidth(0.8).line(margin, currentY, pageWidth - margin, currentY);
             doc.setLineWidth(0.2).line(margin, currentY + 0.8, pageWidth - margin, currentY + 0.8);
             currentY += 15;
 
-            // Judul Laporan & Info User
+            // Judul Laporan
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text('LAPORAN KEHADIRAN INDIVIDU', centerX, currentY, { align: 'center' });
             currentY += 7;
@@ -154,6 +154,7 @@ export default function SchoolReportPage() {
             doc.text(`Periode: ${monthName}`, centerX, currentY, { align: 'center' });
             currentY += 12;
 
+            // Info User
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`Nama`, margin, currentY);
             doc.text(`: ${targetUser.name}`, margin + 35, currentY);
@@ -179,7 +180,7 @@ export default function SchoolReportPage() {
                 head: [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']],
                 body: tableRows,
                 theme: 'grid',
-                styles: { font: 'times', fontSize: 9, cellPadding: 3, valign: 'middle' },
+                styles: { font: 'times', fontSize: 9, cellPadding: 3, valign: 'middle', lineWidth: 0.1, lineColor: [150, 150, 150] },
                 headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: 'center', fontStyle: 'bold', lineWidth: 0 },
                 columnStyles: {
                     0: { halign: 'center', cellWidth: 10 },
@@ -190,16 +191,16 @@ export default function SchoolReportPage() {
                 }
             });
 
-            // Footer handling
-            const pageCount = (doc as any).internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
+            // Footer Otomatis di Setiap Halaman
+            const totalPages = (doc as any).internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
                 doc.setLineWidth(0.2);
                 doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
                 doc.setFontSize(8).setFont('times', 'italic');
-                doc.text('Dokumen ini dihasilkan secara otomatis oleh sistem E-SPENLI.', margin, pageHeight - 10);
+                doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
                 doc.setFontSize(9).setFont('times', 'normal');
-                doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+                doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
             }
 
             doc.save(`Laporan_Personal_${targetUser.name.replace(/\s+/g, '_')}_${monthName.replace(' ', '_')}.pdf`);
