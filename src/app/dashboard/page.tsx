@@ -86,17 +86,17 @@ function useMonthlyAttendanceSummary(user: any) {
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => {
     if (isLoading) return (
-        <div className="space-y-1 mb-3 px-0">
+        <div className="space-y-1 mb-3 px-0 w-full">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-4 w-64" />
         </div>
     );
     return (
-        <div className="mb-4 px-0">
+        <div className="mb-4 px-0 w-full">
             <p className="text-sm text-muted-foreground leading-none">Selamat Datang</p>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground mt-1.5">{user?.name || 'Pengguna'}</h1>
-            <p className="text-xs text-muted-foreground mt-1">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
+            <h1 className="text-3xl font-black tracking-tight text-foreground mt-1.5">{user?.name || 'Pengguna'}</h1>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
         </div>
     );
 };
@@ -125,11 +125,11 @@ const LiveClockUI = () => {
     if (!time) return <div className="h-20" />;
 
     return (
-        <div className="flex flex-col items-center justify-center py-2">
-            <h2 className="text-5xl font-black tracking-tighter tabular-nums text-primary leading-none">
+        <div className="flex flex-col items-center justify-center py-1">
+            <h2 className="text-6xl font-black tracking-tighter tabular-nums text-primary leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-sm font-medium text-muted-foreground mt-3">
+            <p className="text-sm font-bold text-muted-foreground mt-3 capitalize">
                 {format(time, 'EEEE, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -164,45 +164,45 @@ export default function DashboardPage() {
 
   return (
     <PageWrapper>
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-4 max-w-full">
             <WelcomeCard user={user} isLoading={isUserLoading} />
 
             {isGuruOrPegawai && (
-                <div className="w-full space-y-6">
-                    {/* KARTU KEHADIRAN UTAMA - PRESISI DI SEMUA PERANGKAT */}
-                    <Card className="w-full overflow-hidden shadow-md border-muted/50">
-                        <CardHeader className="p-4 pb-0 space-y-1">
+                <div className="w-full space-y-5">
+                    {/* KARTU KEHADIRAN UTAMA - FULL WIDTH & PRECISE */}
+                    <Card className="w-full overflow-hidden shadow-lg border-muted/50">
+                        <CardHeader className="p-4 pb-2 space-y-1">
                             <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-primary" />
-                                <CardTitle className="text-lg font-bold">
+                                <CardTitle className="text-xl font-black">
                                     Kehadiran Anda Hari Ini
                                 </CardTitle>
                             </div>
-                            <CardDescription className="text-[11px]">
+                            <CardDescription className="text-xs font-medium">
                                 Status kehadiran dan jam absensi Anda.
                             </CardDescription>
                         </CardHeader>
                         
-                        <CardContent className="p-4 pt-4">
+                        <CardContent className="p-4 pt-2">
                             <LiveClockUI />
                             
-                            {/* Grid 2 Kolom Fleksibel */}
-                            <div className="grid grid-cols-2 gap-3 mt-4 w-full">
-                                <div className="bg-background rounded-2xl p-4 text-center border border-border/60 flex flex-col items-center justify-center">
+                            {/* Grid 2 Kolom Fleksibel Tanpa Batas Lebar */}
+                            <div className="grid grid-cols-2 gap-3 mt-6 w-full">
+                                <div className="bg-muted/30 rounded-2xl p-4 text-center border border-border/40 flex flex-col items-center justify-center">
                                     <div className="flex items-center justify-center gap-2 mb-2">
-                                        <LogIn className="w-3.5 h-3.5 text-muted-foreground" />
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Masuk</p>
+                                        <LogIn className="w-4 h-4 text-muted-foreground" />
+                                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Masuk</p>
                                     </div>
-                                    <p className="text-xl font-black tabular-nums">
+                                    <p className="text-2xl font-black tabular-nums">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
-                                <div className="bg-background rounded-2xl p-4 text-center border border-border/60 flex flex-col items-center justify-center">
+                                <div className="bg-muted/30 rounded-2xl p-4 text-center border border-border/40 flex flex-col items-center justify-center">
                                     <div className="flex items-center justify-center gap-2 mb-2">
-                                        <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Pulang</p>
+                                        <LogOut className="w-4 h-4 text-muted-foreground" />
+                                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Pulang</p>
                                     </div>
-                                    <p className="text-xl font-black tabular-nums">
+                                    <p className="text-2xl font-black tabular-nums">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
@@ -211,51 +211,51 @@ export default function DashboardPage() {
                         
                         <CardFooter className="bg-muted/5 border-t p-4 flex flex-col items-center gap-3">
                             {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
-                                <Button asChild size="lg" className="w-full font-bold shadow-sm rounded-xl">
+                                <Button asChild size="lg" className="w-full font-bold shadow-md rounded-xl py-6 text-lg">
                                     <Link href="/dashboard/absen">Absen Pulang Sekarang</Link>
                                 </Button>
                             ) : !todaysAttendance?.[0]?.checkInTime ? (
-                                <Button asChild size="lg" className="w-full font-bold shadow-sm rounded-xl">
+                                <Button asChild size="lg" className="w-full font-bold shadow-md rounded-xl py-6 text-lg">
                                     <Link href="/dashboard/absen">Absen Masuk Sekarang</Link>
                                 </Button>
                             ) : (
-                                <Button disabled size="lg" className="w-full bg-green-500/10 text-green-600 border-green-500/20 font-bold rounded-xl">
-                                    <Sparkles className="mr-2 w-4 h-4" /> Absensi Hari Ini Selesai
+                                <Button disabled size="lg" className="w-full bg-green-500/10 text-green-600 border-green-500/20 font-bold rounded-xl py-6">
+                                    <Sparkles className="mr-2 w-5 h-5" /> Absensi Hari Ini Selesai
                                 </Button>
                             )}
 
-                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
+                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">
                                 <Link href="/dashboard/laporan">Lihat Riwayat Lengkap</Link>
                             </Button>
                         </CardFooter>
                     </Card>
 
-                    {/* AREA GRAFIK RIWAYAT */}
+                    {/* AREA GRAFIK RIWAYAT - FULL WIDTH */}
                     <div className="space-y-2 w-full">
                         <div className="px-0 flex items-center justify-between">
                             <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
                                 <TrendingUp size={14} className="text-primary" /> Riwayat Bulan {format(new Date(), 'MMMM', { locale: id })}
                             </h2>
                             <p className="text-[10px] text-muted-foreground">
-                                Kehadiran: <span className="font-bold text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>
+                                Kehadiran: <span className="font-black text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>
                             </p>
                         </div>
-                        <Card className="w-full shadow-md">
+                        <Card className="w-full shadow-md border-muted/50">
                             <CardContent className="p-4 pt-6">
-                                <div className="h-44 w-full">
+                                <div className="h-48 w-full">
                                     {isPersonalSummaryLoading ? (
                                         <Skeleton className="h-full w-full rounded-lg" />
                                     ) : (
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -35, bottom: 0 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
                                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
                                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
                                                 <Tooltip 
-                                                    cursor={{ fill: 'transparent' }} 
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }}
+                                                    cursor={{ fill: 'rgba(0,0,0,0.05)' }} 
+                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }}
                                                 />
-                                                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                                                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={45}>
                                                     {chartData.map((entry, index) => (
                                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                                     ))}
@@ -271,7 +271,7 @@ export default function DashboardPage() {
             )}
 
             {isAdminOrKepsek && (
-                <div className="w-full space-y-6">
+                <div className="w-full space-y-6 max-w-full">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                         <StatCard 
                             title="Hadir Hari Ini" 
