@@ -14,6 +14,19 @@ import { parse, format, startOfDay, endOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
+const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string): Date => {
+    const [startH, startM] = startTimeStr.split(':').map(Number);
+    const [endH, endM] = endTimeStr.split(':').map(Number);
+    const startDate = new Date(baseDate.getTime());
+    startDate.setHours(startH, startM, 0, 0);
+    const endDate = new Date(baseDate.getTime());
+    endDate.setHours(endH, endM, 0, 0);
+    const randomTimestamp = startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime());
+    const res = new Date(randomTimestamp);
+    res.setSeconds(Math.floor(Math.random() * 60));
+    return res;
+};
+
 export default function ManualAttendancePage() {
     const router = useRouter();
     const params = useParams();
@@ -104,6 +117,46 @@ export default function ManualAttendancePage() {
         }
     };
 
+    const handleSetHadir = async () => {
+        if (!schoolConfig || isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            const recordDate = startOfDay(date);
+            const inStart = schoolConfig.checkInStartTime || '07:00';
+            const inEnd = schoolConfig.checkInEndTime || '07:30';
+            const outStart = schoolConfig.checkOutStartTime || '14:00';
+            const outEnd = schoolConfig.checkOutEndTime || '15:00';
+
+            const checkInTime = getRandomTime(recordDate, inStart, inEnd);
+            const checkOutTime = getRandomTime(recordDate, outStart, outEnd);
+
+            const attendanceData = {
+                userId,
+                date: format(date, 'yyyy-MM-dd'),
+                checkInTime: Timestamp.fromDate(checkInTime),
+                checkOutTime: Timestamp.fromDate(checkOutTime),
+                manualEntry: true,
+                reasonForUpdate: 'Kehadiran Penuh',
+                lastModifiedBy: authUser?.uid,
+                lastModifiedAt: serverTimestamp()
+            };
+
+            if (existingRecord) {
+                const recordRef = doc(firestore, 'users', userId, 'attendanceRecords', existingRecord.id);
+                await updateDoc(recordRef, attendanceData);
+            } else {
+                const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
+                await addDoc(attendanceRef, { ...attendanceData, createdAt: serverTimestamp(), createdBy: authUser?.uid });
+            }
+            toast({ title: 'Sukses', description: `Status Hadir penuh telah disimpan untuk ${userData.name}.` });
+            router.back();
+        } catch (err) {
+            setError('Gagal memproses kehadiran otomatis.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleCreateLeave = async (type: 'Sakit' | 'Izin' | 'Dinas', reason: string) => {
         setIsSubmitting(true);
         setError(null);
@@ -159,8 +212,8 @@ export default function ManualAttendancePage() {
             const [inHours, inMinutes] = checkIn ? checkIn.split(':').map(Number) : [null, null];
             const [outHours, outMinutes] = checkOut ? checkOut.split(':').map(Number) : [null, null];
 
-            const checkInTimestamp = inHours !== null && inMinutes !== null ? Timestamp.fromDate(new Date(date.setHours(inHours, inMinutes, 0))) : null;
-            const checkOutTimestamp = outHours !== null && outMinutes !== null ? Timestamp.fromDate(new Date(date.setHours(outHours, outMinutes, 0))) : null;
+            const checkInTimestamp = inHours !== null && inMinutes !== null ? Timestamp.fromDate(new Date(new Date(date).setHours(inHours, inMinutes, 0))) : null;
+            const checkOutTimestamp = outHours !== null && outMinutes !== null ? Timestamp.fromDate(new Date(new Date(date).setHours(outHours, outMinutes, 0))) : null;
             
             const attendanceData = {
                 userId,
@@ -212,6 +265,7 @@ export default function ManualAttendancePage() {
                     <div className="space-y-4 mb-6 pt-2">
                         <Label>Tindakan Cepat</Label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <Button variant="default" size="sm" onClick={handleSetHadir} disabled={isSubmitting}>Jadikan Hadir</Button>
                             <Button variant="outline" size="sm" onClick={handleSetLate} disabled={isSubmitting}>Jadikan Terlambat</Button>
                             <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Sakit', 'Sakit')} disabled={isSubmitting}>Jadikan Sakit</Button>
                             <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Izin', 'Izin Pribadi')} disabled={isSubmitting}>Jadikan Izin</Button>
@@ -221,7 +275,7 @@ export default function ManualAttendancePage() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6 border-t pt-6">
-                         <Label>Entri Manual</Label>
+                         <Label>Entri Jam Manual</Label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="checkIn">Jam Masuk</Label>

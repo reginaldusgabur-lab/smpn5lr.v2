@@ -16,6 +16,9 @@ export interface MonthlyReportData {
     manualEntry: boolean;
 }
 
+// Helper to clean descriptions from legacy suffixes
+const cleanDesc = (desc: string) => desc ? desc.replace(/\s?\(diubah oleh Admin\)/g, '').replace(/\(✓\)/g, '').trim() : '';
+
 // --- DASHBOARD STATS FUNCTION ---
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
@@ -270,14 +273,18 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         if (attendanceRecord) {
             let checkInTime = attendanceRecord.checkInTime.toDate();
             let checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
-            let description = attendanceRecord.reasonForUpdate || 'Kehadiran Penuh';
+            let rawDescription = attendanceRecord.reasonForUpdate || 'Kehadiran Penuh';
+            
+            // CLEAN LOGIC: Remove legacy text
+            let description = cleanDesc(rawDescription);
+            if (!description) description = 'Kehadiran Penuh';
 
-            // LOGIKA REEL: Jika status "Terlambat", Masuk dianggap tidak ada (instruksi: "hanya isi waktu jam pulang saja")
+            // LOGIKA REEL: Jika status "Terlambat", Masuk dianggap tidak ada
             if (description === 'Terlambat') {
                 checkInTime = null; 
             }
 
-            // LOGIKA REEL: Jika status "Pulang Cepat", Pulang dianggap tidak ada (instruksi: "jam pulang kosong")
+            // LOGIKA REEL: Jika status "Pulang Cepat", Pulang dianggap tidak ada
             if (description === 'Pulang Cepat') {
                 checkOutTime = null;
             }
@@ -302,7 +309,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 checkInTime: null,
                 checkOutTime: null,
                 status: leaveRecord.type, 
-                description: leaveRecord.reason || leaveRecord.type,
+                description: cleanDesc(leaveRecord.reason) || leaveRecord.type,
             };
         }
 

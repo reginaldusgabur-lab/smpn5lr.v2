@@ -105,10 +105,8 @@ export default function UserReportDetailPage() {
             const batch = writeBatch(firestore);
             
             if (newStatus === 'Pulang Cepat') {
-                // Untuk Pulang Cepat, kita buat record kehadiran dengan Masuk reel tapi Pulang kosong
                 const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
                 const newDoc = doc(attendanceRef);
-                
                 const inStart = schoolConfigData?.checkInStartTime || '07:00';
                 const inEnd = schoolConfigData?.checkInEndTime || '07:30';
                 const realInTime = getRandomTime(targetDate, inStart, inEnd);
@@ -117,7 +115,7 @@ export default function UserReportDetailPage() {
                     userId,
                     date: dateStr,
                     checkInTime: Timestamp.fromDate(realInTime),
-                    checkOutTime: null, // Kosong sesuai instruksi
+                    checkOutTime: null,
                     manualEntry: true,
                     reasonForUpdate: 'Pulang Cepat',
                     updatedBy: currentUser.uid,
@@ -126,7 +124,6 @@ export default function UserReportDetailPage() {
             } else {
                 const leaveRef = collection(firestore, 'users', userId, 'leaveRequests');
                 const newLeaveDoc = doc(leaveRef);
-                
                 batch.set(newLeaveDoc, {
                     userId,
                     type: newStatus === 'Izin Pribadi' ? 'Izin' : newStatus,
@@ -158,7 +155,7 @@ export default function UserReportDetailPage() {
             const targetDate = parseISO(dateStr);
             const [endH, endM] = (schoolConfigData.checkInEndTime || '08:00').split(':').map(Number);
             const lateTime = new Date(targetDate);
-            lateTime.setHours(endH, endM + 15, 0); // 15 menit terlambat
+            lateTime.setHours(endH, endM + 15, 0);
 
             const [outStart, outEnd] = [schoolConfigData.checkOutStartTime || '14:00', schoolConfigData.checkOutEndTime || '15:00'];
             const realOutTime = getRandomTime(targetDate, outStart, outEnd);
@@ -171,7 +168,7 @@ export default function UserReportDetailPage() {
                     userId,
                     date: dateStr,
                     checkInTime: Timestamp.fromDate(lateTime),
-                    checkOutTime: Timestamp.fromDate(realOutTime), // Terlambat tetap ada jam pulang agar reel
+                    checkOutTime: Timestamp.fromDate(realOutTime),
                     manualEntry: true,
                     reasonForUpdate: 'Terlambat',
                     updatedBy: currentUser.uid,
@@ -180,6 +177,44 @@ export default function UserReportDetailPage() {
                 .commit();
 
             toast({ title: 'Berhasil', description: 'Kehadiran ditandai sebagai terlambat.' });
+            fetchData();
+        } catch (err) {
+            toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' });
+        } finally {
+            setIsMutating(false);
+        }
+    };
+
+    const handleSetHadir = async (dateStr: string) => {
+        if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
+        setIsMutating(true);
+        try {
+            const targetDate = parseISO(dateStr);
+            const inStart = schoolConfigData.checkInStartTime || '07:00';
+            const inEnd = schoolConfigData.checkInEndTime || '07:30';
+            const outStart = schoolConfigData.checkOutStartTime || '14:00';
+            const outEnd = schoolConfigData.checkOutEndTime || '15:00';
+
+            const checkInTime = getRandomTime(targetDate, inStart, inEnd);
+            const checkOutTime = getRandomTime(targetDate, outStart, outEnd);
+
+            const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
+            const newDoc = doc(attendanceRef);
+            
+            await writeBatch(firestore)
+                .set(newDoc, {
+                    userId,
+                    date: dateStr,
+                    checkInTime: Timestamp.fromDate(checkInTime),
+                    checkOutTime: Timestamp.fromDate(checkOutTime),
+                    manualEntry: true,
+                    reasonForUpdate: 'Kehadiran Penuh',
+                    updatedBy: currentUser.uid,
+                    updatedAt: serverTimestamp()
+                })
+                .commit();
+
+            toast({ title: 'Berhasil', description: 'Kehadiran ditandai sebagai Hadir.' });
             fetchData();
         } catch (err) {
             toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' });
@@ -314,13 +349,14 @@ export default function UserReportDetailPage() {
                                                                 <DropdownMenuContent align="end" className="w-48">
                                                                     <DropdownMenuLabel>Ubah Kehadiran</DropdownMenuLabel>
                                                                     <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem onClick={() => handleSetHadir(item.date)}>Hadir (Full)</DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleSetLate(item.date)}>Set Terlambat</DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang Cepat')}>Pulang Cepat</DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
                                                                     <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Sakit</DropdownMenuItem>
                                                                     <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Izin Pribadi', 'Izin Pribadi')}>Izin Pribadi</DropdownMenuItem>
                                                                     <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Pagi')}>Dinas Pagi</DropdownMenuItem>
                                                                     <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Siang')}>Dinas Siang</DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang Cepat')}>Pulang Cepat</DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem onClick={() => handleSetLate(item.date)}>Set Terlambat</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         ) : (
