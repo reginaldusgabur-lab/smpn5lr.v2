@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,6 +25,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    // Hanya redirect jika pemuatan selesai dan user memang tidak ada
     if (!isUserLoading && !user) {
       router.replace('/');
     }
@@ -43,7 +48,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (userDoc.exists() && !userDoc.data().onboardingSelesai) {
         // Pengguna baru, mulai proses orientasi
         sessionStorage.setItem('onboardingInProgress', 'true');
-        // Langsung jalankan tur, tanpa menampilkan dialog aturan
         setRunTour(true);
       }
     };
@@ -64,7 +68,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  if (isUserLoading || !isClient || !user) {
+  // Jangan render apapun di server untuk mencegah hydration mismatch
+  if (!isClient) {
+    return null;
+  }
+
+  // Jika kita yakin tidak ada user, tampilkan loader sebentar sebelum redirect (biasanya cepat)
+  if (!isUserLoading && !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -72,6 +82,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  // RENDER SHELL LANGSUNG: Sidebar dan Header tetap muncul meskipun data detail (isUserLoading) masih diproses.
+  // Ini memberikan efek "Luxury" karena aplikasi terasa instan.
   return (
     <CacheProvider>
       <SidebarProvider>
@@ -81,7 +93,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <DesktopLayout>{children}</DesktopLayout>
         )}
 
-        {/* Dialog aturan telah dihapus. Tur orientasi akan langsung berjalan untuk pengguna baru di desktop. */}
         {!isMobile && <OnboardingTour run={runTour} onTourComplete={handleTourComplete} />}
       </SidebarProvider>
     </CacheProvider>

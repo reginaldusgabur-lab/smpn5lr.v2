@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import Link from 'next/link';
@@ -7,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +31,7 @@ import { ModeToggle } from '@/components/theme-toggle';
 
 export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
 
@@ -40,17 +42,15 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: userData } = useDoc<{ name: string, role: string, photoURL?: string }>(user, userDocRef);
+  const { data: userData, isLoading: isUserDataLoading } = useDoc<{ name: string, role: string, photoURL?: string }>(user, userDocRef);
 
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
-      // Gunakan router.push untuk navigasi sisi klien yang mulus
       router.push('/');
     } catch (error) {
       console.error("Gagal melakukan logout:", error);
-      // Opsional: tambahkan toast atau notifikasi error di sini
     }
   };
 
@@ -65,10 +65,11 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
     if (userData?.role) {
       return userData.role.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
-    return "User";
+    return "";
   }
   const displayRole = getDisplayRole();
   const currentPhoto = userData?.photoURL || user?.photoURL;
+  const isProfileLoading = isUserLoading || isUserDataLoading;
 
   const headerClasses = `
     fixed top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background px-4 sm:px-6
@@ -81,49 +82,59 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
     <header className={headerClasses}>
       {/* Left section: User Profile */}
       <div className="flex items-center gap-3">
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 focus:outline-none rounded-full p-1 -ml-1 sm:p-0 sm:ml-0">
-                    <Avatar className="h-9 w-9">
-                        <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" />
-                        <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-                    </Avatar>
-                    <div className="hidden sm:flex flex-col justify-center text-left">
-                        <p className="text-sm font-medium leading-none">{displayName || 'Loading...'}</p>
-                        <p className="text-xs leading-none text-muted-foreground capitalize">{displayRole}</p>
-                    </div>
-                </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{displayName || 'Pengguna'}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                        {displayRole}
-                    </p>
-                    </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                    <Link href="/dashboard/pengaturan">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Pengaturan</span>
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Keluar</span>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        {isProfileLoading && !displayName ? (
+            <div className="flex items-center gap-3">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="hidden sm:flex flex-col gap-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                </div>
+            </div>
+        ) : (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-3 focus:outline-none rounded-full p-1 -ml-1 sm:p-0 sm:ml-0">
+                        <Avatar className="h-9 w-9 border shadow-sm">
+                            <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" />
+                            <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                        </Avatar>
+                        <div className="hidden sm:flex flex-col justify-center text-left">
+                            <p className="text-sm font-medium leading-none">{displayName || 'Pengguna'}</p>
+                            <p className="text-[10px] uppercase tracking-wider leading-none text-muted-foreground mt-1 font-semibold">{displayRole || 'User'}</p>
+                        </div>
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{displayName || 'Pengguna'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                            {displayRole || 'User'}
+                        </p>
+                        </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/dashboard/pengaturan">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Pengaturan</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Keluar</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        )}
         <ModeToggle />
       </div>
 
       {/* Right Section: Logo with Dialog */}
       <Dialog>
         <DialogTrigger asChild>
-          <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full">
+          <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full transition-transform active:scale-95">
             <Image
               src={appLogo?.imageUrl || '/logo-3d.png'}
               alt="App Logo"
@@ -147,23 +158,15 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
           <div className="text-sm space-y-3 py-2 max-h-[60vh] overflow-y-auto pr-4">
             <div className="font-semibold">1. Kejujuran adalah Segalanya</div>
             <p className="text-muted-foreground pl-4">
-              Setiap pengguna bertanggung jawab penuh atas kebenaran data absensinya. Tindakan manipulasi, "titip absen", atau pemalsuan data dalam bentuk apapun adalah pelanggaran berat.
+              Setiap pengguna bertanggung jawab penuh atas kebenaran data absensinya. Tindakan manipulasi atau pemalsuan data adalah pelanggaran berat.
             </p>
             <div className="font-semibold">2. Tepat Waktu</div>
             <p className="text-muted-foreground pl-4">
-              Lakukan absensi masuk dan pulang sesuai dengan rentang waktu yang telah ditetapkan oleh admin sekolah. Keterlambatan akan tercatat oleh sistem.
+              Lakukan absensi masuk dan pulang sesuai dengan rentang waktu yang telah ditetapkan. Keterlambatan akan tercatat otomatis.
             </p>
             <div className="font-semibold">3. QR Code Bersifat Rahasia</div>
             <p className="text-muted-foreground pl-4">
-              Dilarang keras menyebarluaskan, membagikan, atau mengambil gambar QR Code absensi untuk digunakan oleh orang lain. QR Code hanya valid untuk digunakan di lokasi dan waktu yang telah ditentukan.
-            </p>
-            <div className="font-semibold">4. Gunakan Fitur Izin dengan Benar</div>
-            <p className="text-muted-foreground pl-4">
-              Fitur pengajuan izin/sakit hanya boleh digunakan untuk alasan yang sah dan dapat dipertanggungjawabkan. Pengajuan yang tidak sesuai akan ditolak.
-            </p>
-             <div className="font-semibold">5. Sanksi Pelanggaran</div>
-            <p className="text-muted-foreground pl-4">
-              Setiap pelanggaran yang terbukti, seperti titip absen atau manipulasi data lokasi, akan dianggap sebagai tindakan indisipliner dan akan ditindaklanjuti oleh pimpinan sekolah.
+              Dilarang keras membagikan atau menyalahgunakan QR Code absensi. Pelanggaran akan ditindaklanjuti.
             </p>
           </div>
         </DialogContent>
