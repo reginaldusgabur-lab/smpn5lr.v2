@@ -29,6 +29,7 @@ import {
   Search,
   ShieldCheck,
   Users,
+  Filter,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -291,7 +292,7 @@ const AdminTable = ({ data, canManage, onEdit, onToggleStatus, onDelete }: Table
     );
 };
 
-function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: boolean }) {
+function UsersView({ isAllowed, canManage, isPageLoading }: { isAllowed: boolean, canManage: boolean, isPageLoading: boolean }) {
     type UserFilter = 'all' | 'guru' | 'pegawai' | 'kepala_sekolah';
 
     const [userFilter, setUserFilter] = useState<UserFilter>('all');
@@ -597,7 +598,7 @@ function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: bo
         }
     }
 
-    if (!isAllowed) return null;
+    if (!isAllowed && !isPageLoading) return null;
 
     return (
         <div className="space-y-8">
@@ -606,7 +607,9 @@ function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: bo
                     <h1 className="text-3xl font-bold tracking-tight">Manajemen Pengguna</h1>
                     <p className="text-muted-foreground mt-1">Kelola data Guru, Pegawai, dan Kepala Sekolah.</p>
                 </div>
-                {canManage && (
+                {isPageLoading ? (
+                    <div className="px-1 md:px-0"><Skeleton className="h-11 w-full sm:w-[180px]" /></div>
+                ) : canManage && (
                     <div className="px-1 md:px-0">
                         <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
                             <DialogTrigger asChild><Button size="lg" className="w-full sm:w-auto font-semibold"><PlusCircle className="mr-2 h-5 w-5" />Tambah Pengguna</Button></DialogTrigger>
@@ -670,30 +673,35 @@ function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: bo
                 <CardContent className="py-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
                         <div className="flex-1">
-                            <Select value={userFilter} onValueChange={(value) => setUserFilter(value as UserFilter)}>
-                                <SelectTrigger className="w-full sm:w-[240px]">
-                                    <div className="flex items-center gap-2">
-                                        {userFilter === 'all' && <Users className="h-4 w-4 text-muted-foreground" />}
-                                        {userFilter === 'kepala_sekolah' && <Crown className="h-4 w-4 text-muted-foreground" />}
-                                        {userFilter === 'guru' && <User className="h-4 w-4 text-muted-foreground" />}
-                                        {userFilter === 'pegawai' && <Briefcase className="h-4 w-4 text-muted-foreground" />}
+                            {isPageLoading ? (
+                                <Skeleton className="h-10 w-full sm:w-[240px]" />
+                            ) : (
+                                <Select value={userFilter} onValueChange={(value) => setUserFilter(value as UserFilter)}>
+                                    <SelectTrigger className="w-full sm:w-[240px] pl-10 relative">
+                                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <SelectValue placeholder="Pilih peran..." />
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Semua Pengguna</SelectItem>
-                                    <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
-                                    <SelectItem value="guru">Guru</SelectItem>
-                                    <SelectItem value="pegawai">Pegawai</SelectItem>
-                                </SelectContent>
-                            </Select>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Pengguna</SelectItem>
+                                        <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                        <SelectItem value="guru">Guru</SelectItem>
+                                        <SelectItem value="pegawai">Pegawai</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
                         </div>
                         <div className="relative flex-1 sm:flex-initial sm:w-auto">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input type="search" placeholder="Cari nama pengguna..." className="w-full rounded-lg bg-background pl-8 sm:w-[250px] md:w-[300px]" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
+                            {isPageLoading ? (
+                                <Skeleton className="h-10 w-full sm:w-[250px] md:w-[300px]" />
+                            ) : (
+                                <>
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input type="search" placeholder="Cari nama pengguna..." className="w-full rounded-lg bg-background pl-8 sm:w-[250px] md:w-[300px]" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
+                                </>
+                            )}
                         </div>
                     </div>
-                    {isUsersLoading ? <TableSkeleton cols={canManage ? 8 : 7} /> : <UserTable data={filteredUserData} canManage={canManage} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} onDelete={openDeleteDialog} />}
+                    {(isUsersLoading || isPageLoading) ? <TableSkeleton cols={canManage ? 8 : 7} /> : <UserTable data={filteredUserData} canManage={canManage} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} onDelete={openDeleteDialog} />}
                 </CardContent>
             </Card>
 
@@ -706,11 +714,17 @@ function UsersView({ isAllowed, canManage }: { isAllowed: boolean, canManage: bo
                     <CardContent className="py-6">
                         <div className="flex justify-end mb-6">
                              <div className="relative w-full sm:w-auto">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input type="search" placeholder="Cari nama admin..." className="w-full rounded-lg bg-background pl-8 sm:w-[250px] md:w-[300px]" value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
+                                {isPageLoading ? (
+                                    <Skeleton className="h-10 w-full sm:w-[250px] md:w-[300px]" />
+                                ) : (
+                                    <>
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input type="search" placeholder="Cari nama admin..." className="w-full rounded-lg bg-background pl-8 sm:w-[250px] md:w-[300px]" value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
+                                    </>
+                                )}
                             </div>
                         </div>
-                        {isUsersLoading ? <TableSkeleton cols={canManage ? 5 : 4} /> : <AdminTable data={filteredAdminData} canManage={canManage} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} onDelete={openDeleteDialog} />}
+                        {(isUsersLoading || isPageLoading) ? <TableSkeleton cols={canManage ? 5 : 4} /> : <AdminTable data={filteredAdminData} canManage={canManage} onEdit={openEditDialog} onToggleStatus={handleToggleStatus} onDelete={openDeleteDialog} />}
                     </CardContent>
                 </Card>
             </div>
@@ -803,18 +817,14 @@ export default function AdminUsersPage() {
     }
   }, [isLoadingPage, canView, router, user]);
 
-  if (isLoadingPage || !canView) {
-    return (
-        <div className="flex items-center justify-center h-48">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-    );
-  }
-  
   return (
     <div className="flex-1 pt-4 pb-24 md:p-8">
         <div className="max-w-7xl mx-auto">
-            <UsersView isAllowed={canView} canManage={canManage} />
+            <UsersView 
+                isAllowed={canView || isLoadingPage} 
+                canManage={canManage} 
+                isPageLoading={isLoadingPage} 
+            />
         </div>
     </div>
   );
