@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "push": "git add . && git commit -m \"pushed to github\" && git push -u origin main"
+    "push": "git add . && git commit -m \"pushed to github\" && git push -u origin main",
+    "push-v2": "git remote add origin-v2 https://github.com/reginaldusgabur-lab/smpn5lr.v2.git || git remote set-url origin-v2 https://github.com/reginaldusgabur-lab/smpn5lr.v2.git && git push -u origin-v2 main"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -71,5 +72,9 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "react": "19.0.0-rc-66855b96-20241106",
+    "react-dom": "19.0.0-rc-66855b96-20241106"
   }
 }

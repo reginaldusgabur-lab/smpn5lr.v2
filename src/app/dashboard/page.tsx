@@ -101,7 +101,7 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
     const hasFinished = !!(checkInTime && checkOutTime);
 
     return (
-        <div className="space-y-2 w-full">
+        <div className="space-y-4 w-full">
             <div className="px-1">
                 <h2 className="text-lg font-bold">Kehadiran Anda Hari Ini</h2>
                 <p className="text-sm text-muted-foreground">Status kehadiran dan jam absensi Anda.</p>
@@ -130,21 +130,21 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
                                 </p>
                             </div>
                             <div className="grid grid-cols-2 gap-4 w-full">
-                                <div className="flex flex-col items-center p-4 rounded-xl bg-muted/30 border shadow-sm">
+                                <div className="flex flex-col items-center p-6 rounded-xl bg-muted/30 border shadow-sm">
                                     <div className="flex items-center gap-1.5 mb-2">
                                         <LogIn size={16} className="text-muted-foreground" />
                                         <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Masuk</span>
                                     </div>
-                                    <p className={cn("text-2xl font-bold tabular-nums", isLate ? "text-destructive" : "text-foreground")}>
+                                    <p className={cn("text-3xl font-bold tabular-nums", isLate ? "text-destructive" : "text-foreground")}>
                                         {checkInTime ? format(checkInTime, 'HH:mm') : '--:--'}
                                     </p>
                                 </div>
-                                <div className="flex flex-col items-center p-4 rounded-xl bg-muted/30 border shadow-sm">
+                                <div className="flex flex-col items-center p-6 rounded-xl bg-muted/30 border shadow-sm">
                                     <div className="flex items-center gap-1.5 mb-2">
                                         <LogOut size={16} className="text-muted-foreground" />
                                         <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Pulang</span>
                                     </div>
-                                    <p className={cn("text-2xl font-bold tabular-nums", isEarly ? "text-destructive" : "text-foreground")}>
+                                    <p className={cn("text-3xl font-bold tabular-nums", isEarly ? "text-destructive" : "text-foreground")}>
                                         {checkOutTime ? format(checkOutTime, 'HH:mm') : '--:--'}
                                     </p>
                                 </div>
@@ -173,7 +173,7 @@ const PersonalAttendanceCardUI = ({ attendanceData, schoolConfig, isLoading }: {
 const MonthlyAttendanceChartUI = ({ summaryData, isLoading }: { summaryData: any, isLoading: boolean }) => {
     const now = new Date();
     return (
-        <div className="space-y-2 w-full">
+        <div className="space-y-4 w-full">
             <div className="px-1">
                 <h2 className="flex items-center gap-2 text-lg font-bold">
                     <TrendingUp size={18} className="text-primary" /> Riwayat Bulan {format(now, 'MMMM', { locale: id })}
@@ -207,7 +207,7 @@ const MonthlyAttendanceChartUI = ({ summaryData, isLoading }: { summaryData: any
 
 function useMonthlyAttendanceSummary(user: any) {
     const firestore = useFirestore();
-    const cacheKey = useMemo(() => user ? `monthlySummary_v6_${user.uid}` : null, [user]);
+    const cacheKey = useMemo(() => user ? `monthlySummary_v7_${user.uid}` : null, [user]);
     const [summary, setSummary] = useState<any>(() => cacheKey ? getFromCache(cacheKey) || null : null);
     const [isLoading, setIsLoading] = useState(summary === null);
 
@@ -241,7 +241,7 @@ function useMonthlyAttendanceSummary(user: any) {
 }
 
 function useStaffDashboardStats(firestore: any, user: any) {
-  const cacheKey = 'staffDashboardStats_v5';
+  const cacheKey = 'staffDashboardStats_v6';
   const [stats, setStats] = useState<any>(() => getFromCache(cacheKey) || null);
   const [isLoading, setIsLoading] = useState(stats === null);
 
@@ -285,7 +285,7 @@ export default function DashboardPage() {
             <WelcomeCard user={user} isLoading={isUserLoading} />
 
             {isGuruOrPegawai && (
-                <div className="w-full space-y-6">
+                <div className="w-full space-y-8">
                     <PersonalAttendanceCardUI 
                         attendanceData={todaysAttendance} 
                         schoolConfig={schoolConfig} 
