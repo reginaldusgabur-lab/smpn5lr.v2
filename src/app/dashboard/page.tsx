@@ -117,7 +117,9 @@ export default function DashboardPage() {
                 {user?.name || 'Pengguna'}
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">
-                Lakukan absensi dan lihat riwayat kehadiran Anda hari ini.
+                {role === 'admin' 
+                  ? 'Pantau aktivitas kehadiran dan kelola data sekolah hari ini.' 
+                  : 'Lakukan absensi dan lihat riwayat kehadiran Anda hari ini.'}
             </p>
         </div>
 
