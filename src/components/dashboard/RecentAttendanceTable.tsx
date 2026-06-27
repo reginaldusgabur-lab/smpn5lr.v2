@@ -9,13 +9,6 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, collectionGroup, Timestamp, doc, getDoc } from 'firebase/firestore';
@@ -55,7 +48,6 @@ const RecentAttendanceTable = () => {
         const startOfToday = startOfDay(today);
         const endOfToday = endOfDay(today);
 
-        // 1. Fetch Configs to check for Holiday
         const schoolConfigSnap = await getDoc(doc(firestore, 'schoolConfig', 'default'));
         const schoolConfig = schoolConfigSnap.data();
         
@@ -130,11 +122,7 @@ const RecentAttendanceTable = () => {
 
       } catch (e: any) {
         console.error("Error fetching today's activity:", e);
-        if (e.code === 'failed-precondition') {
-            setError("Database memerlukan indeks. Silakan buat indeks komposit dari link di log error konsol.");
-        } else {
-            setError("Gagal memuat aktivitas hari ini.");
-        }
+        setError("Gagal memuat aktivitas hari ini.");
       } finally {
         setIsLoading(false);
       }
@@ -149,76 +137,76 @@ const RecentAttendanceTable = () => {
     if (isHoliday) {
         return (
             <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-center px-4">
-                <CalendarOff className="w-12 h-12 mb-4" />
-                <h3 className="text-xl font-semibold">Hari Libur</h3>
-                <p>Sistem absensi tidak aktif pada hari libur.</p>
+                <CalendarOff className="w-10 h-10 mb-4 opacity-50" />
+                <h3 className="text-lg font-bold uppercase tracking-tight">Hari Libur</h3>
+                <p className="text-xs">Sistem absensi non-aktif hari ini.</p>
             </div>
         );
     }
     return (
         <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-center px-4">
-            <WifiOff className="w-12 h-12 mb-4" />
-            <h3 className="text-xl font-semibold">Belum Ada Aktivitas</h3>
-            <p>Belum ada staf yang melakukan absensi masuk hari ini.</p>
+            <WifiOff className="w-10 h-10 mb-4 opacity-50" />
+            <h3 className="text-lg font-bold uppercase tracking-tight">Belum Ada Aktivitas</h3>
+            <p className="text-xs">Belum ada staf yang melakukan absensi masuk hari ini.</p>
         </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Aktivitas Kehadiran Hari Ini</CardTitle>
-        <CardDescription>Daftar absensi pada tanggal {todayFormatted}</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="w-full space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 px-1">
+        <h3 className="font-black text-lg uppercase tracking-tight">Aktivitas Kehadiran</h3>
+        <p className="text-[11px] font-bold text-muted-foreground uppercase">{todayFormatted}</p>
+      </div>
+      <div className="bg-card/30 border rounded-2xl overflow-hidden shadow-sm">
         {isLoading ? (
           <div className="flex items-center justify-center h-40 text-muted-foreground">
             <Loader2 className="h-8 w-8 animate-spin mr-3" />
-            <span>Memuat aktivitas...</span>
+            <span className="text-xs font-bold uppercase">Memuat aktivitas...</span>
           </div>
         ) : error ? (
              <div className="flex flex-col items-center justify-center h-40 text-destructive text-center px-4">
                 <AlertCircle className="w-8 h-8 mb-3" />
-                <span className='font-medium'>Terjadi Kesalahan</span>
-                <span>{error}</span>
+                <span className='font-bold uppercase text-xs'>Terjadi Kesalahan</span>
+                <span className="text-[10px]">{error}</span>
             </div>
         ) : activities.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]">No</TableHead>
-                <TableHead>Nama</TableHead>
-                <TableHead>Jam Masuk</TableHead>
-                <TableHead>Jam Pulang</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Keterangan</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activities.map((activity, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell>
-                     <div className="font-medium">{activity.name}</div>
-                    <div className="text-sm text-muted-foreground">NIP: {activity.nip}</div>
-                  </TableCell>
-                  <TableCell>{activity.checkInTime}</TableCell>
-                  <TableCell>{activity.checkOutTime}</TableCell>
-                   <TableCell>
-                    <Badge variant={activity.status === 'Hadir' ? 'default' : 'secondary'}>
-                        {activity.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{activity.keterangan}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="w-[50px] text-center font-black">No</TableHead>
+                  <TableHead className="font-black uppercase text-[10px]">Nama</TableHead>
+                  <TableHead className="text-center font-black uppercase text-[10px]">Masuk</TableHead>
+                  <TableHead className="text-center font-black uppercase text-[10px]">Pulang</TableHead>
+                  <TableHead className="text-center font-black uppercase text-[10px]">Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {activities.map((activity, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="text-center font-bold text-xs">{index + 1}</TableCell>
+                    <TableCell>
+                       <div className="font-black text-sm">{activity.name}</div>
+                      <div className="text-[10px] text-muted-foreground font-bold">{activity.nip}</div>
+                    </TableCell>
+                    <TableCell className="text-center font-mono text-xs">{activity.checkInTime}</TableCell>
+                    <TableCell className="text-center font-mono text-xs">{activity.checkOutTime}</TableCell>
+                     <TableCell className="text-center">
+                      <Badge variant={activity.status === 'Hadir' ? 'default' : 'secondary'} className="text-[9px] font-black uppercase">
+                          {activity.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         ) : (
           <EmptyState />
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

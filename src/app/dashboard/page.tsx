@@ -3,12 +3,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, limit } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock } from 'lucide-react';
 import { PageWrapper } from '@/components/layout/page-wrapper';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -85,33 +84,20 @@ function useMonthlyAttendanceSummary(user: any) {
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => {
     if (isLoading) return (
-        <div className="space-y-1 mb-2 px-0 w-full">
+        <div className="space-y-1 mb-6 px-0 w-full">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-7 w-48" />
             <Skeleton className="h-3 w-64" />
         </div>
     );
     return (
-        <div className="mb-4 px-0 w-full text-left">
+        <div className="mb-8 px-0 w-full text-left">
             <p className="text-sm text-muted-foreground leading-none font-medium">Selamat Datang</p>
             <h1 className="text-2xl font-black tracking-tight text-foreground mt-1.5">{user?.name || 'Pengguna'}</h1>
             <p className="text-[11px] text-muted-foreground mt-1 font-medium">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
         </div>
     );
 };
-
-const StatCard = ({ title, value, icon: Icon, description, isLoading, className, onClick }: any) => (
-    <Card className={cn("transition-all shadow-sm w-full cursor-default", className)} onClick={onClick}>
-        <CardHeader className="flex flex-row items-center justify-between p-4 pb-1 space-y-0">
-            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</CardTitle>
-            <Icon className="h-4 w-4 text-primary" />
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-            {isLoading ? <Skeleton className="h-7 w-12" /> : <div className="text-xl font-black">{value}</div>}
-            {description && <p className="text-[9px] text-muted-foreground mt-0.5">{description}</p>}
-        </CardContent>
-    </Card>
-);
 
 const LiveClockUI = () => {
     const [time, setTime] = useState<Date | null>(null);
@@ -121,14 +107,14 @@ const LiveClockUI = () => {
         return () => clearInterval(timer);
     }, []);
 
-    if (!time) return <div className="h-20 w-full" />;
+    if (!time) return <div className="h-24 w-full" />;
 
     return (
-        <div className="flex flex-col items-center justify-center py-2 w-full">
-            <h2 className="text-5xl font-black tracking-tighter tabular-nums text-primary leading-none">
+        <div className="flex flex-col items-center justify-center py-6 w-full">
+            <h2 className="text-6xl font-black tracking-tighter tabular-nums text-primary leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-xs font-bold text-muted-foreground mt-2 capitalize">
+            <p className="text-sm font-bold text-muted-foreground mt-3 capitalize">
                 {format(time, 'EEEE, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -163,139 +149,139 @@ export default function DashboardPage() {
 
   return (
     <PageWrapper>
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-10">
             <WelcomeCard user={user} isLoading={isUserLoading} />
 
             {isGuruOrPegawai && (
-                <div className="w-full space-y-5">
-                    {/* KARTU KEHADIRAN UTAMA - FULL WIDTH & FLEXIBLE */}
-                    <Card className="w-full overflow-hidden shadow-lg border-muted/50">
-                        <CardHeader className="p-4 pb-2 space-y-1">
-                            <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-primary" />
-                                <CardTitle className="text-lg font-black">
-                                    Kehadiran Anda Hari Ini
-                                </CardTitle>
-                            </div>
-                            <CardDescription className="text-[11px] font-medium">
-                                Status kehadiran dan jam absensi Anda.
-                            </CardDescription>
-                        </CardHeader>
+                <div className="w-full space-y-12">
+                    {/* SECTION: KEHADIRAN (FLAT DESIGN) */}
+                    <div className="w-full space-y-6">
+                        <div className="flex items-center gap-2 px-0">
+                            <Clock className="w-5 h-5 text-primary" />
+                            <h2 className="text-xl font-black uppercase tracking-tight">Kehadiran Hari Ini</h2>
+                        </div>
                         
-                        <CardContent className="p-4 pt-2">
+                        <div className="w-full bg-card/50 border rounded-2xl p-6 shadow-sm">
                             <LiveClockUI />
                             
-                            <div className="grid grid-cols-2 gap-3 mt-4 w-full">
-                                <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center">
+                            <div className="grid grid-cols-2 gap-4 mt-6 w-full">
+                                <div className="bg-muted/30 rounded-xl p-4 text-center border border-border/40 flex flex-col items-center justify-center">
                                     <div className="flex items-center justify-center gap-1.5 mb-1">
                                         <LogIn className="w-3.5 h-3.5 text-muted-foreground" />
                                         <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">Masuk</p>
                                     </div>
-                                    <p className="text-xl font-black tabular-nums">
+                                    <p className="text-2xl font-black tabular-nums">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
-                                <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center">
+                                <div className="bg-muted/30 rounded-xl p-4 text-center border border-border/40 flex flex-col items-center justify-center">
                                     <div className="flex items-center justify-center gap-1.5 mb-1">
                                         <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
                                         <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">Pulang</p>
                                     </div>
-                                    <p className="text-xl font-black tabular-nums">
+                                    <p className="text-2xl font-black tabular-nums">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
                             </div>
-                        </CardContent>
-                        
-                        <CardFooter className="bg-muted/5 border-t p-4 flex flex-col items-center gap-3">
-                            {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
-                                <Button asChild size="lg" className="w-full font-bold shadow-md rounded-xl py-5 text-base">
-                                    <Link href="/dashboard/absen">Absen Pulang Sekarang</Link>
-                                </Button>
-                            ) : !todaysAttendance?.[0]?.checkInTime ? (
-                                <Button asChild size="lg" className="w-full font-bold shadow-md rounded-xl py-5 text-base">
-                                    <Link href="/dashboard/absen">Absen Masuk Sekarang</Link>
-                                </Button>
-                            ) : (
-                                <Button disabled size="lg" className="w-full bg-green-500/10 text-green-600 border-green-500/20 font-bold rounded-xl py-5">
-                                    <Sparkles className="mr-2 w-4 h-4" /> Absensi Hari Ini Selesai
-                                </Button>
-                            )}
 
-                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider">
-                                <Link href="/dashboard/laporan">Lihat Riwayat Lengkap</Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                            <div className="flex flex-col items-center gap-4 mt-8">
+                                {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
+                                    <Button asChild size="lg" className="w-full font-black shadow-lg rounded-2xl py-7 text-lg uppercase tracking-wide transition-transform active:scale-[0.98]">
+                                        <Link href="/dashboard/absen">Absen Pulang Sekarang</Link>
+                                    </Button>
+                                ) : !todaysAttendance?.[0]?.checkInTime ? (
+                                    <Button asChild size="lg" className="w-full font-black shadow-lg rounded-2xl py-7 text-lg uppercase tracking-wide transition-transform active:scale-[0.98]">
+                                        <Link href="/dashboard/absen">Absen Masuk Sekarang</Link>
+                                    </Button>
+                                ) : (
+                                    <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-black rounded-2xl py-6 flex items-center justify-center text-base uppercase tracking-widest">
+                                        <Sparkles className="mr-2 w-5 h-5" /> Absensi Selesai
+                                    </div>
+                                )}
 
-                    {/* AREA GRAFIK RIWAYAT - FULL WIDTH */}
-                    <div className="space-y-2 w-full">
+                                <Button variant="link" size="sm" asChild className="h-auto p-0 text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest">
+                                    <Link href="/dashboard/laporan">Lihat Riwayat Lengkap</Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SECTION: GRAFIK (FLAT DESIGN) */}
+                    <div className="space-y-6 w-full pt-8 border-t border-dashed">
                         <div className="px-0 flex items-center justify-between">
-                            <h2 className="flex items-center gap-1.5 text-xs font-bold text-foreground uppercase tracking-tight">
-                                <TrendingUp size={12} className="text-primary" /> Riwayat Bulan {format(new Date(), 'MMMM', { locale: id })}
+                            <h2 className="flex items-center gap-2 text-sm font-black text-foreground uppercase tracking-tight">
+                                <TrendingUp size={16} className="text-primary" /> Riwayat Kehadiran Bulanan
                             </h2>
-                            <p className="text-[10px] text-muted-foreground font-bold">
-                                Kehadiran: <span className="text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>
+                            <p className="text-[11px] text-muted-foreground font-black uppercase tracking-wider">
+                                Skor: <span className="text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>
                             </p>
                         </div>
-                        <Card className="w-full shadow-md border-muted/50">
-                            <CardContent className="p-4 pt-6">
-                                <div className="h-40 w-full">
-                                    {isPersonalSummaryLoading ? (
-                                        <Skeleton className="h-full w-full rounded-lg" />
-                                    ) : (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -40, bottom: 0 }}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold' }} />
-                                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9 }} allowDecimals={false} />
-                                                <Tooltip 
-                                                    cursor={{ fill: 'rgba(0,0,0,0.05)' }} 
-                                                    contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }}
-                                                />
-                                                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={35}>
-                                                    {chartData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                                    ))}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <div className="w-full bg-card/50 border rounded-2xl p-6 shadow-sm">
+                            <div className="h-52 w-full">
+                                {isPersonalSummaryLoading ? (
+                                    <Skeleton className="h-full w-full rounded-2xl" />
+                                ) : (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={chartData} margin={{ top: 0, right: 0, left: -40, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
+                                            <Tooltip 
+                                                cursor={{ fill: 'rgba(0,0,0,0.03)' }} 
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', fontSize: '12px', fontWeight: 'bold' }}
+                                            />
+                                            <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={45}>
+                                                {chartData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
 
             {isAdminOrKepsek && (
-                <div className="w-full space-y-6">
+                <div className="w-full space-y-10 pt-8 border-t border-dashed">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                        <StatCard 
-                            title="Hadir Hari Ini" 
-                            value={stats.hadir} 
-                            icon={UserCheck} 
-                            isLoading={isStatsLoading || isUserLoading} 
-                        />
-                        <StatCard 
-                            title="Izin/Sakit" 
-                            value={stats.izin + stats.sakit} 
-                            icon={BookUser} 
-                            description={`${stats.izin} Izin, ${stats.sakit} Sakit`} 
-                            isLoading={isStatsLoading || isUserLoading} 
-                        />
-                        <StatCard 
-                            title="Menunggu" 
-                            value={stats.pending} 
-                            icon={MailWarning} 
-                            description="Pengajuan tertunda" 
-                            isLoading={isStatsLoading || isUserLoading} 
-                            className="cursor-pointer hover:bg-accent/5 border-primary/10" 
-                            onClick={() => router.push('/dashboard/izin-kepala-sekolah')} 
-                        />
+                        <div className="bg-muted/30 border border-border/50 rounded-2xl p-6 shadow-sm">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Hadir</p>
+                                <UserCheck className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="text-3xl font-black">{isStatsLoading ? '...' : stats.hadir}</div>
+                            <p className="text-[10px] text-muted-foreground mt-2 font-medium">Staf tercatat masuk hari ini</p>
+                        </div>
+                        
+                        <div className="bg-muted/30 border border-border/50 rounded-2xl p-6 shadow-sm">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Izin/Sakit</p>
+                                <BookUser className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="text-3xl font-black">{isStatsLoading ? '...' : stats.izin + stats.sakit}</div>
+                            <p className="text-[10px] text-muted-foreground mt-2 font-medium">{stats.izin} Izin, {stats.sakit} Sakit</p>
+                        </div>
+
+                        <Link href="/dashboard/izin-kepala-sekolah" className="block">
+                            <div className="bg-muted/30 border border-border/50 rounded-2xl p-6 shadow-sm hover:bg-accent/10 transition-all group">
+                                <div className="flex items-center justify-between mb-3">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Pending</p>
+                                    <MailWarning className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+                                </div>
+                                <div className="text-3xl font-black">{isStatsLoading ? '...' : stats.pending}</div>
+                                <p className="text-[10px] text-muted-foreground mt-2 font-medium">Klik untuk tinjau pengajuan</p>
+                            </div>
+                        </Link>
                     </div>
-                    <div className="w-full"><RecentAttendanceTable /></div>
-                    <div className="w-full"><AbsentUsersTable /></div>
+                    
+                    <div className="w-full space-y-8">
+                        <RecentAttendanceTable />
+                        <AbsentUsersTable />
+                    </div>
                 </div>
             )}
         </div>
