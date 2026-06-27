@@ -129,7 +129,7 @@ export default function SchoolReportPage() {
 
             const config = schoolConfigData || {};
 
-            // Kop Surat - HANYA DI HALAMAN PERTAMA (Sama dengan Laporan Sekolah)
+            // Kop Surat - HANYA DI HALAMAN PERTAMA
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, currentY, { align: 'center' });
             currentY += 7;
@@ -190,6 +190,24 @@ export default function SchoolReportPage() {
                     4: { halign: 'center', cellWidth: 25 },
                 }
             });
+
+            // Tanda Tangan Kepala Sekolah (Hanya di halaman terakhir)
+            let finalTableY = (doc as any).lastAutoTable.finalY;
+            if (finalTableY > pageHeight - 65) {
+                doc.addPage();
+                finalTableY = 20;
+            }
+
+            let signY = finalTableY + 15;
+            const signatureX = pageWidth - 80;
+            doc.setFontSize(10).setFont('times', 'normal');
+            doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, signY);
+            doc.text('Mengetahui,', signatureX, signY + 6);
+            doc.text('Kepala Sekolah', signatureX, signY + 12);
+            doc.setFont('times', 'bold');
+            doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signY + 38);
+            doc.setFont('times', 'normal');
+            doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, signY + 44);
 
             // Footer Otomatis di Setiap Halaman
             const totalPages = (doc as any).internal.getNumberOfPages();
@@ -289,7 +307,7 @@ export default function SchoolReportPage() {
             });
 
             let finalTableY = (doc as any).lastAutoTable.finalY;
-            if (finalTableY > pageHeight - 60) { doc.addPage(); finalTableY = 20; }
+            if (finalTableY > pageHeight - 65) { doc.addPage(); finalTableY = 20; }
 
             let currentY = finalTableY + 10;
             doc.setFontSize(9).setFont('times', 'bold');
@@ -298,15 +316,15 @@ export default function SchoolReportPage() {
             doc.text('H = Hadir, I = Izin, S = Sakit, A = Alpa', margin + 15, currentY);
 
             currentY += 15;
-            const signatureX = pageWidth - 75;
-            doc.setFontSize(11).setFont('times', 'normal');
+            const signatureX = pageWidth - 80;
+            doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, currentY);
             doc.text('Mengetahui,', signatureX, currentY + 6);
             doc.text('Kepala Sekolah', signatureX, currentY + 12);
             doc.setFont('times', 'bold');
-            doc.text(config.headmasterName || 'Kepala Sekolah', signatureX, currentY + 38);
+            doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, currentY + 38);
             doc.setFont('times', 'normal');
-            doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, currentY + 44);
+            doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, currentY + 44);
 
             const totalPages = doc.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
