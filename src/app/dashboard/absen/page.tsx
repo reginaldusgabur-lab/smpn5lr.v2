@@ -4,15 +4,14 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Html5Qrcode, Html5QrcodeCameraScanConfig } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, CheckCircle, Clock, X, Loader2, AlertTriangle, CameraOff, CalendarOff } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { MapPin, CheckCircle, Clock, X, Loader2, AlertTriangle, CameraOff, CalendarOff, ArrowLeft } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, Timestamp, addDoc, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import QuoteOfTheDay from '@/components/layout/quote-of-the-day';
-import { PageWrapper } from '@/components/layout/page-wrapper';
 
 // --- Helper Functions ---
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -86,7 +85,7 @@ export default function AbsenPage() {
   const showScanner = !isDataLoading && hasCameraPermission && !isHoliday && !hasCompletedAttendance;
   const showLoader = isDataLoading || isCameraInitializing || (showScanner && !isScannerReady);
 
-  // --- Core Functions (BUG FIXED) ---
+  // --- Core Functions ---
   const handleAttendance = useCallback(async () => {
     setLocationError(null);
     if (!user || !firestore || !schoolConfig) {
@@ -153,27 +152,16 @@ export default function AbsenPage() {
                 };
 
                 if (!todaysRecord.checkInTime) {
-                    if (!schoolConfig.checkInEndTime) {
-                        setStatus('error_generic');
-                        return toast({ title: 'Gagal', description: 'Konfigurasi jam masuk belum diatur.', variant: 'destructive' });
-                    }
                     const [inEndH, inEndM] = schoolConfig.checkInEndTime.split(':').map(Number);
                     const lateCheckInTime = new Date();
                     lateCheckInTime.setHours(inEndH, inEndM, 0, 0);
                     updateData.checkInTime = lateCheckInTime;
-                    updateData.checkInLatitude = null;
-                    updateData.checkInLongitude = null;
                 }
 
                 await updateDoc(recordRef, updateData);
                 setStatus('success_out');
 
-            } else { // No record for today, create a new one with late check-in
-                if (!schoolConfig.checkInEndTime) {
-                    setStatus('error_generic');
-                    return toast({ title: 'Gagal', description: 'Konfigurasi jam masuk belum diatur.', variant: 'destructive' });
-                }
-
+            } else {
                 const [inEndH, inEndM] = schoolConfig.checkInEndTime.split(':').map(Number);
                 const lateCheckInTime = new Date();
                 lateCheckInTime.setHours(inEndH, inEndM, 0, 0);
@@ -182,8 +170,6 @@ export default function AbsenPage() {
                     userId: user.uid,
                     date: todayStr,
                     checkInTime: lateCheckInTime,
-                    checkInLatitude: null,
-                    checkInLongitude: null,
                     checkOutTime: now,
                     checkOutLatitude: latitude,
                     checkOutLongitude: longitude,
@@ -226,7 +212,7 @@ export default function AbsenPage() {
         const qrCode = html5QrCodeRef.current || new Html5Qrcode(readerId, { verbose: false });
         html5QrCodeRef.current = qrCode;
 
-        if (qrCode.getState() !== 2) { // 2: SCANNING
+        if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
             const config: Html5QrcodeCameraScanConfig = { fps: 10 };
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
@@ -248,46 +234,60 @@ export default function AbsenPage() {
   }, [effectiveStatus, handleCloseRedirect]);
 
   return (
-    <PageWrapper>
-      <div className="relative w-full bg-background" style={{ height: 'calc(100vh - 68px)' }}>
-        {(showScanner || isCameraInitializing) && (
-          <div className="absolute inset-0 z-0">
-            <div id={readerId} className="w-full h-full" />
-            <style>{`
-                #${readerId} > video { width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: ${isScannerReady ? 1 : 0}; transition: opacity 0.5s ease-in-out; }
-                #${readerId}__scan_region, #${readerId}__dashboard_section_csr { display: none !important; }
-            `}</style>
-          </div>
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-between p-4 py-8 text-center w-full h-full pointer-events-none">
-          <div className="w-full pointer-events-auto">
-            <h1 className={cn("text-3xl font-bold tracking-tight", isScannerReady ? 'text-white' : 'text-foreground', 'dark:text-white')} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Pindai QR Code</h1>
-            <p className={cn("mt-2", isScannerReady ? 'text-white/80' : 'text-muted-foreground', 'dark:text-white/80')} style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>Arahkan kamera ke QR Code yang ditampilkan.</p>
-          </div>
-
-          <div className="relative w-full max-w-[280px] sm:max-w-xs aspect-square">
-            {(!isHoliday && !hasCompletedAttendance) && (
-              <>
-                <div className={cn("absolute top-0 left-0 w-1/4 h-1/4 border-t-4 border-l-4 rounded-tl-xl", isScannerReady ? 'border-white' : 'border-foreground', 'dark:border-white')} />
-                <div className={cn("absolute top-0 right-0 w-1/4 h-1/4 border-t-4 border-r-4 rounded-tr-xl", isScannerReady ? 'border-white' : 'border-foreground', 'dark:border-white')} />
-                <div className={cn("absolute bottom-0 left-0 w-1/4 h-1/4 border-b-4 border-l-4 rounded-bl-xl", isScannerReady ? 'border-white' : 'border-foreground', 'dark:border-white')} />
-                <div className={cn("absolute bottom-0 right-0 w-1/4 h-1/4 border-b-4 border-r-4 rounded-br-xl", isScannerReady ? 'border-white' : 'border-foreground', 'dark:border-white')} />
-                {showLoader ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground dark:text-white/80">
-                    <Loader2 className="h-10 w-10 animate-spin text-foreground dark:text-white" />
-                    <p className="mt-4 text-sm font-medium">{isDataLoading ? 'Memuat data...' : 'Menyiapkan kamera...'}</p>
-                  </div>
-                ) : ( isScannerReady && <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-1 bg-red-500/70 shadow-[0_0_15px_3px_theme(colors.red.500)] animate-scan-line" /> )}
-              </>
-            )}
-          </div>
-          <div className="w-full max-w-md h-10 pointer-events-auto" />
-        </div>
-
-        {effectiveStatus !== 'idle' && <StatusFeedbackOverlay status={effectiveStatus} locationError={locationError} onClose={handleOnClose} userData={userData} />}
+    <div className="max-w-md mx-auto space-y-4">
+      <div className="flex items-center gap-2 mb-4">
+          <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
+              <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold tracking-tight">Pindai QR Code</h1>
       </div>
-    </PageWrapper>
+
+      <Card className="overflow-hidden border-none shadow-xl bg-card">
+          <CardHeader className="pb-4">
+              <CardTitle className="text-center text-lg">Arahkan Kamera</CardTitle>
+              <CardDescription className="text-center">Pastikan QR Code berada di dalam kotak pemindaian.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+              <div className="relative aspect-square w-full bg-black">
+                  {(showScanner || isCameraInitializing) && (
+                    <div className="absolute inset-0 z-0">
+                      <div id={readerId} className="w-full h-full" />
+                      <style>{`
+                          #${readerId} > video { width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: ${isScannerReady ? 1 : 0.5}; transition: opacity 0.5s ease-in-out; }
+                          #${readerId}__scan_region, #${readerId}__dashboard_section_csr { display: none !important; }
+                      `}</style>
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 z-10 flex items-center justify-center p-8 pointer-events-none">
+                      <div className="relative w-full h-full">
+                          {/* Corner Borders */}
+                          <div className={cn("absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
+                          <div className={cn("absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 rounded-tr-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
+                          <div className={cn("absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 rounded-bl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
+                          <div className={cn("absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 rounded-br-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/50')} />
+
+                          {showLoader && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-xl">
+                              <Loader2 className="h-10 w-10 animate-spin text-white" />
+                              <p className="mt-4 text-sm font-medium text-white">{isDataLoading ? 'Memuat data...' : 'Menyiapkan kamera...'}</p>
+                            </div>
+                          )}
+
+                          {isScannerReady && !showLoader && (
+                              <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 h-0.5 bg-primary shadow-[0_0_15px_2px_theme(colors.primary.DEFAULT)] animate-scan-line" />
+                          )}
+                      </div>
+                  </div>
+              </div>
+          </CardContent>
+          <CardFooter className="bg-muted/30 p-6 flex flex-col items-center gap-2">
+               <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest italic">E-SPENLI Digital Attendance</p>
+          </CardFooter>
+      </Card>
+
+      {effectiveStatus !== 'idle' && <StatusFeedbackOverlay status={effectiveStatus} locationError={locationError} onClose={handleOnClose} userData={userData} />}
+    </div>
   );
 }
 
@@ -295,19 +295,19 @@ export default function AbsenPage() {
 const StatusFeedbackOverlay = ({ status, locationError, onClose, userData }: { status: FeedbackStatus, locationError: string | null, onClose: () => void, userData: any }) => {
     const feedback = useMemo(() => {
         switch (status) {
-            case 'processing': return { icon: <Loader2 className="h-16 w-16 animate-spin text-primary" />, title: 'Memproses...', desc: 'Sedang memvalidasi absensi Anda.', cardClass: 'bg-background/90' };
-            case 'locating': return { icon: <Loader2 className="h-16 w-16 animate-spin text-primary" />, title: 'Mencari Lokasi...', desc: 'Mohon tunggu, sedang mendapatkan data lokasi.', cardClass: 'bg-background/90' };
-            case 'success_in': return { icon: <CheckCircle className="h-16 w-16 text-green-500" />, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!', cardClass: 'bg-green-50 dark:bg-green-950/50 border-green-800' };
-            case 'success_out': return { icon: <CheckCircle className="h-16 w-16 text-blue-500" />, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!', cardClass: 'bg-blue-50 dark:bg-blue-950/50 border-blue-800' };
-            case 'error_radius': return { icon: <MapPin className="h-16 w-16 text-destructive" />, title: 'Gagal: Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.', cardClass: 'bg-destructive/10 border-destructive' };
-            case 'error_time': return { icon: <Clock className="h-16 w-16 text-destructive" />, title: 'Gagal: Di Luar Jam Absen', desc: 'Waktu absensi belum dibuka atau sudah ditutup.', cardClass: 'bg-destructive/10 border-destructive' };
-            case 'error_already_in': return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Gagal: Sudah Absen Masuk', desc: 'Anda sudah melakukan absensi masuk hari ini.', cardClass: 'bg-destructive/10 border-destructive' };
-            case 'error_already_out': return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Gagal: Sudah Absen Pulang', desc: 'Anda sudah melakukan absensi pulang hari ini.', cardClass: 'bg-destructive/10 border-destructive' };
-            case 'error_location': return { icon: <MapPin className="h-16 w-16 text-destructive" />, title: 'Gagal: Lokasi Error', desc: locationError || 'Pastikan GPS aktif dan berikan izin akses.', cardClass: 'bg-destructive/10 border-destructive' };
-            case 'info_holiday': return { icon: <CalendarOff className="h-16 w-16 text-blue-500" />, title: 'Hari Libur', desc: 'Sistem absensi tidak aktif hari ini.', cardClass: 'bg-blue-50 dark:bg-blue-950/50 border-blue-800' };
-            case 'info_checked_out': return { icon: <CheckCircle className="h-16 w-16 text-green-500" />, title: 'Absensi Selesai', desc: 'Anda telah menyelesaikan absensi untuk hari ini.', cardClass: 'bg-green-50 dark:bg-green-950/50 border-green-800' };
-            case 'info_no_camera': return { icon: <CameraOff className="h-16 w-16 text-destructive" />, title: 'Kamera Tidak Tersedia', desc: 'Izinkan akses kamera di pengaturan browser, lalu segarkan halaman ini.', cardClass: 'bg-destructive/10 border-destructive' };
-            default: return { icon: <AlertTriangle className="h-16 w-16 text-destructive" />, title: 'Gagal: Terjadi Kesalahan', desc: 'Silakan coba lagi beberapa saat.', cardClass: 'bg-destructive/10 border-destructive' };
+            case 'processing': return { icon: <Loader2 className="h-16 w-16 animate-spin text-primary" />, title: 'Memproses...', desc: 'Sedang memvalidasi absensi Anda.', cardClass: 'bg-background' };
+            case 'locating': return { icon: <Loader2 className="h-16 w-16 animate-spin text-primary" />, title: 'Mencari Lokasi...', desc: 'Mohon tunggu, sedang mendapatkan data lokasi.', cardClass: 'bg-background' };
+            case 'success_in': return { icon: <CheckCircle className="h-16 w-16 text-green-500" />, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!', cardClass: 'bg-green-50 dark:bg-green-950/50' };
+            case 'success_out': return { icon: <CheckCircle className="h-16 w-16 text-blue-500" />, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!', cardClass: 'bg-blue-50 dark:bg-blue-950/50' };
+            case 'error_radius': return { icon: <MapPin className="h-16 w-16 text-destructive" />, title: 'Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.', cardClass: 'bg-destructive/10' };
+            case 'error_time': return { icon: <Clock className="h-16 w-16 text-destructive" />, title: 'Di Luar Jam Absen', desc: 'Waktu absensi belum dibuka atau sudah ditutup.', cardClass: 'bg-destructive/10' };
+            case 'error_already_in': return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Sudah Absen Masuk', desc: 'Anda sudah melakukan absensi masuk hari ini.', cardClass: 'bg-destructive/10' };
+            case 'error_already_out': return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Sudah Absen Pulang', desc: 'Anda sudah melakukan absensi pulang hari ini.', cardClass: 'bg-destructive/10' };
+            case 'error_location': return { icon: <MapPin className="h-16 w-16 text-destructive" />, title: 'Lokasi Error', desc: locationError || 'Pastikan GPS aktif dan berikan izin akses.', cardClass: 'bg-destructive/10' };
+            case 'info_holiday': return { icon: <CalendarOff className="h-16 w-16 text-blue-500" />, title: 'Hari Libur', desc: 'Sistem absensi tidak aktif hari ini.', cardClass: 'bg-blue-50 dark:bg-blue-950/50' };
+            case 'info_checked_out': return { icon: <CheckCircle className="h-16 w-16 text-green-500" />, title: 'Absensi Selesai', desc: 'Anda telah menyelesaikan absensi untuk hari ini.', cardClass: 'bg-green-50 dark:bg-green-950/50' };
+            case 'info_no_camera': return { icon: <CameraOff className="h-16 w-16 text-destructive" />, title: 'Kamera Tidak Tersedia', desc: 'Izinkan akses kamera di pengaturan browser.', cardClass: 'bg-destructive/10' };
+            default: return { icon: <AlertTriangle className="h-16 w-16 text-destructive" />, title: 'Terjadi Kesalahan', desc: 'Silakan coba lagi beberapa saat.', cardClass: 'bg-destructive/10' };
         }
     }, [status, locationError]);
 
@@ -321,12 +321,12 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData }: { s
     if (status === 'idle') return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
-            <Card className={cn("w-full max-w-xs text-center shadow-2xl m-4", feedback.cardClass)} onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-current/60 hover:text-current/90" onClick={onClose}><X className="h-5 w-5" /><span className="sr-only">Tutup</span></Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose}>
+            <Card className={cn("w-full max-w-sm text-center shadow-2xl relative", feedback.cardClass)} onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="absolute top-2 right-2 opacity-50 hover:opacity-100" onClick={onClose}><X className="h-5 w-5" /><span className="sr-only">Tutup</span></Button>
                 <CardHeader className="items-center pt-8"><div className="mb-4">{feedback.icon}</div><CardTitle className="text-2xl font-bold">{feedback.title}</CardTitle></CardHeader>
                 <CardContent className="pb-8">
-                    <p className="text-muted-foreground ">{feedback.desc}</p>
+                    <p className="text-muted-foreground">{feedback.desc}</p>
                     {showQuote && attendanceType && <QuoteOfTheDay category={userData?.role} attendanceType={attendanceType} />}
                 </CardContent>
             </Card>
