@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -117,7 +116,6 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-6 pb-10 flex flex-col items-stretch">
-        {/* WELCOME SECTION - SEJAJAR DENGAN KARTU */}
         <div className="w-full px-0">
             <p className="text-base text-muted-foreground font-medium">Selamat Datang</p>
             <h1 className="text-2xl font-black tracking-tight text-foreground mt-0.5 leading-tight">
@@ -130,7 +128,6 @@ export default function DashboardPage() {
 
         {isGuruOrPegawai && (
             <div className="w-full space-y-6 flex flex-col items-stretch">
-                {/* KARTU KEHADIRAN TERINTEGRASI (SESUAI GAMBAR) */}
                 <Card className="w-full border shadow-sm overflow-hidden bg-card">
                     <CardHeader className="p-4 pb-0 flex flex-row items-center gap-2">
                         <Clock className="w-4 h-4 text-primary" />
@@ -140,7 +137,6 @@ export default function DashboardPage() {
                     </CardHeader>
                     
                     <CardContent className="p-4 space-y-6">
-                        {/* Jam dan Tanggal di Tengah */}
                         <LiveClockUI />
                         
                         <div className="grid grid-cols-2 gap-3 w-full">
@@ -180,13 +176,12 @@ export default function DashboardPage() {
                             )}
 
                             <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors">
-                                <Link href="/dashboard/laporan">Lihat Riwayat Lengkap</Link>
+                                <Link href="/dashboard/laporan">Lihat riwayat lengkap</Link>
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* GRAFIK RINGKASAN */}
                 <Card className="w-full border shadow-sm overflow-hidden bg-card">
                     <CardHeader className="p-4 pb-0">
                         <div className="flex items-center justify-between">
