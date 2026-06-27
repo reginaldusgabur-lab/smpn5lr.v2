@@ -212,8 +212,7 @@ export default function IzinPage() {
 
     const getSubmitButtonText = () => {
       if (isChecking) return 'Memeriksa data...';
-      if (selectedLeaveType === 'Pulang Cepat') return 'Ajukan Izin Pulang Cepat';
-      return 'Kirim Pengajuan Ketidakhadiran';
+      return 'Kirim Pengajuan';
     }
 
     return (
@@ -321,7 +320,7 @@ export default function IzinPage() {
                             />
                         </CardContent>
                         <CardFooter className="border-t p-6 bg-muted/5">
-                            <Button type="submit" disabled={isSubmitting || isChecking} className="w-full sm:w-auto h-11 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all bg-primary">
+                            <Button type="submit" disabled={isSubmitting || isChecking} className="w-full sm:w-auto h-11 rounded-xl font-black uppercase tracking-normal shadow-lg shadow-primary/20 active:scale-95 transition-all bg-primary">
                                {(isSubmitting || isChecking) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                {getSubmitButtonText()}
                             </Button>
