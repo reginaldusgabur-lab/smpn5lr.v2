@@ -12,6 +12,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -220,7 +231,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
             <Button onClick={handleSave} className="w-full sm:w-auto font-black rounded-xl h-11 shadow-lg" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                SIMPAN PENGATURAN BULANAN
+                SIMPAN PENGATURAN BULAN INI
             </Button>
         </CardFooter>
     </Card>
@@ -470,13 +481,29 @@ export default function KonfigurasiAbsenPage() {
               <Image src={qrCodeDataUrl} alt="QR Code Absensi" width={224} height={224} className="w-full h-full" />
             )}
           </div>
-          <Button onClick={handleGenerateNewQr} variant="outline" className="w-full max-w-[256px] rounded-xl font-bold" disabled={isQrLoading}>
-            {isQrLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            BUAT QR BARU
-          </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full max-w-[256px] rounded-xl font-bold" disabled={isQrLoading}>
+                    {isQrLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    BUAT QR BARU
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-3xl border-none">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="font-black text-xl">Perbarui Kode QR?</AlertDialogTitle>
+                    <AlertDialogDescription className="font-medium text-sm">
+                        Kode QR lama tidak akan bisa digunakan lagi setelah Anda membuat yang baru. Apakah Anda yakin ingin membuat kode QR baru?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel className="rounded-xl font-bold">Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleGenerateNewQr} className="rounded-xl font-bold bg-primary hover:bg-primary/90">Ya, Buat Baru</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 border-t p-4 sm:p-6 bg-muted/5">
-          <Button className="w-full rounded-xl font-black h-11 shadow-md" onClick={() => downloadQRCode('pdf')} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />UNDUH PDF</Button>
           <Button variant="outline" className="w-full rounded-xl font-black h-11" onClick={() => downloadQRCode('png')} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />UNDUH PNG</Button>
         </CardFooter>
       </Card>
