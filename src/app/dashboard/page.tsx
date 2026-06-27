@@ -85,14 +85,14 @@ function useMonthlyAttendanceSummary(user: any) {
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => {
     if (isLoading) return (
-        <div className="space-y-1 mb-2 px-1">
+        <div className="space-y-1 mb-2 px-0">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-4 w-64" />
         </div>
     );
     return (
-        <div className="mb-4 px-1">
+        <div className="mb-4 px-0">
             <p className="text-xs text-muted-foreground leading-none">Selamat Datang</p>
             <h1 className="text-xl font-bold tracking-tight text-foreground mt-1">{user?.name || 'Pengguna'}</h1>
             <p className="text-[10px] text-muted-foreground mt-1">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
@@ -102,11 +102,11 @@ const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => 
 
 const StatCard = ({ title, value, icon: Icon, description, isLoading, className, onClick }: any) => (
     <Card className={cn("transition-all shadow-sm w-full cursor-default", className)} onClick={onClick}>
-        <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+        <CardHeader className="flex flex-row items-center justify-between p-4 pb-1 space-y-0">
             <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</CardTitle>
             <Icon className="h-4 w-4 text-primary" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0">
             {isLoading ? <Skeleton className="h-7 w-12" /> : <div className="text-xl font-black">{value}</div>}
             {description && <p className="text-[9px] text-muted-foreground mt-0.5">{description}</p>}
         </CardContent>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                 <div className="w-full space-y-5">
                     {/* AREA KEHADIRAN HARI INI */}
                     <Card className="w-full overflow-hidden shadow-md border-muted/50">
-                        <CardHeader className="pb-2 space-y-1">
+                        <CardHeader className="p-4 pb-2 space-y-1">
                             <CardTitle className="text-lg font-bold">
                                 Kehadiran Anda Hari Ini
                             </CardTitle>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
                                 Status kehadiran dan jam absensi Anda.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="pt-2">
+                        <CardContent className="p-4 pt-2">
                             <LiveClock />
                             
                             <div className="grid grid-cols-2 gap-3 mt-2">
@@ -202,7 +202,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </CardContent>
-                        <CardFooter className="bg-muted/5 border-t py-4 flex flex-col items-center gap-3">
+                        <CardFooter className="bg-muted/5 border-t p-4 flex flex-col items-center gap-3">
                             {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
                                 <Button asChild size="lg" className="w-full font-bold shadow-sm rounded-xl">
                                     <Link href="/dashboard/absen">Absen Pulang Sekarang</Link>
@@ -225,7 +225,7 @@ export default function DashboardPage() {
 
                     {/* AREA GRAFIK RIWAYAT */}
                     <div className="space-y-2 w-full">
-                        <div className="px-1">
+                        <div className="px-0">
                             <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
                                 <TrendingUp size={14} className="text-primary" /> Riwayat Bulan {format(new Date(), 'MMMM', { locale: id })}
                             </h2>
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                             </p>
                         </div>
                         <Card className="w-full shadow-md">
-                            <CardContent className="pt-6">
+                            <CardContent className="p-4 pt-6">
                                 <div className="h-44 w-full">
                                     {isPersonalSummaryLoading ? (
                                         <Skeleton className="h-full w-full rounded-lg" />
