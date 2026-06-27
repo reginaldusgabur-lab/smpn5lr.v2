@@ -223,6 +223,10 @@ export default function AdminUsersPage() {
                 </div>
 
                 <Card className="w-full border shadow-xl rounded-3xl overflow-hidden bg-card border-t-4 border-t-primary">
+                    <CardHeader className="bg-primary/5 p-6 border-b border-primary/5">
+                        <CardTitle className="text-primary font-black">DAFTAR PENGGUNA</CardTitle>
+                        <CardDescription>Informasi akun dan hak akses pengguna sistem.</CardDescription>
+                    </CardHeader>
                     <CardContent className="py-6 min-h-[400px]">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
                             <Select value={userFilter} onValueChange={setUserFilter}>
@@ -255,11 +259,11 @@ export default function AdminUsersPage() {
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
                                         <TableHead className="w-[80px] text-center font-bold">No</TableHead>
-                                        <TableHead className="font-bold text-xs">Nama & Email</TableHead>
-                                        <TableHead className="font-bold text-xs">Peran</TableHead>
-                                        <TableHead className="font-bold text-xs">Identitas</TableHead>
-                                        <TableHead className="text-center font-bold text-xs">Status</TableHead>
-                                        <TableHead className="text-right font-bold text-xs pr-6">Aksi</TableHead>
+                                        <TableHead className="font-bold text-xs text-primary/80 uppercase tracking-widest">Nama & Email</TableHead>
+                                        <TableHead className="font-bold text-xs text-primary/80 uppercase tracking-widest">Peran</TableHead>
+                                        <TableHead className="font-bold text-xs text-primary/80 uppercase tracking-widest">Identitas</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-primary/80 uppercase tracking-widest">Status</TableHead>
+                                        <TableHead className="text-right font-bold text-xs text-primary/80 uppercase tracking-widest pr-6">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

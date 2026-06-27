@@ -21,7 +21,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/attendance';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -352,6 +352,10 @@ export default function SchoolReportPage() {
                 </div>
 
                 <Card className="overflow-hidden border shadow-xl rounded-3xl bg-card border-t-4 border-t-primary">
+                    <CardHeader className="bg-primary/5 p-6 border-b border-primary/5">
+                        <CardTitle className="text-primary font-black">REKAPITULASI KEHADIRAN</CardTitle>
+                        <CardDescription>Data kehadiran akumulatif seluruh personil bulan {monthName}.</CardDescription>
+                    </CardHeader>
                     <CardContent className="p-0 sm:p-6 min-h-[500px]">
                         <div className="p-6 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">
@@ -382,7 +386,7 @@ export default function SchoolReportPage() {
                                     <div className="flex-1 relative min-w-[200px] group">
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-primary z-10 pointer-events-none group-focus-within:scale-110 transition-transform" />
                                         <Input 
-                                            placeholder="Lihat Kehadiran" 
+                                            placeholder="Cari personil..." 
                                             className="pl-12 h-12 rounded-2xl bg-muted/40 border-muted-foreground/10 focus:ring-primary focus:bg-background transition-all font-bold placeholder:text-muted-foreground/60" 
                                             value={searchTerm} 
                                             onChange={e => setSearchTerm(e.target.value)} 
