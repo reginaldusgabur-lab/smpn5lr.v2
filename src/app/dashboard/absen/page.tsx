@@ -245,8 +245,8 @@ export default function AbsenPage() {
             </div>
         )}
 
-        {/* Transparent Overlay Instructions */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-10 pt-20 text-center pointer-events-none bg-gradient-to-b from-black/60 to-transparent">
+        {/* Transparent Overlay Instructions - Adjusted Padding to move text up */}
+        <div className="absolute top-0 left-0 right-0 z-10 p-10 pt-12 text-center pointer-events-none bg-gradient-to-b from-black/60 to-transparent">
             <h2 className="text-white text-xl font-bold mb-2">Arahkan Kamera</h2>
             <p className="text-white/80 text-sm">Pastikan QR Code berada di dalam kotak pemindaian.</p>
         </div>
