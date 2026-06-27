@@ -77,6 +77,7 @@ import { doc, collection } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Role = 'guru' | 'pegawai' | 'kepala_sekolah' | 'admin';
 
@@ -238,7 +239,7 @@ export default function AdminUsersPage() {
                                     </div>
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl">
-                                    <SelectItem value="all">Semua Staff</SelectItem>
+                                    <SelectItem value="all">Semua Staf</SelectItem>
                                     <SelectItem value="guru">Guru</SelectItem>
                                     <SelectItem value="pegawai">Pegawai</SelectItem>
                                     <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
@@ -346,8 +347,8 @@ export default function AdminUsersPage() {
 
             {/* Dialog Tambah/Edit User */}
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
-                <DialogContent className="rounded-3xl border-none max-w-lg">
-                    <DialogHeader className="space-y-1">
+                <DialogContent className="rounded-3xl border-none max-w-lg p-0 overflow-hidden max-h-[90vh] flex flex-col">
+                    <DialogHeader className="p-6 pb-2 space-y-1">
                         <DialogTitle className="text-2xl font-black text-primary">
                             {editingUser ? 'Perbarui Data' : 'Tambah Personil'}
                         </DialogTitle>
@@ -355,93 +356,95 @@ export default function AdminUsersPage() {
                             {editingUser ? `Mengubah informasi data untuk ${editingUser.name}.` : 'Masukkan detail akun untuk personil baru sekolah.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <Form {...userForm}>
-                        <form onSubmit={userForm.handleSubmit(handleSaveUser)} className="space-y-4 py-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField control={userForm.control} name="name" render={({field}) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1">Nama Lengkap</FormLabel>
-                                        <FormControl><Input placeholder="Contoh: John Doe, S.Pd" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )} />
-                                <FormField control={userForm.control} name="email" render={({field}) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1">Email</FormLabel>
-                                        <FormControl><Input type="email" placeholder="nama@email.com" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )} />
-                            </div>
+                    <ScrollArea className="flex-1 px-6 pb-6">
+                        <Form {...userForm}>
+                            <form onSubmit={userForm.handleSubmit(handleSaveUser)} className="space-y-4 py-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <FormField control={userForm.control} name="name" render={({field}) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">Nama Lengkap</FormLabel>
+                                            <FormControl><Input placeholder="Contoh: John Doe, S.Pd" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={userForm.control} name="email" render={({field}) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">Email</FormLabel>
+                                            <FormControl><Input type="email" placeholder="nama@email.com" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )} />
+                                </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField control={userForm.control} name="role" render={({field}) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1">Peran</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
-                                                    <SelectValue placeholder="Pilih Peran" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent className="rounded-xl">
-                                                <SelectItem value="guru">Guru</SelectItem>
-                                                <SelectItem value="pegawai">Pegawai</SelectItem>
-                                                <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
-                                                <SelectItem value="admin">Admin</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )} />
-                                <FormField control={userForm.control} name="nip" render={({field}) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1">NIP (Opsional)</FormLabel>
-                                        <FormControl><Input placeholder="19XXXXXXXXXXXX" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )} />
-                            </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <FormField control={userForm.control} name="role" render={({field}) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">Peran</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
+                                                        <SelectValue placeholder="Pilih Peran" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="guru">Guru</SelectItem>
+                                                    <SelectItem value="pegawai">Pegawai</SelectItem>
+                                                    <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                                    <SelectItem value="admin">Admin</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={userForm.control} name="nip" render={({field}) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">NIP (Opsional)</FormLabel>
+                                            <FormControl><Input placeholder="19XXXXXXXXXXXX" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )} />
+                                </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField control={userForm.control} name="position" render={({field}) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1">Status Kepegawaian</FormLabel>
-                                        <FormControl><Input placeholder="Contoh: PNS / Honorer" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )} />
-                                <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1">No. Urut (Urutan Laporan)</FormLabel>
-                                        <FormControl><Input type="number" placeholder="1" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )} />
-                            </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <FormField control={userForm.control} name="position" render={({field}) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">Status Kepegawaian</FormLabel>
+                                            <FormControl><Input placeholder="Contoh: PNS / Honorer" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">No. Urut (Urutan Laporan)</FormLabel>
+                                            <FormControl><Input type="number" placeholder="1" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )} />
+                                </div>
 
-                            {!editingUser && (
-                                <FormField control={userForm.control} name="password" render={({field}) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1">Kata Sandi</FormLabel>
-                                        <FormControl><Input type="password" placeholder="Minimal 6 karakter" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )} />
-                            )}
+                                {!editingUser && (
+                                    <FormField control={userForm.control} name="password" render={({field}) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">Kata Sandi</FormLabel>
+                                            <FormControl><Input type="password" placeholder="Minimal 6 karakter" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )} />
+                                )}
 
-                            <DialogFooter className="pt-4">
-                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-lg active:scale-95 transition-all" disabled={isSaving}>
-                                    {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : (editingUser ? 'Perbarui Data' : 'Buat Akun Sekarang')}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
+                                <div className="pt-4">
+                                    <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-lg active:scale-95 transition-all" disabled={isSaving}>
+                                        {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : (editingUser ? 'Perbarui Data' : 'Buat Akun Sekarang')}
+                                    </Button>
+                                </div>
+                            </form>
+                        </Form>
+                    </ScrollArea>
                 </DialogContent>
             </Dialog>
 
             {/* Alert Dialog Hapus User */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setUserToDelete(null); }}>
                 <AlertDialogContent className="rounded-3xl border-none">
                     <AlertDialogHeader>
                         <div className="flex items-center gap-3 text-destructive mb-2">
