@@ -111,8 +111,6 @@ export default function SchoolReportPage() {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [syncMessage, setSyncMessage] = useState<{type: 'success' | 'error', message: string} | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<ReportRowData | null>(null);
     const [refetchIndex, setRefetchIndex] = useState(0);
@@ -365,106 +363,139 @@ export default function SchoolReportPage() {
     if (!['admin', 'kepala_sekolah'].includes(user.role)) return <div className="p-4"><Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Akses Ditolak</AlertTitle><AlertDescription>Anda tidak memiliki izin untuk mengakses halaman ini.</AlertDescription></Alert></div>;
 
     return (
-        <div className="flex-1 min-w-0 p-2 pt-0 pb-24 md:p-6 md:pt-8">
-            {isEditModalOpen && editingUser && (
-                <EditAttendanceModal user={editingUser} month={currentMonth} isOpen={isEditModalOpen} onClose={handleCloseModal} currentUser={user} />
-            )}
-            <Card>
-                <CardHeader> <CardTitle>Laporan Ringkasan Kehadiran</CardTitle> <CardDescription>Ringkasan kehadiran bulanan untuk seluruh personil sekolah.</CardDescription> </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
-                        <div className="flex items-center gap-2">
-                            {/* --- FIX: Disable button if the year is 2026 and month is January --- */}
-                            <Button variant="outline" size="icon" onClick={() => changeMonth(-1)} disabled={currentMonth.getFullYear() === 2026 && currentMonth.getMonth() === 0}>
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                            <span className="w-36 text-center font-semibold">{monthName}</span>
-                            <Button variant="outline" size="icon" onClick={() => changeMonth(1)} disabled={currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear()}>
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-                            <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter berdasarkan peran" /></SelectTrigger><SelectContent><SelectItem value="all">Semua Peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
-                            <Input type="search" placeholder="Cari berdasarkan nama..." className="w-full sm:w-[250px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                            {user.role === 'admin' && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild><Button><Download className="mr-2 h-4 w-4" />Unduh & Sinkron</Button></DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4"/>Unduh Excel</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={handleDownloadPdf}><FileText className="mr-2 h-4 w-4"/>Unduh PDF</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                        </div>
+        <div className="flex-1 pt-4 pb-24 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+                {isEditModalOpen && editingUser && (
+                    <EditAttendanceModal user={editingUser} month={currentMonth} isOpen={isEditModalOpen} onClose={handleCloseModal} currentUser={user} />
+                )}
+
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-1 md:px-0">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Laporan Sekolah</h1>
+                        <p className="text-muted-foreground mt-1">Ringkasan kehadiran bulanan untuk seluruh personil sekolah.</p>
                     </div>
-                    <div className="overflow-x-auto border rounded-md">
-                         {isLoading ? (
-                            <div className="p-4 space-y-3">{[...Array(15)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
-                        ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[50px]">No</TableHead>
-                                        <TableHead>Nama</TableHead>
-                                        <TableHead>NIP</TableHead>
-                                        <TableHead>Status Kepegawaian</TableHead>
-                                        <TableHead className="text-center">Hadir</TableHead>
-                                        <TableHead className="text-center">Izin</TableHead>
-                                        <TableHead className="text-center">Sakit</TableHead>
-                                        <TableHead className="text-center">Alpa</TableHead>
-                                        <TableHead className="text-center">Persentase</TableHead>
-                                        {user.role === 'admin' && (
-                                            <>
-                                                <TableHead className="w-[50px] text-center">Opsi</TableHead>
-                                                <TableHead className="w-[50px] text-center">Aksi</TableHead>
-                                            </>
-                                        )}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredReports.length > 0 ? filteredReports.map((item) => (
-                                        <TableRow key={item.uid}>
-                                            <TableCell>{item.no}</TableCell>
-                                            <TableCell className="font-medium">{item.name}</TableCell>
-                                            <TableCell>{item.nip}</TableCell>
-                                            <TableCell>{item.position}</TableCell>
-                                            <TableCell className="text-center">{Math.ceil(item.totalHadir)}</TableCell>
-                                            <TableCell className="text-center">{item.totalIzin}</TableCell>
-                                            <TableCell className="text-center">{item.totalSakit}</TableCell>
-                                            <TableCell className="text-center">{item.totalAlpa}</TableCell>
-                                            <TableCell className="text-center font-semibold">{item.persentase}</TableCell>
+                </div>
+
+                <Card className="w-full">
+                    <CardContent className="py-6">
+                        <div className="flex flex-col gap-6 mb-6">
+                            <div className="flex items-center justify-center gap-4">
+                                <Button variant="outline" size="icon" onClick={() => changeMonth(-1)} disabled={currentMonth.getFullYear() === 2026 && currentMonth.getMonth() === 0}>
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <span className="w-40 text-center font-bold text-lg">{monthName}</span>
+                                <Button variant="outline" size="icon" onClick={() => changeMonth(1)} disabled={currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear()}>
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
+                                <div className="flex-1 w-full">
+                                    <Select value={roleFilter} onValueChange={setRoleFilter}>
+                                        <SelectTrigger className="w-full sm:w-[220px]">
+                                            <SelectValue placeholder="Filter berdasarkan peran" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Semua Peran</SelectItem>
+                                            <SelectItem value="guru">Guru</SelectItem>
+                                            <SelectItem value="pegawai">Pegawai</SelectItem>
+                                            <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex-1 w-full sm:max-w-xs">
+                                    <Input type="search" placeholder="Cari berdasarkan nama..." className="w-full" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                </div>
+                                {user.role === 'admin' && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button className="w-full sm:w-auto font-semibold">
+                                                <Download className="mr-2 h-4 w-4" />
+                                                Unduh Laporan
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-[180px]">
+                                            <DropdownMenuItem onClick={handleDownloadExcel}>
+                                                <FileSpreadsheet className="mr-2 h-4 w-4"/>Ekspor Excel
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleDownloadPdf}>
+                                                <FileText className="mr-2 h-4 w-4"/>Ekspor PDF
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto border rounded-md">
+                             {isLoading ? (
+                                <div className="p-4 space-y-3">{[...Array(10)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[50px] text-center">No</TableHead>
+                                            <TableHead>Nama</TableHead>
+                                            <TableHead>NIP</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-center">Hadir</TableHead>
+                                            <TableHead className="text-center">Izin</TableHead>
+                                            <TableHead className="text-center">Sakit</TableHead>
+                                            <TableHead className="text-center">Alpa</TableHead>
+                                            <TableHead className="text-center">Persentase</TableHead>
                                             {user.role === 'admin' && (
                                                 <>
-                                                    <TableCell className="text-center">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                            <DropdownMenuContent>
-                                                                <DropdownMenuItem onClick={() => handleDownloadUserPdf(item)}><FileText className="mr-2 h-4 w-4"/>Unduh PDF</DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleDownloadUserExcel(item)}><FileSpreadsheet className="mr-2 h-4 w-4"/>Unduh Excel</DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                    <TableCell className="text-center">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                            <DropdownMenuContent>
-                                                                <DropdownMenuItem onClick={() => handleEditClick(item)}><Edit className="mr-2 h-4 w-4"/>Edit Kehadiran</DropdownMenuItem>
-                                                                <DropdownMenuItem asChild><Link href={`/dashboard/laporan/${item.uid}`}><Eye className="mr-2 h-4 w-4" />Lihat Detail</Link></DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
+                                                    <TableHead className="w-[50px] text-center">Opsi</TableHead>
+                                                    <TableHead className="w-[50px] text-center">Aksi</TableHead>
                                                 </>
                                             )}
                                         </TableRow>
-                                    )) : (
-                                        <TableRow><TableCell colSpan={user.role === 'admin' ? 11 : 9} className="h-24 text-center">{error ? 'Gagal memuat data.' : 'Tidak ada data untuk ditampilkan.'}</TableCell></TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredReports.length > 0 ? filteredReports.map((item) => (
+                                            <TableRow key={item.uid}>
+                                                <TableCell className="text-center">{item.no}</TableCell>
+                                                <TableCell className="font-medium whitespace-nowrap">{item.name}</TableCell>
+                                                <TableCell className="whitespace-nowrap">{item.nip}</TableCell>
+                                                <TableCell className="whitespace-nowrap">{item.position}</TableCell>
+                                                <TableCell className="text-center font-semibold">{Math.ceil(item.totalHadir)}</TableCell>
+                                                <TableCell className="text-center">{item.totalIzin}</TableCell>
+                                                <TableCell className="text-center">{item.totalSakit}</TableCell>
+                                                <TableCell className="text-center font-medium text-destructive">{item.totalAlpa}</TableCell>
+                                                <TableCell className="text-center font-bold">{item.persentase}</TableCell>
+                                                {user.role === 'admin' && (
+                                                    <>
+                                                        <TableCell className="text-center">
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem onClick={() => handleDownloadUserPdf(item)}><FileText className="mr-2 h-4 w-4"/>Unduh PDF</DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleDownloadUserExcel(item)}><FileSpreadsheet className="mr-2 h-4 w-4"/>Unduh Excel</DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem onClick={() => handleEditClick(item)}><Edit className="mr-2 h-4 w-4"/>Edit Kehadiran</DropdownMenuItem>
+                                                                    <DropdownMenuItem asChild><Link href={`/dashboard/laporan/${item.uid}`}><Eye className="mr-2 h-4 w-4" />Lihat Detail</Link></DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </>
+                                                )}
+                                            </TableRow>
+                                        )) : (
+                                            <TableRow><TableCell colSpan={user.role === 'admin' ? 11 : 9} className="h-24 text-center">{error ? 'Gagal memuat data.' : 'Tidak ada data untuk ditampilkan.'}</TableCell></TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
