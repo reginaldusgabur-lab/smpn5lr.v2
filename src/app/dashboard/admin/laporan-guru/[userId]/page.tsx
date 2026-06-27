@@ -1,10 +1,11 @@
+
 'use server';
 
 import { notFound } from 'next/navigation';
 import { adminDb as firestore } from '@/lib/firebase-admin';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ReportClientShell from './ReportClientShell';
-import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore } from 'date-fns';
+import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay } from 'date-fns';
 import { Timestamp } from 'firebase-admin/firestore';
 
 // Define a type for our records to satisfy TypeScript
@@ -93,6 +94,7 @@ export default async function UserReportDetailPage({ params, searchParams }: {
 
         const report = allDaysInMonth.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
+            const isToday = isSameDay(day, today);
             const attendanceRecord = attendanceMap.get(dayStr);
 
             if (attendanceRecord) {
@@ -114,13 +116,13 @@ export default async function UserReportDetailPage({ params, searchParams }: {
                     } else {
                         const leaveRecord = leaveMap.get(dayStr);
                         if (leaveRecord && leaveRecord.type === 'Pulang Cepat') {
-                            description = 'Pulang Cepat (Disetujui)';
+                            description = 'Pulang Cepat';
                         } else {
                             description = isBefore(day, today) ? 'Tidak Absen Pulang' : 'Belum Absen Pulang';
                         }
                     }
                 }
-                return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: 'Hadir', description };
+                return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: !checkOutTime && !isToday && isBefore(day, today) ? 'Alpa' : 'Hadir', description };
             }
 
             const leaveRecord = leaveMap.get(dayStr);
@@ -129,8 +131,8 @@ export default async function UserReportDetailPage({ params, searchParams }: {
                 return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type, description: leaveRecord.reason };
             }
 
-            if (isWorkingDay && isBefore(day, today)) {
-                return { id: dayStr, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: 'Tidak Ada Keterangan' };
+            if (isWorkingDay && (isBefore(day, today) || isToday)) {
+                return { id: dayStr, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: isToday ? 'Belum Ada Aktivitas' : 'Tidak Ada Keterangan' };
             }
 
             return null;
@@ -145,7 +147,6 @@ export default async function UserReportDetailPage({ params, searchParams }: {
             checkInTime: item.checkInTime ? item.checkInTime.toISOString() : null,
             checkOutTime: item.checkOutTime ? item.checkOutTime.toISOString() : null,
         }));
-        // --- End of re-implemented logic ---
 
         return (
             <ReportClientShell 

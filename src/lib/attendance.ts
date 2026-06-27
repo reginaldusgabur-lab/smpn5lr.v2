@@ -150,7 +150,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd'))
     );
 
-    const pastEffectiveWorkingDays = effectiveWorkingDays.filter(day => isBefore(day, today));
+    const pastEffectiveWorkingDays = effectiveWorkingDays.filter(day => isBefore(day, today) || isSameDay(day, today));
     
     const approvedEarlyLeaveDates = new Set<string>();
     leaveData.forEach(leave => {
@@ -277,13 +277,25 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 checkOutTime = null;
             }
 
+            if (!checkOutTime && !isToday && isBefore(day, todayStart)) {
+                return {
+                    id: attendanceRecord.id,
+                    date: day,
+                    checkInTime: checkInTime,
+                    checkOutTime: null,
+                    status: 'Alpa',
+                    description: 'Tidak Absen Pulang',
+                    manualEntry: attendanceRecord.manualEntry || false,
+                };
+            }
+
             return {
                 id: attendanceRecord.id,
                 date: day,
                 checkInTime: checkInTime,
                 checkOutTime: checkOutTime,
                 status: 'Hadir',
-                description: description,
+                description: !checkOutTime && isToday ? 'Belum Absen Pulang' : description,
                 manualEntry: attendanceRecord.manualEntry || false,
             };
         }
@@ -300,29 +312,14 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             };
         }
 
-        let shouldMarkAsAlpa = false;
-        if (isWorkingDay) {
-            if (isBefore(day, todayStart)) {
-                shouldMarkAsAlpa = true;
-            } else if (isToday) {
-                if (schoolConfig.checkInEndTime) {
-                    const [endH, endM] = schoolConfig.checkInEndTime.split(':').map(Number);
-                    const deadline = setMinutes(setHours(todayStart, endH), endM);
-                    if (now > deadline) {
-                        shouldMarkAsAlpa = true;
-                    }
-                }
-            }
-        }
-
-        if (shouldMarkAsAlpa) {
+        if (isWorkingDay && (isBefore(day, todayStart) || isToday)) {
             return {
                 id: dayStr,
                 date: day,
                 checkInTime: null,
                 checkOutTime: null,
                 status: 'Alpa',
-                description: 'Tidak Ada Keterangan',
+                description: isToday ? 'Belum Ada Aktivitas' : 'Tidak Ada Keterangan',
             };
         }
 

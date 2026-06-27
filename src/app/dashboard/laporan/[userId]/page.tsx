@@ -208,7 +208,6 @@ export default function UserReportDetailPage() {
             const outStart = schoolConfigData.checkOutStartTime || '14:00';
             const outEnd = schoolConfigData.checkOutEndTime || '15:00';
             
-            // Logic Flexible: Jika hari ini dan belum masuk jam pulang, jam pulang kosong dulu agar user bisa absen sendiri
             let checkOutTime: Date | null = null;
             const [outH, outM] = outStart.split(':').map(Number);
             const checkOutLimit = setMinutes(setHours(new Date(now), outH), outM);
@@ -369,7 +368,7 @@ export default function UserReportDetailPage() {
                                                     <TableCell className='text-center font-mono text-sm'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className='text-center font-mono text-sm'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center">
-                                                        {isAdmin && (item.status === 'Alpa' || item.description === 'Tidak Absen Pulang') ? (
+                                                        {isAdmin && (item.status === 'Alpa' || item.description === 'Tidak Absen Pulang' || item.description === 'Belum Absen Pulang') ? (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
                                                                     <Button variant="outline" size="sm" className={`${item.status === 'Alpa' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'} hover:bg-muted font-bold`}>
