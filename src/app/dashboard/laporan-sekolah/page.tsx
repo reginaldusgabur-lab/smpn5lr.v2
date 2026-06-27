@@ -453,7 +453,7 @@ export default function SchoolReportPage() {
                                                             <DropdownMenuItem asChild className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5">
                                                                 <Link href={`/dashboard/laporan/${item.uid}`} className="flex items-center">
                                                                     <Search className="mr-3 h-4 w-4 text-primary" />
-                                                                    <span className="text-xs font-bold">Detail Kehadiran</span>
+                                                                    <span className="text-xs font-bold">Lihat Kehadiran</span>
                                                                 </Link>
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator className="my-1.5 opacity-50" />
