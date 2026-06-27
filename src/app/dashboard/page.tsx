@@ -30,7 +30,7 @@ const LiveClockUI = () => {
 
     return (
         <div className="flex flex-col items-center justify-center py-4 w-full">
-            <h2 className="text-5xl font-black tracking-tighter tabular-nums text-primary leading-none">
+            <h2 className="text-5xl font-black tracking-tighter tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
             <p className="text-sm font-medium text-muted-foreground mt-3">
@@ -184,18 +184,18 @@ export default function DashboardPage() {
                         
                         <div className="grid grid-cols-2 gap-4 w-full">
                             <div className="bg-muted/30 rounded-2xl p-4 text-center border border-border/40 flex flex-col items-center justify-center">
-                                <div className="flex items-center justify-center gap-2 mb-1.5 opacity-70">
+                                <div className="flex items-center justify-center gap-2 mb-1.5">
                                     <LogIn className="w-3.5 h-3.5 text-primary" />
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Masuk</p>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-wider">Masuk</p>
                                 </div>
                                 <p className="text-2xl font-black tabular-nums text-foreground">
                                     {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                 </p>
                             </div>
                             <div className="bg-muted/30 rounded-2xl p-4 text-center border border-border/40 flex flex-col items-center justify-center">
-                                <div className="flex items-center justify-center gap-2 mb-1.5 opacity-70">
+                                <div className="flex items-center justify-center gap-2 mb-1.5">
                                     <LogOut className="w-3.5 h-3.5 text-primary" />
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Pulang</p>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-wider">Pulang</p>
                                 </div>
                                 <p className="text-2xl font-black tabular-nums text-foreground">
                                     {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
