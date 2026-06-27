@@ -259,16 +259,43 @@ export default function UserReportDetailPage() {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
-        const center = pageWidth / 2;
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const centerX = pageWidth / 2;
+        const margin = 14;
         const monthName = format(currentMonth, 'MMMM yyyy', { locale: id });
+        const config = schoolConfigData || {};
 
+        // Kop Surat - HANYA DI HALAMAN PERTAMA
         doc.setFont('times', 'bold').setFontSize(14);
-        doc.text('LAPORAN KEHADIRAN INDIVIDU', center, 20, { align: 'center' });
-        doc.setFont('times', 'normal').setFontSize(11);
-        doc.text(`Periode: ${monthName}`, center, 28, { align: 'center' });
-        doc.text(`Nama: ${userData.name}`, 14, 40);
-        doc.text(`NIP: ${userData.nip || '-'}`, 14, 46);
-        doc.text(`Posisi: ${userData.position || '-'}`, 14, 52);
+        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 20, { align: 'center' });
+        doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 27, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 34, { align: 'center' });
+        doc.setFont('times', 'normal').setFontSize(9);
+        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 39, { align: 'center' });
+        
+        // Garis Ganda Header
+        doc.setLineWidth(0.8).line(margin, 43, pageWidth - margin, 43);
+        doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
+
+        // Judul Laporan
+        doc.setFont('times', 'bold').setFontSize(14);
+        doc.text('LAPORAN KEHADIRAN INDIVIDU', centerX, 58, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text(`Periode: ${monthName}`, centerX, 65, { align: 'center' });
+
+        // Info User
+        doc.setFontSize(10).setFont('times', 'normal');
+        let currentY = 78;
+        doc.text(`Nama`, margin, currentY);
+        doc.text(`: ${userData.name}`, margin + 35, currentY);
+        currentY += 6;
+        doc.text(`NIP`, margin, currentY);
+        doc.text(`: ${userData.nip || '-'}`, margin + 35, currentY);
+        currentY += 6;
+        doc.text(`Jabatan / Status`, margin, currentY);
+        doc.text(`: ${userData.position || '-'}`, margin + 35, currentY);
+        currentY += 10;
 
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
@@ -280,11 +307,52 @@ export default function UserReportDetailPage() {
         ]);
 
         autoTable(doc, {
-            startY: 60, head: [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']],
-            body: tableRows, theme: 'grid', headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-            styles: { font: 'times', fontSize: 9 }
+            startY: currentY,
+            head: [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']],
+            body: tableRows,
+            theme: 'grid',
+            styles: { font: 'times', fontSize: 9, cellPadding: 3, valign: 'middle', lineWidth: 0.1, lineColor: [150, 150, 150] },
+            headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: 'center', fontStyle: 'bold', lineWidth: 0 },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 10 },
+                1: { halign: 'left', cellWidth: 45 },
+                2: { halign: 'center', cellWidth: 22 },
+                3: { halign: 'center', cellWidth: 22 },
+                4: { halign: 'center', cellWidth: 25 },
+            }
         });
-        doc.save(`Laporan_${userData.name}_${monthName}.pdf`);
+
+        // Tanda Tangan Kepala Sekolah (Hanya di halaman terakhir)
+        let finalTableY = (doc as any).lastAutoTable.finalY;
+        if (finalTableY > pageHeight - 65) {
+            doc.addPage();
+            finalTableY = 20;
+        }
+
+        let signY = finalTableY + 15;
+        const signatureX = pageWidth - 80;
+        doc.setFontSize(10).setFont('times', 'normal');
+        doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, signY);
+        doc.text('Mengetahui,', signatureX, signY + 6);
+        doc.text('Kepala Sekolah', signatureX, signY + 12);
+        doc.setFont('times', 'bold');
+        doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signY + 38);
+        doc.setFont('times', 'normal');
+        doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, signY + 44);
+
+        // Footer Otomatis di Setiap Halaman
+        const totalPages = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setLineWidth(0.2);
+            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+            doc.setFontSize(8).setFont('times', 'italic');
+            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
+            doc.setFontSize(9).setFont('times', 'normal');
+            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+        }
+
+        doc.save(`Laporan_Individu_${userData.name.replace(/\s+/g, '_')}_${monthName.replace(' ', '_')}.pdf`);
     };
 
     const isAdmin = currentUser?.role === 'admin';
@@ -326,30 +394,30 @@ export default function UserReportDetailPage() {
                                 <div className="w-full h-px bg-border mt-2" />
                             </div>
                             <div className="flex justify-center sm:justify-end">
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-semibold">
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-semibold bg-primary hover:bg-primary/90 shadow-md h-11 rounded-xl">
                                     {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                                     Unduh Laporan PDF
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="border-t">
+                        <div className="border-t border-muted-foreground/10">
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader className="bg-muted/30">
-                                        <TableRow>
-                                            <TableHead className="w-[60px] text-center font-bold">No</TableHead>
-                                            <TableHead className="w-[200px] font-bold">Tanggal</TableHead>
-                                            <TableHead className="text-center font-bold">Jam Masuk</TableHead>
-                                            <TableHead className="text-center font-bold">Jam Pulang</TableHead>
-                                            <TableHead className="text-center font-bold">Status</TableHead>
-                                            <TableHead className="font-bold">Keterangan</TableHead>
+                                        <TableRow className="border-none">
+                                            <TableHead className="w-[60px] text-center font-bold text-xs">No</TableHead>
+                                            <TableHead className="w-[200px] font-bold text-xs">Tanggal</TableHead>
+                                            <TableHead className="text-center font-bold text-xs">Jam Masuk</TableHead>
+                                            <TableHead className="text-center font-bold text-xs">Jam Pulang</TableHead>
+                                            <TableHead className="text-center font-bold text-xs">Status</TableHead>
+                                            <TableHead className="font-bold text-xs">Keterangan</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {isLoading ? (
                                             [...Array(8)].map((_, i) => (
-                                                <TableRow key={i}>
+                                                <TableRow key={i} className="border-muted-foreground/5">
                                                     <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
                                                     <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                                                     <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
@@ -362,47 +430,47 @@ export default function UserReportDetailPage() {
                                             <TableRow><TableCell colSpan={6} className="h-48 text-center text-destructive"><AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" /><p>{error}</p></TableCell></TableRow>
                                         ) : monthlyReportData.length > 0 ? (
                                             monthlyReportData.map((item, index) => (
-                                                <TableRow key={item.id} className={`${item.status === 'Alpa' ? 'bg-destructive/5' : ''}`}>
-                                                    <TableCell className='text-center font-medium'>{index + 1}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className='text-center font-mono text-sm'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                                    <TableCell className='text-center font-mono text-sm'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                <TableRow key={item.id} className={`${item.status === 'Alpa' ? 'bg-destructive/5' : ''} border-muted-foreground/5 hover:bg-muted/20 transition-colors`}>
+                                                    <TableCell className='text-center font-medium text-muted-foreground text-sm'>{index + 1}</TableCell>
+                                                    <TableCell className="whitespace-nowrap font-medium text-sm">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
+                                                    <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                                    <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center">
                                                         {isAdmin && (item.status === 'Alpa' || item.description === 'Tidak Absen Pulang' || item.description === 'Belum Absen Pulang') ? (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="outline" size="sm" className={`${item.status === 'Alpa' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'} hover:bg-muted font-bold`}>
+                                                                    <Button variant="outline" size="sm" className={`${item.status === 'Alpa' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'} hover:bg-muted font-black text-[9px] h-7 rounded-lg`}>
                                                                         {item.status === 'Alpa' ? 'Alpa' : 'Hadir'} <MoreVertical className="h-3 w-3 ml-1" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-48">
-                                                                    <DropdownMenuLabel>Perbaikan Kehadiran</DropdownMenuLabel>
+                                                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                                                                    <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground">Perbaikan Kehadiran</DropdownMenuLabel>
                                                                     <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem onClick={() => handleSetHadir(item.date)}>Jadikan Hadir</DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleSetLate(item.date)}>Set Terlambat</DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang Cepat')}>Pulang Cepat</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleSetHadir(item.date)}>Jadikan Hadir</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleSetLate(item.date)}>Set Terlambat</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang Cepat')}>Pulang Cepat</DropdownMenuItem>
                                                                     <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Sakit</DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Izin Pribadi', 'Izin Pribadi')}>Izin Pribadi</DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Siang')}>Dinas Siang</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Sakit</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Izin Pribadi', 'Izin Pribadi')}>Izin Pribadi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Siang')}>Dinas Siang</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         ) : (
-                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${ 
+                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black ${ 
                                                                 item.status === 'Hadir' ? 'bg-green-100 text-green-700' : 
                                                                 item.status === 'Alpa' ? 'bg-red-100 text-red-700' : 
-                                                                'bg-orange-100 text-orange-700' 
+                                                                'bg-blue-100 text-blue-700' 
                                                             }`}>
                                                                 {item.status}
                                                             </span>
                                                         )}
                                                     </TableCell>
-                                                    <TableCell className="text-sm text-muted-foreground italic">{item.description || '-'}</TableCell>
+                                                    <TableCell className="text-[11px] text-muted-foreground font-medium italic">{item.description || '-'}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
-                                            <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground">Tidak ada data untuk periode ini.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-medium">Tidak ada data untuk periode ini.</TableCell></TableRow>
                                         )}
                                     </TableBody>
                                 </Table>
