@@ -214,9 +214,14 @@ export default function AbsenPage() {
 
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">
             <div className="relative w-full aspect-square max-w-[280px]">
-                {/* Garis Pemindai (Scan Line) */}
+                {/* Garis Pemindai Bercahaya (Glow Scan Line) */}
                 {isScannerReady && (
-                    <div className="absolute left-2 right-2 h-0.5 bg-primary shadow-[0_0_15px_rgba(var(--primary),0.8)] animate-scan-line z-20" />
+                    <div className={cn(
+                        "absolute left-2 right-2 h-0.5 transition-all duration-300 animate-scan-line z-20",
+                        status === 'idle' 
+                            ? "bg-primary shadow-[0_0_20px_rgba(63,81,181,0.8)]" 
+                            : "bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.9)]"
+                    )} />
                 )}
 
                 <div className={cn("absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
