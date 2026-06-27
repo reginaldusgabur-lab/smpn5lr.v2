@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -123,20 +122,29 @@ export default function SchoolReportPage() {
             const sekolah = (config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase();
             const alamat = config.address || 'Alamat Sekolah';
 
-            doc.setFont('times', 'bold').setFontSize(12);
+            // Kop Surat - Font Instansi & Dinas lebih besar
+            doc.setFont('times', 'bold').setFontSize(14);
             doc.text(instansi, centerX, finalY, { align: 'center' });
-            finalY += 6;
+            finalY += 7;
             doc.text(dinas, centerX, finalY, { align: 'center' });
-            finalY += 6;
-            doc.setFontSize(14);
+            finalY += 7;
+            
+            // Nama Sekolah sedikit lebih kecil atau sama
+            doc.setFontSize(12);
             doc.text(sekolah, centerX, finalY, { align: 'center' });
             finalY += 5;
+            
+            // Alamat
             doc.setFont('times', 'normal').setFontSize(9);
             doc.text(`Alamat: ${alamat}`, centerX, finalY, { align: 'center' });
             finalY += 4;
-            doc.setLineWidth(0.5).line(margin, finalY, pageWidth - margin, finalY);
-            finalY += 10;
+            
+            // Garis bawah Kop (Double line effect)
+            doc.setLineWidth(0.8).line(margin, finalY, pageWidth - margin, finalY);
+            doc.setLineWidth(0.2).line(margin, finalY + 0.8, pageWidth - margin, finalY + 0.8);
+            finalY += 12;
 
+            // Judul Laporan
             doc.setFont('times', 'bold').setFontSize(12);
             doc.text('LAPORAN KEHADIRAN', centerX, finalY, { align: 'center' });
             finalY += 6;
@@ -161,11 +169,11 @@ export default function SchoolReportPage() {
                 head: [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']],
                 body: tableRows,
                 theme: 'grid',
-                styles: { font: 'times', fontSize: 8, cellPadding: 2 },
-                headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: 'center' },
+                styles: { font: 'times', fontSize: 8, cellPadding: 2, lineWidth: 0.1, lineColor: [200, 200, 200] },
+                headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: 'center', fontStyle: 'bold' },
                 columnStyles: {
                     0: { halign: 'center', cellWidth: 8 },
-                    1: { cellWidth: 45 },
+                    1: { cellWidth: 42 },
                     2: { cellWidth: 32 },
                     3: { halign: 'center', cellWidth: 15 },
                     4: { halign: 'center', cellWidth: 12 },
@@ -190,15 +198,6 @@ export default function SchoolReportPage() {
             doc.text(config.headmasterName || 'Kepala Sekolah', signatureX, finalTableY + 35);
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, finalTableY + 40);
-
-            // Add simple footer
-            const pageCount = (doc as any).internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8).setFont('times', 'italic');
-                doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, doc.internal.pageSize.getHeight() - 10);
-                doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin - 20, doc.internal.pageSize.getHeight() - 10);
-            }
 
             doc.save(`Laporan_Sekolah_${monthName.replace(' ', '_')}.pdf`);
             toast({ title: "Berhasil", description: "Laporan PDF berhasil diunduh." });
@@ -230,7 +229,6 @@ export default function SchoolReportPage() {
                                 <div className="w-full h-px bg-border/60" />
                             </div>
                             
-                            {/* Panel Kontrol Responsif */}
                             <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
                                 <div className="flex flex-col sm:flex-row gap-3 flex-1">
                                     <div className="w-full sm:w-[180px] relative">
