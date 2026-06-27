@@ -89,7 +89,7 @@ export default function UserReportDetailPage() {
         const center = pageWidth / 2;
         const monthName = format(currentMonth, 'MMMM yyyy', { locale: id });
 
-        // Header PDF (Minimalist approach matching user preference for precision)
+        // Header PDF
         doc.setFont('times', 'bold');
         doc.setFontSize(14);
         doc.text('LAPORAN KEHADIRAN INDIVIDU', center, 20, { align: 'center' });
@@ -123,7 +123,7 @@ export default function UserReportDetailPage() {
         doc.save(`Laporan_${userData.name}_${monthName}.pdf`);
     };
 
-    const pageIsLoading = isLoading || isUserLoading || isConfigLoading;
+    const pageIsLoading = isUserLoading || isConfigLoading;
 
     if (!isUserLoading && currentUser && !['admin', 'kepala_sekolah'].includes(currentUser.role)) {
         return (
@@ -132,31 +132,6 @@ export default function UserReportDetailPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Akses Ditolak</AlertTitle>
                     <AlertDescription>Anda tidak memiliki izin untuk melihat halaman ini.</AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-
-    if (pageIsLoading && !userData) {
-        return (
-            <div className="flex-1 pt-4 pb-24 md:p-8">
-                <div className="max-w-7xl mx-auto space-y-6">
-                    <div className="px-4 md:px-0 space-y-2">
-                        <Skeleton className="h-10 w-64" />
-                        <Skeleton className="h-4 w-96" />
-                    </div>
-                    <Card><CardContent className="p-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
-                </div>
-            </div>
-        );
-    }
-    
-    if (error) {
-        return (
-             <div className="p-4 md:p-8">
-                <Alert variant="destructive">
-                    <AlertTitle>Terjadi Kesalahan</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
                 </Alert>
             </div>
         );
@@ -177,9 +152,13 @@ export default function UserReportDetailPage() {
                             </Button>
                             <h1 className="text-3xl font-bold tracking-tight">Detail Laporan Kehadiran</h1>
                         </div>
-                        <p className="text-muted-foreground ml-8 sm:ml-0">
-                            Laporan kehadiran harian untuk <span className='font-semibold text-foreground'>{userData?.name || 'Pengguna'}</span>.
-                        </p>
+                        {pageIsLoading && !userData ? (
+                             <Skeleton className="h-4 w-64 ml-8 sm:ml-0 mt-1" />
+                        ) : (
+                            <p className="text-muted-foreground ml-8 sm:ml-0">
+                                Laporan kehadiran harian untuk <span className='font-semibold text-foreground'>{userData?.name || 'Pengguna'}</span>.
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -204,8 +183,8 @@ export default function UserReportDetailPage() {
 
                             {/* Tombol Aksi */}
                             <div className="flex justify-center sm:justify-end">
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0} className="w-full sm:w-auto font-semibold">
-                                    <Download className="mr-2 h-4 w-4" />
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading} className="w-full sm:w-auto font-semibold">
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                                     Unduh Laporan PDF
                                 </Button>
                             </div>
@@ -213,8 +192,13 @@ export default function UserReportDetailPage() {
 
                         {/* Tabel Data */}
                         <div className="border-t">
-                            {isLoading ? (
+                            {(pageIsLoading || isLoading) ? (
                                 <div className="p-4 space-y-3">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                            ) : error ? (
+                                <div className="p-10 text-center text-destructive">
+                                    <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                                    <p>{error}</p>
+                                </div>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <Table>

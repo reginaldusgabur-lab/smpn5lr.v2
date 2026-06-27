@@ -115,7 +115,7 @@ export default function SchoolReportPage() {
     const [refetchIndex, setRefetchIndex] = useState(0);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
-    const { data: schoolConfigData, loading: isConfigLoading } = useDoc(user, schoolConfigRef);
+    const { data: schoolConfigData, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
 
     useEffect(() => {
         if (isUserLoading || !user || !firestore || isConfigLoading || !schoolConfigData) return;
@@ -347,7 +347,7 @@ export default function SchoolReportPage() {
             const finalData = [...kopSurat, ...userInfo, tableHeaders, ...tableBody, ...signature];
             const worksheet = XLSX.utils.aoa_to_sheet(finalData);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Detail Kehadiran");
+            XLSX.utils.book_append_sheet(workbook, userWorksheet, "Detail Kehadiran");
             XLSX.writeFile(workbook, `Laporan Kehadiran ${targetUser.name} - ${monthName}.xlsx`);
         } catch (e) { console.error("Failed to generate user Excel:", e); }
     };
@@ -355,11 +355,11 @@ export default function SchoolReportPage() {
     const changeMonth = (amount: number) => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
     const handleEditClick = (userToEdit: ReportRowData) => { setEditingUser(userToEdit); setIsEditModalOpen(true); };
     const handleCloseModal = () => { setIsEditModalOpen(false); setEditingUser(null); setRefetchIndex(prev => prev + 1); };
-    const isLoading = isReportLoading || isUserLoading || isConfigLoading;
+    
+    // Page Loading logic optimized
+    const isLoadingInitial = isUserLoading || isConfigLoading;
 
-    if (isUserLoading) return <div className="p-6"><Skeleton className="h-40 w-full" /></div>;
-    if (!user) return null;
-    if (!['admin', 'kepala_sekolah'].includes(user.role)) return <div className="p-4"><Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Akses Ditolak</AlertTitle><AlertDescription>Anda tidak memiliki izin untuk mengakses halaman ini.</AlertDescription></Alert></div>;
+    if (user && !['admin', 'kepala_sekolah'].includes(user.role)) return <div className="p-4 md:p-8"><Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Akses Ditolak</AlertTitle><AlertDescription>Anda tidak memiliki izin untuk mengakses halaman ini.</AlertDescription></Alert></div>;
 
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
@@ -397,7 +397,7 @@ export default function SchoolReportPage() {
                                     <Select value={roleFilter} onValueChange={setRoleFilter}>
                                         <SelectTrigger className="w-full bg-background pl-10 relative">
                                             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <SelectValue placeholder="Pilih Peran" />
+                                            <SelectValue placeholder="Semua Peran" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Semua Peran</SelectItem>
@@ -418,7 +418,7 @@ export default function SchoolReportPage() {
                                     />
                                 </div>
                                 <div className="md:col-span-3">
-                                    {user.role === 'admin' && (
+                                    {user?.role === 'admin' && (
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button className="w-full font-semibold shadow-sm">
@@ -442,7 +442,7 @@ export default function SchoolReportPage() {
 
                         {/* --- Section 2: Main Table --- */}
                         <div className="border-t">
-                             {isLoading ? (
+                             { (isLoadingInitial || isReportLoading) ? (
                                 <div className="p-4 space-y-3">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
                             ) : (
                                 <div className="overflow-x-auto">
@@ -455,7 +455,7 @@ export default function SchoolReportPage() {
                                                 <TableHead className="text-center font-bold">I/S</TableHead>
                                                 <TableHead className="text-center font-bold">A</TableHead>
                                                 <TableHead className="text-center font-bold">%</TableHead>
-                                                {user.role === 'admin' && (
+                                                {user?.role === 'admin' && (
                                                     <TableHead className="w-[80px] text-center font-bold">Aksi</TableHead>
                                                 )}
                                             </TableRow>
@@ -482,7 +482,7 @@ export default function SchoolReportPage() {
                                                             </div>
                                                         </div>
                                                     </TableCell>
-                                                    {user.role === 'admin' && (
+                                                    {user?.role === 'admin' && (
                                                         <TableCell className="text-center">
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
@@ -510,7 +510,7 @@ export default function SchoolReportPage() {
                                                     )}
                                                 </TableRow>
                                             )) : (
-                                                <TableRow><TableCell colSpan={user.role === 'admin' ? 7 : 6} className="h-32 text-center text-muted-foreground">{error ? 'Gagal memuat data.' : 'Tidak ada data personil ditemukan.'}</TableCell></TableRow>
+                                                <TableRow><TableCell colSpan={user?.role === 'admin' ? 7 : 6} className="h-32 text-center text-muted-foreground">{error ? 'Gagal memuat data.' : 'Tidak ada data personil ditemukan.'}</TableCell></TableRow>
                                             )}
                                         </TableBody>
                                     </Table>
