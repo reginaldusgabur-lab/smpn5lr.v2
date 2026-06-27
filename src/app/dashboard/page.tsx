@@ -85,7 +85,7 @@ function useMonthlyAttendanceSummary(user: any) {
 
 const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => {
     if (isLoading) return (
-        <div className="space-y-1 mb-4 px-1">
+        <div className="space-y-1 mb-2 px-1">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-4 w-64" />
@@ -93,9 +93,9 @@ const WelcomeCard = ({ user, isLoading }: { user: any, isLoading: boolean }) => 
     );
     return (
         <div className="mb-4 px-1">
-            <p className="text-sm text-muted-foreground leading-relaxed">Selamat Datang</p>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground -mt-1">{user?.name || 'Pengguna'}</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
+            <p className="text-xs text-muted-foreground leading-none">Selamat Datang</p>
+            <h1 className="text-xl font-bold tracking-tight text-foreground mt-1">{user?.name || 'Pengguna'}</h1>
+            <p className="text-[10px] text-muted-foreground mt-1">Lakukan absensi dan lihat riwayat kehadiran Anda.</p>
         </div>
     );
 };
@@ -121,14 +121,14 @@ const LiveClock = () => {
         return () => clearInterval(timer);
     }, []);
 
-    if (!time) return <div className="h-24" />;
+    if (!time) return <div className="h-20" />;
 
     return (
-        <div className="flex flex-col items-center justify-center py-1 mb-3 animate-in fade-in duration-500">
-            <h2 className="text-5xl font-black tracking-tighter tabular-nums text-foreground leading-none">
+        <div className="flex flex-col items-center justify-center py-2 mb-4">
+            <h2 className="text-5xl font-black tracking-tighter tabular-nums text-primary leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-2.5 bg-muted/40 px-3 py-1 rounded-full">
+            <p className="text-sm font-medium text-muted-foreground mt-2">
                 {format(time, 'EEEE, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -166,34 +166,35 @@ export default function DashboardPage() {
         <div className="w-full space-y-4">
             <WelcomeCard user={user} isLoading={isUserLoading} />
 
-            <LiveClock />
-
             {isGuruOrPegawai && (
                 <div className="w-full space-y-5">
                     {/* AREA KEHADIRAN HARI INI */}
                     <Card className="w-full overflow-hidden shadow-md border-muted/50">
-                        <CardHeader className="pb-3 space-y-1">
-                            <CardTitle className="text-base font-bold flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-primary" />
+                        <CardHeader className="pb-2 space-y-1">
+                            <CardTitle className="text-lg font-bold">
                                 Kehadiran Anda Hari Ini
                             </CardTitle>
-                            <CardDescription className="text-[11px]">Status kehadiran dan jam absensi harian Anda.</CardDescription>
+                            <CardDescription className="text-xs">
+                                Status kehadiran dan jam absensi Anda.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-2">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40">
-                                    <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                                        <LogIn className="w-3 h-3 text-muted-foreground" />
-                                        <p className="text-[9px] uppercase font-bold text-muted-foreground">Masuk</p>
+                            <LiveClock />
+                            
+                            <div className="grid grid-cols-2 gap-3 mt-2">
+                                <div className="bg-background rounded-2xl p-4 text-center border border-border/60">
+                                    <div className="flex items-center justify-center gap-2 mb-2">
+                                        <LogIn className="w-3.5 h-3.5 text-muted-foreground" />
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Masuk</p>
                                     </div>
                                     <p className="text-xl font-black tabular-nums">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
-                                <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40">
-                                    <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                                        <LogOut className="w-3 h-3 text-muted-foreground" />
-                                        <p className="text-[9px] uppercase font-bold text-muted-foreground">Pulang</p>
+                                <div className="bg-background rounded-2xl p-4 text-center border border-border/60">
+                                    <div className="flex items-center justify-center gap-2 mb-2">
+                                        <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Pulang</p>
                                     </div>
                                     <p className="text-xl font-black tabular-nums">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
@@ -203,15 +204,15 @@ export default function DashboardPage() {
                         </CardContent>
                         <CardFooter className="bg-muted/5 border-t py-4 flex flex-col items-center gap-3">
                             {todaysAttendance?.[0]?.checkInTime && !todaysAttendance?.[0]?.checkOutTime ? (
-                                <Button asChild size="lg" className="w-full font-bold shadow-sm">
+                                <Button asChild size="lg" className="w-full font-bold shadow-sm rounded-xl">
                                     <Link href="/dashboard/absen">Absen Pulang Sekarang</Link>
                                 </Button>
                             ) : !todaysAttendance?.[0]?.checkInTime ? (
-                                <Button asChild size="lg" className="w-full font-bold shadow-sm">
+                                <Button asChild size="lg" className="w-full font-bold shadow-sm rounded-xl">
                                     <Link href="/dashboard/absen">Absen Masuk Sekarang</Link>
                                 </Button>
                             ) : (
-                                <Button disabled size="lg" className="w-full bg-green-500/10 text-green-600 border-green-500/20 font-bold">
+                                <Button disabled size="lg" className="w-full bg-green-500/10 text-green-600 border-green-500/20 font-bold rounded-xl">
                                     <Sparkles className="mr-2 w-4 h-4" /> Absensi Hari Ini Selesai
                                 </Button>
                             )}
@@ -223,45 +224,42 @@ export default function DashboardPage() {
                     </Card>
 
                     {/* AREA GRAFIK RIWAYAT */}
-                    <Card className="w-full shadow-md">
-                        <CardHeader className="pb-2">
-                             <div className="flex justify-between items-start">
-                                <div>
-                                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                                        <TrendingUp className="w-4 h-4 text-primary" />
-                                        Riwayat Bulan {format(new Date(), 'MMMM', { locale: id })}
-                                    </CardTitle>
-                                    <CardDescription className="text-[11px] mt-1">
-                                        Persentase kehadiran: <span className="font-bold text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>
-                                    </CardDescription>
+                    <div className="space-y-2 w-full">
+                        <div className="px-1">
+                            <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                                <TrendingUp size={14} className="text-primary" /> Riwayat Bulan {format(new Date(), 'MMMM', { locale: id })}
+                            </h2>
+                            <p className="text-[10px] text-muted-foreground">
+                                Persentase kehadiran: <span className="font-bold text-primary">{isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</span>
+                            </p>
+                        </div>
+                        <Card className="w-full shadow-md">
+                            <CardContent className="pt-6">
+                                <div className="h-44 w-full">
+                                    {isPersonalSummaryLoading ? (
+                                        <Skeleton className="h-full w-full rounded-lg" />
+                                    ) : (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
+                                                <Tooltip 
+                                                    cursor={{ fill: 'transparent' }} 
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }}
+                                                />
+                                                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                                                    {chartData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )}
                                 </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-4">
-                            <div className="h-44 w-full">
-                                {isPersonalSummaryLoading ? (
-                                    <Skeleton className="h-full w-full rounded-lg" />
-                                ) : (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={chartData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
-                                            <Tooltip 
-                                                cursor={{ fill: 'transparent' }} 
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }}
-                                            />
-                                            <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
-                                                {chartData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             )}
 
