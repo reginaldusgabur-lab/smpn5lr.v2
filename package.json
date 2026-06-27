@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -9,7 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "push": "git add . && git commit -m \"pushed to github\" && git push -u origin main",
+    "push": "git add . && (git commit -m \"pushed to github\" || echo \"No changes to commit\") && git push -u origin main",
     "push-v2": "git remote add origin-v2 https://github.com/reginaldusgabur-lab/smpn5lr.v2.git || git remote set-url origin-v2 https://github.com/reginaldusgabur-lab/smpn5lr.v2.git && git push -u origin-v2 main"
   },
   "dependencies": {
