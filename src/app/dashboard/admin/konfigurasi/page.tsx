@@ -132,16 +132,16 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   
   return (
     <Card className="lg:col-span-3 overflow-hidden">
-        <CardHeader className="p-4 sm:p-6 bg-primary/10 text-primary border-b border-primary/5">
-            <CardTitle>Pengaturan Hari Kerja & Libur Bulanan</CardTitle>
-            <CardDescription className="text-primary/70">
-                Tandai hari libur spesifik atau tentukan jumlah hari kerja efektif secara manual untuk setiap bulan.
+        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+            <CardTitle className="font-black text-sm uppercase tracking-widest">HARI KERJA & LIBUR BULANAN</CardTitle>
+            <CardDescription className="text-muted-foreground font-medium">
+                Tandai hari libur spesifik atau tentukan jumlah hari kerja efektif.
             </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 sm:p-6">
             <div className="md:col-span-2 space-y-4">
                 {isMonthlyConfigLoading ? (
-                    <div className="w-full h-full flex items-center justify-center bg-muted rounded-md p-10">
+                    <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-2xl p-10">
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 ) : (
@@ -150,21 +150,23 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                             <Button 
                                 variant="outline" 
                                 size="icon" 
+                                className="rounded-full"
                                 onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
                             >
-                                <ChevronLeft />
+                                <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <span className="font-semibold text-center w-32">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                            <span className="font-bold text-center w-32">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                             <Button 
                                 variant="outline" 
                                 size="icon" 
+                                className="rounded-full"
                                 onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
                             >
-                                <ChevronRight />
+                                <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
 
-                        <ScrollArea className="h-96 rounded-md border">
+                        <ScrollArea className="h-96 rounded-2xl border bg-muted/10">
                             <Table>
                                 <TableBody>
                                     {allDaysInMonth.map((day) => {
@@ -172,7 +174,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                                         const isChecked = holidays.some(d => format(d, 'yyyy-MM-dd') === dayString);
 
                                         return (
-                                            <TableRow key={dayString} className="has-[:checked]:bg-primary/10">
+                                            <TableRow key={dayString} className="has-[:checked]:bg-primary/5 border-muted-foreground/5">
                                                 <TableCell className="w-12 text-center py-2">
                                                     <Checkbox
                                                         id={dayString}
@@ -181,7 +183,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                                                     />
                                                 </TableCell>
                                                 <TableCell className="py-2">
-                                                    <Label htmlFor={dayString} className="font-normal cursor-pointer w-full block">
+                                                    <Label htmlFor={dayString} className="font-bold text-sm cursor-pointer w-full block">
                                                         {format(day, 'eeee, d MMMM yyyy', { locale: id })}
                                                     </Label>
                                                 </TableCell>
@@ -194,30 +196,31 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                     </>
                 )}
             </div>
-            <div className="md:col-span-1 space-y-4 border-l-0 md:border-l md:pl-6">
-                <h3 className="font-semibold">Konfigurasi Bulan Ini</h3>
-                 <p className="text-sm text-muted-foreground">
-                    Jumlah hari kerja efektif di bulan <span className="font-bold">{format(currentMonth, 'MMMM', { locale: id })}</span> akan digunakan untuk menghitung persentase kehadiran.
+            <div className="md:col-span-1 space-y-4 border-l-0 md:border-l md:pl-6 border-muted-foreground/10">
+                <h3 className="font-bold text-sm uppercase tracking-wider text-primary">Status Bulan Ini</h3>
+                 <p className="text-xs text-muted-foreground leading-relaxed">
+                    Jumlah hari kerja efektif di bulan <span className="font-bold">{format(currentMonth, 'MMMM', { locale: id })}</span> digunakan untuk hitung persentase kehadiran.
                 </p>
                 <div className="space-y-2">
-                    <Label htmlFor="manualWorkDays">Jumlah Hari Kerja Efektif (Manual)</Label>
+                    <Label htmlFor="manualWorkDays" className="text-xs font-bold">Jumlah Hari Kerja (Manual)</Label>
                     <Input
                         id="manualWorkDays"
                         type="number"
+                        className="rounded-xl h-11 bg-muted/30"
                         value={manualWorkDays}
                         onChange={(e) => setManualWorkDays(e.target.value)}
                         placeholder={calculatedWorkDays.toString()}
                     />
-                     <p className="text-xs text-muted-foreground">
-                        Dihitung otomatis: <span className="font-bold">{calculatedWorkDays} hari</span>. Isi untuk menimpa.
+                     <p className="text-[10px] font-bold text-muted-foreground">
+                        Dihitung otomatis: <span className="text-primary">{calculatedWorkDays} hari</span>.
                     </p>
                 </div>
             </div>
         </CardContent>
-         <CardFooter className="border-t p-4 sm:p-6">
-            <Button onClick={handleSave} disabled={isSaving}>
+         <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
+            <Button onClick={handleSave} className="w-full sm:w-auto font-black rounded-xl h-11 shadow-lg" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Simpan Pengaturan Bulan Ini
+                SIMPAN PENGATURAN BULANAN
             </Button>
         </CardFooter>
     </Card>
@@ -452,43 +455,43 @@ export default function KonfigurasiAbsenPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-1 overflow-hidden">
-        <CardHeader className="p-4 sm:p-6 bg-primary/10 text-primary border-b border-primary/5">
-          <CardTitle>QR Code Absensi</CardTitle>
-          <CardDescription className="text-primary/70">Gunakan QR Code ini untuk absensi.</CardDescription>
+      <Card className="lg:col-span-1 overflow-hidden shadow-xl rounded-3xl">
+        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+          <CardTitle className="font-black text-xs uppercase tracking-widest">QR CODE ABSENSI</CardTitle>
+          <CardDescription className="text-muted-foreground font-medium">Gunakan QR Code ini untuk absensi harian.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center gap-4 p-4 sm:p-6">
-          <div className="p-4 border rounded-lg bg-white aspect-square w-full max-w-[256px] relative">
+          <div className="p-4 border rounded-2xl bg-white aspect-square w-full max-w-[256px] relative shadow-inner">
             {isQrLoading || !qrCodeDataUrl ? (
-              <div className="w-full h-full flex items-center justify-center bg-muted rounded-md">
+              <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-xl">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : (
               <Image src={qrCodeDataUrl} alt="QR Code Absensi" width={224} height={224} className="w-full h-full" />
             )}
           </div>
-          <Button onClick={handleGenerateNewQr} variant="outline" className="w-full max-w-[256px]" disabled={isQrLoading}>
+          <Button onClick={handleGenerateNewQr} variant="outline" className="w-full max-w-[256px] rounded-xl font-bold" disabled={isQrLoading}>
             {isQrLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Buat QR Code Baru
+            BUAT QR BARU
           </Button>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2 border-t p-4 sm:p-6">
-          <Button className="w-full" onClick={() => downloadQRCode('pdf')} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />Unduh PDF</Button>
-          <Button variant="outline" className="w-full" onClick={() => downloadQRCode('png')} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />Unduh PNG</Button>
+        <CardFooter className="flex flex-col gap-2 border-t p-4 sm:p-6 bg-muted/5">
+          <Button className="w-full rounded-xl font-black h-11 shadow-md" onClick={() => downloadQRCode('pdf')} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />UNDUH PDF</Button>
+          <Button variant="outline" className="w-full rounded-xl font-black h-11" onClick={() => downloadQRCode('png')} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />UNDUH PNG</Button>
         </CardFooter>
       </Card>
 
-      <Card className="lg:col-span-2 overflow-hidden">
-        <CardHeader className="p-4 sm:p-6 bg-primary/10 text-primary border-b border-primary/5">
-          <CardTitle>Pengaturan Absensi Umum</CardTitle>
-          <CardDescription className="text-primary/70">Atur parameter untuk sistem absensi di seluruh sekolah.</CardDescription>
+      <Card className="lg:col-span-2 overflow-hidden shadow-xl rounded-3xl">
+        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+          <CardTitle className="font-black text-xs uppercase tracking-widest">PENGATURAN UMUM</CardTitle>
+          <CardDescription className="text-muted-foreground font-medium">Atur parameter sistem absensi sekolah.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 p-4 sm:p-6">
-          <div className="rounded-lg border p-4 space-y-4">
+          <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
               <div className="flex items-center justify-between">
                   <div>
-                      <Label htmlFor="holiday-mode" className="font-semibold">Mode Libur Manual</Label>
-                      <p className="text-sm text-muted-foreground">Jika diaktifkan, sistem absensi akan non-aktif untuk semua.</p>
+                      <Label htmlFor="holiday-mode" className="font-black text-sm">MODE LIBUR MANUAL</Label>
+                      <p className="text-xs text-muted-foreground">Menonaktifkan sistem absensi untuk sementara.</p>
                   </div>
                   <Switch
                       id="holiday-mode"
@@ -496,12 +499,12 @@ export default function KonfigurasiAbsenPage() {
                       onCheckedChange={setHolidayMode}
                   />
               </div>
-              <div className="space-y-4 pt-4 border-t">
-                  <Label className='font-medium'>Hari Libur Rutin</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Pilih hari dalam seminggu yang dianggap sebagai hari libur. Sistem absensi akan non-aktif pada hari-hari ini.
+              <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
+                  <Label className='text-xs font-black uppercase tracking-wider opacity-70'>Hari Libur Rutin</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Pilih hari libur mingguan tetap.
                   </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {daysOfWeek.map(day => (
                         <div key={day.value} className="flex items-center space-x-2">
                         <Checkbox
@@ -510,118 +513,107 @@ export default function KonfigurasiAbsenPage() {
                             onCheckedChange={(checked) => handleDayToggle(day.value, checked)}
                             disabled={holidayMode}
                         />
-                        <Label htmlFor={`day-${day.value}`} className="font-normal">{day.label}</Label>
+                        <Label htmlFor={`day-${day.value}`} className="font-bold text-xs">{day.label}</Label>
                         </div>
                     ))}
                   </div>
               </div>
           </div>
 
-          <div className="rounded-lg border p-4 space-y-4">
+          <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="use-location" className="font-semibold">Gunakan Validasi Lokasi</Label>
-                <p className="text-sm text-muted-foreground">Wajibkan pengguna berada di area sekolah untuk absen.</p>
+                <Label htmlFor="use-location" className="font-black text-sm">VALIDASI LOKASI (GPS)</Label>
+                <p className="text-xs text-muted-foreground">Wajibkan pengguna berada di area sekolah.</p>
               </div>
               <Switch id="use-location" checked={useLocationValidation} onCheckedChange={setUseLocationValidation} disabled={holidayMode} />
             </div>
             {useLocationValidation && (
-              <div className="space-y-4 pt-4 border-t">
+              <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-4">
-                    <Label>Koordinat Lokasi Sekolah</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
-                      {isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LocateFixed className="mr-2 h-4 w-4" />}
-                      Dapatkan Lokasi
+                    <Label className="text-xs font-bold">Koordinat Sekolah</Label>
+                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-black" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
+                      {isLocating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <LocateFixed className="mr-2 h-3 w-3" />}
+                      DAPATKAN LOKASI
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <Label htmlFor="latitude" className="text-xs text-muted-foreground">Latitude</Label>
-                        <Input id="latitude" type="text" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="Contoh: -8.58333" disabled={holidayMode || isLocating} />
+                        <Label htmlFor="latitude" className="text-[10px] font-bold text-muted-foreground">LATITUDE</Label>
+                        <Input id="latitude" type="text" className="h-10 rounded-xl bg-muted/30" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="-8.58333" disabled={holidayMode || isLocating} />
                     </div>
                     <div>
-                        <Label htmlFor="longitude" className="text-xs text-muted-foreground">Longitude</Label>
-                        <Input id="longitude" type="text" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="Contoh: 120.46667" disabled={holidayMode || isLocating} />
+                        <Label htmlFor="longitude" className="text-[10px] font-bold text-muted-foreground">LONGITUDE</Label>
+                        <Input id="longitude" type="text" className="h-10 rounded-xl bg-muted/30" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="120.46667" disabled={holidayMode || isLocating} />
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="radius">Radius Sekolah (meter)</Label>
-                  <Input id="radius" type="number" value={radius} onChange={(e) => setRadius(Number(e.target.value))} placeholder="Contoh: 100" disabled={holidayMode} />
-                  <p className="text-sm text-muted-foreground">Jarak maksimal dari titik pusat sekolah yang dianggap valid.</p>
+                  <Label htmlFor="radius" className="text-xs font-bold">RADIUS SEKOLAH (METER)</Label>
+                  <Input id="radius" type="number" className="h-10 rounded-xl bg-muted/30" value={radius} onChange={(e) => setRadius(Number(e.target.value))} placeholder="100" disabled={holidayMode} />
                 </div>
-                <div className="space-y-2">
-                  <Label>Pratinjau Lokasi di Peta</Label>
-                  <div className="aspect-video w-full overflow-hidden rounded-lg border">
+                <div className="aspect-video w-full overflow-hidden rounded-2xl border shadow-inner">
                     <iframe
                       key={`${latitude}-${longitude}`}
                       width="100%"
                       height="100%"
                       loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
                       src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=id&z=15&output=embed`}
-                      title="Pratinjau Lokasi Peta"
+                      title="Pratinjau Lokasi"
                     ></iframe>
-                  </div>
                 </div>
               </div>
             )}
           </div>
           
-          <div className="rounded-lg border p-4 space-y-4">
+          <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
               <div className="flex items-center justify-between">
                   <div>
-                      <Label htmlFor="use-time" className="font-semibold">Gunakan Validasi Jam Kerja</Label>
-                      <p className="text-sm text-muted-foreground">Wajibkan pengguna absen di dalam jam kerja yang ditentukan.</p>
+                      <Label htmlFor="use-time" className="font-black text-sm">VALIDASI JAM KERJA</Label>
+                      <p className="text-xs text-muted-foreground">Wajibkan pengguna absen sesuai jadwal.</p>
                   </div>
                   <Switch id="use-time" checked={useTimeValidation} onCheckedChange={setUseTimeValidation} disabled={holidayMode} />
               </div>
               {useTimeValidation && (
-                  <div className="space-y-4 pt-4 border-t">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                              <Label htmlFor="checkin-start">Jam Mulai Masuk</Label>
-                              <Input id="checkin-start" type="time" value={checkInStart} onChange={e => setCheckInStart(e.target.value)} disabled={holidayMode} />
+                  <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
+                      <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                              <Label htmlFor="checkin-start" className="text-[10px] font-bold">MULAI MASUK</Label>
+                              <Input id="checkin-start" type="time" className="rounded-xl h-10 bg-muted/30" value={checkInStart} onChange={e => setCheckInStart(e.target.value)} disabled={holidayMode} />
                           </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="checkin-end">Jam Selesai Masuk</Label>
-                              <Input id="checkin-end" type="time" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
+                          <div className="space-y-1.5">
+                              <Label htmlFor="checkin-end" className="text-[10px] font-bold">SELESAI MASUK</Label>
+                              <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
                           </div>
                       </div>
-                      <div className="space-y-2 pt-4">
-                          <Label htmlFor="late-tolerance">Toleransi Keterlambatan (Menit)</Label>
-                          <Input id="late-tolerance" type="number" value={lateTolerance} onChange={e => setLateTolerance(Number(e.target.value))} placeholder="Contoh: 15" disabled={holidayMode} />
-                          <p className="text-sm text-muted-foreground">
-                              Batas waktu setelah "Jam Selesai Masuk". Absen dalam rentang ini akan ditandai 'Terlambat'.
-                          </p>
+                      <div className="space-y-2">
+                          <Label htmlFor="late-tolerance" className="text-xs font-bold">TOLERANSI TERLAMBAT (MENIT)</Label>
+                          <Input id="late-tolerance" type="number" className="rounded-xl h-10 bg-muted/30" value={lateTolerance} onChange={e => setLateTolerance(Number(e.target.value))} placeholder="15" disabled={holidayMode} />
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
-                          <div className="space-y-2">
-                              <Label htmlFor="checkout-start">Jam Mulai Pulang</Label>
-                              <Input id="checkout-start" type="time" value={checkOutStart} onChange={e => setCheckOutStart(e.target.value)} disabled={holidayMode} />
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-muted-foreground/10">
+                          <div className="space-y-1.5">
+                              <Label htmlFor="checkout-start" className="text-[10px] font-bold">MULAI PULANG</Label>
+                              <Input id="checkout-start" type="time" className="rounded-xl h-10 bg-muted/30" value={checkOutStart} onChange={e => setCheckOutStart(e.target.value)} disabled={holidayMode} />
                           </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="checkout-end">Jam Selesai Pulang</Label>
-                              <Input id="checkout-end" type="time" value={checkOutEnd} onChange={e => setCheckOutEnd(e.target.value)} disabled={holidayMode} />
+                          <div className="space-y-1.5">
+                              <Label htmlFor="checkout-end" className="text-[10px] font-bold">SELESAI PULANG</Label>
+                              <Input id="checkout-end" type="time" className="rounded-xl h-10 bg-muted/30" value={checkOutEnd} onChange={e => setCheckOutEnd(e.target.value)} disabled={holidayMode} />
                           </div>
                       </div>
                   </div>
               )}
           </div>
-
         </CardContent>
-         <CardFooter className="border-t p-4 sm:p-6">
-           <Button onClick={handleSave} disabled={isSaving}>
+         <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
+           <Button onClick={handleSave} className="w-full sm:w-auto font-black rounded-xl h-11 shadow-lg" disabled={isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <span>Simpan Pengaturan Umum</span>
+              SIMPAN PENGATURAN UMUM
           </Button>
         </CardFooter>
       </Card>
 
       {schoolConfigData && <MonthlyConfigCalendar user={user} schoolConfig={schoolConfigData} />}
-
     </div>
   );
 }

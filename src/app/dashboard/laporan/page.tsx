@@ -213,32 +213,35 @@ export default function LaporanPage() {
 
   return (
     <Card className="overflow-hidden bg-card border shadow-xl rounded-3xl">
-      <CardHeader className="p-4 md:p-6 bg-primary/10 text-primary border-b border-primary/5">
-        <CardTitle>Riwayat Absensi & Izin</CardTitle>
-        <CardDescription className="text-primary/70">Catatan kehadiran dan pengajuan izin Anda.</CardDescription>
+      <CardHeader className="p-4 md:p-6 text-primary border-b border-muted-foreground/10">
+        <CardTitle className="font-black text-xs uppercase tracking-widest">RIWAYAT ABSENSI & IZIN</CardTitle>
+        <CardDescription className="text-muted-foreground font-medium">Catatan lengkap kehadiran dan pengajuan izin Anda.</CardDescription>
       </CardHeader>
       <CardContent className="p-4 md:p-6 pt-6 min-h-[400px]">
-        <div className="flex items-center gap-2 mb-4">
-            <Button variant="outline" size="icon" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="font-semibold text-center w-32 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-            <Button variant="outline" size="icon" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4" /></Button>
+        <div className="flex flex-col items-center justify-center gap-4 py-2 mb-6">
+            <div className="flex items-center gap-6">
+                <Button variant="outline" size="icon" className="rounded-full" onClick={handlePrevMonth}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                <span className="font-black text-2xl text-primary tracking-tight w-48 text-center capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                <Button variant="outline" size="icon" className="rounded-full" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+            </div>
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent mt-2" />
         </div>
-        <div className="border rounded-md overflow-x-auto">
+        <div className="border rounded-2xl overflow-hidden border-muted-foreground/5 shadow-inner">
             <Table className="min-w-[720px]">
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[50px] text-center">No.</TableHead>
-                        <TableHead className="w-[150px]">Tanggal</TableHead>
-                        <TableHead className="w-[120px] text-center">Masuk</TableHead>
-                        <TableHead className="w-[120px] text-center">Pulang</TableHead>
-                        <TableHead className="w-[120px] text-center">Status</TableHead>
-                        <TableHead>Keterangan</TableHead>
+                <TableHeader className="bg-muted/30">
+                    <TableRow className="border-none">
+                        <TableHead className="w-[60px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
+                        <TableHead className="w-[180px] font-black text-[10px] uppercase tracking-widest text-muted-foreground">Tanggal</TableHead>
+                        <TableHead className="w-[120px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground">Masuk</TableHead>
+                        <TableHead className="w-[120px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground">Pulang</TableHead>
+                        <TableHead className="w-[140px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Keterangan</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {isLoading ? (
                         [...Array(8)].map((_, i) => (
-                            <TableRow key={i}>
+                            <TableRow key={i} className="border-muted-foreground/5">
                                 <TableCell><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
                                 <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                                 <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
@@ -249,25 +252,27 @@ export default function LaporanPage() {
                         ))
                     ) : monthlyReportData.length > 0 ? (
                         monthlyReportData.map((record, index) => (
-                            <TableRow key={record.id}>
-                                <TableCell className="text-center">{index + 1}</TableCell>
-                                <TableCell className="font-medium whitespace-nowrap">{record.dateString}</TableCell>
-                                <TableCell className="text-center">{record.checkIn}</TableCell>
-                                <TableCell className="text-center">{record.checkOut}</TableCell>
+                            <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
+                                <TableCell className="text-center font-bold text-muted-foreground">{index + 1}</TableCell>
+                                <TableCell className="font-black text-sm text-foreground whitespace-nowrap">{record.dateString}</TableCell>
+                                <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkIn}</TableCell>
+                                <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkOut}</TableCell>
                                 <TableCell className="text-center whitespace-nowrap">
-                                    <Badge variant={statusVariant[record.status] || 'default'}>{record.status}</Badge>
+                                    <Badge variant={statusVariant[record.status] || 'default'} className="text-[9px] font-black uppercase px-2 py-0.5">
+                                        {record.status}
+                                    </Badge>
                                     {record.approvalStatus && (
-                                        <Badge variant={approvalStatusVariant[record.approvalStatus] || 'secondary'} className="capitalize ml-1">
+                                        <Badge variant={approvalStatusVariant[record.approvalStatus] || 'secondary'} className="capitalize ml-1 text-[8px] font-black">
                                             {record.approvalStatus}
                                         </Badge>
                                     )}
                                 </TableCell>
-                                <TableCell className="text-xs text-muted-foreground truncate max-w-[200px]" title={record.description}>{record.description}</TableCell>
+                                <TableCell className="text-[11px] font-medium text-muted-foreground italic truncate max-w-[200px]" title={record.description}>{record.description}</TableCell>
                             </TableRow>
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">Tidak ada riwayat untuk bulan ini.</TableCell>
+                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-medium">Tidak ada riwayat kehadiran pada periode ini.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>

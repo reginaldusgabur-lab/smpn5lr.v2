@@ -351,18 +351,18 @@ export default function SchoolReportPage() {
                     <p className="text-muted-foreground mt-1 font-medium">Ringkasan kehadiran bulanan untuk seluruh personil aktif.</p>
                 </div>
 
-                <Card className="overflow-hidden border shadow-xl rounded-3xl bg-card border-t-4 border-t-primary">
-                    <CardHeader className="bg-primary/10 p-6 border-b border-primary/5 text-primary">
-                        <CardTitle className="font-black">REKAPITULASI KEHADIRAN</CardTitle>
-                        <CardDescription className="text-primary/70 font-medium">Data kehadiran akumulatif seluruh personil bulan {monthName}.</CardDescription>
+                <Card className="overflow-hidden border shadow-xl rounded-3xl bg-card">
+                    <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
+                        <CardTitle className="font-black text-xs uppercase tracking-widest">REKAPITULASI KEHADIRAN</CardTitle>
+                        <CardDescription className="text-muted-foreground font-medium">Data kehadiran akumulatif seluruh personil bulan {monthName}.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-6 min-h-[500px]">
                         <div className="p-6 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">
                                 <div className="flex items-center gap-6">
-                                    <Button variant="outline" size="icon" className="rounded-full shrink-0 h-10 w-10 border-primary/20 hover:bg-primary/5" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                    <Button variant="outline" size="icon" className="rounded-full shrink-0 h-10 w-10" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                                     <span className="w-48 text-center font-black text-2xl text-primary tracking-tight">{monthName}</span>
-                                    <Button variant="outline" size="icon" className="rounded-full shrink-0 h-10 w-10 border-primary/20 hover:bg-primary/5" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+                                    <Button variant="outline" size="icon" className="rounded-full shrink-0 h-10 w-10" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                                 <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent mt-2" />
                             </div>
@@ -370,7 +370,7 @@ export default function SchoolReportPage() {
                             <div className="flex flex-wrap gap-4 items-center justify-between">
                                 <div className="flex flex-wrap gap-3 flex-1 min-w-[300px]">
                                     <div className="w-full sm:w-[180px] relative group">
-                                        <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10 pointer-events-none transition-colors group-focus-within:text-primary" />
+                                        <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10 pointer-events-none transition-colors" />
                                         <Select value={roleFilter} onValueChange={setRoleFilter}>
                                             <SelectTrigger className="pl-11 h-12 rounded-2xl bg-muted/40 border-muted-foreground/10 focus:ring-primary focus:bg-background transition-all">
                                                 <SelectValue placeholder="Peran" />
@@ -384,10 +384,10 @@ export default function SchoolReportPage() {
                                         </Select>
                                     </div>
                                     <div className="flex-1 relative min-w-[200px] group">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-primary z-10 pointer-events-none group-focus-within:scale-110 transition-transform" />
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-primary z-10 pointer-events-none transition-transform" />
                                         <Input 
                                             placeholder="Cari personil..." 
-                                            className="pl-12 h-12 rounded-2xl bg-muted/40 border-muted-foreground/10 focus:ring-primary focus:bg-background transition-all font-bold placeholder:text-muted-foreground/60" 
+                                            className="pl-12 h-12 rounded-2xl bg-muted/40 border-muted-foreground/10 focus:ring-primary focus:bg-background transition-all font-bold" 
                                             value={searchTerm} 
                                             onChange={e => setSearchTerm(e.target.value)} 
                                         />
@@ -395,12 +395,12 @@ export default function SchoolReportPage() {
                                 </div>
                                 <div className="w-full lg:w-auto">
                                     <Button 
-                                        className="w-full lg:w-auto h-12 rounded-2xl font-black shadow-lg shadow-primary/20 active:scale-95 transition-all px-8 bg-primary hover:bg-primary/90 text-sm" 
+                                        className="w-full lg:w-auto h-12 rounded-2xl font-black shadow-lg active:scale-95 transition-all px-8 bg-primary hover:bg-primary/90 text-sm" 
                                         disabled={isReportLoading || !filteredReports.length || isExporting}
                                         onClick={handleDownloadPdf}
                                     >
                                         {isExporting && !exportingUserId ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <Download className="mr-3 h-5 w-5" />}
-                                        <span className="whitespace-nowrap uppercase tracking-wider">Unduh Laporan PDF</span>
+                                        <span className="whitespace-nowrap uppercase tracking-wider">UNDUH PDF</span>
                                     </Button>
                                 </div>
                             </div>
@@ -440,7 +440,7 @@ export default function SchoolReportPage() {
                                                 <TableCell className="text-center font-black text-muted-foreground/60">{item.no}</TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col">
-                                                        <span className="font-black text-sm text-foreground group-hover:text-primary transition-colors">{item.name}</span>
+                                                        <span className="font-black text-sm text-foreground">{item.name}</span>
                                                         <span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span>
                                                     </div>
                                                 </TableCell>

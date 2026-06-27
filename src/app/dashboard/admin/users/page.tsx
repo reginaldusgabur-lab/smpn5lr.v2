@@ -214,25 +214,25 @@ export default function AdminUsersPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 md:px-0">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">Manajemen Pengguna</h1>
-                        <p className="text-muted-foreground mt-1">Kelola data personil sekolah dengan mudah.</p>
+                        <p className="text-muted-foreground mt-1 font-medium">Kelola data personil sekolah dengan mudah.</p>
                     </div>
-                    <Button size="lg" className="font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
+                    <Button size="lg" className="font-black rounded-xl h-12 shadow-lg active:scale-95 transition-all bg-primary hover:bg-primary/90" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
                         <PlusCircle className="mr-2 h-5 w-5" />
-                        Tambah Personil
+                        TAMBAH PERSONIL
                     </Button>
                 </div>
 
                 <Card className="w-full border shadow-xl rounded-3xl overflow-hidden bg-card">
-                    <CardHeader className="p-6 border-b border-muted-foreground/5 text-primary">
-                        <CardTitle className="font-black text-xs uppercase tracking-widest">DAFTAR PENGGUNA</CardTitle>
-                        <CardDescription className="text-muted-foreground font-medium">Informasi akun dan hak akses pengguna sistem.</CardDescription>
+                    <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
+                        <CardTitle className="font-black text-xs uppercase tracking-widest">DAFTAR PENGGUNA SISTEM</CardTitle>
+                        <CardDescription className="text-muted-foreground font-medium">Informasi akun dan hak akses pengguna aktif.</CardDescription>
                     </CardHeader>
                     <CardContent className="py-6 min-h-[400px]">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 px-2 sm:px-0">
                             <Select value={userFilter} onValueChange={setUserFilter}>
                                 <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
                                     <div className="flex items-center gap-2">
-                                        <Filter className="h-4 w-4 text-muted-foreground" />
+                                        <Filter className="h-4 w-4 text-primary" />
                                         <SelectValue placeholder="Saring Peran" />
                                     </div>
                                 </SelectTrigger>
@@ -244,10 +244,10 @@ export default function AdminUsersPage() {
                                 </SelectContent>
                             </Select>
                             <div className="relative w-full sm:w-[320px]">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                 <Input 
                                     placeholder="Cari nama personil..." 
-                                    className="pl-10 h-11 rounded-xl bg-muted/30 border-muted-foreground/10" 
+                                    className="pl-10 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold" 
                                     value={userSearch} 
                                     onChange={e => setUserSearch(e.target.value)} 
                                 />
@@ -258,12 +258,12 @@ export default function AdminUsersPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80 tracking-widest">Nama & Email</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80 tracking-widest">Peran</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80 tracking-widest">Identitas</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-primary/80 tracking-widest">Status</TableHead>
-                                        <TableHead className="text-right font-bold text-[10px] uppercase tracking-widest text-primary/80 tracking-widest pr-6">Aksi</TableHead>
+                                        <TableHead className="w-[80px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
+                                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Nama & Email</TableHead>
+                                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Peran</TableHead>
+                                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-primary/80">Identitas</TableHead>
+                                        <TableHead className="text-center font-black text-[10px] uppercase tracking-widest text-primary/80">Status</TableHead>
+                                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-primary/80 pr-6">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -280,7 +280,7 @@ export default function AdminUsersPage() {
                                         ))
                                     ) : filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
                                         <TableRow key={u.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
-                                            <TableCell className="text-center font-bold text-muted-foreground">{u.sequenceNumber ?? i + 1}</TableCell>
+                                            <TableCell className="text-center font-black text-muted-foreground/60">{u.sequenceNumber ?? i + 1}</TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
                                                     <span className="font-black text-sm text-foreground">{u.name}</span>
@@ -294,7 +294,7 @@ export default function AdminUsersPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[10px] font-bold text-foreground">{u.nip || '-'}</span>
+                                                    <span className="text-[10px] font-black text-foreground">{u.nip || '-'}</span>
                                                     <span className="text-[9px] font-bold text-primary uppercase tracking-tight">{u.position || '-'}</span>
                                                 </div>
                                             </TableCell>
