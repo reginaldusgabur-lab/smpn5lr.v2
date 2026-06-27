@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -114,7 +115,7 @@ export default function ReportClientShell({
                 )
             );
 
-            toast({ title: 'Sukses', description: `Status berhasil diubah menjadi ${newStatus}.` });
+            toast({ title: 'Sukses', description: `Status berhasil diubah menjadi ${reason}.` });
         } catch (error) {
             console.error("Error changing status:", error);
             toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan saat mengubah status.' });
@@ -146,19 +147,15 @@ export default function ReportClientShell({
                             </Badge>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenuItem onClick={() => handleStatusChange(reportDetails.find(d => d.status === 'Alpa')!.date, 'Sakit', 'Sakit (✓)')}>Ubah ke Sakit</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(reportDetails.find(d => d.status === 'Alpa')!.date, 'Izin', 'Izin (✓)')}>Ubah ke Izin</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(reportDetails.find(d => d.status === 'Alpa')!.date, 'Dinas', 'Dinas Pagi (✓)')}>Ubah ke Dinas Pagi</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(reportDetails.find(d => d.status === 'Alpa')!.date, 'Dinas', 'Dinas Siang (✓)')}>Ubah ke Dinas Siang</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(reportDetails.find(d => d.status === 'Alpa')!.date, 'Sakit', 'Sakit')}>Ubah ke Sakit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(reportDetails.find(d => d.status === 'Alpa')!.date, 'Izin', 'Izin Pribadi')}>Ubah ke Izin</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(reportDetails.find(d => d.status === 'Alpa')!.date, 'Dinas', 'Dinas Pagi')}>Ubah ke Dinas Pagi</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(reportDetails.find(d => d.status === 'Alpa')!.date, 'Dinas', 'Dinas Siang')}>Ubah ke Dinas Siang</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 );
             default: return <Badge variant="outline">{status}</Badge>;
         }
-    };
-
-    const handleDownloadPdf = () => {
-      // ... (rest of the function is unchanged)
     };
 
     return (
@@ -226,11 +223,11 @@ export default function ReportClientShell({
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[5%]">No</TableHead>
-                                    <TableHead className="w-[20%]">Tanggal</TableHead>
-                                    <TableHead className="w-[15%]">Jam Masuk</TableHead>
-                                    <TableHead className="w-[15%]">Jam Pulang</TableHead>
-                                    <TableHead className="w-[15%]">Status</TableHead>
+                                    <TableHead className="w-[50px]">No</TableHead>
+                                    <TableHead className="w-[200px]">Tanggal</TableHead>
+                                    <TableHead className="text-center">Jam Masuk</TableHead>
+                                    <TableHead className="text-center">Jam Pulang</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
                                     <TableHead>Keterangan</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -239,10 +236,10 @@ export default function ReportClientShell({
                                     reportDetails.map((item, index) => (
                                         <TableRow key={item.id} className="hover:bg-muted/50">
                                             <TableCell>{index + 1}</TableCell>
-                                            <TableCell>{safeFormat(item.date, 'EEEE, dd MMMM yyyy')}</TableCell>
-                                            <TableCell>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                            <TableCell>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
-                                            <TableCell className="font-medium">
+                                            <TableCell>{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                            <TableCell className="text-center">{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                            <TableCell className="text-center">{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                            <TableCell className="text-center font-medium">
                                                 {getStatusBadge(item.status)}
                                             </TableCell>
                                             <TableCell>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -128,7 +129,7 @@ export default function UserReportDetailPage() {
                 
                 batch.set(newLeaveDoc, {
                     userId,
-                    type: newStatus,
+                    type: newStatus === 'Izin Pribadi' ? 'Izin' : newStatus,
                     status: 'approved',
                     reason: reason,
                     startDate: Timestamp.fromDate(startOfDay(targetDate)),
@@ -141,7 +142,7 @@ export default function UserReportDetailPage() {
             }
 
             await batch.commit();
-            toast({ title: 'Berhasil', description: `Status berhasil diubah menjadi ${newStatus}.` });
+            toast({ title: 'Berhasil', description: `Status berhasil diubah menjadi ${reason}.` });
             fetchData();
         } catch (err) {
             toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan saat mengubah status.' });
@@ -314,7 +315,7 @@ export default function UserReportDetailPage() {
                                                                     <DropdownMenuLabel>Ubah Kehadiran</DropdownMenuLabel>
                                                                     <DropdownMenuSeparator />
                                                                     <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Sakit</DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Izin', 'Izin Pribadi')}>Izin Pribadi</DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Izin Pribadi', 'Izin Pribadi')}>Izin Pribadi</DropdownMenuItem>
                                                                     <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Pagi')}>Dinas Pagi</DropdownMenuItem>
                                                                     <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Siang')}>Dinas Siang</DropdownMenuItem>
                                                                     <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang Cepat')}>Pulang Cepat</DropdownMenuItem>

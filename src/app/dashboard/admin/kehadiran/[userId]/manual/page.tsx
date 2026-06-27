@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -133,7 +134,7 @@ export default function ManualAttendancePage() {
             });
 
             await batch.commit();
-            toast({ title: 'Sukses', description: `Kehadiran untuk ${userData.name} telah diubah menjadi ${type}.` });
+            toast({ title: 'Sukses', description: `Kehadiran untuk ${userData.name} telah diubah menjadi ${reason}.` });
             router.back();
 
         } catch (err) {
@@ -212,10 +213,10 @@ export default function ManualAttendancePage() {
                         <Label>Tindakan Cepat</Label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             <Button variant="outline" size="sm" onClick={handleSetLate} disabled={isSubmitting}>Jadikan Terlambat</Button>
-                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Sakit', 'Sakit (✓)')} disabled={isSubmitting}>Jadikan Sakit</Button>
-                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Izin', 'Izin (✓)')} disabled={isSubmitting}>Jadikan Izin</Button>
-                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Dinas', 'Dinas Pagi (✓)')} disabled={isSubmitting}>Dinas Pagi</Button>
-                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Dinas', 'Dinas Siang (✓)')} disabled={isSubmitting}>Dinas Siang</Button>
+                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Sakit', 'Sakit')} disabled={isSubmitting}>Jadikan Sakit</Button>
+                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Izin', 'Izin Pribadi')} disabled={isSubmitting}>Jadikan Izin</Button>
+                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Dinas', 'Dinas Pagi')} disabled={isSubmitting}>Dinas Pagi</Button>
+                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Dinas', 'Dinas Siang')} disabled={isSubmitting}>Dinas Siang</Button>
                         </div>
                     </div>
 
