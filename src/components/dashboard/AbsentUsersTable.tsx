@@ -182,9 +182,9 @@ const AbsentUsersTable = () => {
             <Table>
                 <TableHeader className="bg-muted/30">
                 <TableRow>
-                    <TableHead className="w-[50px] text-center font-black">No</TableHead>
-                    <TableHead className="font-black text-xs">Nama</TableHead>
-                    <TableHead className="text-center font-black text-xs">Status</TableHead>
+                    <TableHead className="w-[50px] text-center font-bold">No</TableHead>
+                    <TableHead className="font-bold text-xs">Nama</TableHead>
+                    <TableHead className="text-center font-bold text-xs">Status</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>

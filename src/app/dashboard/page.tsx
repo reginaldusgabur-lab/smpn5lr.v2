@@ -12,14 +12,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-// Data Libs
 import { calculateAttendanceStats, getDailyStaffAttendanceStats } from '@/lib/attendance';
-
-// Components
 import AbsentUsersTable from '@/components/dashboard/AbsentUsersTable';
 import RecentAttendanceTable from '@/components/dashboard/RecentAttendanceTable';
-
-// --- Sub Components ---
 
 const LiveClockUI = () => {
     const [time, setTime] = useState<Date | null>(null);
@@ -36,7 +31,7 @@ const LiveClockUI = () => {
             <h2 className="text-5xl font-black tracking-tighter tabular-nums text-primary leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-sm font-medium text-muted-foreground mt-3 capitalize">
+            <p className="text-sm font-medium text-muted-foreground mt-3">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -122,7 +117,7 @@ export default function DashboardPage() {
                 {user?.name || 'Pengguna'}
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">
-                Lakukan absensi dan lihat riwayat kehadiran Anda.
+                Lakukan absensi dan lihat riwayat kehadiran Anda hari ini.
             </p>
         </div>
 
@@ -131,7 +126,7 @@ export default function DashboardPage() {
                 <Card className="w-full border shadow-sm overflow-hidden bg-card">
                     <CardHeader className="p-4 pb-0 flex flex-row items-center gap-2">
                         <Clock className="w-4 h-4 text-primary" />
-                        <CardTitle className="text-xs font-black text-muted-foreground">
+                        <CardTitle className="text-xs font-bold text-muted-foreground">
                             Kehadiran Anda Hari Ini
                         </CardTitle>
                     </CardHeader>
@@ -227,7 +222,7 @@ export default function DashboardPage() {
                     <Card className="bg-card border shadow-sm">
                         <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-[9px] font-black text-muted-foreground">Hadir</p>
+                                <p className="text-[10px] font-bold text-muted-foreground">Hadir</p>
                                 <UserCheck className="h-3.5 w-3.5 text-primary" />
                             </div>
                             <div className="text-2xl font-black">{isStatsLoading ? '...' : stats.hadir}</div>
@@ -237,7 +232,7 @@ export default function DashboardPage() {
                     <Card className="bg-card border shadow-sm">
                         <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-[9px] font-black text-muted-foreground">Izin/Sakit</p>
+                                <p className="text-[10px] font-bold text-muted-foreground">Izin / Sakit</p>
                                 <BookUser className="h-3.5 w-3.5 text-primary" />
                             </div>
                             <div className="text-2xl font-black">{isStatsLoading ? '...' : stats.izin + stats.sakit}</div>
@@ -248,7 +243,7 @@ export default function DashboardPage() {
                         <Card className="bg-card border shadow-sm hover:bg-accent/10 transition-colors">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="text-[9px] font-black text-muted-foreground">Menunggu</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground">Menunggu</p>
                                     <MailWarning className="h-3.5 w-3.5 text-primary" />
                                 </div>
                                 <div className="text-2xl font-black">{isStatsLoading ? '...' : stats.pending}</div>
