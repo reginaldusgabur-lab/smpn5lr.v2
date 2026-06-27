@@ -78,6 +78,7 @@ export default function UserReportDetailPage() {
     }, [firestore, userId, currentMonth, schoolConfigData, currentUser]);
 
     const changeMonth = (amount: number) => {
+        setIsLoading(true);
         setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
     };
 
@@ -151,13 +152,15 @@ export default function UserReportDetailPage() {
                         </Button>
                         <h1 className="text-3xl font-bold tracking-tight">Detail Laporan Kehadiran</h1>
                     </div>
-                    {pageIsLoading && !userData ? (
-                         <Skeleton className="h-4 w-64 ml-8 sm:ml-0 mt-1" />
-                    ) : (
-                        <p className="text-muted-foreground ml-8 sm:ml-0">
-                            Laporan kehadiran harian untuk <span className='font-semibold text-foreground'>{userData?.name || 'Pengguna'}</span>.
-                        </p>
-                    )}
+                    <div className="h-6 flex items-center">
+                        {!userData && (pageIsLoading || isLoading) ? (
+                            <Skeleton className="h-4 w-64 ml-8 sm:ml-0" />
+                        ) : (
+                            <p className="text-muted-foreground ml-8 sm:ml-0">
+                                Laporan kehadiran harian untuk <span className='font-semibold text-foreground'>{userData?.name || 'Pengguna'}</span>.
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 {/* --- MAIN CARD --- */}
@@ -190,66 +193,75 @@ export default function UserReportDetailPage() {
 
                         {/* Tabel Data */}
                         <div className="border-t">
-                            {(pageIsLoading || isLoading) ? (
-                                <div className="p-4 space-y-3">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-                            ) : error ? (
-                                <div className="p-10 text-center text-destructive">
-                                    <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                                    <p>{error}</p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader className="bg-muted/30">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader className="bg-muted/30">
+                                        <TableRow>
+                                            <TableHead className="w-[60px] text-center font-bold">No</TableHead>
+                                            <TableHead className="w-[200px] font-bold">Tanggal</TableHead>
+                                            <TableHead className="text-center font-bold">Jam Masuk</TableHead>
+                                            <TableHead className="text-center font-bold">Jam Pulang</TableHead>
+                                            <TableHead className="text-center font-bold">Status</TableHead>
+                                            <TableHead className="font-bold">Keterangan</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {isLoading ? (
+                                            [...Array(8)].map((_, i) => (
+                                                <TableRow key={i}>
+                                                    <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                                                    <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                                    <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                                    <TableCell className="text-center"><Skeleton className="h-5 w-20 mx-auto rounded-full" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : error ? (
                                             <TableRow>
-                                                <TableHead className="w-[60px] text-center font-bold">No</TableHead>
-                                                <TableHead className="w-[200px] font-bold">Tanggal</TableHead>
-                                                <TableHead className="text-center font-bold">Jam Masuk</TableHead>
-                                                <TableHead className="text-center font-bold">Jam Pulang</TableHead>
-                                                <TableHead className="text-center font-bold">Status</TableHead>
-                                                <TableHead className="font-bold">Keterangan</TableHead>
+                                                <TableCell colSpan={6} className="h-48 text-center text-destructive">
+                                                    <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                                                    <p>{error}</p>
+                                                </TableCell>
                                             </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {monthlyReportData.length > 0 ? (
-                                                monthlyReportData.map((item, index) => (
-                                                    <TableRow key={item.id} className={`${item.status === 'Alpa' ? 'bg-destructive/5 hover:bg-destructive/10' : 'hover:bg-muted/20'} transition-colors`}>
-                                                        <TableCell className='text-center font-medium'>{index + 1}</TableCell>
-                                                        <TableCell className="whitespace-nowrap">
-                                                            {safeFormat(item.date, 'eeee, dd MMM yyyy')}
-                                                        </TableCell>
-                                                        <TableCell className='text-center font-mono text-sm'>
-                                                            {safeFormat(item.checkInTime, 'HH:mm:ss')}
-                                                        </TableCell>
-                                                        <TableCell className='text-center font-mono text-sm'>
-                                                            {safeFormat(item.checkOutTime, 'HH:mm:ss')}
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${ 
-                                                                item.status === 'Hadir' ? 'bg-green-100 text-green-700' : 
-                                                                item.status === 'Alpa' ? 'bg-red-100 text-red-700' : 
-                                                                ['Sakit', 'Izin', 'Dinas'].includes(item.status) ? 'bg-orange-100 text-orange-700' : 
-                                                                'bg-gray-100 text-gray-700' 
-                                                            }`}>
-                                                                {item.status}
-                                                            </span>
-                                                        </TableCell>
-                                                        <TableCell className="text-sm text-muted-foreground italic">
-                                                            {item.description || '-'}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
-                                            ) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
-                                                        Tidak ada data kehadiran untuk ditampilkan pada periode ini.
+                                        ) : monthlyReportData.length > 0 ? (
+                                            monthlyReportData.map((item, index) => (
+                                                <TableRow key={item.id} className={`${item.status === 'Alpa' ? 'bg-destructive/5 hover:bg-destructive/10' : 'hover:bg-muted/20'} transition-colors`}>
+                                                    <TableCell className='text-center font-medium'>{index + 1}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">
+                                                        {safeFormat(item.date, 'eeee, dd MMM yyyy')}
+                                                    </TableCell>
+                                                    <TableCell className='text-center font-mono text-sm'>
+                                                        {safeFormat(item.checkInTime, 'HH:mm:ss')}
+                                                    </TableCell>
+                                                    <TableCell className='text-center font-mono text-sm'>
+                                                        {safeFormat(item.checkOutTime, 'HH:mm:ss')}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${ 
+                                                            item.status === 'Hadir' ? 'bg-green-100 text-green-700' : 
+                                                            item.status === 'Alpa' ? 'bg-red-100 text-red-700' : 
+                                                            ['Sakit', 'Izin', 'Dinas'].includes(item.status) ? 'bg-orange-100 text-orange-700' : 
+                                                            'bg-gray-100 text-gray-700' 
+                                                        }`}>
+                                                            {item.status}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="text-sm text-muted-foreground italic">
+                                                        {item.description || '-'}
                                                     </TableCell>
                                                 </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            )}
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
+                                                    Tidak ada data kehadiran untuk ditampilkan pada periode ini.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

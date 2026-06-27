@@ -129,7 +129,10 @@ export default function SchoolReportPage() {
                 const usersSnapshot = await getDocs(usersQuery);
                 
                 if (usersSnapshot.empty) {
-                    if (isMounted) setReportData([]);
+                    if (isMounted) {
+                        setReportData([]);
+                        setIsReportLoading(false);
+                    }
                     return;
                 }
 
@@ -347,16 +350,19 @@ export default function SchoolReportPage() {
             const finalData = [...kopSurat, ...userInfo, tableHeaders, ...tableBody, ...signature];
             const worksheet = XLSX.utils.aoa_to_sheet(finalData);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, userWorksheet, "Detail Kehadiran");
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Detail Kehadiran");
             XLSX.writeFile(workbook, `Laporan Kehadiran ${targetUser.name} - ${monthName}.xlsx`);
         } catch (e) { console.error("Failed to generate user Excel:", e); }
     };
 
-    const changeMonth = (amount: number) => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
+    const changeMonth = (amount: number) => {
+        setIsReportLoading(true);
+        setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
+    };
+
     const handleEditClick = (userToEdit: ReportRowData) => { setEditingUser(userToEdit); setIsEditModalOpen(true); };
     const handleCloseModal = () => { setIsEditModalOpen(false); setEditingUser(null); setRefetchIndex(prev => prev + 1); };
     
-    // Page Loading logic optimized
     const isLoadingInitial = isUserLoading || isConfigLoading;
 
     if (user && !['admin', 'kepala_sekolah'].includes(user.role)) return <div className="p-4 md:p-8"><Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Akses Ditolak</AlertTitle><AlertDescription>Anda tidak memiliki izin untuk mengakses halaman ini.</AlertDescription></Alert></div>;
@@ -442,80 +448,88 @@ export default function SchoolReportPage() {
 
                         {/* --- Section 2: Main Table --- */}
                         <div className="border-t">
-                             { (isLoadingInitial || isReportLoading) ? (
-                                <div className="p-4 space-y-3">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader className="bg-muted/30">
-                                            <TableRow>
-                                                <TableHead className="w-[60px] text-center font-bold">No</TableHead>
-                                                <TableHead className="font-bold">Nama & NIP</TableHead>
-                                                <TableHead className="text-center font-bold">H</TableHead>
-                                                <TableHead className="text-center font-bold">I/S</TableHead>
-                                                <TableHead className="text-center font-bold">A</TableHead>
-                                                <TableHead className="text-center font-bold">%</TableHead>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader className="bg-muted/30">
+                                        <TableRow>
+                                            <TableHead className="w-[60px] text-center font-bold">No</TableHead>
+                                            <TableHead className="font-bold">Nama & NIP</TableHead>
+                                            <TableHead className="text-center font-bold">H</TableHead>
+                                            <TableHead className="text-center font-bold">I/S</TableHead>
+                                            <TableHead className="text-center font-bold">A</TableHead>
+                                            <TableHead className="text-center font-bold">%</TableHead>
+                                            {user?.role === 'admin' && (
+                                                <TableHead className="w-[80px] text-center font-bold">Aksi</TableHead>
+                                            )}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {(isLoadingInitial || isReportLoading) ? (
+                                            [...Array(8)].map((_, i) => (
+                                                <TableRow key={i}>
+                                                    <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-12 w-48" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-6 w-12 mx-auto" /></TableCell>
+                                                    {user?.role === 'admin' && <TableCell><Skeleton className="h-8 w-8 mx-auto" /></TableCell>}
+                                                </TableRow>
+                                            ))
+                                        ) : filteredReports.length > 0 ? filteredReports.map((item) => (
+                                            <TableRow key={item.uid} className="hover:bg-muted/20 transition-colors">
+                                                <TableCell className="text-center font-medium">{item.no}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-sm sm:text-base leading-tight">{item.name}</span>
+                                                        <span className="text-xs text-muted-foreground mt-0.5">{item.nip}</span>
+                                                        <span className="text-[10px] uppercase tracking-wider font-semibold text-primary/70 mt-0.5">{item.position}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center font-semibold text-green-600">{Math.ceil(item.totalHadir)}</TableCell>
+                                                <TableCell className="text-center font-medium text-orange-600">{item.totalIzin + item.totalSakit}</TableCell>
+                                                <TableCell className="text-center font-bold text-destructive">{item.totalAlpa}</TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="font-bold text-sm">{item.persentase}</span>
+                                                        <div className="w-10 h-1 bg-muted rounded-full mt-1 overflow-hidden hidden sm:block">
+                                                            <div className="h-full bg-primary" style={{ width: item.persentase }} />
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
                                                 {user?.role === 'admin' && (
-                                                    <TableHead className="w-[80px] text-center font-bold">Aksi</TableHead>
+                                                    <TableCell className="text-center">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-[180px]">
+                                                                <DropdownMenuItem onClick={() => handleEditClick(item)} className="cursor-pointer">
+                                                                    <Edit className="mr-2 h-4 w-4"/>Edit Kehadiran
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem asChild className="cursor-pointer">
+                                                                    <Link href={`/dashboard/laporan/${item.uid}`}>
+                                                                        <Eye className="mr-2 h-4 w-4" />Lihat Detail
+                                                                    </Link>
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => handleDownloadUserPdf(item)} className="cursor-pointer">
+                                                                    <FileText className="mr-2 h-4 w-4 text-red-500"/>Unduh PDF (User)
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleDownloadUserExcel(item)} className="cursor-pointer">
+                                                                    <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600"/>Unduh Excel (User)
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
                                                 )}
                                             </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {filteredReports.length > 0 ? filteredReports.map((item) => (
-                                                <TableRow key={item.uid} className="hover:bg-muted/20 transition-colors">
-                                                    <TableCell className="text-center font-medium">{item.no}</TableCell>
-                                                    <TableCell>
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-sm sm:text-base leading-tight">{item.name}</span>
-                                                            <span className="text-xs text-muted-foreground mt-0.5">{item.nip}</span>
-                                                            <span className="text-[10px] uppercase tracking-wider font-semibold text-primary/70 mt-0.5">{item.position}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-center font-semibold text-green-600">{Math.ceil(item.totalHadir)}</TableCell>
-                                                    <TableCell className="text-center font-medium text-orange-600">{item.totalIzin + item.totalSakit}</TableCell>
-                                                    <TableCell className="text-center font-bold text-destructive">{item.totalAlpa}</TableCell>
-                                                    <TableCell className="text-center">
-                                                        <div className="flex flex-col items-center">
-                                                            <span className="font-bold text-sm">{item.persentase}</span>
-                                                            <div className="w-10 h-1 bg-muted rounded-full mt-1 overflow-hidden hidden sm:block">
-                                                                <div className="h-full bg-primary" style={{ width: item.persentase }} />
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    {user?.role === 'admin' && (
-                                                        <TableCell className="text-center">
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-[180px]">
-                                                                    <DropdownMenuItem onClick={() => handleEditClick(item)} className="cursor-pointer">
-                                                                        <Edit className="mr-2 h-4 w-4"/>Edit Kehadiran
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem asChild className="cursor-pointer">
-                                                                        <Link href={`/dashboard/laporan/${item.uid}`}>
-                                                                            <Eye className="mr-2 h-4 w-4" />Lihat Detail
-                                                                        </Link>
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem onClick={() => handleDownloadUserPdf(item)} className="cursor-pointer">
-                                                                        <FileText className="mr-2 h-4 w-4 text-red-500"/>Unduh PDF (User)
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => handleDownloadUserExcel(item)} className="cursor-pointer">
-                                                                        <FileSpreadsheet className="mr-2 h-4 w-4 text-green-500"/>Unduh Excel (User)
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </TableCell>
-                                                    )}
-                                                </TableRow>
-                                            )) : (
-                                                <TableRow><TableCell colSpan={user?.role === 'admin' ? 7 : 6} className="h-32 text-center text-muted-foreground">{error ? 'Gagal memuat data.' : 'Tidak ada data personil ditemukan.'}</TableCell></TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            )}
+                                        )) : (
+                                            <TableRow><TableCell colSpan={user?.role === 'admin' ? 7 : 6} className="h-32 text-center text-muted-foreground">{error ? 'Gagal memuat data.' : 'Tidak ada data personil ditemukan.'}</TableCell></TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

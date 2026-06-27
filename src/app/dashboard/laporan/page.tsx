@@ -24,6 +24,7 @@ import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, isBefore, eachDayOfInterval, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     'Hadir': 'default',
@@ -209,22 +210,6 @@ export default function LaporanPage() {
       setCurrentMonth(prev => addMonths(prev, 1));
   };
 
-  if (isLoading) {
-    return (
-        <Card>
-            <CardHeader className="p-4 md:p-6">
-                <CardTitle>Riwayat Absensi & Izin</CardTitle>
-                <CardDescription>
-                    Berikut adalah catatan kehadiran dan pengajuan izin Anda.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 md:p-6 md:pt-0 flex h-96 items-center justify-center">
-                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </CardContent>
-        </Card>
-    );
-  }
-  
   return (
     <Card>
       <CardHeader className="p-4 md:p-6">
@@ -258,31 +243,41 @@ export default function LaporanPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {monthlyReportData && monthlyReportData.length > 0 ? (
-                    monthlyReportData.map((record, index) => (
-                        <TableRow key={`${record.id}-${index}`}>
-                            <TableCell className="text-center">{index + 1}</TableCell>
-                            <TableCell className="font-medium whitespace-nowrap">{record.dateString}</TableCell>
-                            <TableCell className="text-center">{record.checkIn}</TableCell>
-                            <TableCell className="text-center">{record.checkOut}</TableCell>
-                            <TableCell className="text-center whitespace-nowrap">
-                                <Badge variant={statusVariant[record.status] || 'default'}>{record.status}</Badge>
-                                {record.approvalStatus && (
-                                    <Badge variant={approvalStatusVariant[record.approvalStatus] || 'secondary'} className="capitalize">
-                                        {record.approvalStatus}
-                                    </Badge>
-                                )}
+                    {isLoading ? (
+                        [...Array(8)].map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                <TableCell className="text-center"><Skeleton className="h-5 w-20 mx-auto rounded-full" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                            </TableRow>
+                        ))
+                    ) : monthlyReportData && monthlyReportData.length > 0 ? (
+                        monthlyReportData.map((record, index) => (
+                            <TableRow key={`${record.id}-${index}`}>
+                                <TableCell className="text-center">{index + 1}</TableCell>
+                                <TableCell className="font-medium whitespace-nowrap">{record.dateString}</TableCell>
+                                <TableCell className="text-center">{record.checkIn}</TableCell>
+                                <TableCell className="text-center">{record.checkOut}</TableCell>
+                                <TableCell className="text-center whitespace-nowrap">
+                                    <Badge variant={statusVariant[record.status] || 'default'}>{record.status}</Badge>
+                                    {record.approvalStatus && (
+                                        <Badge variant={approvalStatusVariant[record.approvalStatus] || 'secondary'} className="capitalize ml-1">
+                                            {record.approvalStatus}
+                                        </Badge>
+                                    )}
+                                </TableCell>
+                                <TableCell title={record.description}>{record.description}</TableCell>
+                            </TableRow>
+                        ))
+                    ) : (
+                        <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center">
+                                Tidak ada riwayat absensi atau izin untuk bulan ini.
                             </TableCell>
-                            <TableCell title={record.description}>{record.description}</TableCell>
                         </TableRow>
-                        )
-                    ))
-                    : (
-                    <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                        Tidak ada riwayat absensi atau izin untuk bulan ini.
-                        </TableCell>
-                    </TableRow>
                     )}
                 </TableBody>
             </Table>
