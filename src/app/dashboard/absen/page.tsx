@@ -96,12 +96,28 @@ export default function AbsenPage() {
     let isCheckInTime = false, isCheckOutTime = false;
     if (schoolConfig.useTimeValidation) {
         const now = new Date(), currentTime = now.getHours() * 60 + now.getMinutes();
-        const [inStartH, inStartM] = schoolConfig.checkInStartTime.split(':').map(Number), checkInStartTime = inStartH * 60 + inStartM;
-        const [inEndH, inEndM] = schoolConfig.checkInEndTime.split(':').map(Number), checkInEndTime = inEndH * 60 + inEndM;
-        const [outStartH, outStartM] = schoolConfig.checkOutStartTime.split(':').map(Number), checkOutStartTime = outStartH * 60 + outStartM;
-        const [outEndH, outEndM] = schoolConfig.checkOutEndTime.split(':').map(Number), checkOutEndTime = outEndH * 60 + outEndM;
+        
+        // --- FIX: Added safety checks for undefined properties to prevent crash ---
+        const inStart = schoolConfig.checkInStartTime || '00:00';
+        const inEnd = schoolConfig.checkInEndTime || '23:59';
+        const outStart = schoolConfig.checkOutStartTime || '00:00';
+        const outEnd = schoolConfig.checkOutEndTime || '23:59';
+
+        const [inStartH, inStartM] = inStart.split(':').map(Number);
+        const checkInStartTime = inStartH * 60 + inStartM;
+        
+        const [inEndH, inEndM] = inEnd.split(':').map(Number);
+        const checkInEndTime = inEndH * 60 + inEndM;
+        
+        const [outStartH, outStartM] = outStart.split(':').map(Number);
+        const checkOutStartTime = outStartH * 60 + outStartM;
+        
+        const [outEndH, outEndM] = outEnd.split(':').map(Number);
+        const checkOutEndTime = outEndH * 60 + outEndM;
+
         isCheckInTime = currentTime >= checkInStartTime && currentTime <= checkInEndTime;
         isCheckOutTime = currentTime >= checkOutStartTime && currentTime <= checkOutEndTime;
+        
         if (!isCheckInTime && !isCheckOutTime) return setStatus('error_time');
     } else {
         if (todaysRecord && !todaysRecord.checkOutTime) isCheckOutTime = true; else isCheckInTime = true;
