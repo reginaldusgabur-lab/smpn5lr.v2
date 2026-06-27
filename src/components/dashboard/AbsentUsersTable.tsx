@@ -179,7 +179,7 @@ const AbsentUsersTable = () => {
 
   return (
     <div className="w-full space-y-4">
-      <Card className="bg-card border-none rounded-3xl overflow-hidden shadow-xl border-t-4 border-t-destructive">
+      <Card className="bg-card border-none rounded-3xl overflow-hidden shadow-xl">
         <CardHeader className="bg-destructive/10 p-6 flex flex-row items-center justify-between gap-1 text-destructive border-b border-destructive/5">
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5" />

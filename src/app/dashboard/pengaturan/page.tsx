@@ -259,14 +259,14 @@ export default function PengaturanPage() {
   return (
     <div className="grid gap-6">
       <form onSubmit={handleProfileUpdate}>
-        <Card className="border-t-4 border-t-primary">
-          <CardHeader>
+        <Card className="overflow-hidden bg-card border shadow-xl rounded-3xl">
+          <CardHeader className="p-6 bg-primary/10 text-primary border-b border-primary/5">
             <CardTitle>Profil Pengguna</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-primary/70">
               Informasi ini akan ditampilkan di seluruh aplikasi.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6">
+          <CardContent className="grid gap-6 pt-6">
             <div className="flex items-center gap-4 sm:gap-6">
                 <div className="relative shrink-0">
                   <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border">
@@ -335,12 +335,12 @@ export default function PengaturanPage() {
       </form>
       
       {isAdmin && (
-         <Card className="border-t-4 border-t-primary">
-            <CardHeader>
+         <Card className="overflow-hidden bg-card border shadow-xl rounded-3xl">
+            <CardHeader className="p-6 bg-primary/10 text-primary border-b border-primary/5">
                 <CardTitle>Pengaturan Laporan PDF</CardTitle>
-                <CardDescription>Informasi ini akan digunakan pada kop dan footer laporan PDF.</CardDescription>
+                <CardDescription className="text-primary/70">Informasi ini akan digunakan pada kop dan footer laporan PDF.</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4">
+            <CardContent className="grid gap-4 pt-6">
                 <div className="space-y-2">
                     <Label htmlFor="government-agency">Instansi Pemerintah</Label>
                     <Input id="government-agency" value={governmentAgency} onChange={e => setGovernmentAgency(e.target.value)} placeholder="PEMERINTAH KABUPATEN MANGGARAI" />
@@ -389,15 +389,15 @@ export default function PengaturanPage() {
         </Card>
       )}
 
-      <Card className="border-t-4 border-t-primary">
-        <CardHeader>
+      <Card className="overflow-hidden bg-card border shadow-xl rounded-3xl">
+        <CardHeader className="p-6 bg-primary/10 text-primary border-b border-primary/5">
           <CardTitle>Ganti Password</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-primary/70">
             Untuk keamanan, gunakan password yang kuat dan unik.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handlePasswordChange}>
-          <CardContent className="grid gap-4">
+          <CardContent className="grid gap-4 pt-6">
               <div className="space-y-2">
                 <Label htmlFor="new-password">Password Baru</Label>
                 <div className="relative">

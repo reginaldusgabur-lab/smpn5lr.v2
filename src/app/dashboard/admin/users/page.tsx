@@ -222,7 +222,7 @@ export default function AdminUsersPage() {
                     </Button>
                 </div>
 
-                <Card className="w-full border shadow-xl rounded-3xl overflow-hidden bg-card border-t-4 border-t-primary">
+                <Card className="w-full border shadow-xl rounded-3xl overflow-hidden bg-card">
                     <CardHeader className="bg-primary/10 p-6 border-b border-primary/5 text-primary">
                         <CardTitle className="font-black text-xs uppercase tracking-widest">DAFTAR PENGGUNA</CardTitle>
                         <CardDescription className="text-primary/70 font-medium">Informasi akun dan hak akses pengguna sistem.</CardDescription>

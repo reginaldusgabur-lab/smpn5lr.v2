@@ -131,14 +131,14 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   };
   
   return (
-    <Card className="lg:col-span-3 border-t-4 border-t-primary">
-        <CardHeader>
+    <Card className="lg:col-span-3 overflow-hidden">
+        <CardHeader className="p-4 sm:p-6 bg-primary/10 text-primary border-b border-primary/5">
             <CardTitle>Pengaturan Hari Kerja & Libur Bulanan</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-primary/70">
                 Tandai hari libur spesifik atau tentukan jumlah hari kerja efektif secara manual untuk setiap bulan.
             </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 sm:p-6">
             <div className="md:col-span-2 space-y-4">
                 {isMonthlyConfigLoading ? (
                     <div className="w-full h-full flex items-center justify-center bg-muted rounded-md p-10">
@@ -452,10 +452,10 @@ export default function KonfigurasiAbsenPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-1 border-t-4 border-t-primary">
-        <CardHeader className="p-4 sm:p-6">
+      <Card className="lg:col-span-1 overflow-hidden">
+        <CardHeader className="p-4 sm:p-6 bg-primary/10 text-primary border-b border-primary/5">
           <CardTitle>QR Code Absensi</CardTitle>
-          <CardDescription>Gunakan QR Code ini untuk absensi.</CardDescription>
+          <CardDescription className="text-primary/70">Gunakan QR Code ini untuk absensi.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center gap-4 p-4 sm:p-6">
           <div className="p-4 border rounded-lg bg-white aspect-square w-full max-w-[256px] relative">
@@ -478,10 +478,10 @@ export default function KonfigurasiAbsenPage() {
         </CardFooter>
       </Card>
 
-      <Card className="lg:col-span-2 border-t-4 border-t-primary">
-        <CardHeader className="p-4 sm:p-6">
+      <Card className="lg:col-span-2 overflow-hidden">
+        <CardHeader className="p-4 sm:p-6 bg-primary/10 text-primary border-b border-primary/5">
           <CardTitle>Pengaturan Absensi Umum</CardTitle>
-          <CardDescription>Atur parameter untuk sistem absensi di seluruh sekolah.</CardDescription>
+          <CardDescription className="text-primary/70">Atur parameter untuk sistem absensi di seluruh sekolah.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 p-4 sm:p-6">
           <div className="rounded-lg border p-4 space-y-4">

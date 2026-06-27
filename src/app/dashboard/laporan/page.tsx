@@ -212,12 +212,12 @@ export default function LaporanPage() {
   };
 
   return (
-    <Card className="border-t-4 border-t-primary">
-      <CardHeader className="p-4 md:p-6">
+    <Card className="overflow-hidden bg-card border shadow-xl rounded-3xl">
+      <CardHeader className="p-4 md:p-6 bg-primary/10 text-primary border-b border-primary/5">
         <CardTitle>Riwayat Absensi & Izin</CardTitle>
-        <CardDescription>Catatan kehadiran dan pengajuan izin Anda.</CardDescription>
+        <CardDescription className="text-primary/70">Catatan kehadiran dan pengajuan izin Anda.</CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0 md:p-6 md:pt-0 min-h-[400px]">
+      <CardContent className="p-4 md:p-6 pt-6 min-h-[400px]">
         <div className="flex items-center gap-2 mb-4">
             <Button variant="outline" size="icon" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
             <span className="font-semibold text-center w-32 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
