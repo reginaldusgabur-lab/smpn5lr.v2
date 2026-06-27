@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -260,7 +259,14 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const isToday = isSameDay(day, todayStart);
         const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
 
+        // Jika bukan hari kerja DAN bukan hari ini DAN tidak ada data, sembunyikan
         const attendanceRecord = attendanceMap.get(dayStr);
+        const leaveRecord = leaveMap.get(dayStr);
+        
+        if (!isWorkingDay && !isToday && !attendanceRecord && !leaveRecord) {
+            return null;
+        }
+
         if (attendanceRecord) {
             let checkInTime = attendanceRecord.checkInTime.toDate();
             let checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
@@ -269,6 +275,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             let description = cleanDesc(rawDescription);
             if (!description) description = 'Kehadiran Penuh';
 
+            // Visual fix for "Terlambat" and "Pulang Cepat" to match instructed reel logic
             if (description === 'Terlambat') {
                 checkInTime = null; 
             }
@@ -300,8 +307,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             };
         }
 
-        const leaveRecord = leaveMap.get(dayStr);
-        if (leaveRecord && isWorkingDay && leaveRecord.type !== 'Pulang Cepat') {
+        if (leaveRecord && leaveRecord.type !== 'Pulang Cepat') {
             return {
                 id: `${leaveRecord.id}-${dayStr}`,
                 date: day,
@@ -312,13 +318,14 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             };
         }
 
-        if (isWorkingDay && (isBefore(day, todayStart) || isToday)) {
+        // Handle Today or Past Working Days with no data
+        if (isToday || (isWorkingDay && isBefore(day, todayStart))) {
             return {
                 id: dayStr,
                 date: day,
                 checkInTime: null,
                 checkOutTime: null,
-                status: 'Alpa',
+                status: isToday && !isWorkingDay ? 'Hari Libur' : 'Alpa',
                 description: isToday ? 'Belum Ada Aktivitas' : 'Tidak Ada Keterangan',
             };
         }

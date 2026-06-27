@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -23,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, isBefore, eachDayOfInterval, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, isBefore, eachDayOfInterval, startOfDay, endOfDay, isWithinInterval, isSameDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -34,6 +33,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
     'Dinas': 'secondary',
     'Terlambat': 'outline',
     'Alpa': 'destructive',
+    'Hari Libur': 'secondary',
 };
 
 const approvalStatusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -105,11 +105,21 @@ export default function LaporanPage() {
 
     const report: (ReportItem | null)[] = allDaysInMonth.map(day => {
         const dayStr = format(day, 'yyyy-MM-dd');
+        const isToday = isSameDay(day, today);
         const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
+
+        const attendanceRecord = attendanceHistory.find(a => {
+            const checkInDate = a.checkInTime?.toDate();
+            return checkInDate && format(checkInDate, 'yyyy-MM-dd') === dayStr;
+        });
 
         const leaveRecord = leaveHistory.find(l => 
             l.status === 'approved' && isWithinInterval(day, { start: startOfDay(l.startDate.toDate()), end: endOfDay(l.endDate.toDate()) })
         );
+
+        if (!isWorkingDay && !isToday && !attendanceRecord && !leaveRecord) {
+            return null;
+        }
 
         if (leaveRecord) {
             return {
@@ -123,11 +133,6 @@ export default function LaporanPage() {
                 approvalStatus: leaveRecord.status,
             };
         }
-
-        const attendanceRecord = attendanceHistory.find(a => {
-            const checkInDate = a.checkInTime?.toDate();
-            return checkInDate && format(checkInDate, 'yyyy-MM-dd') === dayStr;
-        });
 
         if (attendanceRecord) {
             const checkInTime = attendanceRecord.checkInTime.toDate();
@@ -177,15 +182,15 @@ export default function LaporanPage() {
             }
         }
         
-        if (isWorkingDay && isBefore(day, today)) {
+        if (isToday || (isWorkingDay && isBefore(day, today))) {
              return {
                 id: dayStr,
                 date: day,
                 dateString: format(day, 'eee, dd/MM/yy', { locale: id }),
                 checkIn: '-',
                 checkOut: '-',
-                status: 'Alpa',
-                description: 'Tidak Ada Keterangan',
+                status: isToday && !isWorkingDay ? 'Hari Libur' : 'Alpa',
+                description: isToday ? 'Belum Ada Aktivitas' : 'Tidak Ada Keterangan',
             };
         }
 
@@ -197,10 +202,6 @@ export default function LaporanPage() {
   }, [attendanceHistory, leaveHistory, schoolConfig, monthlyConfig, currentMonth]);
 
   const handlePrevMonth = () => {
-    if (isStaff) {
-        toast({ title: 'Akses Terbatas', description: 'Gunakan versi web untuk melihat riwayat lama.' });
-        return;
-    }
     setCurrentMonth(prev => subMonths(prev, 1));
   };
 

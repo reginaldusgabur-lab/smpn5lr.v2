@@ -1,11 +1,10 @@
-
 'use server';
 
 import { notFound } from 'next/navigation';
 import { adminDb as firestore } from '@/lib/firebase-admin';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ReportClientShell from './ReportClientShell';
-import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay } from 'date-fns';
+import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay, endOfDay } from 'date-fns';
 import { Timestamp } from 'firebase-admin/firestore';
 
 // Define a type for our records to satisfy TypeScript
@@ -43,7 +42,7 @@ export default async function UserReportDetailPage({ params, searchParams }: {
         const [userSnap, schoolConfigSnap, monthlyConfigSnap] = await Promise.all([
             userRef.get(),
             schoolConfigRef.get(),
-            monthlyConfigRef.get(),
+            monthlyConfigSnap.get(),
         ]);
 
         if (!userSnap.exists) {
@@ -95,7 +94,14 @@ export default async function UserReportDetailPage({ params, searchParams }: {
         const report = allDaysInMonth.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
             const isToday = isSameDay(day, today);
+            const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
             const attendanceRecord = attendanceMap.get(dayStr);
+            const leaveRecord = leaveMap.get(dayStr);
+
+            // Filter out non-working days that don't have records, UNLESS it's today
+            if (!isWorkingDay && !isToday && !attendanceRecord && !leaveRecord) {
+                return null;
+            }
 
             if (attendanceRecord) {
                 const checkInTime = attendanceRecord.checkInTime.toDate();
@@ -114,7 +120,6 @@ export default async function UserReportDetailPage({ params, searchParams }: {
                             description = 'Kehadiran Penuh';
                         }
                     } else {
-                        const leaveRecord = leaveMap.get(dayStr);
                         if (leaveRecord && leaveRecord.type === 'Pulang Cepat') {
                             description = 'Pulang Cepat';
                         } else {
@@ -122,17 +127,29 @@ export default async function UserReportDetailPage({ params, searchParams }: {
                         }
                     }
                 }
-                return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: !checkOutTime && !isToday && isBefore(day, today) ? 'Alpa' : 'Hadir', description };
+                return { 
+                    id: attendanceRecord.id, 
+                    date: day, 
+                    checkInTime, 
+                    checkOutTime, 
+                    status: !checkOutTime && !isToday && isBefore(day, today) ? 'Alpa' : 'Hadir', 
+                    description 
+                };
             }
 
-            const leaveRecord = leaveMap.get(dayStr);
-            const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
-            if (leaveRecord && isWorkingDay && leaveRecord.type !== 'Pulang Cepat') {
+            if (leaveRecord && leaveRecord.type !== 'Pulang Cepat') {
                 return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type, description: leaveRecord.reason };
             }
 
-            if (isWorkingDay && (isBefore(day, today) || isToday)) {
-                return { id: dayStr, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: isToday ? 'Belum Ada Aktivitas' : 'Tidak Ada Keterangan' };
+            if (isToday || (isWorkingDay && isBefore(day, today))) {
+                return { 
+                    id: dayStr, 
+                    date: day, 
+                    checkInTime: null, 
+                    checkOutTime: null, 
+                    status: isToday && !isWorkingDay ? 'Hari Libur' : 'Alpa', 
+                    description: isToday ? 'Belum Ada Aktivitas' : 'Tidak Ada Keterangan' 
+                };
             }
 
             return null;
