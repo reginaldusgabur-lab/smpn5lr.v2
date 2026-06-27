@@ -43,14 +43,14 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
 
   const { data: userData, isLoading: isUserDataLoading } = useDoc<{ name: string, role: string, photoURL?: string }>(user, userDocRef);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     if (!auth) return;
-    try {
-      await signOut(auth);
+    signOut(auth).then(() => {
       router.push('/');
-    } catch (error) {
+    }).catch((error) => {
       console.error("Gagal melakukan logout:", error);
-    }
+      router.push('/');
+    });
   };
 
   const getInitials = (name: string | undefined | null) => {
@@ -79,7 +79,6 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
 
   return (
     <header className={headerClasses}>
-      {/* Left section: User Profile */}
       <div className="flex items-center gap-3">
         {isProfileLoading && !displayName ? (
             <div className="flex items-center gap-3">
@@ -130,7 +129,6 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
         <ModeToggle />
       </div>
 
-      {/* Right Section: Logo with Dialog */}
       <Dialog>
         <DialogTrigger asChild>
           <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full transition-transform active:scale-95">
@@ -154,16 +152,16 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
               Aplikasi ini adalah alat resmi untuk mencatat kehadiran. Pelanggaran terhadap aturan berikut akan dikenakan sanksi sesuai kebijakan sekolah.
             </DialogDescription>
           </DialogHeader>
-          <div className="text-sm space-y-3 py-2 max-h-[60vh] overflow-y-auto pr-4">
-            <div className="font-semibold">1. Kejujuran adalah Segalanya</div>
+          <div className="text-sm space-y-3 py-2 max-h-[60vh] overflow-y-auto pr-4 text-left">
+            <div className="font-semibold text-foreground">1. Kejujuran adalah Segalanya</div>
             <p className="text-muted-foreground pl-4">
               Setiap pengguna bertanggung jawab penuh atas kebenaran data absensinya. Tindakan manipulasi atau pemalsuan data adalah pelanggaran berat.
             </p>
-            <div className="font-semibold">2. Tepat Waktu</div>
+            <div className="font-semibold text-foreground">2. Tepat Waktu</div>
             <p className="text-muted-foreground pl-4">
               Lakukan absensi masuk dan pulang sesuai dengan rentang waktu yang telah ditetapkan. Keterlambatan akan tercatat otomatis.
             </p>
-            <div className="font-semibold">3. QR Code Bersifat Rahasia</div>
+            <div className="font-semibold text-foreground">3. QR Code Bersifat Rahasia</div>
             <p className="text-muted-foreground pl-4">
               Dilarang keras membagikan atau menyalahgunakan QR Code absensi. Pelanggaran akan ditindaklanjuti.
             </p>
