@@ -122,14 +122,14 @@ export default function SchoolReportPage() {
             const sekolah = (config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase();
             const alamat = config.address || 'Alamat Sekolah';
 
-            // Kop Surat - Instansi & Dinas (14pt Bold)
+            // Kop Surat - Instansi & Dinas (14pt Bold) - LEBIH BESAR
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text(instansi, centerX, finalY, { align: 'center' });
             finalY += 7;
             doc.text(dinas, centerX, finalY, { align: 'center' });
             finalY += 7;
             
-            // Nama Sekolah (12pt Bold)
+            // Nama Sekolah (12pt Bold) - LEBIH KECIL
             doc.setFontSize(12);
             doc.text(sekolah, centerX, finalY, { align: 'center' });
             finalY += 5;
@@ -166,7 +166,7 @@ export default function SchoolReportPage() {
 
             autoTable(doc, {
                 startY: finalY,
-                head: [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']],
+                head: [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', 'Persen']],
                 body: tableRows,
                 theme: 'grid',
                 styles: { 
@@ -182,35 +182,46 @@ export default function SchoolReportPage() {
                     textColor: 255, 
                     halign: 'center', 
                     fontStyle: 'bold',
-                    fontSize: 10
+                    fontSize: 10,
+                    lineWidth: 0 // Menghilangkan garis batas di bagian judul
                 },
                 columnStyles: {
-                    0: { halign: 'center', cellWidth: 10 }, // No
-                    1: { halign: 'left', cellWidth: 'auto' }, // Nama
-                    2: { halign: 'left', cellWidth: 35 }, // NIP
-                    3: { halign: 'center', cellWidth: 20 }, // Status
-                    4: { halign: 'center', cellWidth: 15 }, // Hadir
-                    5: { halign: 'center', cellWidth: 15 }, // Izin
-                    6: { halign: 'center', cellWidth: 15 }, // Sakit
-                    7: { halign: 'center', cellWidth: 15 }, // Alpa
-                    8: { halign: 'center', cellWidth: 20 }, // Persen
+                    0: { halign: 'center', cellWidth: 10 },
+                    1: { halign: 'left', cellWidth: 45 },
+                    2: { halign: 'left', cellWidth: 35 },
+                    3: { halign: 'center', cellWidth: 20 },
+                    4: { halign: 'center', cellWidth: 12 }, // H
+                    5: { halign: 'center', cellWidth: 12 }, // I
+                    6: { halign: 'center', cellWidth: 12 }, // S
+                    7: { halign: 'center', cellWidth: 12 }, // A
+                    8: { halign: 'center', cellWidth: 22 }, // Persen
                 }
             });
 
-            const finalTableY = (doc as any).lastAutoTable.finalY + 15;
+            const finalTableY = (doc as any).lastAutoTable.finalY;
+            
+            // Bagian Catatan (Legenda)
+            let currentY = finalTableY + 10;
+            doc.setFontSize(9).setFont('times', 'bold');
+            doc.text('Catatan:', margin, currentY);
+            doc.setFont('times', 'normal');
+            doc.text('H = Hadir, I = Izin, S = Sakit, A = Alpa', margin + 15, currentY);
+
+            // Tanda Tangan
+            currentY += 15;
             const signatureX = pageWidth - 75;
             const kota = config.reportCity || 'Mando';
             const tgl = format(new Date(), 'd MMMM yyyy', { locale: id });
 
             doc.setFontSize(11).setFont('times', 'normal');
-            doc.text(`${kota}, ${tgl}`, signatureX, finalTableY);
-            doc.text('Mengetahui,', signatureX, finalTableY + 6);
-            doc.text('Kepala Sekolah', signatureX, finalTableY + 12);
+            doc.text(`${kota}, ${tgl}`, signatureX, currentY);
+            doc.text('Mengetahui,', signatureX, currentY + 6);
+            doc.text('Kepala Sekolah', signatureX, currentY + 12);
             
             doc.setFont('times', 'bold');
-            doc.text(config.headmasterName || 'Kepala Sekolah', signatureX, finalTableY + 38);
+            doc.text(config.headmasterName || 'Kepala Sekolah', signatureX, currentY + 38);
             doc.setFont('times', 'normal');
-            doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, finalTableY + 44);
+            doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, currentY + 44);
 
             doc.save(`Laporan_Sekolah_${monthName.replace(' ', '_')}.pdf`);
             toast({ title: "Berhasil", description: "Laporan PDF berhasil diunduh." });
