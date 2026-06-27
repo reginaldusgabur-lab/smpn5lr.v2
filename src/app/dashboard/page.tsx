@@ -116,7 +116,6 @@ export default function DashboardPage() {
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
 
-    // Disabled Blue style class
     const disabledStyle = "w-full bg-primary/5 text-primary/40 border border-primary/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none";
 
     if (windowStatus === 'LOADING' || isAttendanceLoading) {
@@ -141,7 +140,6 @@ export default function DashboardPage() {
         return <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
     }
 
-    // Already checked in
     if (windowStatus === 'CHECK_OUT_OPEN') {
         return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang Sekarang</Link></Button>;
     }

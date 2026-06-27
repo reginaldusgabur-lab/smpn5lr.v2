@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from "react";
@@ -76,6 +75,7 @@ export const useAttendanceWindow = () => {
         }
 
         const parseToMinutes = (timeStr: string) => {
+            if (!timeStr) return 0;
             const [h, m] = timeStr.split(':').map(Number);
             return h * 60 + m;
         };
@@ -84,8 +84,8 @@ export const useAttendanceWindow = () => {
         const inEnd = parseToMinutes(config.checkInEndTime || "23:59");
         
         const dailyOut = config.dailyCheckOutTimes?.[dayOfWeek.toString()];
-        const outStart = parseToMinutes(dailyOut?.start || config.checkOutStartTime || "00:00");
-        const outEnd = parseToMinutes(dailyOut?.end || config.checkOutEndTime || "23:59");
+        const outStart = parseToMinutes(dailyOut?.start || config.checkOutStartTime || "14:00");
+        const outEnd = parseToMinutes(dailyOut?.end || config.checkOutEndTime || "16:00");
 
         if (currentTime < inStart) {
             setStatus("BEFORE_IN");

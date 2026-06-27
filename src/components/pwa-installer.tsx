@@ -25,11 +25,9 @@ const PwaInstaller = () => {
       e.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
       
-      // Cek apakah aplikasi sudah dalam mode standalone
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
       
       if (!isStandalone && !isDismissed) {
-         // Berikan sedikit jeda agar tidak langsung muncul saat loading
          setTimeout(() => setIsVisible(true), 3000);
       }
     };

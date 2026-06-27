@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button'
@@ -412,7 +411,6 @@ export default function PengaturanPage() {
             </CardFooter>
         </Card>
 
-        {/* System Notification Settings Card */}
         <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
             <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
