@@ -155,19 +155,19 @@ const RecentAttendanceTable = () => {
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 px-1">
-        <h3 className="font-black text-lg uppercase tracking-tight">Aktivitas Kehadiran</h3>
-        <p className="text-[11px] font-bold text-muted-foreground uppercase">{todayFormatted}</p>
+        <h3 className="font-black text-lg tracking-tight">Aktivitas Kehadiran</h3>
+        <p className="text-[11px] font-bold text-muted-foreground">{todayFormatted}</p>
       </div>
       <div className="bg-card/30 border rounded-2xl overflow-hidden shadow-sm">
         {isLoading ? (
           <div className="flex items-center justify-center h-40 text-muted-foreground">
             <Loader2 className="h-8 w-8 animate-spin mr-3" />
-            <span className="text-xs font-bold uppercase">Memuat aktivitas...</span>
+            <span className="text-xs font-bold">Memuat aktivitas...</span>
           </div>
         ) : error ? (
              <div className="flex flex-col items-center justify-center h-40 text-destructive text-center px-4">
                 <AlertCircle className="w-8 h-8 mb-3" />
-                <span className='font-bold uppercase text-xs'>Terjadi kesalahan</span>
+                <span className='font-bold text-xs'>Terjadi kesalahan</span>
                 <span className="text-[10px]">{error}</span>
             </div>
         ) : activities.length > 0 ? (
@@ -176,10 +176,10 @@ const RecentAttendanceTable = () => {
               <TableHeader className="bg-muted/30">
                 <TableRow>
                   <TableHead className="w-[50px] text-center font-black">No</TableHead>
-                  <TableHead className="font-black text-[10px]">Nama</TableHead>
-                  <TableHead className="text-center font-black text-[10px]">Masuk</TableHead>
-                  <TableHead className="text-center font-black text-[10px]">Pulang</TableHead>
-                  <TableHead className="text-center font-black text-[10px]">Status</TableHead>
+                  <TableHead className="font-black text-xs">Nama</TableHead>
+                  <TableHead className="text-center font-black text-xs">Masuk</TableHead>
+                  <TableHead className="text-center font-black text-xs">Pulang</TableHead>
+                  <TableHead className="text-center font-black text-xs">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

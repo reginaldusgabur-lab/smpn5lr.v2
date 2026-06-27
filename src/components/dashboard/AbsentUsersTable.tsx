@@ -173,8 +173,8 @@ const AbsentUsersTable = () => {
   return (
     <div className="w-full space-y-4">
       <div className="px-1">
-        <h3 className="font-black text-lg uppercase tracking-tight">Daftar Tidak Hadir</h3>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase">Staf tanpa absensi & izin hari ini</p>
+        <h3 className="font-black text-lg tracking-tight">Daftar Tidak Hadir</h3>
+        <p className="text-[10px] font-bold text-muted-foreground">Staf tanpa absensi & izin hari ini</p>
       </div>
       <div className="bg-card/30 border rounded-2xl overflow-hidden shadow-sm">
         {!isHoliday && absentUsers.length > 0 ? (
@@ -183,8 +183,8 @@ const AbsentUsersTable = () => {
                 <TableHeader className="bg-muted/30">
                 <TableRow>
                     <TableHead className="w-[50px] text-center font-black">No</TableHead>
-                    <TableHead className="font-black text-[10px]">Nama</TableHead>
-                    <TableHead className="text-center font-black text-[10px]">Status</TableHead>
+                    <TableHead className="font-black text-xs">Nama</TableHead>
+                    <TableHead className="text-center font-black text-xs">Status</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>

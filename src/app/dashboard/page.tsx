@@ -37,7 +37,7 @@ const LiveClockUI = () => {
                 {format(time, 'HH:mm:ss')}
             </h2>
             <p className="text-sm font-medium text-muted-foreground mt-3 capitalize">
-                {format(time, 'EEEE, d MMMM yyyy', { locale: id })}
+                {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
     );
@@ -131,7 +131,7 @@ export default function DashboardPage() {
                 <Card className="w-full border shadow-sm overflow-hidden bg-card">
                     <CardHeader className="p-4 pb-0 flex flex-row items-center gap-2">
                         <Clock className="w-4 h-4 text-primary" />
-                        <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                        <CardTitle className="text-xs font-black text-muted-foreground">
                             Kehadiran Anda Hari Ini
                         </CardTitle>
                     </CardHeader>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
                             <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-center gap-1.5 mb-1 opacity-70">
                                     <LogIn className="w-3 h-3 text-primary" />
-                                    <p className="text-[10px] font-bold text-muted-foreground tracking-wider">Masuk</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground">Masuk</p>
                                 </div>
                                 <p className="text-lg font-black tabular-nums">
                                     {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
@@ -152,7 +152,7 @@ export default function DashboardPage() {
                             <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-center gap-1.5 mb-1 opacity-70">
                                     <LogOut className="w-3 h-3 text-primary" />
-                                    <p className="text-[10px] font-bold text-muted-foreground tracking-wider">Pulang</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground">Pulang</p>
                                 </div>
                                 <p className="text-lg font-black tabular-nums">
                                     {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                                     <Link href="/dashboard/absen">Absen Masuk Sekarang</Link>
                                 </Button>
                             ) : (
-                                <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm uppercase tracking-wider">
+                                <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm">
                                     <Sparkles className="mr-2 w-4 h-4" /> Absensi Selesai
                                 </div>
                             )}
@@ -185,7 +185,7 @@ export default function DashboardPage() {
                 <Card className="w-full border shadow-sm overflow-hidden bg-card">
                     <CardHeader className="p-4 pb-0">
                         <div className="flex items-center justify-between">
-                            <h2 className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-tight">
+                            <h2 className="flex items-center gap-2 text-xs font-bold text-foreground">
                                 <TrendingUp size={14} className="text-primary" /> Ringkasan Bulanan
                             </h2>
                             <p className="text-[10px] text-muted-foreground font-bold">
@@ -227,7 +227,7 @@ export default function DashboardPage() {
                     <Card className="bg-card border shadow-sm">
                         <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Hadir</p>
+                                <p className="text-[9px] font-black text-muted-foreground">Hadir</p>
                                 <UserCheck className="h-3.5 w-3.5 text-primary" />
                             </div>
                             <div className="text-2xl font-black">{isStatsLoading ? '...' : stats.hadir}</div>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                     <Card className="bg-card border shadow-sm">
                         <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Izin/Sakit</p>
+                                <p className="text-[9px] font-black text-muted-foreground">Izin/Sakit</p>
                                 <BookUser className="h-3.5 w-3.5 text-primary" />
                             </div>
                             <div className="text-2xl font-black">{isStatsLoading ? '...' : stats.izin + stats.sakit}</div>
@@ -248,7 +248,7 @@ export default function DashboardPage() {
                         <Card className="bg-card border shadow-sm hover:bg-accent/10 transition-colors">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Menunggu</p>
+                                    <p className="text-[9px] font-black text-muted-foreground">Menunggu</p>
                                     <MailWarning className="h-3.5 w-3.5 text-primary" />
                                 </div>
                                 <div className="text-2xl font-black">{isStatsLoading ? '...' : stats.pending}</div>
