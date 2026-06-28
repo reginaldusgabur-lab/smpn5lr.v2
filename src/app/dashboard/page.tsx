@@ -75,7 +75,7 @@ export default function DashboardPage() {
         }
     } catch (error) {
         if (isMounted.current) {
-            console.error("Dashboard data load error:", error instanceof Error ? error.message : "Unknown error");
+            console.error("Dashboard load failed:", error instanceof Error ? error.message : "Unknown error");
             setIsStatsLoading(false);
             setIsPersonalSummaryLoading(false);
         }

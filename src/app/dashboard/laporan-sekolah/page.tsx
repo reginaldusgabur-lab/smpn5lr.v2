@@ -190,7 +190,7 @@ export default function SchoolReportPage() {
             }
         } catch (err) { 
             if (isMounted.current) {
-                console.error("Load bulk report error:", err);
+                console.error("Load bulk report error:", err instanceof Error ? err.message : "Unknown error");
                 setError("Gagal memuat data laporan.");
                 setIsReportLoading(false);
             }

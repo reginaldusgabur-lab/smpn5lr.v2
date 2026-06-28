@@ -19,11 +19,12 @@ const cleanDesc = (desc: string) => desc ? desc.replace(/\s?\(diubah oleh Admin\
 
 /**
  * Mendapatkan ringkasan kehadiran harian seluruh staf untuk dashboard.
+ * Dioptimalkan untuk 1 hari kerja efektif.
  */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `daily_v5_${todayStr}`;
+    const cacheKey = `daily_v6_${todayStr}`;
     
     const cachedData = getFromCache(cacheKey);
     if (cachedData) return cachedData;
@@ -122,6 +123,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
+        console.error("Daily stats load error:", e instanceof Error ? e.message : "Unknown error");
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, isHoliday: false };
     }
 }
@@ -131,7 +133,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
  */
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v6_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v7_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -181,7 +183,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         attendanceData.forEach((att: any) => {
             const attDateStr = format(att.checkInTime.toDate(), 'yyyy-MM-dd');
             if (workingDaysSet.has(attDateStr)) {
-                // Status Dinas, Pulang Cepat, atau Hadir penuh = 1.0 poin
                 hadirScore += 1;
                 attDates.add(attDateStr);
             }
@@ -196,7 +197,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 const dayStr = format(day, 'yyyy-MM-dd');
                 if (workingDaysSet.has(dayStr)) {
                     if (leave.type === 'Pulang Cepat' || leave.type === 'Dinas') {
-                        // Jika sudah ada record absen, jangan double count
                         if (!attDates.has(dayStr)) {
                            hadirScore += 1;
                            attDates.add(dayStr);
@@ -216,7 +216,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         }).length;
         
         const totalPastWorkingDays = pastWorkingDaysSet.size;
-        // Denominator hanya dikurangi Izin dan Sakit. Dinas/Pulang Cepat dihitung sebagai Hadir.
         const denominator = Math.max(1, totalPastWorkingDays - (izinCount + sakitCount));
 
         const percentageRaw = (hadirScore / denominator) * 100;
@@ -233,6 +232,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
+        console.error("Personal stats load error:", e instanceof Error ? e.message : "Unknown error");
         return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
     }
 }
