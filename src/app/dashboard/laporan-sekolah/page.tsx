@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, endOfDay, isBefore, isSameDay, eachDayOfInterval } from 'date-fns';
+import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, isBefore, isSameDay, eachDayOfInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -56,7 +56,7 @@ export default function SchoolReportPage() {
     const { data: schoolConfigData } = useDoc(user, schoolConfigRef);
 
     const loadData = useCallback(async () => {
-        if (!firestore || !user || !isMounted.current) return;
+        if (!firestore || !user?.uid || !isMounted.current) return;
         setIsReportLoading(true);
         setError(null);
         try {
@@ -125,7 +125,7 @@ export default function SchoolReportPage() {
                 const hadirScore = uAtt.reduce((total, att) => {
                     const attDateStr = format(att.checkInTime.toDate(), 'yyyy-MM-dd');
                     if (!workingDaysSet.has(attDateStr)) return total;
-                    return total + 1; // Hadir/Dinas/Pulang Cepat = 1.0 poin
+                    return total + 1;
                 }, 0);
 
                 const attDates = new Set(uAtt.map(att => format(att.checkInTime.toDate(), 'yyyy-MM-dd')));
@@ -182,15 +182,15 @@ export default function SchoolReportPage() {
                 setIsReportLoading(false);
             }
         }
-    }, [firestore, user, currentMonth, schoolConfigData]);
+    }, [firestore, user?.uid, currentMonth, schoolConfigData]);
 
     useEffect(() => {
         isMounted.current = true;
-        if (!isUserLoading && user && schoolConfigData) {
+        if (!isUserLoading && user?.uid && schoolConfigData) {
             loadData();
         }
         return () => { isMounted.current = false; };
-    }, [user, isUserLoading, schoolConfigData, loadData]);
+    }, [user?.uid, isUserLoading, schoolConfigData, loadData]);
 
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
     const monthName = format(currentMonth, 'MMMM yyyy', { locale: id });

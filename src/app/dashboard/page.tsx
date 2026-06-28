@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
 
   const loadDashboardData = useCallback(async () => {
-    if (!firestore || !user || !isMounted.current) return;
+    if (!firestore || !user?.uid || !isMounted.current) return;
     try {
         const now = new Date();
         const [dailyStats, personalStats] = await Promise.all([
@@ -78,15 +78,15 @@ export default function DashboardPage() {
             setIsPersonalSummaryLoading(false);
         }
     }
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   useEffect(() => {
     isMounted.current = true;
-    if (!isUserLoading && user) {
+    if (!isUserLoading && user?.uid) {
         loadDashboardData();
     }
     return () => { isMounted.current = false; };
-  }, [loadDashboardData, user, isUserLoading]);
+  }, [loadDashboardData, user?.uid, isUserLoading]);
 
   const todaysAttendanceQuery = useMemoFirebase(() => {
       if (!user || !firestore) return null;
