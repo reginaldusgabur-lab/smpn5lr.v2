@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -50,34 +50,37 @@ export default function DashboardPage() {
   const [personalSummary, setPersonalSummary] = useState({ percentage: '0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
 
-  useEffect(() => {
+  const loadDashboardData = useCallback(async () => {
     if (!firestore || !user) return;
-    const loadDashboardData = async () => {
-        setIsStatsLoading(true);
-        setIsPersonalSummaryLoading(true);
-        try {
-            const now = new Date();
-            const [dailyStats, personalStats] = await Promise.all([
-                getDailyStaffAttendanceStats(firestore),
-                calculateAttendanceStats(firestore, user.uid, { start: startOfMonth(now), end: endOfMonth(now) })
-            ]);
-            setStats(dailyStats);
-            setPersonalSummary({
-                percentage: personalStats.persentase.replace('%', ''),
-                hadir: Math.ceil(personalStats.totalHadir),
-                izin: personalStats.totalIzin,
-                sakit: personalStats.totalSakit,
-                alpa: personalStats.totalAlpa
-            });
-        } catch (error) {
-            console.error("Dashboard error:", error);
-        } finally {
-            setIsStatsLoading(false);
-            setIsPersonalSummaryLoading(false);
-        }
-    };
-    loadDashboardData();
+    setIsStatsLoading(true);
+    setIsPersonalSummaryLoading(true);
+    try {
+        const now = new Date();
+        const [dailyStats, personalStats] = await Promise.all([
+            getDailyStaffAttendanceStats(firestore),
+            calculateAttendanceStats(firestore, user.uid, { start: startOfMonth(now), end: endOfMonth(now) })
+        ]);
+        setStats(dailyStats);
+        setPersonalSummary({
+            percentage: personalStats.persentase.replace('%', ''),
+            hadir: Math.ceil(personalStats.totalHadir),
+            izin: personalStats.totalIzin,
+            sakit: personalStats.totalSakit,
+            alpa: personalStats.totalAlpa
+        });
+    } catch (error) {
+        // Silent error for stability
+    } finally {
+        setIsStatsLoading(false);
+        setIsPersonalSummaryLoading(false);
+    }
   }, [firestore, user]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isMounted) loadDashboardData();
+    return () => { isMounted = false; };
+  }, [loadDashboardData]);
 
   const todaysAttendanceQuery = useMemoFirebase(() => {
       if (!user || !firestore) return null;

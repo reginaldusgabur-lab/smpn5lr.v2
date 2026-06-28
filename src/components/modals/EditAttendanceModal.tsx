@@ -91,7 +91,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const targetDate = parseISO(day.date);
             const batch = writeBatch(firestore);
             
-            // Delete existing problematic record if any
             const attendanceRef = collection(firestore, 'users', user.uid, 'attendanceRecords');
             const q = query(attendanceRef, where('date', '==', format(targetDate, 'yyyy-MM-dd')));
             const snap = await getDocs(q);
@@ -126,7 +125,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const batch = writeBatch(firestore);
             const recordDate = parseISO(day.date);
             const now = new Date();
-            const isToday = isSameDay(recordDate, now);
             const isPast = isBefore(recordDate, startOfDay(now));
 
             const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
@@ -145,12 +143,9 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 checkInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 15) + 1);
                 reasonForUpdate = 'Terlambat';
             }
-            
-            const [outStartH, outStartM] = checkOutStartTime.split(':').map(Number);
-            const checkOutLimit = setMinutes(setHours(startOfDay(recordDate), outStartH), outStartM);
 
-            // Logic to fill check-out for past days
-            if (isPast || (isToday && now >= checkOutLimit)) {
+            // Always fill check-out for past dates when fixing Alpa
+            if (isPast) {
                 checkOutTime = getRandomTime(recordDate, checkOutStartTime, checkOutEndTime);
                 if (checkOutTime.getTime() <= checkInTime.getTime()) {
                     checkOutTime = addMinutes(checkInTime, 240);
