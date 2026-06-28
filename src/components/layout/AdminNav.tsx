@@ -12,7 +12,7 @@ import {
 const adminNavItems = [
   { href: '/dashboard', icon: Home, label: 'Beranda' },
   { href: '/dashboard/admin/users', icon: Users, label: 'Pengguna' },
-  { href: '/dashboard/pengaturan-absen', icon: QrCode, label: 'Pengaturan Absen' },
+  { href: '/dashboard/admin/konfigurasi', icon: QrCode, label: 'Pengaturan Absen' },
   { href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan Sekolah' },
   { href: '/dashboard/pengaturan', icon: Settings, label: 'Pengaturan' },
 ];
