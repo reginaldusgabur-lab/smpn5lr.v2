@@ -149,7 +149,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   };
   
   return (
-    <Card className="lg:col-span-3 overflow-hidden border shadow-none">
+    <Card className="lg:col-span-3 overflow-hidden border shadow-none rounded-3xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
             <CardTitle className="font-bold text-sm tracking-tight">Hari kerja & libur bulanan</CardTitle>
             <CardDescription className="text-muted-foreground font-bold">

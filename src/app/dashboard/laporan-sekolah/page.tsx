@@ -124,24 +124,35 @@ export default function SchoolReportPage() {
                 const uAtt = attendanceByUserId[u.id] || [];
                 const uLeave = leaveByUserId[u.id] || [];
 
-                const hadirScore = uAtt.reduce((total, att) => {
-                    const attDateStr = format(att.checkInTime.toDate(), 'yyyy-MM-dd');
-                    if (!workingDaysSet.has(attDateStr)) return total;
-                    return total + 1;
-                }, 0);
+                const attDates = new Set<string>();
+                let hadirScore = 0;
 
-                const attDates = new Set(uAtt.map(att => format(att.checkInTime.toDate(), 'yyyy-MM-dd')));
+                uAtt.forEach(att => {
+                    const attDateStr = format(att.checkInTime.toDate(), 'yyyy-MM-dd');
+                    if (workingDaysSet.has(attDateStr)) {
+                        hadirScore += 1;
+                        attDates.add(attDateStr);
+                    }
+                });
                 
                 let izinCount = 0;
                 let sakitCount = 0;
                 const leaveDatesSet = new Set<string>();
 
                 uLeave.forEach(leave => {
-                    if (leave.type === 'Pulang Cepat') return;
                     eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                         const dayStr = format(day, 'yyyy-MM-dd');
                         if (workingDaysSet.has(dayStr)) {
-                            if (leave.type === 'Sakit') sakitCount++; else izinCount++;
+                            if (leave.type === 'Pulang Cepat' || leave.type === 'Dinas') {
+                                if (!attDates.has(dayStr)) {
+                                    hadirScore += 1;
+                                    attDates.add(dayStr);
+                                }
+                            } else if (leave.type === 'Sakit') {
+                                sakitCount++;
+                            } else {
+                                izinCount++;
+                            }
                             leaveDatesSet.add(dayStr);
                         }
                     });
@@ -179,7 +190,7 @@ export default function SchoolReportPage() {
             }
         } catch (err) { 
             if (isMounted.current) {
-                console.error("Bulk report error:", err instanceof Error ? err.message : "Unknown error");
+                console.error("Load bulk report error:", err);
                 setError("Gagal memuat data laporan.");
                 setIsReportLoading(false);
             }
@@ -297,7 +308,7 @@ export default function SchoolReportPage() {
 
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-7xl mx-auto space-y-6">
                 <div className="px-4 md:px-0">
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Laporan sekolah</h1>
                     <p className="text-muted-foreground mt-1 font-bold">Ringkasan kehadiran bulanan untuk seluruh personil aktif.</p>

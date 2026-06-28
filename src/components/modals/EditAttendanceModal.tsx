@@ -94,7 +94,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const leaveRef = collection(firestore, 'users', user.uid, 'leaveRequests');
             const newLeaveDoc = doc(leaveRef);
             batch.set(newLeaveDoc, {
-                userId: user.uid, type: newStatus, status: 'approved',
+                userId: user.uid, type: newStatus === 'Izin' || newStatus === 'Dinas' ? newStatus : 'Sakit', status: 'approved',
                 startDate: Timestamp.fromDate(startOfDay(targetDate)),
                 endDate: Timestamp.fromDate(endOfDay(targetDate)),
                 createdAt: serverTimestamp(), approvedBy: currentUser.uid, approvedAt: serverTimestamp(), createdBy: currentUser.uid,
@@ -121,7 +121,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             let reasonForUpdate: string;
 
             if (type === 'hadir' || type === 'dinas') {
-                checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '08:00');
+                checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '07:30');
                 reasonForUpdate = type === 'dinas' ? 'Dinas pagi' : 'Kehadiran penuh';
             } else {
                 const [endH, endM] = (checkInEndTime || '08:00').split(':').map(Number);

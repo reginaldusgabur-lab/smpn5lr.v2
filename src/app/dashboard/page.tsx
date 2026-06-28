@@ -44,6 +44,7 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const { status: windowStatus } = useAttendanceWindow();
   const isMounted = useRef(true);
+  const dataLoadedRef = useRef(false);
 
   const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0 });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
@@ -70,10 +71,11 @@ export default function DashboardPage() {
             });
             setIsStatsLoading(false);
             setIsPersonalSummaryLoading(false);
+            dataLoadedRef.current = true;
         }
     } catch (error) {
         if (isMounted.current) {
-            console.error("Dashboard load failed:", error instanceof Error ? error.message : "Unknown error");
+            console.error("Dashboard data load error:", error instanceof Error ? error.message : "Unknown error");
             setIsStatsLoading(false);
             setIsPersonalSummaryLoading(false);
         }
@@ -82,10 +84,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     isMounted.current = true;
-    if (!isUserLoading && user?.uid) {
+    if (!isUserLoading && user?.uid && !dataLoadedRef.current) {
         loadDashboardData();
     }
-    return () => { isMounted.current = false; };
+    return () => { 
+        isMounted.current = false;
+    };
   }, [loadDashboardData, user?.uid, isUserLoading]);
 
   const todaysAttendanceQuery = useMemoFirebase(() => {
@@ -267,7 +271,7 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <TrendingUp className="w-5 h-5" />
-                                <h2 className="text-xs font-bold uppercase tracking-widest">
+                                <h2 className="text-xs font-bold tracking-widest">
                                     Ringkasan bulanan
                                 </h2>
                             </div>
