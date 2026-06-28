@@ -1,4 +1,4 @@
-'use client';
+'use server';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
 import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
@@ -17,9 +17,6 @@ export interface MonthlyReportData {
 
 const cleanDesc = (desc: string) => desc ? desc.replace(/\s?\(diubah oleh Admin\)/g, '').replace(/\(✓\)/g, '').trim() : '';
 
-/**
- * Mengambil statistik kehadiran harian dengan dukungan caching hybrid.
- */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
@@ -79,7 +76,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const startDate = leave.startDate?.toDate();
         const endDate = leave.endDate?.toDate();
 
-        if (startDate && endDate && isWithinInterval(today, { start: startOfDay(startDate), end: endOfToday })) {
+        if (startDate && endDate && isWithinInterval(today, { start: startOfDay(startDate), end: endOfDay(endDate) })) {
             const userId = leave.userId || doc.ref.parent.parent?.id;
             if (userId) {
                 if (!leaveStatusByUserId.has(userId) || leave.status === 'approved') {
@@ -302,11 +299,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (!description) description = 'Kehadiran penuh';
 
             if (description === 'Terlambat') {
-                checkInTime = null; 
-            }
-
-            if (description === 'Pulang cepat') {
-                checkOutTime = null;
+                // Jangan null-kan jam masuk, agar tetap tampil di laporan tapi beri tanda di status
             }
 
             if (!checkOutTime && !isToday && isBefore(day, todayStart)) {

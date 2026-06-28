@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { parse, format, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes } from 'date-fns';
+import { parse, format, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes, isBefore } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
@@ -103,11 +102,25 @@ export default function ManualAttendancePage() {
             const [endH, endM] = inEnd.split(':').map(Number);
             const baseLateTime = new Date(recordDate);
             baseLateTime.setHours(endH, endM, 0);
-            const checkInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 10) + 1);
+            const checkInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 15) + 1);
+
+            let checkOutTime: Date | null = null;
+            const outStart = schoolConfig.checkOutStartTime || '14:00';
+            const outEnd = schoolConfig.checkOutEndTime || '15:00';
+            const [outH, outM] = outStart.split(':').map(Number);
+            const checkOutLimit = setMinutes(setHours(startOfDay(recordDate), outH), outM);
+
+            if (!isToday || (isToday && now >= checkOutLimit)) {
+                checkOutTime = getRandomTime(recordDate, outStart, outEnd);
+                if (checkOutTime.getTime() <= checkInTime.getTime()) {
+                    checkOutTime = addMinutes(checkInTime, 240);
+                }
+            }
 
             const attendanceData: any = {
                 userId, date: format(date, 'yyyy-MM-dd'),
                 checkInTime: Timestamp.fromDate(checkInTime),
+                checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : (existingRecord?.checkOutTime || null),
                 manualEntry: true, reasonForUpdate: 'Terlambat',
                 lastModifiedBy: authUser?.uid, lastModifiedAt: serverTimestamp()
             };
@@ -140,7 +153,7 @@ export default function ManualAttendancePage() {
             
             let checkOutTime: Date | null = null;
             const [outH, outM] = outStart.split(':').map(Number);
-            const checkOutLimit = setMinutes(setHours(new Date(now), outH), outM);
+            const checkOutLimit = setMinutes(setHours(startOfDay(recordDate), outH), outM);
 
             if (!isToday || (isToday && now >= checkOutLimit)) {
                 checkOutTime = getRandomTime(recordDate, outStart, outEnd);
@@ -152,8 +165,8 @@ export default function ManualAttendancePage() {
             const attendanceData: any = {
                 userId, date: format(date, 'yyyy-MM-dd'),
                 checkInTime: Timestamp.fromDate(checkInTime),
-                checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : null,
-                manualEntry: true, reasonForUpdate: 'Kehadiran Penuh',
+                checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : (existingRecord?.checkOutTime || null),
+                manualEntry: true, reasonForUpdate: 'Kehadiran penuh',
                 lastModifiedBy: authUser?.uid, lastModifiedAt: serverTimestamp()
             };
 
@@ -202,7 +215,8 @@ export default function ManualAttendancePage() {
             
             const data = {
                 userId, date: format(date, 'yyyy-MM-dd'),
-                checkInTime: checkInTs, checkOutTime: checkOutTs,
+                checkInTime: checkInTs || (existingRecord?.checkInTime || null),
+                checkOutTime: checkOutTs || (existingRecord?.checkOutTime || null),
                 manualEntry: true, lastModifiedBy: authUser?.uid, lastModifiedAt: serverTimestamp()
             };
             if (existingRecord) await updateDoc(doc(firestore, 'users', userId, 'attendanceRecords', existingRecord.id), data);
@@ -216,47 +230,52 @@ export default function ManualAttendancePage() {
     if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="h-12 w-12 animate-spin" /></div>;
 
     return (
-        <div className="max-w-2xl mx-auto p-4">
-             <Button variant="outline" size="icon" onClick={() => router.back()} className="mb-4">
-                <ArrowLeft className="h-4 w-4" />
+        <div className="max-w-2xl mx-auto p-4 flex flex-col items-stretch pb-24">
+             <Button variant="outline" size="icon" onClick={() => router.back()} className="mb-4 rounded-full h-10 w-10 shrink-0">
+                <ArrowLeft className="h-5 w-5" />
             </Button>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Entri Kehadiran Manual</CardTitle>
+            <Card className="rounded-3xl border shadow-xl overflow-hidden">
+                <CardHeader className="bg-muted/30 border-b border-muted-foreground/10">
+                    <CardTitle className="font-bold text-xl">Entri Kehadiran Manual</CardTitle>
                     {userData && (
-                        <CardDescription>
-                            Ubah kehadiran untuk <span className="font-semibold">{userData.name}</span> pada <span className="font-semibold">{format(date, 'EEEE, dd MMMM yyyy', { locale: id })}</span>.
+                        <CardDescription className="font-medium">
+                            Ubah kehadiran untuk <span className="font-bold text-foreground">{userData.name}</span> pada <span className="font-bold text-foreground">{format(date, 'EEEE, dd MMMM yyyy', { locale: id })}</span>.
                         </CardDescription>
                     )}
                 </CardHeader>
-                <CardContent>
-                    {error && <p className="text-red-500 mb-4 text-sm font-semibold text-center">{error}</p>}
-                    <div className="space-y-4 mb-6 pt-2">
-                        <Label>Tindakan Cepat</Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            <Button variant="default" size="sm" onClick={handleSetHadir} disabled={isSubmitting}>Jadikan Hadir</Button>
-                            <Button variant="outline" size="sm" onClick={handleSetLate} disabled={isSubmitting}>Jadikan Terlambat</Button>
-                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Sakit', 'Sakit')} disabled={isSubmitting}>Jadikan Sakit</Button>
-                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Izin', 'Izin Pribadi')} disabled={isSubmitting}>Jadikan Izin</Button>
-                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Dinas', 'Dinas Pagi')} disabled={isSubmitting}>Dinas Pagi</Button>
-                            <Button variant="outline" size="sm" onClick={() => handleCreateLeave('Dinas', 'Dinas Siang')} disabled={isSubmitting}>Dinas Siang</Button>
+                <CardContent className="p-6">
+                    {error && <p className="text-destructive mb-6 text-sm font-bold text-center bg-destructive/10 p-3 rounded-xl">{error}</p>}
+                    <div className="space-y-4 mb-8">
+                        <Label className="text-xs font-bold text-primary tracking-widest uppercase ml-1">Tindakan Cepat</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <Button variant="default" className="rounded-xl font-bold h-11" onClick={handleSetHadir} disabled={isSubmitting}>Jadikan Hadir</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11" onClick={handleSetLate} disabled={isSubmitting}>Jadikan Terlambat</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11" onClick={() => handleCreateLeave('Sakit', 'Sakit')} disabled={isSubmitting}>Jadikan Sakit</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11" onClick={() => handleCreateLeave('Izin', 'Izin Pribadi')} disabled={isSubmitting}>Jadikan Izin</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11 text-xs" onClick={() => handleCreateLeave('Dinas', 'Dinas Pagi')} disabled={isSubmitting}>Dinas Pagi</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11 text-xs" onClick={() => handleCreateLeave('Dinas', 'Dinas Siang')} disabled={isSubmitting}>Dinas Siang</Button>
                         </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6 border-t pt-6">
-                         <Label>Entri Jam Manual</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <form onSubmit={handleSubmit} className="space-y-6 border-t border-muted-foreground/10 pt-8">
+                         <Label className="text-xs font-bold text-primary tracking-widest uppercase ml-1">Entri Jam Manual</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="checkIn">Jam Masuk</Label>
-                                <Input id="checkIn" type="time" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
+                                <Label htmlFor="checkIn" className="text-xs font-bold ml-1">Jam Masuk</Label>
+                                <Input id="checkIn" type="time" className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="checkOut">Jam Pulang</Label>
-                                <Input id="checkOut" type="time" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
+                                <Label htmlFor="checkOut" className="text-xs font-bold ml-1">Jam Pulang</Label>
+                                <Input id="checkOut" type="time" className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">Isi jam masuk/pulang secara manual dan klik simpan.</p>
-                        <div className="flex justify-end"><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Simpan Jam Kehadiran</Button></div>
+                        <p className="text-[11px] text-muted-foreground font-medium italic">Isi jam masuk/pulang secara manual jika diperlukan dan klik simpan.</p>
+                        <div className="flex justify-end pt-4">
+                            <Button type="submit" className="w-full sm:w-auto h-12 rounded-xl font-bold px-10 shadow-lg active:scale-95 transition-all" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Simpan Kehadiran
+                            </Button>
+                        </div>
                     </form>
                 </CardContent>
             </Card>

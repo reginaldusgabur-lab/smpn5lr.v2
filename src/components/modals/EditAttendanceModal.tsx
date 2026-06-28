@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -20,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { format, parseISO, isValid, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes } from 'date-fns';
+import { format, parseISO, isValid, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes, isBefore } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { MoreVertical } from 'lucide-react';
 
@@ -73,7 +72,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 const config = schoolConfigSnap.data() || {};
                 setSchoolConfig(config);
                 const reportData = await fetchUserMonthlyReportData(firestore, user.uid, month, config);
-                const problems = reportData.filter(d => (d.status === 'Alpa' && d.description === 'Tidak Ada Keterangan') || (d.description === 'Tidak Absen Pulang'));
+                const problems = reportData.filter(d => (d.status === 'Alpa' && d.description === 'Tidak Ada Keterangan') || (d.description === 'Tidak Absen Pulang') || (d.description === 'Belum absen pulang'));
                 setProblematicDays(problems);
                 setSelectedDays({});
             } catch (err) { console.error("Error fetching problematic days:", err); setError('Gagal memuat data.'); }
@@ -109,7 +108,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         if (!currentUser?.uid || !firestore) return setError("Admin tidak teridentifikasi.");
         if (!schoolConfig) return setError("Konfigurasi sekolah tidak termuat.");
         const { checkInStartTime, checkInEndTime, checkOutStartTime, checkOutEndTime } = schoolConfig;
-        if (!checkInEndTime || !checkOutStartTime || !checkOutEndTime) return setError("Konfigurasi jam masuk/pulang belum lengkap.");
+        if (!checkInEndTime || !checkOutStartTime || !checkOutEndTime) return setError("Konfigurasi jam operasional belum lengkap.");
 
         setIsSaving(true); setError(null);
         try {
@@ -126,18 +125,19 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
 
             if (type === 'hadir') {
                 checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime);
-                reasonForUpdate = 'Kehadiran Penuh';
+                reasonForUpdate = 'Kehadiran penuh';
             } else {
                 const [endH, endM] = checkInEndTime.split(':').map(Number);
                 const baseLateTime = new Date(recordDate);
                 baseLateTime.setHours(endH, endM, 0);
-                checkInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 10) + 1);
+                checkInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 15) + 1);
                 reasonForUpdate = 'Terlambat';
             }
             
             const [outStartH, outStartM] = checkOutStartTime.split(':').map(Number);
-            const checkOutLimit = setMinutes(setHours(new Date(now), outStartH), outStartM);
+            const checkOutLimit = setMinutes(setHours(startOfDay(recordDate), outStartH), outStartM);
 
+            // Jika hari ini sudah lewat jam pulang, atau jika sedang mengedit hari kemarin/lampau
             if (!isToday || (isToday && now >= checkOutLimit)) {
                 checkOutTime = getRandomTime(recordDate, checkOutStartTime, checkOutEndTime);
                 if (checkOutTime.getTime() <= checkInTime.getTime()) {
@@ -154,7 +154,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
 
             await batch.commit();
             setProblematicDays(prev => prev.filter(p => p.id !== day.id));
-        } catch (err) { console.error("Error converting Alpa status:", err); setError("Gagal menyimpan perubahan."); }
+        } catch (err) { console.error("Error converting status:", err); setError("Gagal menyimpan perubahan."); }
         finally { setIsSaving(false); }
     };
 
@@ -170,7 +170,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const batch = writeBatch(firestore);
             const daysToUpdate = problematicDays.filter(day => selectedDays[day.id]);
             for (const day of daysToUpdate) {
-                if (day.description === 'Tidak Absen Pulang') {
+                if (day.description === 'Tidak absen pulang' || day.description === 'Belum absen pulang') {
                     const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
                     const originalCheckInTime = toDate(day.checkInTime);
                     if (!originalCheckInTime || !isValid(originalCheckInTime)) continue;
@@ -184,7 +184,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                         checkOutTime: Timestamp.fromDate(checkOutTime), 
                         updatedBy: currentUser.uid, 
                         updatedAt: Timestamp.now(), 
-                        reasonForUpdate: 'Kehadiran Penuh', 
+                        reasonForUpdate: 'Kehadiran penuh', 
                         manualEntry: true 
                     });
                 }
@@ -199,45 +199,49 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md rounded-3xl border-none shadow-2xl">
                 <DialogHeader>
-                    <DialogTitle>Perbaiki Kehadiran</DialogTitle>
-                    {error && <Alert variant="destructive" className="mt-4"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+                    <DialogTitle className="text-xl font-bold text-primary">Perbaiki Kehadiran</DialogTitle>
+                    {error && <Alert variant="destructive" className="mt-4 rounded-xl"><AlertTitle className="font-bold">Kesalahan</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
                 </DialogHeader>
                 {isLoading ? (
                     <div className="py-4 space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div>
                 ) : problematicDays.length > 0 ? (
                     <div className="py-4">
-                        <DialogDescription className="mb-4">Pilih data untuk diperbaiki atau ubah status Alpa secara langsung.</DialogDescription>
-                        <div className="max-h-[300px] overflow-y-auto -mr-2 pr-2 space-y-1">
+                        <DialogDescription className="mb-4 text-sm font-medium">Pilih data untuk diperbaiki atau ubah status Alpa secara langsung.</DialogDescription>
+                        <div className="max-h-[300px] overflow-y-auto -mr-2 pr-2 space-y-2">
                             {problematicDays.map(day => (
-                                <div key={day.id} className="flex items-center gap-3 p-2 rounded-md transition-colors hover:bg-muted/50">
-                                    {day.status === 'Alpa' ? <div className="w-5 h-5 shrink-0" /> : <Checkbox id={day.id} checked={!!selectedDays[day.id]} onCheckedChange={() => handleSelectDay(day.id)} className="w-5 h-5 shrink-0" />}
-                                    <label htmlFor={day.id} className="text-sm font-medium grow">{format(parseISO(day.date), 'eeee, dd MMMM yyyy', { locale: id })}</label>
+                                <div key={day.id} className="flex items-center gap-3 p-3 rounded-2xl transition-colors hover:bg-muted/50 border border-muted-foreground/5">
+                                    {day.status === 'Alpa' ? <div className="w-5 h-5 shrink-0" /> : <Checkbox id={day.id} checked={!!selectedDays[day.id]} onCheckedChange={() => handleSelectDay(day.id)} className="rounded-md" />}
+                                    <label htmlFor={day.id} className="text-sm font-bold grow cursor-pointer">{format(parseISO(day.date), 'eeee, dd MMMM yyyy', { locale: id })}</label>
                                     {day.status === 'Alpa' ? (
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Badge variant="destructive" className="cursor-pointer hover:bg-destructive/80 flex items-center">Alpa <MoreVertical className="h-3 w-3 ml-1" /></Badge>
+                                                <Badge variant="destructive" className="cursor-pointer hover:bg-destructive/80 flex items-center px-3 py-1 rounded-lg text-[10px] font-bold">Alpa <MoreVertical className="h-3 w-3 ml-1" /></Badge>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'hadir')}>Jadikan Hadir</DropdownMenuItem>
-                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Sakit')}>Ubah ke Sakit</DropdownMenuItem>
-                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Izin')}>Ubah ke Izin</DropdownMenuItem>
-                                                <DropdownMenuItem disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Dinas')}>Ubah ke Dinas</DropdownMenuItem>
+                                            <DropdownMenuContent align="end" className="w-48 rounded-2xl p-2 shadow-2xl border-none">
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'hadir')}>Jadikan Hadir</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                <DropdownMenuSeparator className="my-1.5 opacity-50" />
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Sakit')}>Ubah ke Sakit</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Izin')}>Ubah ke Izin</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Dinas')}>Ubah ke Dinas</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
-                                    ) : <Badge variant="secondary" className="whitespace-nowrap">Tidak Absen Pulang</Badge>}
+                                    ) : (
+                                        <Badge variant="secondary" className="whitespace-nowrap rounded-lg text-[10px] font-bold px-3 py-1 bg-amber-50 text-amber-700 border-amber-200">
+                                            {day.description}
+                                        </Badge>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     </div>
-                ) : <p className="py-8 text-center text-sm text-muted-foreground">Tidak ada data yang perlu diperbaiki.</p>}
-                <DialogFooter className="pt-4">
-                    <DialogClose asChild><Button variant="ghost" disabled={isSaving}>Batal</Button></DialogClose>
-                    <Button onClick={handleSaveChanges} disabled={isLoading || isSaving || !hasSelection}>
-                        {isSaving ? 'Menyimpan...' : 'Perbaiki yang Dipilih'}
+                ) : <p className="py-12 text-center text-sm font-medium text-muted-foreground">Tidak ada data yang perlu diperbaiki.</p>}
+                <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-2">
+                    <DialogClose asChild><Button variant="ghost" className="rounded-xl font-bold" disabled={isSaving}>Batal</Button></DialogClose>
+                    <Button onClick={handleSaveChanges} className="rounded-xl font-bold shadow-lg" disabled={isLoading || isSaving || !hasSelection}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Simpan Perubahan'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
