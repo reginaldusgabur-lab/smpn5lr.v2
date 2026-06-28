@@ -60,7 +60,6 @@ export default function LoginPage() {
 
   const appLogo = PlaceHolderImages.find(p => p.id === 'app-logo');
 
-  // PWA Update Check: Apply update ONLY on login page to avoid screen flash in dashboard
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then(reg => {
@@ -136,7 +135,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-background text-foreground">
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-md bg-card border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+        <Card className="w-full max-w-md bg-card border shadow-none rounded-[2.5rem] overflow-hidden">
           <CardHeader className="text-center space-y-2 pt-12 pb-6">
             <div className="flex justify-center mb-6">
               <div className="relative w-20 h-20 transition-all duration-500 hover:scale-110">
@@ -213,7 +212,7 @@ export default function LoginPage() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-14 text-sm font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-4 tracking-widest" 
+                  className="w-full h-14 text-sm font-bold rounded-2xl shadow-none transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-4 tracking-widest" 
                   disabled={isLoginLoading}
                 >
                   {isLoginLoading ? (
@@ -232,7 +231,7 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
 
-        <DialogContent className="rounded-[2.5rem] border-none p-10">
+        <DialogContent className="rounded-[2.5rem] border-none p-10 shadow-none">
           <DialogHeader>
             <DialogTitle className="font-bold text-2xl tracking-tighter text-primary">Atur ulang sandi</DialogTitle>
             <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">
@@ -265,7 +264,7 @@ export default function LoginPage() {
                 <Button 
                   type="submit" 
                   disabled={isResetLoading} 
-                  className="w-full h-12 rounded-2xl font-bold tracking-widest shadow-lg"
+                  className="w-full h-12 rounded-2xl font-bold tracking-widest shadow-none"
                 >
                   {isResetLoading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />

@@ -206,7 +206,7 @@ export default function LaporanPage() {
   };
 
   return (
-    <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
+    <Card className="overflow-hidden bg-card border shadow-none rounded-3xl">
       <CardHeader className="p-4 md:p-6 text-primary border-b border-muted-foreground/10">
         <CardTitle className="font-bold text-sm tracking-tight">Riwayat Absensi & Izin</CardTitle>
         <CardDescription className="text-muted-foreground font-medium">Catatan lengkap kehadiran dan pengajuan izin Anda.</CardDescription>
@@ -214,9 +214,9 @@ export default function LaporanPage() {
       <CardContent className="p-4 md:p-6 pt-6 min-h-[400px]">
         <div className="flex flex-col items-center justify-center gap-4 py-2 mb-6">
             <div className="flex items-center gap-6">
-                <Button variant="outline" size="icon" className="rounded-full" onClick={handlePrevMonth}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                <Button variant="outline" size="icon" className="rounded-full shadow-none" onClick={handlePrevMonth}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                 <span className="font-bold text-2xl text-primary tracking-tight w-48 text-center capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                <Button variant="outline" size="icon" className="rounded-full" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+                <Button variant="outline" size="icon" className="rounded-full shadow-none" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
             </div>
             <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent mt-2" />
         </div>

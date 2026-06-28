@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, BellRing, Sparkles } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -26,20 +26,17 @@ export default function PengaturanPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // State for password change
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-  // State for profile update
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [name, setName] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // State for report settings
   const [isReportSaving, setIsReportSaving] = useState(false);
   const [governmentAgency, setGovernmentAgency] = useState('');
   const [educationAgency, setEducationAgency] = useState('');
@@ -50,14 +47,12 @@ export default function PengaturanPage() {
   const [reportCity, setReportCity] = useState('');
   const [academicYear, setAcademicYear] = useState('');
 
-  // State for system notification settings
   const [isNotificationSaving, setIsNotificationSaving] = useState(false);
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationContent, setNotificationContent] = useState('');
   const [isNotificationActive, setIsNotificationActive] = useState(false);
   const [notificationInterval, setNotificationInterval] = useState(3);
 
-  // Firestore refs
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
@@ -68,7 +63,6 @@ export default function PengaturanPage() {
     return doc(firestore, 'schoolConfig', 'default');
   }, [firestore, user]);
 
-  // Data fetching hooks
   const { data: userData, isLoading: isUserDataLoading } = useDoc<{ 
       name: string;
       role: string;
@@ -93,7 +87,6 @@ export default function PengaturanPage() {
       notificationInterval?: number;
   }>(user, schoolConfigRef);
 
-  // Populate state from fetched data
   useEffect(() => {
     if (userData?.name) {
       setName(userData.name);
@@ -111,7 +104,6 @@ export default function PengaturanPage() {
       setReportCity(schoolConfigData.reportCity ?? 'Mando');
       setAcademicYear(schoolConfigData.academicYear ?? '');
       
-      // Notification settings
       setNotificationTitle(schoolConfigData.notificationTitle ?? '');
       setNotificationContent(schoolConfigData.notificationContent ?? '');
       setIsNotificationActive(schoolConfigData.isNotificationActive ?? false);
@@ -282,7 +274,7 @@ export default function PengaturanPage() {
   return (
     <div className="grid gap-6">
       <form onSubmit={handleProfileUpdate}>
-        <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
+        <Card className="overflow-hidden bg-card border shadow-none rounded-3xl">
           <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
             <CardTitle className="font-bold text-sm tracking-tight">Profil Pengguna</CardTitle>
             <CardDescription className="text-muted-foreground font-medium">
@@ -292,7 +284,7 @@ export default function PengaturanPage() {
           <CardContent className="grid gap-6 pt-6">
             <div className="flex items-center gap-4 sm:gap-6">
                 <div className="relative shrink-0">
-                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-primary/20 shadow-sm">
+                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-primary/20 shadow-none">
                     <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" />
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
                   </Avatar>
@@ -300,7 +292,7 @@ export default function PengaturanPage() {
                     type="button"
                     size="icon"
                     variant="outline"
-                    className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 border-2 bg-background hover:bg-muted shadow-sm"
+                    className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 border-2 bg-background hover:bg-muted shadow-none"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Camera className="h-4 w-4" />
@@ -346,7 +338,7 @@ export default function PengaturanPage() {
             </div>
           </CardContent>
           <CardFooter className="border-t px-6 py-4 bg-muted/5">
-            <Button type="submit" className="font-bold rounded-xl h-11 shadow-sm" disabled={isProfileLoading}>
+            <Button type="submit" className="font-bold rounded-xl h-11 shadow-none" disabled={isProfileLoading}>
               <span className="flex items-center justify-center">
                 {isProfileLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Simpan Profil
@@ -358,7 +350,7 @@ export default function PengaturanPage() {
       
       {isAdmin && (
         <>
-         <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
+         <Card className="overflow-hidden bg-card border shadow-none rounded-3xl">
             <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
                 <CardTitle className="font-bold text-sm tracking-tight">Pengaturan Laporan PDF</CardTitle>
                 <CardDescription className="text-muted-foreground font-medium">Informasi resmi untuk kop dan footer laporan PDF.</CardDescription>
@@ -402,7 +394,7 @@ export default function PengaturanPage() {
                  </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4 bg-muted/5">
-                <Button onClick={handleReportSettingsSave} className="font-bold rounded-xl h-11 shadow-sm" disabled={isReportSaving}>
+                <Button onClick={handleReportSettingsSave} className="font-bold rounded-xl h-11 shadow-none" disabled={isReportSaving}>
                   <span className="flex items-center justify-center">
                     {isReportSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Simpan Data Laporan
@@ -411,7 +403,7 @@ export default function PengaturanPage() {
             </CardFooter>
         </Card>
 
-        <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
+        <Card className="overflow-hidden bg-card border shadow-none rounded-3xl">
             <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
                     <div>
@@ -442,7 +434,7 @@ export default function PengaturanPage() {
                 </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4 bg-muted/5">
-                <Button onClick={handleNotificationSettingsSave} className="font-bold rounded-xl h-11 shadow-sm" disabled={isNotificationSaving}>
+                <Button onClick={handleNotificationSettingsSave} className="font-bold rounded-xl h-11 shadow-none" disabled={isNotificationSaving}>
                   <span className="flex items-center justify-center">
                     {isNotificationSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Simpan & Aktifkan
@@ -453,7 +445,7 @@ export default function PengaturanPage() {
         </>
       )}
 
-      <Card className="overflow-hidden bg-card border shadow-sm rounded-3xl">
+      <Card className="overflow-hidden bg-card border shadow-none rounded-3xl">
         <CardHeader className="p-6 text-primary border-b border-muted-foreground/10">
           <CardTitle className="font-bold text-sm tracking-tight">Ganti Kata Sandi</CardTitle>
           <CardDescription className="text-muted-foreground font-medium">
@@ -496,7 +488,7 @@ export default function PengaturanPage() {
               </div>
           </CardContent>
           <CardFooter className="border-t px-6 py-4 bg-muted/5">
-            <Button type="submit" className="font-bold rounded-xl h-11 shadow-sm" disabled={isPasswordLoading}>
+            <Button type="submit" className="font-bold rounded-xl h-11 shadow-none" disabled={isPasswordLoading}>
               <span className="flex items-center justify-center">
                 {isPasswordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Simpan Password

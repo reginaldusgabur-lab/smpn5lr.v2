@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -24,12 +23,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useFirestore, FirestorePermissionError, errorEmitter, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Info, Loader2 } from 'lucide-react';
-import { format, startOfDay, endOfDay, addDays, setHours, setMinutes } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
+import { startOfDay, endOfDay, addDays, setHours, setMinutes } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageWrapper } from '@/components/layout/page-wrapper';
 
 const leaveRequestSchema = z.object({
@@ -69,8 +66,6 @@ export default function IzinPage() {
     const { data: schoolConfig, isLoading: isSchoolConfigLoading } = useDoc(user, schoolConfigRef);
 
     const selectedDateValue = form.watch('leaveDate');
-    const selectedLeaveType = form.watch('type');
-
     const targetDate = useMemo(() => {
         const now = new Date();
         return selectedDateValue === 'tomorrow' ? addDays(now, 1) : now;
@@ -91,16 +86,6 @@ export default function IzinPage() {
     
     const hasCheckedIn = useMemo(() => !!(targetDateAttendance && targetDateAttendance[0]?.checkInTime), [targetDateAttendance]);
     const hasCheckedOut = useMemo(() => !!(targetDateAttendance && targetDateAttendance[0]?.checkOutTime), [targetDateAttendance]);
-
-    const leaveQuery = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
-        return query(
-            collection(firestore, 'users', user.uid, 'leaveRequests'),
-            where('startDate', '>=', Timestamp.fromDate(targetDateStart)),
-            where('startDate', '<=', Timestamp.fromDate(targetDateEnd))
-        );
-    }, [user, firestore, targetDateStart, targetDateEnd]);
-    const { data: targetDateLeave, isLoading: isLeaveLoading } = useCollection(user, leaveQuery);
 
     const isPastCheckoutTime = useMemo(() => {
         if (!schoolConfig?.checkOutStartTime) return false;
@@ -188,11 +173,11 @@ export default function IzinPage() {
             .finally(() => setIsSubmitting(false));
     }
 
-    const isChecking = isAttendanceLoading || isLeaveLoading || isSchoolConfigLoading;
+    const isChecking = isAttendanceLoading || isSchoolConfigLoading;
 
     return (
         <PageWrapper>
-            <Card className="w-full overflow-hidden border shadow-sm rounded-3xl">
+            <Card className="w-full overflow-hidden border shadow-none rounded-3xl">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
@@ -209,11 +194,11 @@ export default function IzinPage() {
                                             <FormLabel className="text-xs font-bold ml-1">Pilih Tanggal</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
                                                         <SelectValue placeholder="Pilih tanggal" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                <SelectContent className="rounded-xl border-none shadow-none">
                                                     <SelectItem value="today" className="rounded-lg">Hari Ini</SelectItem>
                                                     <SelectItem value="tomorrow" className="rounded-lg">Besok</SelectItem>
                                                 </SelectContent>
@@ -230,11 +215,11 @@ export default function IzinPage() {
                                             <FormLabel className="text-xs font-bold ml-1">Jenis Pengajuan</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
                                                         <SelectValue placeholder="Pilih jenis" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                <SelectContent className="rounded-xl border-none shadow-none">
                                                     {availableLeaveTypes.map(type => (
                                                         <SelectItem key={type.value} value={type.value} disabled={type.disabled} className="rounded-lg">
                                                             {type.label}
@@ -262,7 +247,7 @@ export default function IzinPage() {
                             />
                         </CardContent>
                         <CardFooter className="border-t p-6 bg-muted/5">
-                            <Button type="submit" disabled={isSubmitting || isChecking} className="w-full sm:w-auto h-11 rounded-xl font-bold tracking-normal shadow-sm active:scale-95 transition-all bg-primary">
+                            <Button type="submit" disabled={isSubmitting || isChecking} className="w-full sm:w-auto h-11 rounded-xl font-bold tracking-normal shadow-none active:scale-95 transition-all bg-primary">
                                {(isSubmitting || isChecking) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                Kirim Pengajuan
                             </Button>
