@@ -94,7 +94,7 @@ function useAttendanceSummary(currentMonth: Date) {
 
                 const hadirCount = userAttendance.filter((att: any) => att.checkInTime && att.checkOutTime).length;
                 
-                let Count = 0;
+                let terlambatCount = 0;
                 if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
                     const [endH, endM] = schoolConfig.checkInEndTime.split(':').map(Number);
                     terlambatCount = userAttendance.filter((att: any) => {

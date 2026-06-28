@@ -1,14 +1,14 @@
 {
   "id": "espenli-absensi-v1",
-  "name": "E-SPENLI",
+  "name": "E-SPENLI Absensi Digital",
   "short_name": "E-SPENLI",
   "description": "Aplikasi Absensi Digital Modern SMPN 5 Langke Rembong",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFFFFF",
-  "theme_color": "#3F51B5",
+  "theme_color": "#2563EB",
   "icons": [
     {
       "src": "/logo-3d-v2.png",
