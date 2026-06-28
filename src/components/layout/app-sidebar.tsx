@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home,
-  QrCode,
   FileText,
   Settings,
   Users,
   MailCheck,
   ClipboardCheck,
   BookCheck,
+  Settings2,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -23,10 +23,8 @@ import {
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
-// Add 'id' for the tour
 const defaultNavItems = [
   { id: 'nav-beranda', href: '/dashboard', icon: Home, label: 'Beranda' },
-  { id: 'nav-absen', href: '/dashboard/absen', icon: QrCode, label: 'Absen' },
   { id: 'nav-izin', href: '/dashboard/izin', icon: MailCheck, label: 'Izin' },
   { id: 'nav-laporan', href: '/dashboard/laporan', icon: FileText, label: 'Laporan' },
   { id: 'nav-pengaturan', href: '/dashboard/pengaturan', icon: Settings, label: 'Pengaturan' },
@@ -35,14 +33,13 @@ const defaultNavItems = [
 const adminNavItems = [
   { id: 'nav-beranda', href: '/dashboard', icon: Home, label: 'Beranda' },
   { id: 'nav-admin-users', href: '/dashboard/admin/users', icon: Users, label: 'Pengguna' },
-  { id: 'nav-admin-konfigurasi', href: '/dashboard/admin/konfigurasi', icon: QrCode, label: 'Pengaturan Absen' },
+  { id: 'nav-admin-konfigurasi', href: '/dashboard/admin/konfigurasi', icon: Settings2, label: 'Pengaturan Absen' },
   { id: 'nav-laporan-sekolah', href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan Sekolah' },
   { id: 'nav-pengaturan', href: '/dashboard/pengaturan', icon: Settings, label: 'Pengaturan' },
 ];
 
 const headmasterNavItems = [
     { id: 'nav-beranda', href: '/dashboard', icon: Home, label: 'Beranda' },
-    { id: 'nav-absen', href: '/dashboard/absen', icon: QrCode, label: 'Absen' },
     { id: 'nav-izin-kepsek', href: '/dashboard/izin-kepala-sekolah', icon: ClipboardCheck, label: 'Persetujuan Izin' },
     { id: 'nav-laporan-sekolah', href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan Sekolah' },
     { id: 'nav-pengaturan', href: '/dashboard/pengaturan', icon: Settings, label: 'Pengaturan' },

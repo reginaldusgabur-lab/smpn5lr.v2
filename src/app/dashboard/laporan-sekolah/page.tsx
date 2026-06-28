@@ -94,7 +94,7 @@ export default function SchoolReportPage() {
 
             const [attendanceSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery),
-                getDocs(leaveQuery)
+                getDocs(leaveSnap)
             ]);
 
             const attendanceByUserId: Record<string, any[]> = {};

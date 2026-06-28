@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -145,7 +144,7 @@ export default function IzinKepalaSekolahPage() {
         }
     };
 
-    const columns = useMemo(() => createColumns(handleUpdateRequest), [handleUpdateRequest]);
+    const handleColumns = useMemo(() => createColumns(handleUpdateRequest), []);
 
     if (!isUserLoading && user && user.role !== 'kepala_sekolah') {
         return (
@@ -190,7 +189,7 @@ export default function IzinKepalaSekolahPage() {
                             </div>
                         ) : requests.length > 0 ? (
                             <div className="p-4 sm:p-0">
-                                <DataTable columns={columns} data={requests} />
+                                <DataTable columns={handleColumns} data={requests} />
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center py-20 px-4 text-muted-foreground">

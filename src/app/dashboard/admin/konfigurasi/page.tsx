@@ -32,7 +32,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Download, Loader2, RefreshCw, LocateFixed, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -43,6 +43,7 @@ import { id } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const daysOfWeek = [
     { value: 0, label: 'Minggu' },
@@ -159,8 +160,9 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 sm:p-6">
             <div className="md:col-span-2 space-y-4">
                 {isMonthlyConfigLoading ? (
-                    <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-2xl p-10">
-                        <Loader2 className="h-8 w-8 animate-spin" />
+                    <div className="w-full h-full flex flex-col gap-2 bg-muted/30 rounded-2xl p-10">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-40 w-full" />
                     </div>
                 ) : (
                     <>
@@ -463,7 +465,15 @@ export default function KonfigurasiAbsenPage() {
   };
 
   if (isLoading || !isAdmin) {
-    return <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Skeleton className="h-96 rounded-3xl" />
+                <Skeleton className="lg:col-span-2 h-96 rounded-3xl" />
+            </div>
+            <Skeleton className="h-96 rounded-3xl" />
+        </div>
+    );
   }
 
   return (
@@ -487,7 +497,7 @@ export default function KonfigurasiAbsenPage() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
                 <Button variant="outline" className="w-full max-w-[256px] rounded-xl font-bold shadow-none" disabled={isQrLoading}>
-                    {isQrLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    {isQrLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Buat QR baru
                 </Button>
             </AlertDialogTrigger>
@@ -506,7 +516,7 @@ export default function KonfigurasiAbsenPage() {
           </AlertDialog>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 border-t p-4 sm:p-6 bg-muted/5">
-          <Button variant="outline" className="w-full rounded-xl font-bold h-11 shadow-none" onClick={downloadQRCode} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />Unduh PNG</Button>
+          <Button variant="outline" className="w-full rounded-xl font-bold h-11 shadow-none" onClick={downloadQRCode} disabled={isQrLoading}>Unduh PNG</Button>
         </CardFooter>
       </Card>
 
@@ -561,7 +571,7 @@ export default function KonfigurasiAbsenPage() {
                   <div className="flex items-center justify-between gap-4">
                     <Label className="text-xs font-bold">Koordinat sekolah</Label>
                     <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-bold shadow-none" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
-                      {isLocating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <LocateFixed className="mr-2 h-3 w-3" />}
+                      {isLocating && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
                       Dapatkan lokasi
                     </Button>
                   </div>
