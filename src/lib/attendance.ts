@@ -17,20 +17,13 @@ export interface MonthlyReportData {
 
 const cleanDesc = (desc: string) => desc ? desc.replace(/\s?\(diubah oleh Admin\)/g, '').replace(/\(✓\)/g, '').trim() : '';
 
-/**
- * Mendapatkan ringkasan kehadiran harian seluruh staf untuk dashboard.
- * Dioptimalkan untuk 1 hari kerja efektif. Jika hari libur, statistik dikembalikan ke 0.
- */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `daily_v10_${todayStr}`;
+    const cacheKey = `daily_stats_v11_${todayStr}`;
     
     const cachedData = getFromCache(cacheKey);
     if (cachedData) return cachedData;
-
-    const startOfToday = startOfDay(today);
-    const endOfToday = endOfDay(today);
 
     try {
         const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
@@ -45,7 +38,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const schoolConfig = schoolConfigSnap.data();
         const monthlyConfig = monthlyConfigSnap.data();
 
-        // LOGIKA HARI EFEKTIF: Periksa apakah hari ini libur
         const isHoliday = (() => {
             if (!schoolConfig) return false;
             if (schoolConfig.isAttendanceActive === false) return true;
@@ -56,6 +48,13 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return false;
         })();
 
+        if (isHoliday) {
+            return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, isHoliday: true };
+        }
+
+        const startOfToday = startOfDay(today);
+        const endOfToday = endOfDay(today);
+
         const usersQuery = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -63,20 +62,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         );
         const usersSnap = await getDocs(usersQuery);
         const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // Jika hari libur, paksa statistik menjadi 0 untuk semua kontrol aktivitas
-        if (isHoliday) {
-            const holidayResult = {
-                totalStaff: allStaff.length,
-                hadir: 0,
-                izin: 0,
-                sakit: 0,
-                pending: 0,
-                isHoliday: true
-            };
-            setInCache(cacheKey, holidayResult);
-            return holidayResult;
-        }
 
         const attendanceQuery = query(
             collectionGroup(firestore, 'attendanceRecords'),
@@ -93,37 +78,27 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
         const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
         const leaveSnap = await getDocs(leaveQuery);
-        const leaveStatusByUserId = new Map<string, { status: string, type: string }>();
-        leaveSnap.forEach(doc => {
-            const leave = doc.data();
-            const startDate = leave.startDate?.toDate();
-            const endDate = leave.endDate?.toDate();
-
-            if (startDate && endDate && isWithinInterval(today, { start: startOfDay(startDate), end: endOfDay(endDate) })) {
-                const userId = leave.userId || doc.ref.parent.parent?.id;
-                if (userId) {
-                    if (!leaveStatusByUserId.has(userId) || leave.status === 'approved') {
-                        leaveStatusByUserId.set(userId, { status: leave.status, type: leave.type || 'Izin' });
-                    }
-                }
-            }
-        });
-
+        
         let izinCount = 0;
         let sakitCount = 0;
         let pendingCount = 0;
 
-        const notPresentStaffIds = allStaff.filter((u: any) => !presentUserIds.has(u.id)).map((u: any) => u.id);
+        allStaff.forEach((u: any) => {
+            if (presentUserIds.has(u.id)) return;
 
-        notPresentStaffIds.forEach((uid) => {
-            const leaveInfo = leaveStatusByUserId.get(uid);
-            if (leaveInfo) {
-                if (leaveInfo.status === 'approved') {
-                    if (leaveInfo.type === 'Pulang Cepat') return;
-                    if (leaveInfo.type === 'Sakit') sakitCount++;
-                    else izinCount++;
-                } else if (leaveInfo.status === 'pending') {
-                     if (leaveInfo.type !== 'Pulang Cepat') pendingCount++;
+            const userLeaves = leaveSnap.docs.filter(d => (d.data().userId || d.ref.parent.parent?.id) === u.id);
+            const activeLeave = userLeaves.find(d => {
+                const leave = d.data();
+                return isWithinInterval(today, { start: startOfDay(leave.startDate.toDate()), end: endOfDay(leave.endDate.toDate()) });
+            });
+
+            if (activeLeave) {
+                const leave = activeLeave.data();
+                if (leave.status === 'approved') {
+                    if (leave.type === 'Sakit') sakitCount++;
+                    else if (leave.type !== 'Pulang Cepat') izinCount++;
+                } else if (leave.status === 'pending' && leave.type !== 'Pulang Cepat') {
+                    pendingCount++;
                 }
             }
         });
@@ -140,17 +115,13 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
-        console.error("Daily stats load error:", e);
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, isHoliday: false };
     }
 }
 
-/**
- * Kalkulasi statistik kehadiran individu dengan akurasi tinggi (Sinkron dengan Laporan).
- */
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v10_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v11_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -187,12 +158,12 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const holidays: string[] = monthlyConfig?.holidays ?? [];
         const today = startOfDay(new Date());
 
-        const effectiveWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
+        const workingDaysInPeriod = eachDayOfInterval({ start, end }).filter(day => 
             !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd'))
         );
 
-        const workingDaysSet = new Set(effectiveWorkingDays.map(day => format(day, 'yyyy-MM-dd')));
-        const pastWorkingDaysSet = new Set(effectiveWorkingDays.filter(day => isBefore(day, today) || isSameDay(day, today)).map(d => format(d, 'yyyy-MM-dd')));
+        const workingDaysSet = new Set(workingDaysInPeriod.map(day => format(day, 'yyyy-MM-dd')));
+        const pastWorkingDays = workingDaysInPeriod.filter(day => isBefore(day, today) || isSameDay(day, today));
         
         let hadirScore = 0;
         const attDates = new Set<string>();
@@ -228,18 +199,17 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             });
         });
 
-        const alpaCount = Array.from(pastWorkingDaysSet).filter(dayStr => {
+        const alpaCount = pastWorkingDays.filter(day => {
+            const dayStr = format(day, 'yyyy-MM-dd');
             return !attDates.has(dayStr) && !leaveDates.has(dayStr);
         }).length;
         
-        const totalPastWorkingDays = pastWorkingDaysSet.size;
+        const totalPastWorkingDays = pastWorkingDays.length;
         const denominator = Math.max(1, totalPastWorkingDays - (izinCount + sakitCount));
-
-        const percentageRaw = (hadirScore / denominator) * 100;
-        const finalPercentage = Math.min(percentageRaw, 100);
+        const finalPercentage = Math.min((hadirScore / denominator) * 100, 100);
 
         const result = {
-            totalHadir: Math.round(hadirScore), 
+            totalHadir: hadirScore, 
             totalIzin: izinCount,
             totalSakit: sakitCount,
             totalAlpa: alpaCount,
@@ -249,14 +219,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
-        console.error("Personal stats load error:", e);
         return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
     }
 }
 
-/**
- * Mengambil data laporan bulanan individu secara lengkap.
- */
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -307,9 +273,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const isToday = isSameDay(day, todayStart);
             const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
 
-            if (!isWorkingDay) {
-                return null;
-            }
+            if (!isWorkingDay) return null;
 
             const attendanceRecord = attendanceMap.get(dayStr) as any;
             const leaveRecord = leaveMap.get(dayStr);
@@ -317,70 +281,31 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (attendanceRecord) {
                 let checkInTime = attendanceRecord.checkInTime.toDate();
                 let checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
-                let rawDescription = attendanceRecord.reasonForUpdate || 'Kehadiran penuh';
-                
-                let description = cleanDesc(rawDescription);
-                if (!description) description = 'Kehadiran penuh';
+                let description = attendanceRecord.reasonForUpdate || 'Kehadiran penuh';
+                description = cleanDesc(description) || 'Kehadiran penuh';
 
                 if (!checkOutTime && !isToday && isBefore(day, todayStart)) {
-                    return {
-                        id: attendanceRecord.id,
-                        date: day,
-                        checkInTime: checkInTime,
-                        checkOutTime: null,
-                        status: 'Alpa',
-                        description: 'Tidak absen pulang',
-                        manualEntry: attendanceRecord.manualEntry || false,
-                    };
+                    return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime: null, status: 'Alpa', description: 'Tidak absen pulang', manualEntry: attendanceRecord.manualEntry || false };
                 }
-
-                return {
-                    id: attendanceRecord.id,
-                    date: day,
-                    checkInTime: checkInTime,
-                    checkOutTime: checkOutTime,
-                    status: 'Hadir',
-                    description: !checkOutTime && isToday ? 'Belum absen pulang' : description,
-                    manualEntry: attendanceRecord.manualEntry || false,
-                };
+                return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: 'Hadir', description: !checkOutTime && isToday ? 'Belum absen pulang' : description, manualEntry: attendanceRecord.manualEntry || false };
             }
 
             if (leaveRecord && leaveRecord.type !== 'Pulang Cepat') {
-                return {
-                    id: `${leaveRecord.id}-${dayStr}`,
-                    date: day,
-                    checkInTime: null,
-                    checkOutTime: null,
-                    status: leaveRecord.type, 
-                    description: cleanDesc(leaveRecord.reason) || leaveRecord.type,
-                };
+                return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type, description: cleanDesc(leaveRecord.reason) || leaveRecord.type };
             }
 
             if (isToday || (isWorkingDay && isBefore(day, todayStart))) {
-                return {
-                    id: dayStr,
-                    date: day,
-                    checkInTime: null,
-                    checkOutTime: null,
-                    status: 'Alpa',
-                    description: isToday ? 'Belum ada aktivitas' : 'Tidak ada keterangan',
-                };
+                return { id: dayStr, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: isToday ? 'Belum ada aktivitas' : 'Tidak ada keterangan' };
             }
-
             return null;
         });
 
-        const validReport = report.filter(Boolean) as any[];
-        validReport.sort((a, b) => b.date.getTime() - a.date.getTime());
-
-        return validReport.map(item => {
-            return {
-                ...item,
-                date: item.date.toISOString(),
-                checkInTime: item.checkInTime ? item.checkInTime.toISOString() : null,
-                checkOutTime: item.checkOutTime ? item.checkOutTime.toISOString() : null,
-            };
-        });
+        return report.filter(Boolean).sort((a: any, b: any) => b.date.getTime() - a.date.getTime()).map((item: any) => ({
+            ...item,
+            date: item.date.toISOString(),
+            checkInTime: item.checkInTime ? item.checkInTime.toISOString() : null,
+            checkOutTime: item.checkOutTime ? item.checkOutTime.toISOString() : null,
+        }));
     } catch (e) {
         return [];
     }

@@ -29,7 +29,7 @@ const LiveClockUI = () => {
 
     return (
         <div className="flex flex-col items-center justify-center pt-0 pb-2 w-full">
-            <h2 className="text-5xl font-bold tracking-tight tabular-nums text-foreground leading-none">
+            <h2 className="text-4xl font-bold tracking-tight tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
             <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-wider opacity-60">
@@ -44,7 +44,6 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const { status: windowStatus } = useAttendanceWindow();
   const isMounted = useRef(true);
-  const loadingInitiated = useRef(false);
 
   const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, isHoliday: false });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
@@ -74,7 +73,6 @@ export default function DashboardPage() {
         }
     } catch (error) {
         if (isMounted.current) {
-            console.error("Dashboard load failed:", error instanceof Error ? error.message : "Unknown error");
             setIsStatsLoading(false);
             setIsPersonalSummaryLoading(false);
         }
@@ -83,8 +81,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     isMounted.current = true;
-    if (!isUserLoading && user?.uid && !loadingInitiated.current) {
-        loadingInitiated.current = true;
+    if (!isUserLoading && user?.uid) {
         loadDashboardData();
     }
     return () => { isMounted.current = false; };
@@ -130,8 +127,7 @@ export default function DashboardPage() {
     }
 
     if (windowStatus === 'CHECK_OUT_OPEN') return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-none active:scale-95 transition-all"><Link href="/dashboard/absen">Absen pulang sekarang</Link></Button>;
-    if (windowStatus === 'AFTER_IN' || windowStatus === 'CHECK_IN_OPEN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam pulang</div>;
-    return <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><AlertCircle className="mr-2 h-4 w-4" /> Waktu absen pulang berakhir</div>;
+    return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam pulang</div>;
   };
 
   if (isUserLoading) return <div className="w-full space-y-6 animate-pulse p-4"><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-48" /></div><div className="pt-10 space-y-4"><Skeleton className="h-64 w-full rounded-2xl" /><Skeleton className="h-40 w-full rounded-2xl" /></div></div>;
@@ -144,18 +140,18 @@ export default function DashboardPage() {
         <div className="w-full px-0">
             <p className="text-base text-muted-foreground font-bold">Selamat datang</p>
             <h1 className="text-2xl font-bold tracking-tight text-foreground mt-0.5 leading-tight">{user?.name || 'Pengguna'}</h1>
-            <p className="text-sm text-muted-foreground mt-1 font-bold">{user?.role === 'admin' ? 'Pantau aktivitas kehadiran dan kelola data sekolah hari ini.' : 'Lakukan absensi dan lihat riwayat kehadiran Anda hari ini.'}</p>
+            <p className="text-sm text-muted-foreground mt-1 font-bold">{user?.role === 'admin' ? 'Pantau aktivitas kehadiran hari ini.' : 'Lakukan absensi dan lihat riwayat kehadiran Anda.'}</p>
         </div>
 
         {isStaff && (
             <div className="w-full space-y-6 flex flex-col items-stretch">
                 <Card className="w-full border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden bg-card text-center">
-                    <CardHeader className="p-6 text-primary border-b border-muted-foreground/5"><CardTitle className="text-2xl font-bold tracking-tight">Kehadiran Anda hari ini</CardTitle></CardHeader>
+                    <CardHeader className="p-6 text-primary border-b border-muted-foreground/5"><CardTitle className="text-xl font-bold tracking-tight">Kehadiran hari ini</CardTitle></CardHeader>
                     <CardContent className="p-6 space-y-4 pt-4">
                         <LiveClockUI />
                         <div className="grid grid-cols-2 gap-4 w-full">
-                            <div className="bg-muted/30 rounded-2xl p-3 text-center border border-border/40 flex flex-col items-center justify-center"><div className="flex items-center justify-center gap-2 mb-1.5"><LogIn className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Masuk</p></div><p className="text-2xl font-bold tabular-nums text-foreground">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}</p></div>
-                            <div className="bg-muted/30 rounded-2xl p-3 text-center border border-border/40 flex flex-col items-center justify-center"><div className="flex items-center justify-center gap-2 mb-1.5"><LogOut className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Pulang</p></div><p className="text-2xl font-bold tabular-nums text-foreground">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}</p></div>
+                            <div className="bg-muted/30 rounded-2xl p-3 text-center border border-border/40 flex flex-col items-center justify-center"><div className="flex items-center justify-center gap-2 mb-1.5"><LogIn className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Masuk</p></div><p className="text-xl font-bold tabular-nums text-foreground">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}</p></div>
+                            <div className="bg-muted/30 rounded-2xl p-3 text-center border border-border/40 flex flex-col items-center justify-center"><div className="flex items-center justify-center gap-2 mb-1.5"><LogOut className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Pulang</p></div><p className="text-xl font-bold tabular-nums text-foreground">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}</p></div>
                         </div>
                         <div className="flex flex-col items-stretch gap-3">
                             {renderAttendanceButton()}
@@ -173,32 +169,32 @@ export default function DashboardPage() {
 
         {isAdminOrKepsek && (
             <div className="w-full space-y-4 pt-4 border-t border-dashed border-border/50 flex flex-col items-stretch">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                     {/* Hadir Card */}
-                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden">
+                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-[2rem] overflow-hidden">
                         <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-xs font-bold text-green-600">Hadir</CardTitle>
-                            <div className="p-1.5 bg-green-50 rounded-lg">
+                            <div className="p-1.5 bg-green-50 rounded-xl">
                                 <UserCheck className="h-4 w-4 text-green-600" />
                             </div>
                         </CardHeader>
                         <CardContent className="p-4 pt-2">
-                            <div className="text-4xl font-bold text-green-600 tracking-tighter">
+                            <div className="text-3xl font-bold text-green-600 tracking-tighter">
                                 {isStatsLoading ? '...' : stats.hadir}
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Izin / Sakit Card */}
-                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden">
+                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-[2rem] overflow-hidden">
                         <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-xs font-bold text-blue-600">Izin / Sakit</CardTitle>
-                            <div className="p-1.5 bg-blue-50 rounded-lg">
+                            <div className="p-1.5 bg-blue-50 rounded-xl">
                                 <BookUser className="h-4 w-4 text-blue-600" />
                             </div>
                         </CardHeader>
                         <CardContent className="p-4 pt-2">
-                            <div className="text-4xl font-bold text-blue-600 tracking-tighter">
+                            <div className="text-3xl font-bold text-blue-600 tracking-tighter">
                                 {isStatsLoading ? '...' : stats.izin + stats.sakit}
                             </div>
                         </CardContent>
@@ -206,15 +202,15 @@ export default function DashboardPage() {
 
                     {/* Menunggu Card */}
                     <Link href="/dashboard/izin-kepala-sekolah" className="block">
-                        <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-3xl hover:bg-muted/30 transition-all group overflow-hidden">
+                        <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-[2rem] hover:bg-muted/30 transition-all group overflow-hidden">
                             <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
                                 <CardTitle className="text-xs font-bold text-amber-600">Menunggu</CardTitle>
-                                <div className="p-1.5 bg-amber-50 rounded-lg group-hover:scale-110 transition-transform">
+                                <div className="p-1.5 bg-amber-50 rounded-xl group-hover:scale-110 transition-transform">
                                     <MailWarning className="h-4 w-4 text-amber-600" />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-4 pt-2">
-                                <div className="text-4xl font-bold text-amber-600 tracking-tighter">
+                                <div className="text-3xl font-bold text-amber-600 tracking-tighter">
                                     {isStatsLoading ? '...' : stats.pending}
                                 </div>
                             </CardContent>

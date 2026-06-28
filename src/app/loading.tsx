@@ -10,8 +10,7 @@ export default function Loading() {
           <Image
             src="/logo-3d-v2.png"
             alt="E-SPENLI"
-            width={96}
-            height={96}
+            fill
             className="object-contain"
             priority
             sizes="96px"

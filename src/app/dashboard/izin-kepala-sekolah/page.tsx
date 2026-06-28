@@ -100,11 +100,7 @@ export default function IzinKepalaSekolahPage() {
                 setRequests(allPendingRequests);
             } catch (err: any) {
                 console.error("Error fetching leave requests:", err);
-                if (err.code === 'permission-denied') {
-                    setError("Gagal mengambil data: Akses ditolak.");
-                } else {
-                    setError(`Gagal mengambil data permintaan izin.`);
-                }
+                setError(`Gagal mengambil data permintaan izin.`);
             } finally {
                 setIsLoadingData(false);
             }
@@ -123,17 +119,6 @@ export default function IzinKepalaSekolahPage() {
                 status,
                 approvedBy: user.uid,
                 approvedAt: new Date()
-            });
-
-            const activityRef = doc(collection(firestore, "activities"));
-            batch.set(activityRef, {
-                userId: user.uid,
-                userName: user.name,
-                userRole: user.role,
-                type: 'leave_approval',
-                description: `Mengubah status pengajuan menjadi ${status}`,
-                timestamp: new Date(),
-                targetId: path,
             });
 
             await batch.commit();
@@ -166,13 +151,13 @@ export default function IzinKepalaSekolahPage() {
                 
                 <div className="px-4 md:px-0">
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Persetujuan izin</h1>
-                    <p className="text-muted-foreground mt-1 font-bold">Tinjau dan proses permintaan izin atau sakit yang diajukan oleh guru dan pegawai.</p>
+                    <p className="text-muted-foreground mt-1 font-bold">Tinjau dan proses permintaan izin atau sakit.</p>
                 </div>
 
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-3xl bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
                         <CardTitle className="font-bold text-sm tracking-tight">Daftar pengajuan izin</CardTitle>
-                        <CardDescription className="text-muted-foreground font-bold pt-1">Menunggu peninjauan dan persetujuan Kepala Sekolah.</CardDescription>
+                        <CardDescription className="text-muted-foreground font-bold pt-1">Menunggu peninjauan Kepala Sekolah.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-6 min-h-[400px]">
                         {error ? (
