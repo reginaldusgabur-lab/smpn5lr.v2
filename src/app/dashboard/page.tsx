@@ -73,7 +73,7 @@ export default function DashboardPage() {
         }
     } catch (error) {
         if (isMounted.current) {
-            console.error("Dashboard data load error:", error);
+            console.error("Dashboard load failed:", error instanceof Error ? error.message : "Unknown error");
             setIsStatsLoading(false);
             setIsPersonalSummaryLoading(false);
         }
@@ -107,7 +107,7 @@ export default function DashboardPage() {
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
 
-    const disabledStyle = "w-full bg-primary/5 text-primary/40 border border-primary/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none";
+    const disabledStyle = "w-full bg-primary/5 text-primary/40 border border-primary/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none shadow-none";
 
     if (windowStatus === 'LOADING' || isAttendanceLoading) {
         return (
@@ -120,7 +120,7 @@ export default function DashboardPage() {
 
     if (windowStatus === 'SESSION_INACTIVE') {
         return (
-            <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm">
+            <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
                 <Lock className="mr-2 h-4 w-4" /> 
                 Sistem nonaktif / hari libur
             </div>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
 
     if (isCheckedOut) {
         return (
-            <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm">
+            <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
                 <Sparkles className="mr-2 w-4 h-4" /> 
                 Absensi selesai
             </div>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
             );
         }
         return (
-            <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm">
+            <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
                 <AlertCircle className="mr-2 h-4 w-4" /> 
                 Batas jam masuk berakhir
             </div>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
     }
     
     return (
-        <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm">
+        <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
             <AlertCircle className="mr-2 h-4 w-4" /> 
             Waktu absen pulang berakhir
         </div>

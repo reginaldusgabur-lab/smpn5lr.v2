@@ -213,41 +213,41 @@ export default function AdminUsersPage() {
             <div className="max-w-7xl mx-auto space-y-8">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 md:px-0">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Manajemen Pengguna</h1>
-                        <p className="text-muted-foreground mt-1 font-semibold">Kelola data personil sekolah dengan mudah.</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Manajemen pengguna</h1>
+                        <p className="text-muted-foreground mt-1 font-bold">Kelola data personil sekolah dengan mudah.</p>
                     </div>
                     <Button size="lg" className="font-bold rounded-xl h-12 shadow-none active:scale-95 transition-all bg-primary hover:bg-primary/90" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
                         <PlusCircle className="mr-2 h-5 w-5" />
-                        Tambah Personil
+                        Tambah personil
                     </Button>
                 </div>
 
                 <Card className="w-full border shadow-none rounded-3xl overflow-hidden bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
-                        <CardTitle className="font-bold text-sm tracking-tight">Daftar Pengguna Sistem</CardTitle>
-                        <CardDescription className="text-muted-foreground font-semibold">Informasi akun dan hak akses pengguna aktif.</CardDescription>
+                        <CardTitle className="font-bold text-sm tracking-tight">Daftar pengguna sistem</CardTitle>
+                        <CardDescription className="text-muted-foreground font-bold">Informasi akun dan hak akses pengguna aktif.</CardDescription>
                     </CardHeader>
                     <CardContent className="py-6 min-h-[400px]">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 px-2 sm:px-0">
                             <Select value={userFilter} onValueChange={setUserFilter}>
-                                <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
+                                <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
                                     <div className="flex items-center gap-2">
                                         <Filter className="h-4 w-4 text-primary" />
-                                        <SelectValue placeholder="Saring Peran" />
+                                        <SelectValue placeholder="Saring peran" />
                                     </div>
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    <SelectItem value="all">Semua Staf</SelectItem>
-                                    <SelectItem value="guru">Guru</SelectItem>
-                                    <SelectItem value="pegawai">Pegawai</SelectItem>
-                                    <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                <SelectContent className="rounded-xl border-none">
+                                    <SelectItem value="all" className='rounded-lg'>Semua staf</SelectItem>
+                                    <SelectItem value="guru" className='rounded-lg'>Guru</SelectItem>
+                                    <SelectItem value="pegawai" className='rounded-lg'>Pegawai</SelectItem>
+                                    <SelectItem value="kepala_sekolah" className='rounded-lg'>Kepala Sekolah</SelectItem>
                                 </SelectContent>
                             </Select>
                             <div className="relative w-full sm:w-[320px]">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                 <Input 
                                     placeholder="Cari nama personil..." 
-                                    className="pl-10 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold" 
+                                    className="pl-10 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold shadow-none" 
                                     value={userSearch} 
                                     onChange={e => setUserSearch(e.target.value)} 
                                 />
@@ -258,8 +258,8 @@ export default function AdminUsersPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[80px] text-center font-bold text-xs text-muted-foreground">No</TableHead>
-                                        <TableHead className="font-bold text-xs text-primary/80">Nama & Email</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground">No</TableHead>
+                                        <TableHead className="font-bold text-xs text-primary/80">Nama & email</TableHead>
                                         <TableHead className="font-bold text-xs text-primary/80">Peran</TableHead>
                                         <TableHead className="font-bold text-xs text-primary/80">Identitas</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-primary/80">Status</TableHead>
@@ -306,24 +306,24 @@ export default function AdminUsersPage() {
                                             <TableCell className="text-right pr-4">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-primary/10">
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-primary/10 shadow-none">
                                                             <MoreHorizontal className="h-5 w-5" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-none border-none">
-                                                        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 mb-1">Aksi Pengguna</DropdownMenuLabel>
+                                                        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 mb-1">Aksi pengguna</DropdownMenuLabel>
                                                         <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}>
                                                             <Edit2 className="mr-3 h-4 w-4 text-primary" />
-                                                            <span className="text-xs font-bold">Ubah Data</span>
+                                                            <span className="text-xs font-bold">Ubah data</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5" onClick={() => handleToggleStatus(u)}>
                                                             <Power className={`mr-3 h-4 w-4 ${u.status === 'Aktif' ? 'text-orange-500' : 'text-green-500'}`} />
-                                                            <span className="text-xs font-bold">{u.status === 'Aktif' ? 'Non-aktifkan' : 'Aktifkan'} Akun</span>
+                                                            <span className="text-xs font-bold">{u.status === 'Aktif' ? 'Non-aktifkan' : 'Aktifkan'} akun</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator className="my-1.5 opacity-50" />
                                                         <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 text-destructive focus:bg-destructive/5" onClick={() => { setUserToDelete(u); setIsDeleteDialogOpen(true); }}>
                                                             <Trash2 className="mr-3 h-4 w-4" />
-                                                            <span className="text-xs font-bold">Hapus Akun</span>
+                                                            <span className="text-xs font-bold">Hapus akun</span>
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -331,7 +331,7 @@ export default function AdminUsersPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-semibold">
+                                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold">
                                                 Tidak ada data personil ditemukan.
                                             </TableCell>
                                         </TableRow>
@@ -345,12 +345,12 @@ export default function AdminUsersPage() {
 
             {/* Dialog Tambah/Edit User */}
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
-                <DialogContent className="rounded-3xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                <DialogContent className="rounded-3xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-none">
                     <DialogHeader className="p-6 pb-2 border-b border-muted-foreground/5">
                         <DialogTitle className="text-xl font-bold text-primary">
-                            {editingUser ? 'Perbarui Data' : 'Tambah Personil'}
+                            {editingUser ? 'Perbarui data' : 'Tambah personil'}
                         </DialogTitle>
-                        <DialogDescription className="text-xs font-semibold text-muted-foreground">
+                        <DialogDescription className="text-xs font-bold text-muted-foreground">
                             {editingUser ? `Mengubah informasi data untuk ${editingUser.name}.` : 'Masukkan detail akun untuk personil baru sekolah.'}
                         </DialogDescription>
                     </DialogHeader>
@@ -361,15 +361,15 @@ export default function AdminUsersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="name" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Nama Lengkap</FormLabel>
-                                            <FormControl><Input placeholder="John Doe, S.Pd" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormLabel className="text-xs font-bold ml-1">Nama lengkap</FormLabel>
+                                            <FormControl><Input placeholder="John Doe, S.Pd" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
                                     <FormField control={userForm.control} name="email" render={({field}) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-xs font-bold ml-1">Email</FormLabel>
-                                            <FormControl><Input type="email" placeholder="nama@email.com" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormControl><Input type="email" placeholder="nama@email.com" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
@@ -381,8 +381,8 @@ export default function AdminUsersPage() {
                                             <FormLabel className="text-xs font-bold ml-1">Peran</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10">
-                                                        <SelectValue placeholder="Pilih Peran" />
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
+                                                        <SelectValue placeholder="Pilih peran" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-none shadow-none">
@@ -398,7 +398,7 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="nip" render={({field}) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-xs font-bold ml-1">NIP (Opsional)</FormLabel>
-                                            <FormControl><Input placeholder="19XXXXXXXXXXXX" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormControl><Input placeholder="19XXXXXXXXXXXX" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
@@ -407,15 +407,15 @@ export default function AdminUsersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="position" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Status Kepegawaian</FormLabel>
-                                            <FormControl><Input placeholder="PNS / Honorer" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormLabel className="text-xs font-bold ml-1">Status kepegawaian</FormLabel>
+                                            <FormControl><Input placeholder="PNS / Honorer" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
                                     <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">No. Urut Laporan</FormLabel>
-                                            <FormControl><Input type="number" placeholder="1" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormLabel className="text-xs font-bold ml-1">No. urut laporan</FormLabel>
+                                            <FormControl><Input type="number" placeholder="1" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
@@ -424,8 +424,8 @@ export default function AdminUsersPage() {
                                 {!editingUser && (
                                     <FormField control={userForm.control} name="password" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Kata Sandi</FormLabel>
-                                            <FormControl><Input type="password" placeholder="Minimal 6 karakter" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10" /></FormControl>
+                                            <FormLabel className="text-xs font-bold ml-1">Kata sandi</FormLabel>
+                                            <FormControl><Input type="password" placeholder="Minimal 6 karakter" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
@@ -433,7 +433,7 @@ export default function AdminUsersPage() {
 
                                 <div className="pt-4 sticky bottom-0 bg-card/80 backdrop-blur-sm">
                                     <Button type="submit" className="w-full h-12 rounded-xl font-bold shadow-none active:scale-95 transition-all" disabled={isSaving}>
-                                        {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : (editingUser ? 'Perbarui Data' : 'Buat Akun Sekarang')}
+                                        {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : (editingUser ? 'Perbarui data' : 'Buat akun sekarang')}
                                     </Button>
                                 </div>
                             </form>
@@ -444,20 +444,20 @@ export default function AdminUsersPage() {
 
             {/* Alert Dialog Hapus User */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setUserToDelete(null); }}>
-                <AlertDialogContent className="rounded-3xl border-none">
+                <AlertDialogContent className="rounded-3xl border-none shadow-none">
                     <AlertDialogHeader>
                         <div className="flex items-center gap-3 text-destructive mb-2">
                             <AlertCircle className="h-6 w-6" />
-                            <AlertDialogTitle className="text-xl font-bold">Hapus Pengguna?</AlertDialogTitle>
+                            <AlertDialogTitle className="text-xl font-bold">Hapus pengguna?</AlertDialogTitle>
                         </div>
-                        <AlertDialogDescription className="text-sm font-semibold">
+                        <AlertDialogDescription className="text-sm font-bold">
                             Tindakan ini akan menghapus data <span className="font-bold text-foreground">{userToDelete?.name}</span> secara permanen dari database.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-4 gap-2">
-                        <AlertDialogCancel className="h-11 rounded-xl font-bold border-muted-foreground/10 active:scale-95 transition-all" disabled={isSaving}>Batal</AlertDialogCancel>
+                        <AlertDialogCancel className="h-11 rounded-xl font-bold border-muted-foreground/10 active:scale-95 transition-all shadow-none" disabled={isSaving}>Batal</AlertDialogCancel>
                         <AlertDialogAction className="h-11 rounded-xl font-bold bg-destructive hover:bg-destructive/90 shadow-none active:scale-95 transition-all" onClick={handleDeleteUser} disabled={isSaving}>
-                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Ya, Hapus Permanen'}
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Ya, hapus permanen'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

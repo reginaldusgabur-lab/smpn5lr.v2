@@ -152,7 +152,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
     <Card className="lg:col-span-3 overflow-hidden border shadow-none">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
             <CardTitle className="font-bold text-sm tracking-tight">Hari kerja & libur bulanan</CardTitle>
-            <CardDescription className="text-muted-foreground font-medium">
+            <CardDescription className="text-muted-foreground font-bold">
                 Tandai hari libur spesifik atau tentukan jumlah hari kerja efektif.
             </CardDescription>
         </CardHeader>
@@ -471,7 +471,7 @@ export default function KonfigurasiAbsenPage() {
       <Card className="lg:col-span-1 overflow-hidden border shadow-none rounded-3xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
           <CardTitle className="font-bold text-sm tracking-tight">Kode QR absensi</CardTitle>
-          <CardDescription className="text-muted-foreground font-medium">Gunakan kode QR ini untuk absensi harian.</CardDescription>
+          <CardDescription className="text-muted-foreground font-bold">Gunakan kode QR ini untuk absensi harian.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center gap-4 p-4 sm:p-6">
           <div className="p-4 border rounded-2xl bg-white aspect-square w-full max-w-[256px] relative shadow-none">
@@ -513,7 +513,7 @@ export default function KonfigurasiAbsenPage() {
       <Card className="lg:col-span-2 overflow-hidden border shadow-none rounded-3xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
           <CardTitle className="font-bold text-sm tracking-tight">Pengaturan umum</CardTitle>
-          <CardDescription className="text-muted-foreground font-medium">Atur parameter sistem absensi sekolah.</CardDescription>
+          <CardDescription className="text-muted-foreground font-bold">Atur parameter sistem absensi sekolah.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 p-4 sm:p-6">
           <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
@@ -618,7 +618,7 @@ export default function KonfigurasiAbsenPage() {
                           <Accordion type="single" collapsible className="w-full">
                               {daysOfWeek.map((day) => (
                                   <AccordionItem key={day.value} value={day.value.toString()} className="border-muted-foreground/10">
-                                      <AccordionTrigger className="hover:no-underline py-3 px-1">
+                                      <AccordionTrigger className="hover:no-underline py-3 px-1 shadow-none">
                                           <div className="flex items-center gap-3">
                                               <div className={cn("w-2 h-2 rounded-full", offDays.includes(day.value) ? "bg-muted-foreground/30" : "bg-primary")} />
                                               <span className={cn("text-xs font-bold", offDays.includes(day.value) && "text-muted-foreground")}>

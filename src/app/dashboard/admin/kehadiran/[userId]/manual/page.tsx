@@ -1,16 +1,15 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { doc, getDoc, addDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, Timestamp, deleteDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, addDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { parse, format, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes, isBefore } from 'date-fns';
+import { parse, format, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
@@ -232,12 +231,12 @@ export default function ManualAttendancePage() {
 
     return (
         <div className="max-w-2xl mx-auto p-4 flex flex-col items-stretch pb-24">
-             <Button variant="outline" size="icon" onClick={() => router.back()} className="mb-4 rounded-full h-10 w-10 shrink-0">
+             <Button variant="outline" size="icon" onClick={() => router.back()} className="mb-4 rounded-full h-10 w-10 shrink-0 shadow-none">
                 <ArrowLeft className="h-5 w-5" />
             </Button>
-            <Card className="rounded-3xl border shadow-xl overflow-hidden">
+            <Card className="rounded-3xl border shadow-none overflow-hidden">
                 <CardHeader className="bg-muted/30 border-b border-muted-foreground/10">
-                    <CardTitle className="font-bold text-xl">Entri Kehadiran Manual</CardTitle>
+                    <CardTitle className="font-bold text-xl">Entri kehadiran manual</CardTitle>
                     {userData && (
                         <CardDescription className="font-bold">
                             Ubah kehadiran untuk <span className="text-foreground">{userData.name}</span> pada <span className="text-foreground">{format(date, 'EEEE, dd MMMM yyyy', { locale: id })}</span>.
@@ -249,12 +248,12 @@ export default function ManualAttendancePage() {
                     <div className="space-y-4 mb-8">
                         <Label className="text-xs font-bold text-primary tracking-widest uppercase ml-1">Tindakan cepat</Label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <Button variant="default" className="rounded-xl font-bold h-11" onClick={handleSetHadir} disabled={isSubmitting}>Jadikan hadir</Button>
-                            <Button variant="outline" className="rounded-xl font-bold h-11" onClick={handleSetLate} disabled={isSubmitting}>Jadikan terlambat</Button>
-                            <Button variant="outline" className="rounded-xl font-bold h-11" onClick={() => handleCreateLeave('Sakit', 'Sakit')} disabled={isSubmitting}>Jadikan sakit</Button>
-                            <Button variant="outline" className="rounded-xl font-bold h-11" onClick={() => handleCreateLeave('Izin', 'Izin pribadi')} disabled={isSubmitting}>Jadikan izin</Button>
-                            <Button variant="outline" className="rounded-xl font-bold h-11 text-xs" onClick={() => handleCreateLeave('Dinas', 'Dinas pagi')} disabled={isSubmitting}>Dinas pagi</Button>
-                            <Button variant="outline" className="rounded-xl font-bold h-11 text-xs" onClick={() => handleCreateLeave('Dinas', 'Dinas siang')} disabled={isSubmitting}>Dinas siang</Button>
+                            <Button variant="default" className="rounded-xl font-bold h-11 shadow-none" onClick={handleSetHadir} disabled={isSubmitting}>Jadikan hadir</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11 shadow-none" onClick={handleSetLate} disabled={isSubmitting}>Jadikan terlambat</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11 shadow-none" onClick={() => handleCreateLeave('Sakit', 'Sakit')} disabled={isSubmitting}>Jadikan sakit</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11 shadow-none" onClick={() => handleCreateLeave('Izin', 'Izin pribadi')} disabled={isSubmitting}>Jadikan izin</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11 text-xs shadow-none" onClick={() => handleCreateLeave('Dinas', 'Dinas pagi')} disabled={isSubmitting}>Dinas pagi</Button>
+                            <Button variant="outline" className="rounded-xl font-bold h-11 text-xs shadow-none" onClick={() => handleCreateLeave('Dinas', 'Dinas siang')} disabled={isSubmitting}>Dinas siang</Button>
                         </div>
                     </div>
 
@@ -263,16 +262,16 @@ export default function ManualAttendancePage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="checkIn" className="text-xs font-bold ml-1">Jam masuk</Label>
-                                <Input id="checkIn" type="time" className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
+                                <Input id="checkIn" type="time" className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="checkOut" className="text-xs font-bold ml-1">Jam pulang</Label>
-                                <Input id="checkOut" type="time" className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
+                                <Input id="checkOut" type="time" className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
                             </div>
                         </div>
                         <p className="text-[11px] text-muted-foreground font-bold italic">Isi jam masuk/pulang secara manual jika diperlukan dan klik simpan.</p>
                         <div className="flex justify-end pt-4">
-                            <Button type="submit" className="w-full sm:w-auto h-12 rounded-xl font-bold px-10 shadow-lg active:scale-95 transition-all" disabled={isSubmitting}>
+                            <Button type="submit" className="w-full sm:w-auto h-12 rounded-xl font-bold px-10 shadow-none active:scale-95 transition-all" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Simpan kehadiran
                             </Button>

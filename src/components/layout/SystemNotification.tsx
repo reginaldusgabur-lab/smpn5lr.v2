@@ -56,7 +56,7 @@ export function SystemNotification() {
     <div className="fixed top-0 left-0 right-0 z-[100] flex justify-center p-4 pointer-events-none">
       <div 
         className={cn(
-          "w-full max-w-lg bg-card border border-primary/10 shadow-2xl rounded-3xl p-6 pointer-events-auto",
+          "w-full max-w-lg bg-card border border-primary/10 shadow-none rounded-3xl p-6 pointer-events-auto",
           "animate-in fade-in slide-in-from-top-full duration-700 ease-out"
         )}
       >
@@ -94,10 +94,10 @@ export function SystemNotification() {
           <Button 
             onClick={handleDismiss}
             className={cn(
-              "rounded-xl font-bold px-6 h-10 shadow-lg active:scale-95 transition-all",
+              "rounded-xl font-bold px-6 h-10 shadow-none active:scale-95 transition-all",
               isQuote 
-                ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20" 
-                : "bg-primary hover:bg-primary/90 text-white shadow-primary/20"
+                ? "bg-amber-500 hover:bg-amber-600 text-white" 
+                : "bg-primary hover:bg-primary/90 text-white"
             )}
           >
             <CheckCircle2 className="mr-2 h-4 w-4" />

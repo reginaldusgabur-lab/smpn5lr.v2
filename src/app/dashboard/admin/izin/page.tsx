@@ -99,7 +99,7 @@ export default function PersetujuanIzinPage() {
 
     const fetchLeaveRequests = async () => {
         setIsLeaveRequestsLoading(true);
-        setAllRequests([]); // Clear previous results
+        setAllRequests([]);
         try {
             const usersToQuery = usersData.filter(u => u.role !== 'admin' && u.role !== 'siswa');
 
@@ -126,20 +126,12 @@ export default function PersetujuanIzinPage() {
             setAllRequests(recentRequests);
 
         } catch (error) {
-            console.error("Failed to fetch leave requests:", error);
-            if ((error as any).code !== 'permission-denied') {
-                toast({
-                    variant: 'destructive',
-                    title: 'Gagal Memuat Permintaan Izin',
-                    description: 'Terjadi kesalahan saat mengambil data dari database.',
-                });
-            } else {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Gagal: Izin Ditolak',
-                    description: 'Gagal memuat data karena masalah izin. Ini bisa terjadi jika terlalu banyak data dimuat sekaligus.',
-                });
-            }
+            console.error("Failed to fetch leave requests:", error instanceof Error ? error.message : "Unknown error");
+            toast({
+                variant: 'destructive',
+                title: 'Gagal memuat permintaan izin',
+                description: 'Terjadi kesalahan saat mengambil data dari database.',
+            });
         } finally {
             setIsLeaveRequestsLoading(false);
         }
@@ -189,15 +181,15 @@ export default function PersetujuanIzinPage() {
         );
 
         toast({
-            title: `Pengajuan Berhasil Diperbarui`,
+            title: `Pengajuan berhasil diperbarui`,
             description: `Permintaan dari ${request.userName} telah di-${newStatus === 'approved' ? 'setujui' : 'tolak'}.`,
         });
     } catch (error) {
         console.error("Gagal memperbarui status izin:", error);
         toast({
             variant: 'destructive',
-            title: 'Gagal Memperbarui',
-            description: 'Terjadi kesalahan. Pastikan Anda memiliki hak akses dan koneksi internet stabil.',
+            title: 'Gagal memperbarui',
+            description: 'Terjadi kesalahan sistem.',
         });
     } finally {
         setUpdatingId(null);
@@ -216,8 +208,8 @@ export default function PersetujuanIzinPage() {
     <div className="space-y-8">
       <Card className="overflow-hidden border shadow-none rounded-3xl bg-card">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-          <CardTitle className="font-bold text-sm tracking-tight">Permintaan Izin Tertunda</CardTitle>
-          <CardDescription className="text-muted-foreground font-medium pt-1">Tinjau dan proses permintaan izin atau sakit yang menunggu persetujuan.</CardDescription>
+          <CardTitle className="font-bold text-sm tracking-tight">Permintaan izin tertunda</CardTitle>
+          <CardDescription className="text-muted-foreground font-bold pt-1">Tinjau dan proses permintaan izin atau sakit yang menunggu persetujuan.</CardDescription>
         </CardHeader>
         <CardContent className="p-0 sm:p-6">
           {isDataLoading ? (
@@ -225,15 +217,15 @@ export default function PersetujuanIzinPage() {
           ) : pendingRequests.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
                 <Inbox className="h-12 w-12 mb-4 opacity-20" />
-                <p className="font-bold text-foreground">Tidak Ada Permintaan Tertunda</p>
-                <p className="text-xs">Semua permintaan izin dan sakit telah diproses.</p>
+                <p className="font-bold text-foreground">Tidak ada permintaan tertunda</p>
+                <p className="text-xs font-bold">Semua permintaan izin dan sakit telah diproses.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="border-none">
-                    <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Nama Pengguna</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Nama pengguna</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Jenis</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Tanggal</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Alasan</TableHead>
@@ -254,13 +246,13 @@ export default function PersetujuanIzinPage() {
                         <TableCell className="text-[10px] font-bold text-muted-foreground">
                           {req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''} - {req.endDate?.toDate ? format(req.endDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate text-[11px] font-medium" title={req.reason}>{req.reason}</TableCell>
+                        <TableCell className="max-w-xs truncate text-[11px] font-bold" title={req.reason}>{req.reason}</TableCell>
                         <TableCell className="text-right space-x-2 pr-4">
-                          <Button size="sm" variant="outline" className="h-8 rounded-xl font-bold text-xs" onClick={() => handleUpdateRequestStatus(req, 'approved')} disabled={isCurrentUpdating}>
+                          <Button size="sm" variant="outline" className="h-8 rounded-xl font-bold text-xs shadow-none" onClick={() => handleUpdateRequestStatus(req, 'approved')} disabled={isCurrentUpdating}>
                             {isCurrentUpdating && updatingId === req.id ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5 text-green-500" />}
                             Setujui
                           </Button>
-                          <Button size="sm" variant="destructive" className="h-8 rounded-xl font-bold text-xs" onClick={() => handleUpdateRequestStatus(req, 'rejected')} disabled={isCurrentUpdating}>
+                          <Button size="sm" variant="destructive" className="h-8 rounded-xl font-bold text-xs shadow-none" onClick={() => handleUpdateRequestStatus(req, 'rejected')} disabled={isCurrentUpdating}>
                             {isCurrentUpdating && updatingId === req.id ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <X className="mr-1 h-3.5 w-3.5" />}
                             Tolak
                           </Button>
@@ -277,22 +269,22 @@ export default function PersetujuanIzinPage() {
 
       <Card className="overflow-hidden border shadow-none rounded-3xl bg-card">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-          <CardTitle className="font-bold text-sm tracking-tight">Riwayat Persetujuan</CardTitle>
-          <CardDescription className="text-muted-foreground font-medium pt-1">Riwayat permintaan izin atau sakit yang telah diproses dalam 6 hari terakhir.</CardDescription>
+          <CardTitle className="font-bold text-sm tracking-tight">Riwayat persetujuan</CardTitle>
+          <CardDescription className="text-muted-foreground font-bold pt-1">Riwayat permintaan izin atau sakit yang telah diproses dalam 6 hari terakhir.</CardDescription>
         </CardHeader>
         <CardContent className="p-0 sm:p-6">
           {isDataLoading ? (
             <ApprovalTableSkeleton cols={4} />
           ) : recentHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
-              <p className="text-xs font-medium">Tidak ada riwayat untuk ditampilkan.</p>
+              <p className="text-xs font-bold">Tidak ada riwayat untuk ditampilkan.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="border-none">
-                    <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Nama Pengguna</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Nama pengguna</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Jenis</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Tanggal</TableHead>
                     <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-primary/80">Status</TableHead>

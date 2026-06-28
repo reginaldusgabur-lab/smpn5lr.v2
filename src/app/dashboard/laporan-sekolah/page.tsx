@@ -57,8 +57,10 @@ export default function SchoolReportPage() {
 
     const loadData = useCallback(async () => {
         if (!firestore || !user?.uid || !isMounted.current) return;
+        
         setIsReportLoading(true);
         setError(null);
+        
         try {
             const start = startOfMonth(currentMonth);
             const end = endOfMonth(currentMonth);
@@ -177,7 +179,7 @@ export default function SchoolReportPage() {
             }
         } catch (err) { 
             if (isMounted.current) {
-                console.error("Load bulk report error:", err);
+                console.error("Bulk report error:", err instanceof Error ? err.message : "Unknown error");
                 setError("Gagal memuat data laporan.");
                 setIsReportLoading(false);
             }
@@ -190,7 +192,7 @@ export default function SchoolReportPage() {
             loadData();
         }
         return () => { isMounted.current = false; };
-    }, [user?.uid, isUserLoading, schoolConfigData, loadData]);
+    }, [loadData, user?.uid, isUserLoading, schoolConfigData]);
 
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
     const monthName = format(currentMonth, 'MMMM yyyy', { locale: id });
