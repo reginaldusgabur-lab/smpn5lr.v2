@@ -1,3 +1,4 @@
+
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -40,7 +41,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#FFFFFF', // Mengunci warna tema ke putih agar splash screen tidak berubah liar
+  themeColor: '#FFFFFF',
 }
 
 export default function RootLayout({

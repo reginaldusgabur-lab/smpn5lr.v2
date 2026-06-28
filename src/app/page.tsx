@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -127,7 +128,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-md bg-card border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
           <CardHeader className="text-center space-y-2 pt-12 pb-6">
             <div className="flex justify-center mb-6">
-              <div className="relative w-20 h-20 transition-all duration-500 hover:scale-110">
+              <div className="relative w-16 h-16 transition-all duration-500 hover:scale-110">
                 <Image
                   src={appLogo?.imageUrl || "/logo-3d-v2.png"}
                   alt="Logo E-SPENLI"

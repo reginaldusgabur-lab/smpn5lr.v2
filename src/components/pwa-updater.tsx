@@ -7,16 +7,17 @@ import { RefreshCw, Sparkles } from 'lucide-react';
 
 /**
  * PwaUpdater mendeteksi jika Service Worker baru telah terinstal dan menunggu untuk diaktifkan.
- * Memberikan prompt kepada pengguna untuk memuat ulang aplikasi agar logo dan aset terbaru diterapkan.
+ * Saat diklik, notifikasi langsung hilang dan pembaruan berjalan di latar belakang.
  */
 const PwaUpdater = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       const sw = navigator.serviceWorker;
 
-      // Event ini terpicu saat SW baru mengambil alih kontrol
+      // Event ini terpicu saat SW baru mengambil alih kontrol (setelah skipWaiting)
       sw.addEventListener('controllerchange', () => {
         window.location.reload();
       });
@@ -29,7 +30,7 @@ const PwaUpdater = () => {
             const newWorker = registration.installing;
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
-                // Jika SW baru sudah terinstal (installed) dan ada SW lama yang sedang berjalan (controller)
+                // Jika SW baru sudah terinstal dan ada SW lama yang sedang berjalan
                 if (newWorker.state === 'installed' && sw.controller) {
                   setUpdateAvailable(true);
                 }
@@ -49,6 +50,9 @@ const PwaUpdater = () => {
   }, []);
 
   const handleUpdate = () => {
+    // Langsung sembunyikan UI agar terasa "berjalan di latar belakang"
+    setIsHiding(true);
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then((reg) => {
         if (reg && reg.waiting) {
@@ -61,12 +65,13 @@ const PwaUpdater = () => {
     }
   };
 
-  if (!updateAvailable) return null;
+  // Jika tidak ada update, atau sedang dalam proses sembunyi, jangan tampilkan apa-apa
+  if (!updateAvailable || isHiding) return null;
 
   return (
     <div className="fixed top-20 left-4 right-4 sm:left-auto sm:right-6 z-[110] animate-in fade-in slide-in-from-top-10 duration-700">
-      <div className="bg-primary text-primary-foreground border border-white/20 shadow-2xl rounded-2xl p-4 flex items-center gap-4 max-w-md ml-auto backdrop-blur-md">
-        <div className="bg-white/20 p-2.5 rounded-xl shrink-0">
+      <div className="bg-primary text-primary-foreground border border-white/20 shadow-2xl rounded-3xl p-4 flex items-center gap-4 max-w-md ml-auto backdrop-blur-md">
+        <div className="bg-white/20 p-2.5 rounded-2xl shrink-0">
             <RefreshCw className="h-5 w-5 animate-spin" style={{ animationDuration: '3s' }} />
         </div>
         
@@ -84,7 +89,7 @@ const PwaUpdater = () => {
             onClick={handleUpdate} 
             size="sm"
             variant="secondary"
-            className="h-9 px-4 rounded-xl font-bold text-[11px] shadow-lg active:scale-95 transition-all"
+            className="h-9 px-5 rounded-xl font-bold text-[11px] shadow-lg active:scale-95 transition-all"
         >
             Perbarui
         </Button>
