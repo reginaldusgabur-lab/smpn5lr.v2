@@ -19,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { format, parseISO, isValid, startOfDay, endOfDay, addMinutes, isSameDay, setHours, setMinutes, isBefore } from 'date-fns';
+import { format, parseISO, isValid, startOfDay, endOfDay, addMinutes, isBefore } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { MoreVertical, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 
@@ -39,17 +39,6 @@ const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string)
     const randomDate = new Date(randomTimestamp);
     randomDate.setSeconds(Math.floor(Math.random() * 60));
     return randomDate;
-};
-
-const toDate = (dateInput: any): Date | null => {
-    if (!dateInput) return null;
-    if (dateInput instanceof Date) return dateInput;
-    if (typeof dateInput === 'string') {
-        const parsed = parseISO(dateInput);
-        if (isValid(parsed)) return parsed;
-    }
-    if (typeof dateInput.toDate === 'function') { return dateInput.toDate(); }
-    return null;
 };
 
 export default function EditAttendanceModal({ user, month, isOpen, onClose, currentUser }) {
@@ -78,9 +67,9 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 if (isMounted.current) {
                     setProblematicDays(problems);
                     setSelectedDays({});
+                    setIsLoading(false);
                 }
-            } catch (err) { console.error("Error fetching problematic days:", err); setError('Gagal memuat data.'); }
-            finally { if (isMounted.current) setIsLoading(false); }
+            } catch (err) { if (isMounted.current) { setIsLoading(false); setError('Gagal memuat data.'); } }
         };
         getProblematicDays();
         return () => { isMounted.current = false; };
@@ -89,7 +78,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
     const handleSelectDay = (dayId: string) => setSelectedDays(prev => ({ ...prev, [dayId]: !prev[dayId] }));
 
     const handleAlpaConversionToLeave = async (day: any, newStatus: 'Sakit' | 'Izin' | 'Dinas') => {
-        if (!currentUser?.uid || !firestore) return setError("Admin tidak teridentifikasi.");
+        if (!currentUser?.uid || !firestore) return;
         setIsSaving(true);
         try {
             const targetDate = parseISO(day.date);
@@ -113,96 +102,83 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             });
             await batch.commit();
             setProblematicDays(prev => prev.filter(p => p.id !== day.id));
-        } catch (err) { console.error(err); setError("Gagal mengubah status."); }
+        } catch (err) { setError("Gagal mengubah status."); }
         finally { setIsSaving(false); }
     };
 
     const handleAlpaConversionToAttendance = async (day: any, type: 'hadir' | 'terlambat' | 'dinas') => {
-        if (!currentUser?.uid || !firestore) return setError("Admin tidak teridentifikasi.");
-        if (!schoolConfig) return setError("Konfigurasi sekolah tidak termuat.");
+        if (!currentUser?.uid || !firestore || !schoolConfig) return;
         
         const { checkInStartTime, checkInEndTime, checkOutStartTime, checkOutEndTime } = schoolConfig;
-        if (!checkInEndTime || !checkOutStartTime || !checkOutEndTime) return setError("Konfigurasi jam operasional belum lengkap.");
-
-        setIsSaving(true); setError(null);
+        setIsSaving(true);
         try {
             const batch = writeBatch(firestore);
             const recordDate = parseISO(day.date);
-            const now = new Date();
-            const isPast = isBefore(recordDate, startOfDay(now));
-
             const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
 
             let checkInTime: Date;
-            let checkOutTime: Date | null = null;
+            let checkOutTime: Date;
             let reasonForUpdate: string;
 
             if (type === 'hadir' || type === 'dinas') {
-                checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime);
-                reasonForUpdate = type === 'dinas' ? 'Dinas Pagi' : 'Kehadiran penuh';
+                checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '08:00');
+                reasonForUpdate = type === 'dinas' ? 'Dinas pagi' : 'Kehadiran penuh';
             } else {
-                const [endH, endM] = checkInEndTime.split(':').map(Number);
+                const [endH, endM] = (checkInEndTime || '08:00').split(':').map(Number);
                 const baseLateTime = new Date(recordDate);
                 baseLateTime.setHours(endH, endM, 0);
                 checkInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 15) + 1);
                 reasonForUpdate = 'Terlambat';
             }
 
-            // Always fill check-out for past dates when fixing Alpa
-            if (isPast) {
-                checkOutTime = getRandomTime(recordDate, checkOutStartTime, checkOutEndTime);
-                if (checkOutTime.getTime() <= checkInTime.getTime()) {
-                    checkOutTime = addMinutes(checkInTime, 240);
-                }
+            checkOutTime = getRandomTime(recordDate, checkOutStartTime || '14:00', checkOutEndTime || '16:00');
+            if (checkOutTime.getTime() <= checkInTime.getTime()) {
+                checkOutTime = addMinutes(checkInTime, 240);
             }
 
             batch.set(recordRef, {
                 userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
                 checkInTime: Timestamp.fromDate(checkInTime), 
-                checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : null,
+                checkOutTime: Timestamp.fromDate(checkOutTime),
                 updatedBy: currentUser.uid, updatedAt: Timestamp.now(), reasonForUpdate: reasonForUpdate, manualEntry: true
             }, { merge: true });
 
             await batch.commit();
             setProblematicDays(prev => prev.filter(p => p.id !== day.id));
-        } catch (err) { console.error("Error converting status:", err); setError("Gagal menyimpan perubahan."); }
+        } catch (err) { setError("Gagal menyimpan perubahan."); }
         finally { setIsSaving(false); }
     };
 
     const handleSaveChanges = async () => {
         const selectedIds = Object.keys(selectedDays).filter(id => selectedDays[id]);
-        if (selectedIds.length === 0) return setError("Tidak ada tanggal yang dipilih.");
-        if (!currentUser?.uid || !schoolConfig) return setError("Konfigurasi tidak lengkap.");
-        const { checkOutStartTime, checkOutEndTime } = schoolConfig;
-        if (!checkOutStartTime || !checkOutEndTime) return setError("Konfigurasi jam pulang tidak lengkap.");
+        if (selectedIds.length === 0 || !schoolConfig) return;
 
-        setIsSaving(true); setError(null);
+        setIsSaving(true);
         try {
             const batch = writeBatch(firestore);
             const daysToUpdate = problematicDays.filter(day => selectedDays[day.id]);
             for (const day of daysToUpdate) {
-                if (day.description === 'Tidak absen pulang' || day.description === 'Belum absen pulang') {
-                    const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
-                    const originalCheckInTime = toDate(day.checkInTime);
-                    if (!originalCheckInTime || !isValid(originalCheckInTime)) continue;
-                    
-                    let checkOutTime = getRandomTime(parseISO(day.date), checkOutStartTime, checkOutEndTime);
-                    if (checkOutTime.getTime() <= originalCheckInTime.getTime()) {
-                        checkOutTime = addMinutes(originalCheckInTime, 60);
-                    }
-                    
-                    batch.update(recordRef, { 
-                        checkOutTime: Timestamp.fromDate(checkOutTime), 
-                        updatedBy: currentUser.uid, 
-                        updatedAt: Timestamp.now(), 
-                        reasonForUpdate: 'Kehadiran penuh', 
-                        manualEntry: true 
-                    });
+                const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
+                const recordDate = parseISO(day.date);
+                
+                const checkInTime = day.checkInTime ? parseISO(day.checkInTime) : getRandomTime(recordDate, schoolConfig.checkInStartTime || '07:00', schoolConfig.checkInEndTime || '08:00');
+                let checkOutTime = getRandomTime(recordDate, schoolConfig.checkOutStartTime || '14:00', schoolConfig.checkOutEndTime || '16:00');
+                
+                if (checkOutTime.getTime() <= checkInTime.getTime()) {
+                    checkOutTime = addMinutes(checkInTime, 60);
                 }
+                
+                batch.set(recordRef, { 
+                    checkOutTime: Timestamp.fromDate(checkOutTime), 
+                    updatedBy: currentUser.uid, 
+                    updatedAt: Timestamp.now(), 
+                    reasonForUpdate: 'Kehadiran penuh', 
+                    manualEntry: true 
+                }, { merge: true });
             }
             await batch.commit();
             onClose();
-        } catch (err) { console.error(err); setError("Gagal menyimpan perubahan."); }
+        } catch (err) { setError("Gagal menyimpan perubahan."); }
         finally { setIsSaving(false); }
     };
 
@@ -220,7 +196,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                     <div className="py-4 space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div>
                 ) : problematicDays.length > 0 ? (
                     <div className="py-4">
-                        <DialogDescription className="mb-4 text-sm font-medium">Pilih data untuk diperbaiki atau ubah status alpa secara langsung.</DialogDescription>
+                        <DialogDescription className="mb-4 text-sm font-bold text-muted-foreground">Pilih data untuk diperbaiki atau ubah status alpa secara langsung.</DialogDescription>
                         <div className="max-h-[300px] overflow-y-auto -mr-2 pr-2 space-y-2">
                             {problematicDays.map(day => (
                                 <div key={day.id} className="flex items-center gap-3 p-3 rounded-2xl transition-colors hover:bg-muted/50 border border-muted-foreground/5">
@@ -229,19 +205,19 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                     ) : (
                                         <Checkbox id={day.id} checked={!!selectedDays[day.id]} onCheckedChange={() => handleSelectDay(day.id)} className="rounded-md" />
                                     )}
-                                    <label htmlFor={day.id} className="text-sm font-bold grow cursor-pointer">{format(parseISO(day.date), 'eeee, dd MMMM yyyy', { locale: id })}</label>
+                                    <label htmlFor={day.id} className="text-sm font-bold grow cursor-pointer">{format(parseISO(day.date), 'eeee, d MMM yyyy', { locale: id })}</label>
                                     {day.status === 'Alpa' ? (
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Badge variant="destructive" className="cursor-pointer hover:bg-destructive/80 flex items-center px-3 py-1 rounded-lg text-[10px] font-bold">Alpa <MoreVertical className="h-3 w-3 ml-1" /></Badge>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-none p-2">
-                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'hadir')}>Jadikan Hadir</DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'dinas')}>Dinas Pagi</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'hadir')}>Jadikan hadir</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'terlambat')}>Set terlambat</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToAttendance(day, 'dinas')}>Dinas pagi</DropdownMenuItem>
                                                 <DropdownMenuSeparator className="my-1.5 opacity-50" />
-                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Sakit')}>Set Sakit</DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Izin')}>Set Izin</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Sakit')}>Set sakit</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl cursor-pointer py-2 px-3 font-bold text-xs" disabled={isSaving} onClick={() => handleAlpaConversionToLeave(day, 'Izin')}>Set izin</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     ) : (
@@ -256,14 +232,14 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 ) : (
                     <div className="py-12 flex flex-col items-center justify-center text-center gap-3">
                         <CheckCircle2 className="h-12 w-12 text-green-500 opacity-20" />
-                        <p className="text-sm font-medium text-muted-foreground">Semua data kehadiran sudah rapi.</p>
+                        <p className="text-sm font-bold text-muted-foreground">Semua data kehadiran sudah rapi.</p>
                     </div>
                 )}
                 </div>
                 <DialogFooter className="p-6 pt-0 flex flex-col sm:flex-row gap-2">
                     <DialogClose asChild><Button variant="ghost" className="rounded-xl font-bold" disabled={isSaving}>Batal</Button></DialogClose>
                     <Button onClick={handleSaveChanges} className="rounded-xl font-bold shadow-lg bg-primary" disabled={isLoading || isSaving || !hasSelection}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Perbaiki Terpilih'}
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Perbaiki terpilih'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

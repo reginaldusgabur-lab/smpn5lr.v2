@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc } from 'firebase/firestore';
@@ -60,52 +60,58 @@ export default function SchoolReportPage() {
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(user, schoolConfigRef);
 
+    const loadData = useCallback(async () => {
+        if (!firestore || !user) return;
+        setIsReportLoading(true);
+        setError(null);
+        try {
+            const usersQuery = query(
+                collection(firestore, 'users'), 
+                where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
+                where('status', '==', 'Aktif')
+            );
+            const usersSnapshot = await getDocs(usersQuery);
+            
+            const reportPromises = usersSnapshot.docs.map(async (userDoc) => {
+                const stats = await calculateAttendanceStats(firestore, userDoc.id, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
+                const userData = userDoc.data();
+                return {
+                    uid: userDoc.id,
+                    name: userData.name || '',
+                    nip: userData.nip || '-',
+                    position: userData.position || '-',
+                    role: userData.role || '',
+                    sequenceNumber: userData.sequenceNumber || null,
+                    totalHadir: stats.totalHadir,
+                    totalIzin: stats.totalIzin,
+                    totalSakit: stats.totalSakit,
+                    totalAlpa: stats.totalAlpa,
+                    persentase: stats.persentase,
+                };
+            });
+
+            const results = await Promise.all(reportPromises);
+            results.sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
+
+            if (isMounted.current) {
+                setReportData(results.map((r, i) => ({ ...r, no: i + 1 })));
+                setIsReportLoading(false);
+            }
+        } catch (err) { 
+            if (isMounted.current) {
+                setError("Gagal memuat data laporan.");
+                setIsReportLoading(false);
+            }
+        }
+    }, [firestore, user, currentMonth]);
+
     useEffect(() => {
         isMounted.current = true;
-        if (isUserLoading || !user || !firestore) return;
-        
-        const loadData = async () => {
-            setIsReportLoading(true);
-            setError(null);
-            try {
-                const usersQuery = query(
-                    collection(firestore, 'users'), 
-                    where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-                    where('status', '==', 'Aktif')
-                );
-                const usersSnapshot = await getDocs(usersQuery);
-                
-                const reportPromises = usersSnapshot.docs.map(async (userDoc) => {
-                    const stats = await calculateAttendanceStats(firestore, userDoc.id, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
-                    const userData = userDoc.data();
-                    return {
-                        uid: userDoc.id,
-                        name: userData.name || '',
-                        nip: userData.nip || '-',
-                        position: userData.position || '-',
-                        role: userData.role || '',
-                        sequenceNumber: userData.sequenceNumber || null,
-                        totalHadir: stats.totalHadir,
-                        totalIzin: stats.totalIzin,
-                        totalSakit: stats.totalSakit,
-                        totalAlpa: stats.totalAlpa,
-                        persentase: stats.persentase,
-                    };
-                });
-
-                const results = await Promise.all(reportPromises);
-                results.sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
-
-                if (isMounted.current) setReportData(results.map((r, i) => ({ ...r, no: i + 1 })));
-            } catch (err) { 
-                console.error("Load report error:", err);
-                if (isMounted.current) setError("Gagal memuat data laporan."); 
-            }
-            finally { if (isMounted.current) setIsReportLoading(false); }
-        };
-        loadData();
+        if (!isUserLoading && user) {
+            loadData();
+        }
         return () => { isMounted.current = false; };
-    }, [user, isUserLoading, firestore, currentMonth]);
+    }, [user, isUserLoading, loadData]);
 
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
     const monthName = format(currentMonth, 'MMMM yyyy', { locale: id });
@@ -114,124 +120,6 @@ export default function SchoolReportPage() {
         if (!dateInput) return '-';
         const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
         return isValid(date) ? format(date, formatString, { locale: id }) : '-';
-    };
-
-    const handleDownloadPersonalPdf = async (targetUser: ReportRowData) => {
-        if (isExporting || exportingUserId) return;
-        setExportingUserId(targetUser.uid);
-        setIsExporting(true);
-
-        try {
-            const detailData = await fetchUserMonthlyReportData(firestore, targetUser.uid, currentMonth, schoolConfigData || {});
-            
-            const doc = new jsPDF();
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const centerX = pageWidth / 2;
-            const margin = 14;
-            let currentY = 20;
-
-            const config = schoolConfigData || ({} as any);
-
-            doc.setFont('times', 'bold').setFontSize(14);
-            doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, currentY, { align: 'center' });
-            currentY += 7;
-            doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, currentY, { align: 'center' });
-            currentY += 7;
-            doc.setFontSize(12);
-            doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, currentY, { align: 'center' });
-            currentY += 5;
-            doc.setFont('times', 'normal').setFontSize(9);
-            doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, currentY, { align: 'center' });
-            currentY += 4;
-            doc.setLineWidth(0.8).line(margin, currentY, pageWidth - margin, currentY);
-            doc.setLineWidth(0.2).line(margin, currentY + 0.8, pageWidth - margin, currentY + 0.8);
-            currentY += 15;
-
-            doc.setFont('times', 'bold').setFontSize(14);
-            doc.text(`LAPORAN KEHADIRAN INDIVIDU BULAN ${monthName.toUpperCase()}`, centerX, currentY, { align: 'center' });
-            if (config.academicYear) {
-                currentY += 7;
-                doc.text(`TAHUN AJARAN ${config.academicYear.toUpperCase()}`, centerX, currentY, { align: 'center' });
-            }
-            currentY += 12;
-
-            doc.setFontSize(10).setFont('times', 'normal');
-            doc.text(`Nama`, margin, currentY);
-            doc.text(`: ${targetUser.name}`, margin + 40, currentY);
-            currentY += 6;
-            doc.text(`NIP`, margin, currentY);
-            doc.text(`: ${targetUser.nip}`, margin + 40, currentY);
-            currentY += 6;
-            doc.text(`Jabatan / Status`, margin, currentY);
-            
-            const displayRole = targetUser.role.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            const jabStat = `${displayRole} / ${targetUser.position}`;
-            doc.text(`: ${jabStat}`, margin + 40, currentY);
-            currentY += 10;
-
-            const tableRows = detailData.map((item, index) => [
-                index + 1,
-                safeFormat(item.date, 'eeee, dd MMMM yyyy'),
-                safeFormat(item.checkInTime, 'HH:mm:ss'),
-                safeFormat(item.checkOutTime, 'HH:mm:ss'),
-                item.status,
-                item.description || '-'
-            ]);
-
-            autoTable(doc, {
-                startY: currentY,
-                head: [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']],
-                body: tableRows,
-                theme: 'grid',
-                styles: { font: 'times', fontSize: 9, cellPadding: 3, valign: 'middle', lineWidth: 0.1, lineColor: [150, 150, 150] },
-                headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: 'center', fontStyle: 'bold', lineWidth: 0 },
-                columnStyles: {
-                    0: { halign: 'center', cellWidth: 10 },
-                    1: { halign: 'left', cellWidth: 45 },
-                    2: { halign: 'center', cellWidth: 22 },
-                    3: { halign: 'center', cellWidth: 22 },
-                    4: { halign: 'center', cellWidth: 25 },
-                }
-            });
-
-            let finalTableY = (doc as any).lastAutoTable.finalY;
-            if (finalTableY > pageHeight - 65) {
-                doc.addPage();
-                finalTableY = 20;
-            }
-
-            let signY = finalTableY + 15;
-            const signatureX = pageWidth - 80;
-            doc.setFontSize(10).setFont('times', 'normal');
-            doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, signY);
-            doc.text('Mengetahui,', signatureX, signY + 6);
-            doc.text('Kepala Sekolah', signatureX, signY + 12);
-            doc.setFont('times', 'bold');
-            doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signY + 38);
-            doc.setFont('times', 'normal');
-            doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, signY + 44);
-
-            const totalPages = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                doc.setPage(i);
-                doc.setLineWidth(0.2);
-                doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-                doc.setFontSize(8).setFont('times', 'italic');
-                doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
-                doc.setFontSize(9).setFont('times', 'normal');
-                doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-            }
-
-            doc.save(`Laporan_Personal_${targetUser.name.replace(/\s+/g, '_')}_${monthName.replace(' ', '_')}.pdf`);
-            toast({ title: "Berhasil", description: "Laporan personal berhasil diunduh." });
-        } catch (err) {
-            console.error("Personal PDF error:", err);
-            toast({ variant: "destructive", title: "Gagal", description: "Gagal memproses PDF personal." });
-        } finally {
-            setIsExporting(false);
-            setExportingUserId(null);
-        }
     };
 
     const handleDownloadPdf = async () => {
@@ -349,13 +237,13 @@ export default function SchoolReportPage() {
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="px-4 md:px-0">
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Laporan Sekolah</h1>
-                    <p className="text-muted-foreground mt-1 font-medium">Ringkasan kehadiran bulanan untuk seluruh personil aktif.</p>
+                    <p className="text-muted-foreground mt-1 font-bold">Ringkasan kehadiran bulanan untuk seluruh personil aktif.</p>
                 </div>
 
                 <Card className="overflow-hidden border shadow-xl rounded-3xl bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
                         <CardTitle className="font-bold text-sm tracking-tight">Rekapitulasi Kehadiran</CardTitle>
-                        <CardDescription className="text-muted-foreground font-medium">Data kehadiran akumulatif seluruh personil bulan {monthName}.</CardDescription>
+                        <CardDescription className="text-muted-foreground font-bold">Data kehadiran akumulatif seluruh personil bulan {monthName}.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-6 min-h-[500px]">
                         <div className="p-6 space-y-6">
@@ -412,14 +300,14 @@ export default function SchoolReportPage() {
                                 <Table>
                                     <TableHeader className="bg-muted/30">
                                         <TableRow className="border-none">
-                                            <TableHead className="w-[60px] text-center font-bold text-[10px] tracking-widest text-muted-foreground">No</TableHead>
-                                            <TableHead className="font-bold text-[10px] tracking-widest text-muted-foreground">Nama & NIP</TableHead>
-                                            <TableHead className="text-center font-bold text-[10px] tracking-widest text-muted-foreground">H</TableHead>
-                                            <TableHead className="text-center font-bold text-[10px] tracking-widest text-muted-foreground">I</TableHead>
-                                            <TableHead className="text-center font-bold text-[10px] tracking-widest text-muted-foreground">S</TableHead>
-                                            <TableHead className="text-center font-bold text-[10px] tracking-widest text-muted-foreground">A</TableHead>
-                                            <TableHead className="text-center font-bold text-[10px] tracking-widest text-muted-foreground">%</TableHead>
-                                            <TableHead className="w-[80px] text-center font-bold text-[10px] tracking-widest text-muted-foreground">Aksi</TableHead>
+                                            <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
+                                            <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Nama & NIP</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">H</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">I</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">S</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">A</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">%</TableHead>
+                                            <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Aksi</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -455,39 +343,16 @@ export default function SchoolReportPage() {
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/10 active:scale-90 transition-all">
-                                                                <Eye className="h-5 w-5 text-primary" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-2xl border-none">
-                                                            <DropdownMenuItem asChild className="rounded-xl cursor-pointer py-3 px-4 focus:bg-primary/5 group">
-                                                                <Link href={`/dashboard/laporan/${item.uid}`} className="flex items-center">
-                                                                    <Search className="mr-3 h-4.5 w-4.5 text-primary group-hover:scale-110 transition-transform" />
-                                                                    <span className="text-xs font-bold text-foreground">Lihat Kehadiran</span>
-                                                                </Link>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator className="my-1.5 opacity-30" />
-                                                            <DropdownMenuItem 
-                                                                className="rounded-xl cursor-pointer py-3 px-4 focus:bg-destructive/5 group"
-                                                                disabled={isExporting && exportingUserId === item.uid}
-                                                                onClick={() => handleDownloadPersonalPdf(item)}
-                                                            >
-                                                                {exportingUserId === item.uid ? (
-                                                                    <Loader2 className="mr-3 h-4.5 w-4.5 animate-spin text-destructive" />
-                                                                ) : (
-                                                                    <FileText className="mr-3 h-4.5 w-4.5 text-destructive group-hover:scale-110 transition-transform" />
-                                                                )}
-                                                                <span className="text-xs font-bold text-destructive">Unduh Laporan</span>
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                    <Link href={`/dashboard/laporan/${item.uid}`}>
+                                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/10 active:scale-90 transition-all">
+                                                            <Eye className="h-5 w-5 text-primary" />
+                                                        </Button>
+                                                    </Link>
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
                                             <TableRow>
-                                                <TableCell colSpan={8} className="h-48 text-center text-muted-foreground font-medium">
+                                                <TableCell colSpan={8} className="h-48 text-center text-muted-foreground font-bold">
                                                     {error || "Tidak ada data kehadiran ditemukan."}
                                                 </TableCell>
                                             </TableRow>

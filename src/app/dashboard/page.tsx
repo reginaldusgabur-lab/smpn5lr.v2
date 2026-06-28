@@ -29,10 +29,10 @@ const LiveClockUI = () => {
 
     return (
         <div className="flex flex-col items-center justify-center pt-0 pb-2 w-full">
-            <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
+            <h2 className="text-5xl font-bold tracking-tight tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-bold text-muted-foreground mt-1.5 tracking-widest opacity-70">
+            <p className="text-[10px] font-bold text-muted-foreground mt-2 uppercase tracking-wider opacity-60">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -52,8 +52,6 @@ export default function DashboardPage() {
 
   const loadDashboardData = useCallback(async () => {
     if (!firestore || !user) return;
-    setIsStatsLoading(true);
-    setIsPersonalSummaryLoading(true);
     try {
         const now = new Date();
         const [dailyStats, personalStats] = await Promise.all([
@@ -69,10 +67,10 @@ export default function DashboardPage() {
                 sakit: personalStats.totalSakit,
                 alpa: personalStats.totalAlpa
             });
+            setIsStatsLoading(false);
+            setIsPersonalSummaryLoading(false);
         }
     } catch (error) {
-        // Silent catch for stability
-    } finally {
         if (isMounted.current) {
             setIsStatsLoading(false);
             setIsPersonalSummaryLoading(false);
@@ -127,7 +125,7 @@ export default function DashboardPage() {
 
     if (isCheckedOut) {
         return (
-            <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm tracking-wide">
+            <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm">
                 <Sparkles className="mr-2 w-4 h-4" /> 
                 Absensi selesai
             </div>
@@ -234,7 +232,7 @@ export default function DashboardPage() {
                             <div className="bg-muted/30 rounded-2xl p-3 text-center border border-border/40 flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-center gap-2 mb-1.5">
                                     <LogIn className="w-3.5 h-3.5 text-primary" />
-                                    <p className="text-[10px] font-bold text-primary tracking-wider">Masuk</p>
+                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Masuk</p>
                                 </div>
                                 <p className="text-2xl font-bold tabular-nums text-foreground">
                                     {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
@@ -243,7 +241,7 @@ export default function DashboardPage() {
                             <div className="bg-muted/30 rounded-2xl p-3 text-center border border-border/40 flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-center gap-2 mb-1.5">
                                     <LogOut className="w-3.5 h-3.5 text-primary" />
-                                    <p className="text-[10px] font-bold text-primary tracking-wider">Pulang</p>
+                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Pulang</p>
                                 </div>
                                 <p className="text-2xl font-bold tabular-nums text-foreground">
                                     {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
@@ -265,7 +263,7 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <TrendingUp className="w-5 h-5" />
-                                <h2 className="text-xs font-bold tracking-widest">
+                                <h2 className="text-xs font-bold uppercase tracking-widest">
                                     Ringkasan bulanan
                                 </h2>
                             </div>
@@ -308,7 +306,7 @@ export default function DashboardPage() {
                     <Card className="bg-card border-none shadow-xl rounded-3xl overflow-hidden">
                         <CardHeader className="p-4 text-green-700 border-b border-muted-foreground/5">
                             <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-bold tracking-widest">Hadir</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest">Hadir</p>
                                 <UserCheck className="h-4 w-4" />
                             </div>
                         </CardHeader>
@@ -320,7 +318,7 @@ export default function DashboardPage() {
                     <Card className="bg-card border-none shadow-xl rounded-3xl overflow-hidden">
                         <CardHeader className="p-4 text-blue-700 border-b border-muted-foreground/5">
                             <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-bold tracking-widest">Izin / sakit</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest">Izin / sakit</p>
                                 <BookUser className="h-4 w-4" />
                             </div>
                         </CardHeader>
@@ -333,7 +331,7 @@ export default function DashboardPage() {
                         <Card className="bg-card border-none shadow-xl rounded-3xl hover:opacity-95 transition-all group overflow-hidden">
                             <CardHeader className="p-4 text-amber-700 border-b border-muted-foreground/5">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-bold tracking-widest">Menunggu</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest">Menunggu</p>
                                     <MailWarning className="h-4 w-4 group-hover:scale-110 transition-transform" />
                                 </div>
                             </CardHeader>
