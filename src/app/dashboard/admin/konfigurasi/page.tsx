@@ -571,7 +571,6 @@ export default function KonfigurasiAbsenPage() {
                   <div className="flex items-center justify-between gap-4">
                     <Label className="text-xs font-bold">Koordinat sekolah</Label>
                     <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-bold shadow-none" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
-                      {isLocating && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
                       Dapatkan lokasi
                     </Button>
                   </div>

@@ -171,7 +171,7 @@ export default function IzinKepalaSekolahPage() {
 
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-3xl bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
-                        <CardTitle className="font-bold text-sm tracking-tight uppercase tracking-widest">Daftar pengajuan izin</CardTitle>
+                        <CardTitle className="font-bold text-sm tracking-tight">Daftar pengajuan izin</CardTitle>
                         <CardDescription className="text-muted-foreground font-bold pt-1">Menunggu peninjauan dan persetujuan Kepala Sekolah.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-6 min-h-[400px]">

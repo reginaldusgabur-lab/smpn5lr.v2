@@ -1,20 +1,20 @@
-
 'use client';
 
 import Image from 'next/image';
 
 export default function Loading() {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-[9999] h-screen w-full">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-[9999] h-screen w-full pointer-events-none">
       <div className="relative flex flex-col items-center gap-6">
         <div className="relative w-24 h-24 animate-logo-pulse">
           <Image
             src="/logo-3d-v2.png"
             alt="E-SPENLI"
-            fill
-            sizes="96px"
+            width={96}
+            height={96}
             className="object-contain"
             priority
+            sizes="96px"
           />
         </div>
       </div>

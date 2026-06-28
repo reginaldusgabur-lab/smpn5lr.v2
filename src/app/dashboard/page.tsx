@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
@@ -150,8 +149,8 @@ export default function DashboardPage() {
 
         {isStaff && (
             <div className="w-full space-y-6 flex flex-col items-stretch">
-                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden bg-card">
-                    <CardHeader className="p-6 text-primary border-b border-muted-foreground/5 text-center"><CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">Kehadiran Anda hari ini</CardTitle></CardHeader>
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden bg-card text-center">
+                    <CardHeader className="p-6 text-primary border-b border-muted-foreground/5"><CardTitle className="text-2xl font-bold tracking-tight">Kehadiran Anda hari ini</CardTitle></CardHeader>
                     <CardContent className="p-6 space-y-4 pt-4">
                         <LiveClockUI />
                         <div className="grid grid-cols-2 gap-4 w-full">
@@ -231,4 +230,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
