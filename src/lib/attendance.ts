@@ -53,7 +53,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return offDays.includes(today.getDay());
         })();
 
-        // Ambil staf aktif
         const usersQuery = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -62,7 +61,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const usersSnap = await getDocs(usersQuery);
         const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Ambil kehadiran hari ini (Bulk)
         const attendanceQuery = query(
             collectionGroup(firestore, 'attendanceRecords'),
             where('checkInTime', '>=', startOfToday),
@@ -76,7 +74,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             if (userId) presentUserIds.add(userId);
         });
 
-        // Ambil izin hari ini (Bulk)
         const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'));
         const leaveSnap = await getDocs(leaveQuery);
         const leaveStatusByUserId = new Map<string, { status: string, type: string }>();
@@ -135,11 +132,11 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 }
 
 /**
- * Kalkulasi statistik kehadiran individu.
+ * Kalkulasi statistik kehadiran individu (SINKRON DENGAN LAPORAN).
  */
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_sync_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -181,7 +178,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         );
 
         const workingDaysSet = new Set(effectiveWorkingDays.map(day => format(day, 'yyyy-MM-dd')));
-        const pastEffectiveWorkingDays = effectiveWorkingDays.filter(day => isBefore(day, today) || isSameDay(day, today));
+        const pastWorkingDaysSet = new Set(effectiveWorkingDays.filter(day => isBefore(day, today) || isSameDay(day, today)).map(d => format(d, 'yyyy-MM-dd')));
         
         const approvedEarlyLeaveDates = new Set<string>();
         leaveData.forEach(leave => {
@@ -197,13 +194,15 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             if (att.checkInTime && att.checkOutTime) {
                 return total + 1;
             } else if (att.checkInTime) {
+                // Jika ada CheckIn tapi tidak ada CheckOut, cek apakah ada Izin Pulang Cepat
                 if (approvedEarlyLeaveDates.has(attDateStr)) return total + 1;
-                return total + 0.5;
+                // Jika hari sudah lewat dan tidak ada CheckOut, itu Alpa (0 poin), tapi jika hari ini, dianggap hadir sementara (0.5 atau 1 tergantung kebijakan)
+                return isBefore(att.checkInTime.toDate(), today) ? total : total + 0.5;
             }
             return total;
         }, 0);
 
-        const anyAttendanceDates = new Set(
+        const attDates = new Set(
             attendanceData
                 .filter(att => workingDaysSet.has(format(att.checkInTime.toDate(), 'yyyy-MM-dd')))
                 .map(att => format(att.checkInTime.toDate(), 'yyyy-MM-dd'))
@@ -227,15 +226,14 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             });
         });
 
-        const alpaCount = pastEffectiveWorkingDays.filter(day => {
-            const dayStr = format(day, 'yyyy-MM-dd');
-            return !anyAttendanceDates.has(dayStr) && !leaveDates.has(dayStr);
+        const alpaCount = Array.from(pastWorkingDaysSet).filter(dayStr => {
+            return !attDates.has(dayStr) && !leaveDates.has(dayStr);
         }).length;
         
         const totalWorkingDays = effectiveWorkingDays.length;
-        const adjustedWorkingDays = totalWorkingDays > 0 ? (totalWorkingDays - (izinCount + sakitCount)) : 0;
+        const denominator = Math.max(1, totalWorkingDays - (izinCount + sakitCount));
 
-        const percentageRaw = adjustedWorkingDays > 0 ? (hadirScore / adjustedWorkingDays) * 100 : 0;
+        const percentageRaw = (hadirScore / denominator) * 100;
         const finalPercentage = Math.min(percentageRaw, 100);
 
         const result = {
