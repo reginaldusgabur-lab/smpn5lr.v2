@@ -19,12 +19,12 @@ const cleanDesc = (desc: string) => desc ? desc.replace(/\s?\(diubah oleh Admin\
 
 /**
  * Mendapatkan ringkasan kehadiran harian seluruh staf untuk dashboard.
- * Dioptimalkan untuk 1 hari kerja efektif.
+ * Dioptimalkan untuk 1 hari kerja efektif. Jika hari libur, statistik dikembalikan ke 0.
  */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `daily_v6_${todayStr}`;
+    const cacheKey = `daily_v8_${todayStr}`;
     
     const cachedData = getFromCache(cacheKey);
     if (cachedData) return cachedData;
@@ -45,12 +45,15 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const schoolConfig = schoolConfigSnap.data();
         const monthlyConfig = monthlyConfigSnap.data();
 
+        // LOGIKA HARI EFEKTIF: Periksa apakah hari ini libur
         const isHoliday = (() => {
             if (!schoolConfig) return false;
             if (schoolConfig.isAttendanceActive === false) return true;
-            if (monthlyConfig?.holidays?.includes(todayStr)) return true;
+            const dayOfWeek = today.getDay();
             const offDays: number[] = schoolConfig.offDays ?? [0, 6];
-            return offDays.includes(today.getDay());
+            if (offDays.includes(dayOfWeek)) return true;
+            if (monthlyConfig?.holidays?.includes(todayStr)) return true;
+            return false;
         })();
 
         const usersQuery = query(
@@ -60,6 +63,20 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         );
         const usersSnap = await getDocs(usersQuery);
         const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Jika hari libur, kembalikan 0 untuk semua statistik kontrol aktivitas
+        if (isHoliday) {
+            const holidayResult = {
+                totalStaff: allStaff.length,
+                hadir: 0,
+                izin: 0,
+                sakit: 0,
+                pending: 0,
+                isHoliday: true
+            };
+            setInCache(cacheKey, holidayResult);
+            return holidayResult;
+        }
 
         const attendanceQuery = query(
             collectionGroup(firestore, 'attendanceRecords'),
@@ -74,7 +91,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             if (userId) presentUserIds.add(userId);
         });
 
-        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'));
+        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
         const leaveSnap = await getDocs(leaveQuery);
         const leaveStatusByUserId = new Map<string, { status: string, type: string }>();
         leaveSnap.forEach(doc => {
@@ -96,10 +113,10 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         let sakitCount = 0;
         let pendingCount = 0;
 
-        const notPresentStaff = allStaff.filter((user: any) => !presentUserIds.has(user.id));
+        const notPresentStaffIds = allStaff.filter((u: any) => !presentUserIds.has(u.id)).map((u: any) => u.id);
 
-        notPresentStaff.forEach((user: any) => {
-            const leaveInfo = leaveStatusByUserId.get(user.id);
+        notPresentStaffIds.forEach((uid) => {
+            const leaveInfo = leaveStatusByUserId.get(uid);
             if (leaveInfo) {
                 if (leaveInfo.status === 'approved') {
                     if (leaveInfo.type === 'Pulang Cepat') return;
@@ -117,23 +134,24 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             izin: izinCount,
             sakit: sakitCount,
             pending: pendingCount,
-            isHoliday: isHoliday
+            isHoliday: false
         };
 
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
-        console.error("Daily stats load error:", e instanceof Error ? e.message : "Unknown error");
+        console.error("Daily stats load error:", e);
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, isHoliday: false };
     }
 }
 
 /**
  * Kalkulasi statistik kehadiran individu dengan akurasi tinggi (Sinkron dengan Laporan).
+ * Menghitung status Dinas dan Pulang Cepat sebagai kehadiran 100%.
  */
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v7_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v8_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -232,7 +250,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
-        console.error("Personal stats load error:", e instanceof Error ? e.message : "Unknown error");
+        console.error("Personal stats load error:", e);
         return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
     }
 }
