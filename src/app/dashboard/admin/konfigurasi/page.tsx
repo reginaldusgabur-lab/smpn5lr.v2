@@ -168,7 +168,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                             <Button 
                                 variant="outline" 
                                 size="icon" 
-                                className="rounded-full"
+                                className="rounded-full shadow-none"
                                 onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
                             >
                                 <ChevronLeft className="h-4 w-4" />
@@ -177,7 +177,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                             <Button 
                                 variant="outline" 
                                 size="icon" 
-                                className="rounded-full"
+                                className="rounded-full shadow-none"
                                 onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
                             >
                                 <ChevronRight className="h-4 w-4" />
@@ -201,7 +201,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                                                     />
                                                 </TableCell>
                                                 <TableCell className="py-2">
-                                                    <Label htmlFor={dayString} className="font-medium text-sm cursor-pointer w-full block">
+                                                    <Label htmlFor={dayString} className="font-bold text-sm cursor-pointer w-full block">
                                                         {format(day, 'eeee, d MMMM yyyy', { locale: id })}
                                                     </Label>
                                                 </TableCell>
@@ -216,7 +216,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
             </div>
             <div className="md:col-span-1 space-y-4 border-l-0 md:border-l md:pl-6 border-muted-foreground/10">
                 <h3 className="font-bold text-sm tracking-tight text-primary">Status bulan ini</h3>
-                 <p className="text-xs text-muted-foreground leading-relaxed">
+                 <p className="text-xs text-muted-foreground leading-relaxed font-bold">
                     Jumlah hari kerja efektif di bulan <span className="font-bold">{format(currentMonth, 'MMMM', { locale: id })}</span> digunakan untuk hitung persentase kehadiran.
                 </p>
                 <div className="space-y-2">
@@ -224,7 +224,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                     <Input
                         id="manualWorkDays"
                         type="number"
-                        className="rounded-xl h-11 bg-muted/30"
+                        className="rounded-xl h-11 bg-muted/30 shadow-none font-bold"
                         value={manualWorkDays}
                         onChange={(e) => setManualWorkDays(e.target.value)}
                         placeholder={calculatedWorkDays.toString()}
@@ -348,7 +348,6 @@ export default function KonfigurasiAbsenPage() {
           });
           setQrCodeDataUrl(url);
         } catch (err) {
-          console.error('QR Code generation failed:', err);
           toast({
             variant: 'destructive',
             title: 'Gagal membuat kode QR',
@@ -382,10 +381,7 @@ export default function KonfigurasiAbsenPage() {
     downloadLink.click();
     document.body.removeChild(downloadLink);
     
-    toast({
-      title: 'Berhasil',
-      description: `Kode QR berhasil diunduh sebagai PNG.`,
-    });
+    toast({ title: 'Berhasil', description: `Kode QR berhasil diunduh sebagai PNG.` });
   };
   
   const handleGenerateNewQr = () => {
@@ -394,10 +390,7 @@ export default function KonfigurasiAbsenPage() {
     const newQrValue = Math.random().toString(36).substring(2, 15);
     updateDocumentNonBlocking(schoolConfigRef, { qrCodeValue: newQrValue });
     setQrCodeValue(newQrValue);
-    toast({
-      title: 'Kode QR diperbarui',
-      description: 'Kode QR absensi baru telah berhasil dibuat.',
-    });
+    toast({ title: 'Kode QR diperbarui', description: 'Kode QR absensi baru telah berhasil dibuat.' });
   };
 
   const handleGetCurrentLocation = () => {
@@ -416,22 +409,13 @@ export default function KonfigurasiAbsenPage() {
         setLatitude(position.coords.latitude.toFixed(6));
         setLongitude(position.coords.longitude.toFixed(6));
         setIsLocating(false);
-        toast({
-          title: 'Lokasi ditemukan',
-          description: 'Koordinat latitude dan longitude telah diperbarui.',
-        });
+        toast({ title: 'Lokasi ditemukan', description: 'Koordinat latitude dan longitude telah diperbarui.' });
       },
       (error) => {
         setIsLocating(false);
         let description = 'Terjadi kesalahan saat mengambil lokasi.';
-        if (error.code === 1) {
-          description = 'Akses lokasi ditolak. Aktifkan izin lokasi di browser.';
-        }
-        toast({
-          variant: 'destructive',
-          title: 'Gagal mendapatkan lokasi',
-          description,
-        });
+        if (error.code === 1) description = 'Akses lokasi ditolak. Aktifkan izin lokasi di browser.';
+        toast({ variant: 'destructive', title: 'Gagal mendapatkan lokasi', description });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -456,10 +440,7 @@ export default function KonfigurasiAbsenPage() {
       checkOutEndTime: checkOutEnd,
       dailyCheckOutTimes: dailyCheckOutTimes,
     }, { merge: true });
-    toast({
-      title: 'Pengaturan disimpan',
-      description: 'Konfigurasi absensi telah berhasil diperbarui.',
-    });
+    toast({ title: 'Pengaturan disimpan', description: 'Konfigurasi absensi telah berhasil diperbarui.' });
     setIsSaving(false);
   };
 
@@ -487,7 +468,7 @@ export default function KonfigurasiAbsenPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-1 overflow-hidden border shadow-none">
+      <Card className="lg:col-span-1 overflow-hidden border shadow-none rounded-3xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
           <CardTitle className="font-bold text-sm tracking-tight">Kode QR absensi</CardTitle>
           <CardDescription className="text-muted-foreground font-medium">Gunakan kode QR ini untuk absensi harian.</CardDescription>
@@ -505,31 +486,31 @@ export default function KonfigurasiAbsenPage() {
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button variant="outline" className="w-full max-w-[256px] rounded-xl font-bold" disabled={isQrLoading}>
+                <Button variant="outline" className="w-full max-w-[256px] rounded-xl font-bold shadow-none" disabled={isQrLoading}>
                     {isQrLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                     Buat QR baru
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-3xl border-none">
+            <AlertDialogContent className="rounded-3xl border-none shadow-none">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="font-bold text-xl">Perbarui kode QR?</AlertDialogTitle>
-                    <AlertDialogDescription className="font-medium text-sm">
+                    <AlertDialogDescription className="font-bold text-sm">
                         Kode QR lama tidak akan bisa digunakan lagi setelah Anda membuat yang baru. Apakah Anda yakin ingin membuat kode QR baru?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-2">
-                    <AlertDialogCancel className="rounded-xl font-bold">Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleGenerateNewQr} className="rounded-xl font-bold bg-primary hover:bg-primary/90">Ya, buat baru</AlertDialogAction>
+                    <AlertDialogCancel className="rounded-xl font-bold shadow-none">Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleGenerateNewQr} className="rounded-xl font-bold bg-primary hover:bg-primary/90 shadow-none">Ya, buat baru</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 border-t p-4 sm:p-6 bg-muted/5">
-          <Button variant="outline" className="w-full rounded-xl font-bold h-11" onClick={downloadQRCode} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />Unduh PNG</Button>
+          <Button variant="outline" className="w-full rounded-xl font-bold h-11 shadow-none" onClick={downloadQRCode} disabled={isQrLoading}><Download className="mr-2 h-4 w-4" />Unduh PNG</Button>
         </CardFooter>
       </Card>
 
-      <Card className="lg:col-span-2 overflow-hidden border shadow-none">
+      <Card className="lg:col-span-2 overflow-hidden border shadow-none rounded-3xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
           <CardTitle className="font-bold text-sm tracking-tight">Pengaturan umum</CardTitle>
           <CardDescription className="text-muted-foreground font-medium">Atur parameter sistem absensi sekolah.</CardDescription>
@@ -539,7 +520,7 @@ export default function KonfigurasiAbsenPage() {
               <div className="flex items-center justify-between">
                   <div>
                       <Label htmlFor="holiday-mode" className="font-bold text-sm">Nonaktifkan absensi</Label>
-                      <p className="text-xs text-muted-foreground">Sistem absensi akan dinonaktifkan sementara untuk semua.</p>
+                      <p className="text-xs text-muted-foreground font-bold">Sistem absensi akan dinonaktifkan sementara untuk semua.</p>
                   </div>
                   <Switch
                       id="holiday-mode"
@@ -549,9 +530,7 @@ export default function KonfigurasiAbsenPage() {
               </div>
               <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
                   <Label className='text-xs font-bold opacity-70'>Hari libur rutin</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Pilih hari libur mingguan tetap.
-                  </p>
+                  <p className="text-xs text-muted-foreground font-bold">Pilih hari libur mingguan tetap.</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {daysOfWeek.map(day => (
                         <div key={day.value} className="flex items-center space-x-2">
@@ -572,7 +551,7 @@ export default function KonfigurasiAbsenPage() {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="use-location" className="font-bold text-sm">Validasi lokasi (GPS)</Label>
-                <p className="text-xs text-muted-foreground">Wajibkan pengguna berada di area sekolah.</p>
+                <p className="text-xs text-muted-foreground font-bold">Wajibkan pengguna berada di area sekolah.</p>
               </div>
               <Switch id="use-location" checked={useLocationValidation} onCheckedChange={setUseLocationValidation} disabled={holidayMode} />
             </div>
@@ -581,7 +560,7 @@ export default function KonfigurasiAbsenPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-4">
                     <Label className="text-xs font-bold">Koordinat sekolah</Label>
-                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-bold" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
+                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-bold shadow-none" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
                       {isLocating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <LocateFixed className="mr-2 h-3 w-3" />}
                       Dapatkan lokasi
                     </Button>
@@ -589,27 +568,17 @@ export default function KonfigurasiAbsenPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <Label htmlFor="latitude" className="text-[10px] font-bold text-muted-foreground">Latitude</Label>
-                        <Input id="latitude" type="text" className="h-10 rounded-xl bg-muted/30" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="-8.58333" disabled={holidayMode || isLocating} />
+                        <Input id="latitude" type="text" className="h-10 rounded-xl bg-muted/30 font-bold shadow-none" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="-8.58333" disabled={holidayMode || isLocating} />
                     </div>
                     <div>
                         <Label htmlFor="longitude" className="text-[10px] font-bold text-muted-foreground">Longitude</Label>
-                        <Input id="longitude" type="text" className="h-10 rounded-xl bg-muted/30" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="120.46667" disabled={holidayMode || isLocating} />
+                        <Input id="longitude" type="text" className="h-10 rounded-xl bg-muted/30 font-bold shadow-none" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="120.46667" disabled={holidayMode || isLocating} />
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="radius" className="text-xs font-bold">Radius sekolah (Meter)</Label>
-                  <Input id="radius" type="number" className="h-10 rounded-xl bg-muted/30" value={radius} onChange={(e) => setRadius(Number(e.target.value))} placeholder="100" disabled={holidayMode} />
-                </div>
-                <div className="aspect-video w-full overflow-hidden rounded-2xl border shadow-none">
-                    <iframe
-                      key={`${latitude}-${longitude}`}
-                      width="100%"
-                      height="100%"
-                      loading="lazy"
-                      src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=id&z=15&output=embed`}
-                      title="Pratinjau lokasi"
-                    ></iframe>
+                  <Input id="radius" type="number" className="h-10 rounded-xl bg-muted/30 font-bold shadow-none" value={radius} onChange={(e) => setRadius(Number(e.target.value))} placeholder="100" disabled={holidayMode} />
                 </div>
               </div>
             )}
@@ -619,27 +588,23 @@ export default function KonfigurasiAbsenPage() {
               <div className="flex items-center justify-between">
                   <div>
                       <Label htmlFor="use-time" className="font-bold text-sm">Validasi jam kerja</Label>
-                      <p className="text-xs text-muted-foreground">Wajibkan pengguna absen sesuai jadwal.</p>
+                      <p className="text-xs text-muted-foreground font-bold">Wajibkan pengguna absen sesuai jadwal.</p>
                   </div>
                   <Switch id="use-time" checked={useTimeValidation} onCheckedChange={setUseTimeValidation} disabled={holidayMode} />
               </div>
               {useTimeValidation && (
                   <div className="space-y-6 pt-4 border-t border-muted-foreground/10">
                       <div className="space-y-4">
-                          <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Masuk (Global)</Label>
+                          <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Masuk</Label>
                           <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-1.5">
                                   <Label htmlFor="checkin-start" className="text-[10px] font-bold">Mulai masuk</Label>
-                                  <Input id="checkin-start" type="time" className="rounded-xl h-10 bg-muted/30" value={checkInStart} onChange={e => setCheckInStart(e.target.value)} disabled={holidayMode} />
+                                  <Input id="checkin-start" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInStart} onChange={e => setCheckInStart(e.target.value)} disabled={holidayMode} />
                               </div>
                               <div className="space-y-1.5">
                                   <Label htmlFor="checkin-end" className="text-[10px] font-bold">Selesai masuk</Label>
-                                  <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
+                                  <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
                               </div>
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="late-tolerance" className="text-xs font-bold">Toleransi terlambat (Menit)</Label>
-                              <Input id="late-tolerance" type="number" className="rounded-xl h-10 bg-muted/30" value={lateTolerance} onChange={e => setLateTolerance(Number(e.target.value))} placeholder="15" disabled={holidayMode} />
                           </div>
                       </div>
 
@@ -648,7 +613,7 @@ export default function KonfigurasiAbsenPage() {
                             <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Pulang Spesifik</Label>
                             <Clock className="h-4 w-4 text-primary opacity-50" />
                           </div>
-                          <p className="text-[10px] text-muted-foreground font-medium">Atur jam pulang berbeda untuk setiap hari.</p>
+                          <p className="text-[10px] text-muted-foreground font-bold">Atur jam pulang berbeda untuk setiap hari.</p>
                           
                           <Accordion type="single" collapsible className="w-full">
                               {daysOfWeek.map((day) => (
@@ -667,7 +632,7 @@ export default function KonfigurasiAbsenPage() {
                                                   <Label className="text-[10px] font-bold">Mulai pulang</Label>
                                                   <Input 
                                                       type="time" 
-                                                      className="rounded-xl h-10 bg-muted/30" 
+                                                      className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
                                                       value={dailyCheckOutTimes[day.value]?.start || checkOutStart} 
                                                       onChange={e => handleDailyCheckOutChange(day.value.toString(), 'start', e.target.value)}
                                                       disabled={holidayMode || offDays.includes(day.value)}
@@ -677,7 +642,7 @@ export default function KonfigurasiAbsenPage() {
                                                   <Label className="text-[10px] font-bold">Selesai pulang</Label>
                                                   <Input 
                                                       type="time" 
-                                                      className="rounded-xl h-10 bg-muted/30" 
+                                                      className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
                                                       value={dailyCheckOutTimes[day.value]?.end || checkOutEnd} 
                                                       onChange={e => handleDailyCheckOutChange(day.value.toString(), 'end', e.target.value)}
                                                       disabled={holidayMode || offDays.includes(day.value)}

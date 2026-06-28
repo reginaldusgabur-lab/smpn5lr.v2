@@ -56,7 +56,7 @@ export default function SchoolReportPage() {
     const { data: schoolConfigData } = useDoc(user, schoolConfigRef);
 
     const loadData = useCallback(async () => {
-        if (!firestore || !user) return;
+        if (!firestore || !user || !isMounted.current) return;
         setIsReportLoading(true);
         setError(null);
         try {
@@ -122,17 +122,10 @@ export default function SchoolReportPage() {
                 const uAtt = attendanceByUserId[u.id] || [];
                 const uLeave = leaveByUserId[u.id] || [];
 
-                const approvedEarlyLeaveDates = new Set(
-                    uLeave.filter(l => l.type === 'Pulang Cepat').map(l => format(l.startDate.toDate(), 'yyyy-MM-dd'))
-                );
-
                 const hadirScore = uAtt.reduce((total, att) => {
                     const attDateStr = format(att.checkInTime.toDate(), 'yyyy-MM-dd');
                     if (!workingDaysSet.has(attDateStr)) return total;
-                    if (att.checkInTime && att.checkOutTime) return total + 1;
-                    if (att.checkInTime && approvedEarlyLeaveDates.has(attDateStr)) return total + 1;
-                    if (att.checkInTime) return total + 0.5;
-                    return total;
+                    return total + 1; // Hadir/Dinas/Pulang Cepat = 1.0 poin
                 }, 0);
 
                 const attDates = new Set(uAtt.map(att => format(att.checkInTime.toDate(), 'yyyy-MM-dd')));
@@ -157,8 +150,9 @@ export default function SchoolReportPage() {
                     return !attDates.has(dayStr) && !leaveDatesSet.has(dayStr);
                 }).length;
 
-                const adjustedWorkingDays = workingDays.length - (izinCount + sakitCount);
-                const persentase = adjustedWorkingDays > 0 ? ((hadirScore / adjustedWorkingDays) * 100).toFixed(1) + '%' : '0%';
+                const denominator = Math.max(1, pastWorkingDays.length - (izinCount + sakitCount));
+                const persentaseRaw = (hadirScore / denominator) * 100;
+                const persentase = Math.min(persentaseRaw, 100).toFixed(1) + '%';
 
                 return {
                     uid: u.id,
@@ -182,8 +176,8 @@ export default function SchoolReportPage() {
                 setIsReportLoading(false);
             }
         } catch (err) { 
-            console.error("Load bulk report error:", err);
             if (isMounted.current) {
+                console.error("Load bulk report error:", err);
                 setError("Gagal memuat data laporan.");
                 setIsReportLoading(false);
             }
@@ -290,21 +284,9 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, currentY + 44);
 
-            const totalPages = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                doc.setPage(i);
-                doc.setLineWidth(0.2);
-                doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-                doc.setFontSize(8).setFont('times', 'italic');
-                doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
-                doc.setFontSize(9).setFont('times', 'normal');
-                doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-            }
-
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
             toast({ title: "Berhasil", description: "Laporan PDF berhasil diunduh." });
         } catch (err) {
-            console.error("Export PDF error:", err);
             toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membuat PDF." });
         } finally {
             setIsExporting(false);
@@ -315,22 +297,22 @@ export default function SchoolReportPage() {
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="px-4 md:px-0">
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Laporan Sekolah</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Laporan sekolah</h1>
                     <p className="text-muted-foreground mt-1 font-bold">Ringkasan kehadiran bulanan untuk seluruh personil aktif.</p>
                 </div>
 
                 <Card className="overflow-hidden border shadow-none rounded-3xl bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
-                        <CardTitle className="font-bold text-sm tracking-tight">Rekapitulasi Kehadiran</CardTitle>
+                        <CardTitle className="font-bold text-sm tracking-tight">Rekapitulasi kehadiran</CardTitle>
                         <CardDescription className="text-muted-foreground font-bold">Data kehadiran akumulatif seluruh personil bulan {monthName}.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-6 min-h-[500px]">
                         <div className="p-6 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">
                                 <div className="flex items-center gap-6">
-                                    <Button variant="outline" size="icon" className="rounded-full shrink-0 h-10 w-10" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                    <Button variant="outline" size="icon" className="rounded-full shrink-0 h-10 w-10 shadow-none" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                                     <span className="w-48 text-center font-bold text-2xl text-primary tracking-tight">{monthName}</span>
-                                    <Button variant="outline" size="icon" className="rounded-full shrink-0 h-10 w-10" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+                                    <Button variant="outline" size="icon" className="rounded-full shrink-0 h-10 w-10 shadow-none" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                                 <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent mt-2" />
                             </div>
@@ -340,11 +322,11 @@ export default function SchoolReportPage() {
                                     <div className="w-full sm:w-[180px] relative group">
                                         <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10 pointer-events-none transition-colors" />
                                         <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                            <SelectTrigger className="pl-11 h-12 rounded-2xl bg-muted/40 border-muted-foreground/10 focus:ring-primary focus:bg-background transition-all">
+                                            <SelectTrigger className="pl-11 h-12 rounded-2xl bg-muted/40 border-muted-foreground/10 focus:ring-primary focus:bg-background transition-all shadow-none">
                                                 <SelectValue placeholder="Peran" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-2xl border-none shadow-2xl">
-                                                <SelectItem value="all" className='rounded-xl'>Semua Peran</SelectItem>
+                                                <SelectItem value="all" className='rounded-xl'>Semua peran</SelectItem>
                                                 <SelectItem value="guru" className='rounded-xl'>Guru</SelectItem>
                                                 <SelectItem value="pegawai" className='rounded-xl'>Pegawai</SelectItem>
                                                 <SelectItem value="kepala_sekolah" className='rounded-xl'>Kepala Sekolah</SelectItem>
@@ -355,7 +337,7 @@ export default function SchoolReportPage() {
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-primary z-10 pointer-events-none" />
                                         <Input 
                                             placeholder="Cari personil..." 
-                                            className="pl-12 h-12 rounded-2xl bg-muted/40 border-muted-foreground/10 focus:ring-primary focus:bg-background transition-all font-bold" 
+                                            className="pl-12 h-12 rounded-2xl bg-muted/40 border-muted-foreground/10 focus:ring-primary focus:bg-background transition-all font-bold shadow-none" 
                                             value={searchTerm} 
                                             onChange={e => setSearchTerm(e.target.value)} 
                                         />
@@ -429,7 +411,7 @@ export default function SchoolReportPage() {
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>
-                                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/10 active:scale-90 transition-all">
+                                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/10 active:scale-90 transition-all shadow-none">
                                                             <Eye className="h-5 w-5 text-primary" />
                                                         </Button>
                                                     </Link>

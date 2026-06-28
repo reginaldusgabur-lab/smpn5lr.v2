@@ -51,13 +51,14 @@ export default function DashboardPage() {
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
 
   const loadDashboardData = useCallback(async () => {
-    if (!firestore || !user) return;
+    if (!firestore || !user || !isMounted.current) return;
     try {
         const now = new Date();
         const [dailyStats, personalStats] = await Promise.all([
             getDailyStaffAttendanceStats(firestore),
             calculateAttendanceStats(firestore, user.uid, { start: startOfMonth(now), end: endOfMonth(now) })
         ]);
+        
         if (isMounted.current) {
             setStats(dailyStats);
             setPersonalSummary({
@@ -72,6 +73,7 @@ export default function DashboardPage() {
         }
     } catch (error) {
         if (isMounted.current) {
+            console.error("Dashboard data load error:", error);
             setIsStatsLoading(false);
             setIsPersonalSummaryLoading(false);
         }

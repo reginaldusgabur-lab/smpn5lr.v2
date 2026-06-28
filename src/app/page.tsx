@@ -61,17 +61,6 @@ export default function LoginPage() {
   const appLogo = PlaceHolderImages.find(p => p.id === 'app-logo');
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then(reg => {
-        if (reg && reg.waiting) {
-          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          window.location.reload();
-        }
-      });
-    }
-  }, []);
-
-  useEffect(() => {
     if (!isUserLoading && user) {
       router.replace('/dashboard');
     }
@@ -164,7 +153,7 @@ export default function LoginPage() {
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background focus:ring-primary/20 transition-all font-medium"
+                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background focus:ring-primary/20 transition-all font-bold shadow-none"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -191,14 +180,14 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background focus:ring-primary/20 transition-all font-medium"
+                              className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background focus:ring-primary/20 transition-all font-bold shadow-none"
                             />
                           </FormControl>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
+                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none"
                             onClick={() => setShowLoginPass(!showLoginPass)}
                           >
                             {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -215,11 +204,7 @@ export default function LoginPage() {
                   className="w-full h-14 text-sm font-bold rounded-2xl shadow-none transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-4 tracking-widest" 
                   disabled={isLoginLoading}
                 >
-                  {isLoginLoading ? (
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  ) : (
-                    "Masuk sekarang"
-                  )}
+                  {isLoginLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Masuk sekarang"}
                 </Button>
               </form>
             </Form>
@@ -252,7 +237,7 @@ export default function LoginPage() {
                           id="reset-email" 
                           placeholder="email@anda.com" 
                           {...field} 
-                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background"
+                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background shadow-none font-bold"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -266,11 +251,7 @@ export default function LoginPage() {
                   disabled={isResetLoading} 
                   className="w-full h-12 rounded-2xl font-bold tracking-widest shadow-none"
                 >
-                  {isResetLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    "Kirim link pemulihan"
-                  )}
+                  {isResetLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim link pemulihan"}
                 </Button>
               </DialogFooter>
             </form>

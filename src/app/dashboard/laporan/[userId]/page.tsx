@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, writeBatch, collection, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
@@ -62,6 +62,7 @@ export default function UserReportDetailPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const userId = params.userId as string;
+    const isMounted = useRef(true);
 
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData[]>([]);
@@ -73,30 +74,31 @@ export default function UserReportDetailPage() {
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
 
-    const fetchData = async () => {
-        if (!firestore || !userId || !schoolConfigData || !currentUser) return;
+    const fetchData = useCallback(async () => {
+        if (!firestore || !userId || !schoolConfigData || !currentUser || !isMounted.current) return;
         setIsLoading(true);
         setError(null);
         try {
             const userRef = doc(firestore, 'users', userId);
             const userSnap = await getDoc(userRef);
             if (!userSnap.exists()) throw new Error('Pengguna tidak ditemukan.');
-            setUserData(userSnap.data());
+            if (isMounted.current) setUserData(userSnap.data());
             const reportData = await fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData);
-            setMonthlyReportData(reportData);
+            if (isMounted.current) setMonthlyReportData(reportData);
         } catch (err: any) {
-            setError(err.message || 'Gagal memuat data laporan.');
+            if (isMounted.current) setError(err.message || 'Gagal memuat data laporan.');
         } finally {
-            setIsLoading(false);
+            if (isMounted.current) setIsLoading(false);
         }
-    };
-
-    useEffect(() => {
-        fetchData();
     }, [firestore, userId, currentMonth, schoolConfigData, currentUser]);
 
+    useEffect(() => {
+        isMounted.current = true;
+        fetchData();
+        return () => { isMounted.current = false; };
+    }, [fetchData]);
+
     const changeMonth = (amount: number) => {
-        setIsLoading(true);
         setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
     };
 
@@ -106,8 +108,10 @@ export default function UserReportDetailPage() {
         try {
             const targetDate = parseISO(dateStr);
             const batch = writeBatch(firestore);
+            const now = new Date();
+            const isPast = isBefore(startOfDay(targetDate), startOfDay(now));
             
-            // Logika baru: Dinas dan Pulang Cepat harus mengisi AttendanceRecord agar sinkron ke persentase
+            // Logika: Dinas dan Pulang Cepat harus mengisi AttendanceRecord agar sinkron ke persentase
             if (newStatus.includes('Dinas') || newStatus === 'Pulang Cepat') {
                 const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
                 const q = query(attendanceRef, where('date', '==', format(targetDate, 'yyyy-MM-dd')));
@@ -119,7 +123,7 @@ export default function UserReportDetailPage() {
                 const outEnd = schoolConfigData.checkOutEndTime || '16:00';
                 
                 const realInTime = getRandomTime(targetDate, inStart, inEnd);
-                let realOutTime: Date | null = getRandomTime(targetDate, outStart, outEnd);
+                let realOutTime: Date | null = isPast ? getRandomTime(targetDate, outStart, outEnd) : null;
                 
                 if (newStatus === 'Pulang Cepat') realOutTime = null;
 
@@ -148,10 +152,10 @@ export default function UserReportDetailPage() {
             }
 
             await batch.commit();
-            toast({ title: 'Berhasil', description: `Status berhasil diubah menjadi ${reason}.` });
+            toast({ title: 'Berhasil', description: `Status diperbarui menjadi ${reason}.` });
             fetchData();
         } catch (err) {
-            toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan saat mengubah status.' });
+            toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' });
         } finally {
             setIsMutating(false);
         }
@@ -162,6 +166,9 @@ export default function UserReportDetailPage() {
         setIsMutating(true);
         try {
             const targetDate = parseISO(dateStr);
+            const now = new Date();
+            const isPast = isBefore(startOfDay(targetDate), startOfDay(now));
+
             const inEnd = schoolConfigData.checkInEndTime || '08:00';
             const [endH, endM] = inEnd.split(':').map(Number);
             const baseLateTime = new Date(targetDate);
@@ -170,30 +177,27 @@ export default function UserReportDetailPage() {
 
             const outStart = schoolConfigData.checkOutStartTime || '14:00';
             const outEnd = schoolConfigData.checkOutEndTime || '15:00';
-            const realOutTime = getRandomTime(targetDate, outStart, outEnd);
+            const realOutTime = isPast ? getRandomTime(targetDate, outStart, outEnd) : null;
 
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const q = query(attendanceRef, where('date', '==', format(targetDate, 'yyyy-MM-dd')));
             const snap = await getDocs(q);
 
+            const data = {
+                userId, date: format(targetDate, 'yyyy-MM-dd'),
+                checkInTime: Timestamp.fromDate(realInTime),
+                checkOutTime: realOutTime ? Timestamp.fromDate(realOutTime) : null,
+                manualEntry: true, reasonForUpdate: 'Terlambat',
+                updatedBy: currentUser.uid, updatedAt: serverTimestamp()
+            };
+
             if (!snap.empty) {
-                await writeBatch(firestore).update(snap.docs[0].ref, {
-                    checkInTime: Timestamp.fromDate(realInTime),
-                    checkOutTime: Timestamp.fromDate(realOutTime),
-                    manualEntry: true, reasonForUpdate: 'Terlambat',
-                    updatedBy: currentUser.uid, updatedAt: serverTimestamp()
-                }).commit();
+                await writeBatch(firestore).update(snap.docs[0].ref, data).commit();
             } else {
-                await writeBatch(firestore).set(doc(attendanceRef), {
-                    userId, date: format(targetDate, 'yyyy-MM-dd'),
-                    checkInTime: Timestamp.fromDate(realInTime),
-                    checkOutTime: Timestamp.fromDate(realOutTime),
-                    manualEntry: true, reasonForUpdate: 'Terlambat',
-                    updatedBy: currentUser.uid, updatedAt: serverTimestamp()
-                }).commit();
+                await writeBatch(firestore).set(doc(attendanceRef), data).commit();
             }
 
-            toast({ title: 'Berhasil', description: 'Kehadiran ditandai sebagai terlambat.' });
+            toast({ title: 'Berhasil', description: 'Ditandai sebagai terlambat.' });
             fetchData();
         } catch (err) {
             toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' });
@@ -208,7 +212,7 @@ export default function UserReportDetailPage() {
         try {
             const targetDate = parseISO(dateStr);
             const now = new Date();
-            const isToday = isSameDay(targetDate, now);
+            const isPast = isBefore(startOfDay(targetDate), startOfDay(now));
 
             const inStart = schoolConfigData.checkInStartTime || '07:00';
             const inEnd = schoolConfigData.checkInEndTime || '07:30';
@@ -216,17 +220,7 @@ export default function UserReportDetailPage() {
 
             const outStart = schoolConfigData.checkOutStartTime || '14:00';
             const outEnd = schoolConfigData.checkOutEndTime || '16:00';
-            
-            let checkOutTime: Date | null = null;
-            const [outH, outM] = outStart.split(':').map(Number);
-            const checkOutLimit = setMinutes(setHours(new Date(now), outH), outM);
-
-            if (!isToday || (isToday && now >= checkOutLimit)) {
-                checkOutTime = getRandomTime(targetDate, outStart, outEnd);
-                if (checkOutTime.getTime() <= checkInTime.getTime()) {
-                    checkOutTime = addMinutes(checkInTime, 240);
-                }
-            }
+            const checkOutTime = isPast ? getRandomTime(targetDate, outStart, outEnd) : null;
 
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const q = query(attendanceRef, where('date', '==', format(targetDate, 'yyyy-MM-dd')));
@@ -234,31 +228,26 @@ export default function UserReportDetailPage() {
 
             const batch = writeBatch(firestore);
             const dataToSave = {
+                userId, date: format(targetDate, 'yyyy-MM-dd'),
+                checkInTime: Timestamp.fromDate(checkInTime), 
+                checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : null,
                 manualEntry: true,
                 reasonForUpdate: 'Kehadiran penuh',
                 updatedBy: currentUser.uid,
                 updatedAt: serverTimestamp()
-            } as any;
+            };
 
             if (!snap.empty) {
-                const existingData = snap.docs[0].data();
-                if (!existingData.checkInTime) dataToSave.checkInTime = Timestamp.fromDate(checkInTime);
-                if (!existingData.checkOutTime && checkOutTime) dataToSave.checkOutTime = Timestamp.fromDate(checkOutTime);
                 batch.update(snap.docs[0].ref, dataToSave);
             } else {
-                batch.set(doc(attendanceRef), {
-                    userId, date: format(targetDate, 'yyyy-MM-dd'),
-                    checkInTime: Timestamp.fromDate(checkInTime), 
-                    checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : null,
-                    ...dataToSave
-                });
+                batch.set(doc(attendanceRef), dataToSave);
             }
 
             await batch.commit();
-            toast({ title: 'Berhasil', description: 'Kehadiran ditandai sebagai hadir.' });
+            toast({ title: 'Berhasil', description: 'Ditandai sebagai hadir.' });
             fetchData();
         } catch (err) {
-            toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' });
+            toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan.' });
         } finally {
             setIsMutating(false);
         }
@@ -288,13 +277,9 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').setFontSize(14);
         let currentY = 58;
         doc.text(`LAPORAN KEHADIRAN INDIVIDU BULAN ${monthName.toUpperCase()}`, centerX, currentY, { align: 'center' });
-        if (config.academicYear) {
-            currentY += 7;
-            doc.text(`TAHUN AJARAN ${config.academicYear.toUpperCase()}`, centerX, currentY, { align: 'center' });
-        }
+        currentY += 15;
 
         doc.setFontSize(10).setFont('times', 'normal');
-        currentY += 15;
         doc.text(`Nama`, margin, currentY);
         doc.text(`: ${userData.name}`, margin + 40, currentY);
         currentY += 6;
@@ -304,8 +289,7 @@ export default function UserReportDetailPage() {
         doc.text(`Jabatan / Status`, margin, currentY);
         
         const displayRole = userData.role.replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        const jabStat = `${displayRole} / ${userData.position || '-'}`;
-        doc.text(`: ${jabStat}`, margin + 40, currentY);
+        doc.text(`: ${displayRole} / ${userData.position || '-'}`, margin + 40, currentY);
         currentY += 10;
 
         const tableRows = monthlyReportData.map((item, index) => [
@@ -333,13 +317,9 @@ export default function UserReportDetailPage() {
             }
         });
 
-        let finalTableY = (doc as any).lastAutoTable.finalY;
-        if (finalTableY > pageHeight - 65) {
-            doc.addPage();
-            finalTableY = 20;
-        }
+        let signY = (doc as any).lastAutoTable.finalY + 15;
+        if (signY > pageHeight - 65) { doc.addPage(); signY = 20; }
 
-        let signY = finalTableY + 15;
         const signatureX = pageWidth - 80;
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, signY);
@@ -349,17 +329,6 @@ export default function UserReportDetailPage() {
         doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signY + 38);
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${config.headmasterNip || '198507272011011020'}`, signatureX, signY + 44);
-
-        const totalPages = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.setLineWidth(0.2);
-            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-            doc.setFontSize(8).setFont('times', 'italic');
-            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
-            doc.setFontSize(9).setFont('times', 'normal');
-            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-        }
 
         doc.save(`Laporan_Individu_${userData.name.replace(/\s+/g, '_')}_${monthName.replace(' ', '_')}.pdf`);
     };
@@ -371,36 +340,25 @@ export default function UserReportDetailPage() {
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="px-4 md:px-0">
                     <div className="flex items-center gap-2 mb-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2" onClick={() => router.back()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 shadow-none" onClick={() => router.back()}>
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <h1 className="text-3xl font-bold tracking-tight">Detail Laporan Kehadiran</h1>
                     </div>
                     <div className="h-6 flex items-center">
-                        {!userData ? (
-                            <Skeleton className="h-4 w-64 ml-8 sm:ml-0" />
-                        ) : (
-                            <p className="text-muted-foreground ml-8 sm:ml-0">
-                                Laporan harian untuk <span className='font-bold text-foreground'>{userData?.name || 'Pengguna'}</span>.
-                            </p>
-                        )}
+                        {!userData ? <Skeleton className="h-4 w-64 ml-8 sm:ml-0" /> : <p className="text-muted-foreground ml-8 sm:ml-0 font-bold">Laporan harian untuk {userData.name}.</p>}
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border shadow-none">
+                <Card className="overflow-hidden border shadow-none rounded-3xl">
                     <CardContent className="p-0 sm:p-6">
                         <div className="p-4 space-y-4">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">
                                 <div className="flex items-center gap-4">
-                                    <Button variant="outline" size="icon" className="rounded-full" onClick={() => changeMonth(-1)} disabled={isLoading}>
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </Button>
+                                    <Button variant="outline" size="icon" className="rounded-full shadow-none" onClick={() => changeMonth(-1)} disabled={isLoading}><ChevronLeft className="h-4 w-4" /></Button>
                                     <span className="w-40 text-center font-bold text-lg">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                                    <Button variant="outline" size="icon" className="rounded-full" onClick={() => changeMonth(1)} disabled={isLoading || (currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear())}>
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
+                                    <Button variant="outline" size="icon" className="rounded-full shadow-none" onClick={() => changeMonth(1)} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4" /></Button>
                                 </div>
-                                <div className="w-full h-px bg-border mt-2" />
                             </div>
                             <div className="flex justify-center sm:justify-end">
                                 <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 shadow-none h-11 rounded-xl">
@@ -427,16 +385,16 @@ export default function UserReportDetailPage() {
                                         {isLoading ? (
                                             [...Array(8)].map((_, i) => (
                                                 <TableRow key={i} className="border-muted-foreground/5">
-                                                    <TableCell className="text-center"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
                                                     <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                                                    <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
-                                                    <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
-                                                    <TableCell className="text-center"><Skeleton className="h-5 w-20 mx-auto rounded-full" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                                                    <TableCell><Skeleton className="h-5 w-20 mx-auto rounded-full" /></TableCell>
                                                     <TableCell><Skeleton className="h-4 w-full" /></TableCell>
                                                 </TableRow>
                                             ))
                                         ) : error ? (
-                                            <TableRow><TableCell colSpan={6} className="h-48 text-center text-destructive"><AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" /><p>{error}</p></TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={6} className="h-48 text-center text-destructive font-bold"><AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" /><p>{error}</p></TableCell></TableRow>
                                         ) : monthlyReportData.length > 0 ? (
                                             monthlyReportData.map((item, index) => (
                                                 <TableRow key={item.id} className={`${item.status === 'Alpa' ? 'bg-destructive/5' : ''} border-muted-foreground/5 hover:bg-muted/20 transition-colors`}>
@@ -448,17 +406,14 @@ export default function UserReportDetailPage() {
                                                         {isAdmin && (item.status === 'Alpa' || item.description === 'Tidak absen pulang' || item.description === 'Belum absen pulang') ? (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="outline" size="sm" className={`${item.status === 'Alpa' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'} hover:bg-muted font-bold text-[9px] h-7 rounded-lg shadow-none`}>
+                                                                    <Button variant="outline" size="sm" className={`${item.status === 'Alpa' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'} font-bold text-[9px] h-7 rounded-lg shadow-none`}>
                                                                         {item.status === 'Alpa' ? 'Alpa' : 'Hadir'} <MoreVertical className="h-3 w-3 ml-1" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-none border border-muted-foreground/10">
-                                                                    <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground">Perbaikan Kehadiran</DropdownMenuLabel>
-                                                                    <DropdownMenuSeparator />
+                                                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-none border border-muted-foreground/10 p-2">
                                                                     <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleSetHadir(item.date)}>Jadikan Hadir</DropdownMenuItem>
                                                                     <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleSetLate(item.date)}>Set Terlambat</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang Cepat')}>Pulang Cepat</DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuSeparator className='my-1 opacity-50' />
                                                                     <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Sakit</DropdownMenuItem>
                                                                     <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Izin Pribadi', 'Izin Pribadi')}>Izin Pribadi</DropdownMenuItem>
                                                                     <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleStatusChange(item.date, 'Dinas Pagi', 'Dinas Pagi')}>Dinas Pagi</DropdownMenuItem>
@@ -478,9 +433,7 @@ export default function UserReportDetailPage() {
                                                     <TableCell className="text-[11px] text-muted-foreground font-bold italic">{item.description || '-'}</TableCell>
                                                 </TableRow>
                                             ))
-                                        ) : (
-                                            <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold">Tidak ada data untuk periode ini.</TableCell></TableRow>
-                                        )}
+                                        ) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold">Tidak ada data untuk periode ini.</TableCell></TableRow>}
                                     </TableBody>
                                 </Table>
                             </div>
