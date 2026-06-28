@@ -6,8 +6,7 @@ import { RefreshCw, Sparkles } from 'lucide-react';
 
 /**
  * PwaUpdater mendeteksi jika Service Worker baru tersedia.
- * Tidak melakukan auto-reload saat dibuka untuk kenyamanan pengguna.
- * Pembaruan akan diterapkan saat tombol diklik atau pada sesi login berikutnya.
+ * Tombol "Perbarui" kini langsung berjalan di latar belakang tanpa reload otomatis saat Dashboard aktif.
  */
 const PwaUpdater = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -47,10 +46,8 @@ const PwaUpdater = () => {
       navigator.serviceWorker.getRegistration().then((reg) => {
         if (reg && reg.waiting) {
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          // Manual reload triggered by user
-          setTimeout(() => window.location.reload(), 200);
-        } else {
-          window.location.reload();
+          // Perubahan logo dan aset akan diterapkan pada login berikutnya 
+          // atau jika pengguna melakukan reload manual.
         }
       });
     }

@@ -79,7 +79,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const startDate = leave.startDate?.toDate();
         const endDate = leave.endDate?.toDate();
 
-        if (startDate && endDate && isWithinInterval(today, { start: startDate, end: endDate })) {
+        if (startDate && endDate && isWithinInterval(today, { start: startOfDay(startDate), end: endOfToday })) {
             const userId = leave.userId || doc.ref.parent.parent?.id;
             if (userId) {
                 if (!leaveStatusByUserId.has(userId) || leave.status === 'approved') {

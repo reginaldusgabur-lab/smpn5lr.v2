@@ -92,6 +92,89 @@ export default function DashboardPage() {
     { name: 'Alpa', value: personalSummary.alpa, color: '#ef4444' },
   ], [personalSummary]);
 
+  const renderAttendanceButton = () => {
+    const record = todaysAttendance?.[0];
+    const isCheckedIn = !!record?.checkInTime;
+    const isCheckedOut = !!record?.checkOutTime;
+
+    const disabledStyle = "w-full bg-primary/5 text-primary/40 border border-primary/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none";
+
+    if (windowStatus === 'LOADING' || isAttendanceLoading) {
+        return (
+            <div className={disabledStyle}>
+                <Clock className="mr-2 h-4 w-4 animate-spin" /> 
+                Memuat data...
+            </div>
+        );
+    }
+
+    if (windowStatus === 'SESSION_INACTIVE') {
+        return (
+            <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm">
+                <Lock className="mr-2 h-4 w-4" /> 
+                Sistem nonaktif / Hari libur
+            </div>
+        );
+    }
+
+    if (isCheckedOut) {
+        return (
+            <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm tracking-wide">
+                <Sparkles className="mr-2 w-4 h-4" /> 
+                Absensi selesai
+            </div>
+        );
+    }
+
+    if (!isCheckedIn) {
+        if (windowStatus === 'BEFORE_IN') {
+            return (
+                <div className={disabledStyle}>
+                    <Clock className="mr-2 h-4 w-4" /> 
+                    Belum waktu jam masuk
+                </div>
+            );
+        }
+        if (windowStatus === 'CHECK_IN_OPEN') {
+            return (
+                <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all">
+                    <Link href="/dashboard/absen">Absen masuk sekarang</Link>
+                </Button>
+            );
+        }
+        return (
+            <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm">
+                <AlertCircle className="mr-2 h-4 w-4" /> 
+                Batas jam masuk berakhir
+            </div>
+        );
+    }
+
+    if (windowStatus === 'CHECK_OUT_OPEN') {
+        return (
+            <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all">
+                <Link href="/dashboard/absen">Absen pulang sekarang</Link>
+            </Button>
+        );
+    }
+    
+    if (windowStatus === 'AFTER_IN' || windowStatus === 'CHECK_IN_OPEN') {
+        return (
+            <div className={disabledStyle}>
+                <Clock className="mr-2 h-4 w-4" /> 
+                Belum waktu jam pulang
+            </div>
+        );
+    }
+    
+    return (
+        <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm">
+            <AlertCircle className="mr-2 h-4 w-4" /> 
+            Waktu absen pulang berakhir
+        </div>
+    );
+  };
+
   if (isUserLoading) {
     return (
         <div className="w-full space-y-6 animate-pulse p-4">
@@ -110,45 +193,6 @@ export default function DashboardPage() {
   const role = user?.role;
   const isAdminOrKepsek = role === 'admin' || role === 'kepala_sekolah';
   const isStaff = role === 'guru' || role === 'pegawai' || role === 'siswa' || role === 'kepala_sekolah';
-
-  const renderAttendanceButton = () => {
-    const record = todaysAttendance?.[0];
-    const isCheckedIn = !!record?.checkInTime;
-    const isCheckedOut = !!record?.checkOutTime;
-
-    const disabledStyle = "w-full bg-primary/5 text-primary/40 border border-primary/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none";
-
-    if (windowStatus === 'LOADING' || isAttendanceLoading) {
-        return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat data...</div>;
-    }
-
-    if (windowStatus === 'SESSION_INACTIVE') {
-        return <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm"><Lock className="mr-2 h-4 w-4" /> Sistem nonaktif / Hari libur</div>;
-    }
-
-    if (isCheckedOut) {
-        return <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm tracking-wide"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
-    }
-
-    if (!isCheckedIn) {
-        if (windowStatus === 'BEFORE_IN') {
-            return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
-        }
-        if (windowStatus === 'CHECK_IN_OPEN') {
-            return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all"><Link href="/dashboard/absen">Absen masuk sekarang</Link></Button>;
-        }
-        return <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
-    }
-
-    if (windowStatus === 'CHECK_OUT_OPEN') {
-        return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all"><Link href="/dashboard/absen">Absen pulang sekarang</Link></Button>;
-    }
-    if (windowStatus === 'AFTER_IN' || windowStatus === 'CHECK_IN_OPEN') {
-        return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam pulang</div>;
-    }
-    
-    return <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Waktu absen pulang berakhir</div>;
-  };
 
   return (
     <div className="w-full space-y-6 pb-10 flex flex-col items-stretch">
@@ -288,7 +332,7 @@ export default function DashboardPage() {
                             <CardContent className="p-6">
                                 <div className="text-3xl font-bold text-amber-700 dark:text-amber-400">{isStatsLoading ? '...' : stats.pending}</div>
                             </CardContent>
-                        </Link>
+                        </Card>
                     </Link>
                 </div>
                 

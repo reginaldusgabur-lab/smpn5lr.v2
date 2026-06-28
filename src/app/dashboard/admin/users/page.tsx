@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 
@@ -215,7 +214,7 @@ export default function AdminUsersPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 md:px-0">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">Manajemen Pengguna</h1>
-                        <p className="text-muted-foreground mt-1 font-medium">Kelola data personil sekolah dengan mudah.</p>
+                        <p className="text-muted-foreground mt-1 font-semibold">Kelola data personil sekolah dengan mudah.</p>
                     </div>
                     <Button size="lg" className="font-bold rounded-xl h-12 shadow-sm active:scale-95 transition-all bg-primary hover:bg-primary/90" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
                         <PlusCircle className="mr-2 h-5 w-5" />
@@ -226,7 +225,7 @@ export default function AdminUsersPage() {
                 <Card className="w-full border shadow-sm rounded-3xl overflow-hidden bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
                         <CardTitle className="font-bold text-sm tracking-tight">Daftar Pengguna Sistem</CardTitle>
-                        <CardDescription className="text-muted-foreground font-medium">Informasi akun dan hak akses pengguna aktif.</CardDescription>
+                        <CardDescription className="text-muted-foreground font-semibold">Informasi akun dan hak akses pengguna aktif.</CardDescription>
                     </CardHeader>
                     <CardContent className="py-6 min-h-[400px]">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 px-2 sm:px-0">
@@ -332,7 +331,7 @@ export default function AdminUsersPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-medium">
+                                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-semibold">
                                                 Tidak ada data personil ditemukan.
                                             </TableCell>
                                         </TableRow>
@@ -351,7 +350,7 @@ export default function AdminUsersPage() {
                         <DialogTitle className="text-xl font-bold text-primary">
                             {editingUser ? 'Perbarui Data' : 'Tambah Personil'}
                         </DialogTitle>
-                        <DialogDescription className="text-xs font-medium text-muted-foreground">
+                        <DialogDescription className="text-xs font-semibold text-muted-foreground">
                             {editingUser ? `Mengubah informasi data untuk ${editingUser.name}.` : 'Masukkan detail akun untuk personil baru sekolah.'}
                         </DialogDescription>
                     </DialogHeader>
@@ -451,7 +450,7 @@ export default function AdminUsersPage() {
                             <AlertCircle className="h-6 w-6" />
                             <AlertDialogTitle className="text-xl font-bold">Hapus Pengguna?</AlertDialogTitle>
                         </div>
-                        <AlertDialogDescription className="text-sm font-medium">
+                        <AlertDialogDescription className="text-sm font-semibold">
                             Tindakan ini akan menghapus data <span className="font-bold text-foreground">{userToDelete?.name}</span> secara permanen dari database.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
