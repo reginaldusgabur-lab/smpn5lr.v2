@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, Sparkles } from 'lucide-react';
 
 /**
- * PwaUpdater mendeteksi jika Service Worker baru telah terinstal dan menunggu untuk diaktifkan.
+ * PwaUpdater mendeteksi jika Service Worker baru (versi logo/manifest baru) tersedia.
  * Saat diklik, notifikasi langsung hilang dan pembaruan berjalan di latar belakang.
  */
 const PwaUpdater = () => {
@@ -19,7 +19,10 @@ const PwaUpdater = () => {
 
       // Event ini terpicu saat SW baru mengambil alih kontrol (setelah skipWaiting)
       sw.addEventListener('controllerchange', () => {
-        window.location.reload();
+        // Melakukan reload hanya jika sudah dipicu oleh tombol
+        if (isHiding) {
+            window.location.reload();
+        }
       });
 
       const checkUpdate = async () => {
@@ -47,7 +50,7 @@ const PwaUpdater = () => {
 
       checkUpdate();
     }
-  }, []);
+  }, [isHiding]);
 
   const handleUpdate = () => {
     // Langsung sembunyikan UI agar terasa "berjalan di latar belakang"
@@ -57,15 +60,17 @@ const PwaUpdater = () => {
       navigator.serviceWorker.getRegistration().then((reg) => {
         if (reg && reg.waiting) {
           // Kirim pesan ke SW baru untuk melompati fase waiting (skipWaiting)
+          // Ini akan memastikan manifest dan logo baru diterapkan
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         } else {
+            // Jika tidak ada yang waiting, tetap reload untuk memastikan aset segar
             window.location.reload();
         }
       });
     }
   };
 
-  // Jika tidak ada update, atau sedang dalam proses sembunyi, jangan tampilkan apa-apa
+  // Jangan tampilkan jika tidak ada update, atau sedang diproses di latar belakang
   if (!updateAvailable || isHiding) return null;
 
   return (

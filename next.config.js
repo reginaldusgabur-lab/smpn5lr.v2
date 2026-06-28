@@ -8,7 +8,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
-    // Diubah ke false agar kita bisa menampilkan prompt "Update Available"
+    // Tetap false agar PwaUpdater bisa memicu sinkronisasi logo secara manual/proaktif
     skipWaiting: false, 
     clientsClaim: true,
   },
