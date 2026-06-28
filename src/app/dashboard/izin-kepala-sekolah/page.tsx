@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const ApprovalTableSkeleton = () => (
-    <div className="rounded-md border">
+    <div className="rounded-md border border-muted-foreground/10">
         <Table>
             <TableHeader>
                 <TableRow>
@@ -150,10 +150,10 @@ export default function IzinKepalaSekolahPage() {
         return (
             <div className="flex-1 pt-4 pb-24 md:p-8">
                 <div className="max-w-7xl mx-auto">
-                    <Alert variant="destructive">
+                    <Alert variant="destructive" className="rounded-3xl border-none">
                         <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>Akses Ditolak</AlertTitle>
-                        <AlertDescription>Halaman ini hanya dapat diakses oleh Kepala Sekolah.</AlertDescription>
+                        <AlertTitle className="font-bold">Akses ditolak</AlertTitle>
+                        <AlertDescription className="font-bold">Halaman ini hanya dapat diakses oleh Kepala Sekolah.</AlertDescription>
                     </Alert>
                 </div>
             </div>
@@ -165,22 +165,22 @@ export default function IzinKepalaSekolahPage() {
             <div className="max-w-7xl mx-auto space-y-6">
                 
                 <div className="px-4 md:px-0">
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Persetujuan Izin</h1>
-                    <p className="text-muted-foreground mt-1 font-medium">Tinjau dan proses permintaan izin atau sakit yang diajukan oleh guru dan pegawai.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Persetujuan izin</h1>
+                    <p className="text-muted-foreground mt-1 font-bold">Tinjau dan proses permintaan izin atau sakit yang diajukan oleh guru dan pegawai.</p>
                 </div>
 
-                <Card className="overflow-hidden border shadow-none rounded-3xl bg-card">
+                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-3xl bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
-                        <CardTitle className="font-black text-xs uppercase tracking-widest">Daftar Pengajuan Izin</CardTitle>
-                        <CardDescription className="text-muted-foreground font-medium pt-1">Menunggu peninjauan dan persetujuan Kepala Sekolah.</CardDescription>
-                    </Header>
+                        <CardTitle className="font-bold text-sm tracking-tight uppercase tracking-widest">Daftar pengajuan izin</CardTitle>
+                        <CardDescription className="text-muted-foreground font-bold pt-1">Menunggu peninjauan dan persetujuan Kepala Sekolah.</CardDescription>
+                    </CardHeader>
                     <CardContent className="p-0 sm:p-6 min-h-[400px]">
                         {error ? (
                             <div className="p-8 text-center">
-                                <Alert variant="destructive" className="rounded-2xl">
+                                <Alert variant="destructive" className="rounded-2xl border-none">
                                     <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>Error</AlertTitle>
-                                    <AlertDescription>{error}</AlertDescription>
+                                    <AlertTitle className="font-bold">Error</AlertTitle>
+                                    <AlertDescription className="font-bold">{error}</AlertDescription>
                                 </Alert>
                             </div>
                         ) : (isLoadingData || isUserLoading) ? (
@@ -194,8 +194,8 @@ export default function IzinKepalaSekolahPage() {
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center py-20 px-4 text-muted-foreground">
                                 <Inbox className="h-12 w-12 mb-4 opacity-20" />
-                                <h3 className="text-lg font-bold text-foreground">Tidak Ada Permintaan</h3>
-                                <p className="text-xs font-medium">Semua permintaan izin dan sakit telah diproses.</p>
+                                <h3 className="text-lg font-bold text-foreground">Tidak ada permintaan</h3>
+                                <p className="text-xs font-bold">Semua permintaan izin dan sakit telah diproses.</p>
                             </div>
                         )}
                     </CardContent>

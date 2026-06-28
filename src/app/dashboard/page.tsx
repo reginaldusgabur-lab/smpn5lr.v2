@@ -149,7 +149,7 @@ export default function DashboardPage() {
 
         {isStaff && (
             <div className="w-full space-y-6 flex flex-col items-stretch">
-                <Card className="w-full border shadow-none rounded-3xl overflow-hidden bg-card">
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden bg-card">
                     <CardHeader className="p-6 text-primary border-b border-muted-foreground/5 text-center"><CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">Kehadiran Anda hari ini</CardTitle></CardHeader>
                     <CardContent className="p-6 space-y-4 pt-4">
                         <LiveClockUI />
@@ -164,7 +164,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="w-full border shadow-none rounded-3xl overflow-hidden bg-card">
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden bg-card">
                     <CardHeader className="p-6 text-primary border-b border-muted-foreground/5"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><TrendingUp className="w-5 h-5" /><h2 className="text-xs font-bold tracking-widest">Ringkasan bulanan</h2></div><p className="text-[10px] font-bold tracking-widest opacity-80 bg-primary/10 px-2 py-1 rounded-lg">Skor: {isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</p></div></CardHeader>
                     <CardContent className="p-6 pt-8"><div className="w-full h-44">{isPersonalSummaryLoading ? <Skeleton className="h-full w-full rounded-2xl" /> : <ResponsiveContainer width="100%" height="100%"><BarChart data={chartData} margin={{ top: 0, right: 0, left: -40, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'currentColor' }} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} allowDecimals={false} /><Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ borderRadius: '12px', border: 'none', shadow: 'none', fontSize: '11px', fontWeight: 'bold' }} /><Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>{chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Bar></BarChart></ResponsiveContainer>}</div></CardContent>
                 </Card>

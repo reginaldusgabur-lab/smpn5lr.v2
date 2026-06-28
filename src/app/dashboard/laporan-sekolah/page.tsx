@@ -308,13 +308,13 @@ export default function SchoolReportPage() {
 
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
-            <div className="max-7xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-6">
                 <div className="px-4 md:px-0">
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Laporan sekolah</h1>
                     <p className="text-muted-foreground mt-1 font-bold">Ringkasan kehadiran bulanan untuk seluruh personil aktif.</p>
                 </div>
 
-                <Card className="overflow-hidden border shadow-none rounded-3xl bg-card">
+                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-3xl bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
                         <CardTitle className="font-bold text-sm tracking-tight">Rekapitulasi kehadiran</CardTitle>
                         <CardDescription className="text-muted-foreground font-bold">Data kehadiran akumulatif seluruh personil bulan {monthName}.</CardDescription>
