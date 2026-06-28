@@ -142,7 +142,7 @@ export default function LoginPage() {
               </div>
             </div>
             <CardTitle className="text-4xl font-bold tracking-tighter text-primary">E-SPENLI</CardTitle>
-            <CardDescription className="font-semibold text-muted-foreground/80 tracking-tight">SMPN 5 LANGKE REMBONG</CardDescription>
+            <CardDescription className="font-semibold text-muted-foreground/80 tracking-tight">SMPN 5 Langke Rembong</CardDescription>
           </CardHeader>
           <CardContent className="px-10 pb-10">
             <Form {...loginForm}>
@@ -152,7 +152,7 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email Address</Label>
+                      <Label className="text-[10px] font-bold tracking-widest text-muted-foreground ml-1">Alamat Email</Label>
                       <FormControl>
                         <Input 
                           placeholder="nama@email.com" 
@@ -166,10 +166,10 @@ export default function LoginPage() {
                 />
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between mb-1">
-                    <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
+                    <Label htmlFor="password" className="text-[10px] font-bold tracking-widest text-muted-foreground ml-1">Kata Sandi</Label>
                     <DialogTrigger asChild>
-                      <button type="button" className="text-[10px] font-bold text-primary hover:opacity-70 transition-opacity uppercase tracking-widest">
-                        Lupa?
+                      <button type="button" className="text-[10px] font-bold text-primary hover:opacity-70 transition-opacity tracking-widest">
+                        Lupa sandi?
                       </button>
                     </DialogTrigger>
                   </div>
@@ -205,7 +205,7 @@ export default function LoginPage() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-14 text-sm font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-4 uppercase tracking-widest" 
+                  className="w-full h-14 text-sm font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-4 tracking-widest" 
                   disabled={isLoginLoading}
                 >
                   {isLoginLoading ? (
@@ -218,8 +218,8 @@ export default function LoginPage() {
             </Form>
           </CardContent>
           <CardFooter className="flex-col items-center justify-center bg-muted/20 py-6 px-10 border-t border-muted-foreground/5">
-            <p className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              Aplikasi Absensi Digital Resmi
+            <p className="text-center text-[10px] font-bold text-muted-foreground tracking-widest">
+              Aplikasi absensi digital resmi
             </p>
           </CardFooter>
         </Card>
@@ -239,7 +239,7 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="reset-email" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email Terdaftar</Label>
+                      <Label htmlFor="reset-email" className="text-[10px] font-bold tracking-widest text-muted-foreground ml-1">Email Terdaftar</Label>
                       <FormControl>
                         <Input 
                           id="reset-email" 
@@ -257,7 +257,7 @@ export default function LoginPage() {
                 <Button 
                   type="submit" 
                   disabled={isResetLoading} 
-                  className="w-full h-12 rounded-2xl font-bold uppercase tracking-widest shadow-lg"
+                  className="w-full h-12 rounded-2xl font-bold tracking-widest shadow-lg"
                 >
                   {isResetLoading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -270,7 +270,7 @@ export default function LoginPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      <footer className="mt-10 text-center text-[10px] font-bold text-muted-foreground/40 leading-relaxed uppercase tracking-[0.2em]">
+      <footer className="mt-10 text-center text-[10px] font-bold text-muted-foreground/40 leading-relaxed tracking-[0.2em]">
         ©2026 SMPN 5 LANGKE REMBONG <br /> 
         <span className="text-primary/40">Powered by Team Operator</span>
       </footer>

@@ -186,7 +186,7 @@ const AbsentUsersTable = () => {
             <AlertTriangle className="h-5 w-5" />
             <CardTitle className="font-bold text-sm tracking-tight">Daftar Ketidakhadiran</CardTitle>
           </div>
-          <p className="text-[10px] font-bold uppercase opacity-80 tracking-widest bg-destructive/10 px-3 py-1 rounded-lg">Staf Tanpa Absen & Izin</p>
+          <p className="text-[10px] font-bold tracking-widest bg-destructive/10 px-3 py-1 rounded-lg">Staf tanpa absen & izin</p>
         </CardHeader>
         <CardContent className="p-0">
           {!isHoliday && absentUsers.length > 0 ? (
@@ -194,9 +194,9 @@ const AbsentUsersTable = () => {
               <Table>
                   <TableHeader className="bg-destructive/5">
                   <TableRow className="border-none">
-                      <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-destructive">No</TableHead>
-                      <TableHead className="font-bold text-[10px] uppercase tracking-widest text-destructive">Nama & Posisi</TableHead>
-                      <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-destructive">Status</TableHead>
+                      <TableHead className="w-[60px] text-center font-bold text-[10px] tracking-widest text-destructive">No</TableHead>
+                      <TableHead className="font-bold text-[10px] tracking-widest text-destructive">Nama & Posisi</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] tracking-widest text-destructive">Status</TableHead>
                   </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -205,10 +205,10 @@ const AbsentUsersTable = () => {
                       <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                       <TableCell>
                           <div className="font-bold text-sm text-foreground">{user.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-bold tracking-tight uppercase">{user.position}</div>
+                          <div className="text-[10px] text-muted-foreground font-bold tracking-tight">{user.position}</div>
                       </TableCell>
                       <TableCell className="text-center">
-                          <Badge variant={getBadgeVariant(user.status)} className="text-[9px] font-bold uppercase px-3">
+                          <Badge variant={getBadgeVariant(user.status)} className="text-[9px] font-bold px-3">
                               {user.status}
                           </Badge>
                       </TableCell>

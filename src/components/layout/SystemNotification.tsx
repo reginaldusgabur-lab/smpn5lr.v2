@@ -103,7 +103,7 @@ export function SystemNotification() {
             )}
           >
             <CheckCircle2 className="mr-2 h-4 w-4" />
-            Saya Mengerti
+            Saya mengerti
           </Button>
         </div>
       </div>
