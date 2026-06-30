@@ -12,8 +12,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchUserMonthlyReportData, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, AlertCircle, ArrowLeft, Loader2, MoreVertical } from 'lucide-react';
+import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
+import { Download, ChevronLeft, ChevronRight, AlertCircle, ArrowLeft, Loader2, MoreVertical, TrendingUp } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +66,7 @@ export default function UserReportDetailPage() {
 
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData[]>([]);
+    const [stats, setStats] = useState<{ persentase: string } | null>(null);
     const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isMutating, setIsMutating] = useState(false);
@@ -80,11 +81,18 @@ export default function UserReportDetailPage() {
         setError(null);
         try {
             const userRef = doc(firestore, 'users', userId);
-            const userSnap = await getDoc(userRef);
+            const [userSnap, reportData, reportStats] = await Promise.all([
+                getDoc(userRef),
+                fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData),
+                calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })
+            ]);
+
             if (!userSnap.exists()) throw new Error('Pengguna tidak ditemukan.');
-            if (isMounted.current) setUserData(userSnap.data());
-            const reportData = await fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData);
-            if (isMounted.current) setMonthlyReportData(reportData);
+            if (isMounted.current) {
+                setUserData(userSnap.data());
+                setMonthlyReportData(reportData);
+                setStats(reportStats);
+            }
         } catch (err: any) {
             if (isMounted.current) setError(err.message || 'Gagal memuat data laporan.');
         } finally {
@@ -368,10 +376,22 @@ export default function UserReportDetailPage() {
                     <CardContent className="p-0 sm:p-6">
                         <div className="p-4 space-y-4">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">
-                                <div className="flex items-center gap-4">
-                                    <Button variant="outline" size="icon" className="rounded-full shadow-none" onClick={() => changeMonth(-1)} disabled={isLoading}><ChevronLeft className="h-4 w-4" /></Button>
-                                    <span className="w-40 text-center font-bold text-lg">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                                    <Button variant="outline" size="icon" className="rounded-full shadow-none" onClick={() => changeMonth(1)} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4" /></Button>
+                                <div className="flex items-center gap-4 sm:gap-6">
+                                    <Button variant="outline" size="icon" className="rounded-full shadow-none shrink-0" onClick={() => changeMonth(-1)} disabled={isLoading}><ChevronLeft className="h-4 w-4" /></Button>
+                                    
+                                    <div className="flex items-center gap-3 px-4 py-2 bg-muted/40 rounded-2xl border border-muted-foreground/5">
+                                        {stats && (
+                                            <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                                <TrendingUp className="h-4 w-4 text-primary" />
+                                                <span className="text-sm font-black text-primary">{stats.persentase}</span>
+                                            </div>
+                                        )}
+                                        <span className="w-40 text-center font-bold text-lg sm:text-xl text-primary tracking-tight capitalize">
+                                            {format(currentMonth, 'MMMM yyyy', { locale: id })}
+                                        </span>
+                                    </div>
+
+                                    <Button variant="outline" size="icon" className="rounded-full shadow-none shrink-0" onClick={() => changeMonth(1)} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4" /></Button>
                                 </div>
                             </div>
                             <div className="flex justify-center sm:justify-end">
@@ -424,7 +444,7 @@ export default function UserReportDetailPage() {
                                                                         {item.status === 'Alpa' ? 'Alpa' : 'Hadir'} <MoreVertical className="h-3 w-3 ml-1" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-none border border-muted-foreground/10 p-2">
+                                                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-none p-2">
                                                                     <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleSetHadir(item.date)}>Jadikan Hadir</DropdownMenuItem>
                                                                     <DropdownMenuItem className="text-xs font-bold rounded-lg" onClick={() => handleSetLate(item.date)}>Set Terlambat</DropdownMenuItem>
                                                                     <DropdownMenuSeparator className='my-1 opacity-50' />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -18,12 +18,13 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, isBefore, eachDayOfInterval, startOfDay, endOfDay, isWithinInterval, isSameDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import { calculateAttendanceStats } from '@/lib/attendance';
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     'Hadir': 'default',
@@ -56,6 +57,7 @@ export default function LaporanPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [stats, setStats] = useState<{ persentase: string } | null>(null);
 
   const schoolConfigRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -85,6 +87,19 @@ export default function LaporanPage() {
 
   const isLoading = isAuthLoading || isHistoryLoading || isLeaveLoading || isConfigLoading || isMonthlyConfigLoading;
   
+  // Efek untuk memuat persentase kehadiran bulanan secara sinkron
+  useEffect(() => {
+    if (user?.uid && firestore && !isConfigLoading) {
+        const fetchStats = async () => {
+            const start = startOfMonth(currentMonth);
+            const end = endOfMonth(currentMonth);
+            const res = await calculateAttendanceStats(firestore, user.uid, { start, end });
+            setStats(res);
+        };
+        fetchStats();
+    }
+  }, [user?.uid, firestore, currentMonth, isConfigLoading]);
+
   const monthlyReportData = useMemo(() => {
     if (!attendanceHistory || !leaveHistory || !schoolConfig) {
       return [];
@@ -110,7 +125,8 @@ export default function LaporanPage() {
 
         const attendanceRecord = attendanceHistory.find(a => {
             const checkInDate = a.checkInTime?.toDate();
-            return checkInDate && format(checkInDate, 'yyyy-MM-dd') === dayStr;
+            const recordDate = a.date || (checkInDate ? format(checkInDate, 'yyyy-MM-dd') : null);
+            return recordDate === dayStr;
         });
 
         const leaveRecord = leaveHistory.find(l => 
@@ -131,8 +147,21 @@ export default function LaporanPage() {
         }
 
         if (attendanceRecord) {
-            const checkInTime = attendanceRecord.checkInTime.toDate();
-            const checkOutTime = attendanceRecord.checkOutTime?.toDate();
+            const checkInTime = attendanceRecord.checkInTime?.toDate() || null;
+            const checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
+            const isManual = attendanceRecord.manualEntry || false;
+
+            if (isManual) {
+                 return {
+                    id: attendanceRecord.id,
+                    date: day,
+                    dateString: format(day, 'eee, dd/MM/yy', { locale: id }),
+                    checkIn: checkInTime ? format(checkInTime, 'HH:mm') : '-',
+                    checkOut: checkOutTime ? format(checkOutTime, 'HH:mm') : '-',
+                    status: 'Hadir',
+                    description: attendanceRecord.reasonForUpdate || 'Hadir penuh',
+                };
+            }
 
             if (checkInTime && checkOutTime) {
                 let description = 'Kehadiran Penuh';
@@ -206,21 +235,33 @@ export default function LaporanPage() {
   };
 
   return (
-    <Card className="overflow-hidden bg-card border shadow-none rounded-3xl">
+    <Card className="overflow-hidden bg-card border shadow-none rounded-xl">
       <CardHeader className="p-4 md:p-6 text-primary border-b border-muted-foreground/10">
         <CardTitle className="font-bold text-sm tracking-tight">Riwayat Absensi & Izin</CardTitle>
         <CardDescription className="text-muted-foreground font-medium">Catatan lengkap kehadiran dan pengajuan izin Anda.</CardDescription>
       </CardHeader>
       <CardContent className="p-4 md:p-6 pt-6 min-h-[400px]">
         <div className="flex flex-col items-center justify-center gap-4 py-2 mb-6">
-            <div className="flex items-center gap-6">
-                <Button variant="outline" size="icon" className="rounded-full shadow-none" onClick={handlePrevMonth}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                <span className="font-bold text-2xl text-primary tracking-tight w-48 text-center capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                <Button variant="outline" size="icon" className="rounded-full shadow-none" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+            <div className="flex items-center gap-4 sm:gap-6">
+                <Button variant="outline" size="icon" className="rounded-full shadow-none shrink-0" onClick={handlePrevMonth}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                
+                <div className="flex items-center gap-3 px-4 py-2 bg-muted/40 rounded-2xl border border-muted-foreground/5">
+                    {stats && (
+                        <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                            <TrendingUp className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-black text-primary">{stats.persentase}</span>
+                        </div>
+                    )}
+                    <span className="font-bold text-lg sm:text-2xl text-primary tracking-tight min-w-[120px] text-center capitalize">
+                        {format(currentMonth, 'MMMM yyyy', { locale: id })}
+                    </span>
+                </div>
+
+                <Button variant="outline" size="icon" className="rounded-full shadow-none shrink-0" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
             </div>
             <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent mt-2" />
         </div>
-        <div className="border rounded-2xl overflow-hidden border-muted-foreground/5">
+        <div className="border rounded-xl overflow-hidden border-muted-foreground/5">
             <Table className="min-w-[720px]">
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
