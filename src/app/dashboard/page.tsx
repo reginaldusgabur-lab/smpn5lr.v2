@@ -135,7 +135,7 @@ export default function DashboardPage() {
     return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam pulang</div>;
   };
 
-  if (isUserLoading) return <div className="w-full space-y-6 animate-pulse p-4"><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-48" /></div><div className="pt-10 space-y-4"><Skeleton className="h-64 w-full rounded-2xl" /><Skeleton className="h-40 w-full rounded-2xl" /></div></div>;
+  if (isUserLoading) return <div className="w-full space-y-6 animate-pulse p-4"><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-48" /></div><div className="pt-10 space-y-4"><Skeleton className="h-64 w-full rounded-xl" /><Skeleton className="h-40 w-full rounded-xl" /></div></div>;
 
   const isAdminOrKepsek = user?.role === 'admin' || user?.role === 'kepala_sekolah';
   const isStaff = ['guru', 'pegawai', 'siswa', 'kepala_sekolah'].includes(user?.role || '');
@@ -150,13 +150,13 @@ export default function DashboardPage() {
 
         {isStaff && (
             <div className="w-full space-y-6 flex flex-col items-stretch">
-                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden bg-card text-center">
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card text-center">
                     <CardHeader className="p-6 text-primary border-b border-muted-foreground/5"><CardTitle className="text-xl font-bold tracking-tight">Kehadiran hari ini</CardTitle></CardHeader>
                     <CardContent className="p-6 space-y-4 pt-4">
                         <LiveClockUI />
                         <div className="grid grid-cols-2 gap-4 w-full">
-                            <div className="bg-muted/30 rounded-2xl p-3 text-center border border-border/40 flex flex-col items-center justify-center"><div className="flex items-center justify-center gap-2 mb-1.5"><LogIn className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Masuk</p></div><p className="text-xl font-bold tabular-nums text-foreground">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}</p></div>
-                            <div className="bg-muted/30 rounded-2xl p-3 text-center border border-border/40 flex flex-col items-center justify-center"><div className="flex items-center justify-center gap-2 mb-1.5"><LogOut className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Pulang</p></div><p className="text-xl font-bold tabular-nums text-foreground">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}</p></div>
+                            <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center"><div className="flex items-center justify-center gap-2 mb-1.5"><LogIn className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Masuk</p></div><p className="text-xl font-bold tabular-nums text-foreground">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}</p></div>
+                            <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center"><div className="flex items-center justify-center gap-2 mb-1.5"><LogOut className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Pulang</p></div><p className="text-xl font-bold tabular-nums text-foreground">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}</p></div>
                         </div>
                         <div className="flex flex-col items-stretch gap-3">
                             {renderAttendanceButton()}
@@ -165,9 +165,9 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-3xl overflow-hidden bg-card">
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
                     <CardHeader className="p-6 text-primary border-b border-muted-foreground/5"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><TrendingUp className="w-5 h-5" /><h2 className="text-xs font-bold tracking-widest">Ringkasan bulanan</h2></div><p className="text-[10px] font-bold tracking-widest opacity-80 bg-primary/10 px-2 py-1 rounded-lg">Skor: {isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}</p></div></CardHeader>
-                    <CardContent className="p-6 pt-8"><div className="w-full h-44">{isPersonalSummaryLoading ? <Skeleton className="h-full w-full rounded-2xl" /> : <ResponsiveContainer width="100%" height="100%"><BarChart data={chartData} margin={{ top: 0, right: 0, left: -40, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'currentColor' }} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} allowDecimals={false} /><Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ borderRadius: '12px', border: 'none', shadow: 'none', fontSize: '11px', fontWeight: 'bold' }} /><Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>{chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Bar></BarChart></ResponsiveContainer>}</div></CardContent>
+                    <CardContent className="p-6 pt-8"><div className="w-full h-44">{isPersonalSummaryLoading ? <Skeleton className="h-full w-full rounded-xl" /> : <ResponsiveContainer width="100%" height="100%"><BarChart data={chartData} margin={{ top: 0, right: 0, left: -40, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'currentColor' }} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} allowDecimals={false} /><Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ borderRadius: '12px', border: 'none', shadow: 'none', fontSize: '11px', fontWeight: 'bold' }} /><Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>{chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Bar></BarChart></ResponsiveContainer>}</div></CardContent>
                 </Card>
             </div>
         )}
@@ -175,7 +175,7 @@ export default function DashboardPage() {
         {isAdminOrKepsek && (
             <div className="w-full space-y-4 pt-4 border-t border-dashed border-border/50 flex flex-col items-stretch">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
-                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-[1.5rem] overflow-hidden">
+                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold text-green-600 uppercase tracking-wider">Hadir</CardTitle>
                             <div className="p-1.5 bg-green-50 rounded-lg">
@@ -189,7 +189,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-[1.5rem] overflow-hidden">
+                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Izin / Sakit</CardTitle>
                             <div className="p-1.5 bg-blue-50 rounded-lg">
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                     </Card>
 
                     <Link href="/dashboard/izin-kepala-sekolah" className="block">
-                        <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-[1.5rem] hover:bg-muted/30 transition-all group overflow-hidden">
+                        <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl hover:bg-muted/30 transition-all group overflow-hidden">
                             <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                                 <CardTitle className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Menunggu</CardTitle>
                                 <div className="p-1.5 bg-amber-50 rounded-lg group-hover:scale-110 transition-transform">

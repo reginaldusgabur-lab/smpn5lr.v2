@@ -178,7 +178,7 @@ const AbsentUsersTable = () => {
 
   return (
     <div className="w-full space-y-4">
-      <Card className="bg-card border-none rounded-3xl overflow-hidden shadow-none">
+      <Card className="bg-card border border-muted-foreground/10 rounded-xl overflow-hidden shadow-none">
         <CardHeader className="p-6 border-b border-muted-foreground/5">
           <div className="flex items-start gap-3">
             <div className="mt-1">

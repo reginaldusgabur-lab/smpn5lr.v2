@@ -369,7 +369,7 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border shadow-none rounded-3xl">
+                <Card className="overflow-hidden border shadow-none rounded-xl">
                     <CardContent className="p-0 sm:p-6">
                         <div className="p-4 space-y-4">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">

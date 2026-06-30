@@ -202,7 +202,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md rounded-3xl border-none shadow-none p-0 overflow-hidden">
+            <DialogContent className="max-w-md rounded-2xl border-none shadow-none p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-2">
                     <DialogTitle className="text-xl font-bold text-primary">Perbaiki kehadiran</DialogTitle>
                     {error && <Alert variant="destructive" className="mt-4 rounded-xl"><AlertTitle className="font-bold">Kesalahan</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
@@ -215,7 +215,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                         <DialogDescription className="mb-4 text-sm font-bold text-muted-foreground">Pilih data untuk diperbaiki atau ubah status alpa secara langsung.</DialogDescription>
                         <div className="max-h-[300px] overflow-y-auto -mr-2 pr-2 space-y-2">
                             {problematicDays.map(day => (
-                                <div key={day.id} className="flex items-center gap-3 p-3 rounded-2xl transition-colors hover:bg-muted/50 border border-muted-foreground/5">
+                                <div key={day.id} className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-muted/50 border border-muted-foreground/5">
                                     {day.status === 'Alpa' ? (
                                         <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div>
                                     ) : (
