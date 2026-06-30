@@ -20,7 +20,7 @@ const cleanDesc = (desc: string) => desc ? desc.replace(/\s?\(diubah oleh Admin\
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `daily_stats_v11_${todayStr}`;
+    const cacheKey = `daily_stats_v12_${todayStr}`;
     
     const cachedData = getFromCache(cacheKey);
     if (cachedData) return cachedData;
@@ -120,7 +120,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v11_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v12_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -234,7 +234,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             where('checkInTime', '<=', monthEnd)
         );
         
-        // Tambahkan fallback query jika record menggunakan field 'date' string
         const attendanceFallbackQuery = query(
             collection(firestore, 'users', userId, 'attendanceRecords'),
             where('date', '>=', format(monthStart, 'yyyy-MM-dd')),
@@ -263,7 +262,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const offDays = schoolConfig.offDays ?? [0, 6];
         const holidays = monthlyConfig?.holidays ?? [];
 
-        // Gabungkan records berdasarkan tanggal unik
         const attendanceMap = new Map();
         attendanceHistory.forEach(rec => {
             const d = (rec as any).date || format((rec as any).checkInTime.toDate(), 'yyyy-MM-dd');
@@ -303,7 +301,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 }
 
                 if (!checkOutTime && !isToday && isBefore(day, todayStart)) {
-                    // Check if it was intentionally marked as "Pulang Cepat" by admin
                     if (description === 'Pulang Cepat' || description === 'Dinas Siang') {
                         return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime: null, status: 'Hadir', description, manualEntry: true };
                     }

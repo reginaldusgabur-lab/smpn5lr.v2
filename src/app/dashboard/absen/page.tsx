@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -171,7 +170,7 @@ export default function AbsenPage() {
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
             const config: Html5QrcodeCameraScanConfig = { 
-                fps: 25,
+                fps: 30,
             };
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
@@ -187,7 +186,7 @@ export default function AbsenPage() {
   }, [showScanner, status, onScanSuccess]);
 
   return (
-    <div className="fixed inset-0 z-40 bg-black overflow-hidden">
+    <div className="fixed inset-0 z-40 bg-black overflow-hidden touch-none overscroll-none">
         {(showScanner || isCameraInitializing) && (
             <div className="absolute inset-0">
                 <div id={readerId} className="w-full h-full" />
@@ -199,8 +198,8 @@ export default function AbsenPage() {
         )}
 
         <div className="absolute top-8 left-0 right-0 z-50 px-8 text-center pointer-events-none transition-all">
-            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Arahkan kamera ke QR Code</h2>
-            <p className="text-white/80 text-xs font-medium">Deteksi aktif di seluruh area layar</p>
+            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Scan QR Code</h2>
+            <p className="text-white/80 text-xs font-medium">Deteksi aktif di seluruh layar</p>
         </div>
 
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">
@@ -255,13 +254,13 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData }: { s
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-            <div className={cn("w-full max-sm text-center p-8 rounded-3xl shadow-2xl relative", feedback.cardClass)} onClick={(e) => e.stopPropagation()}>
+            <div className={cn("w-full max-sm text-center p-8 rounded-2xl shadow-2xl relative", feedback.cardClass)} onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-col items-center gap-4">
                     <div className="mb-2">{feedback.icon}</div>
                     <h3 className="text-2xl font-bold">{feedback.title}</h3>
                     <p className="text-muted-foreground text-sm">{feedback.desc}</p>
                     {(status.startsWith('success')) && <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_in' ? 'in' : 'out'} />}
-                    <Button className="mt-6 w-full font-bold" onClick={onClose}>Tutup</Button>
+                    <Button className="mt-6 w-full font-bold rounded-xl" onClick={onClose}>Tutup</Button>
                 </div>
             </div>
         </div>
