@@ -89,8 +89,7 @@ const AbsentUsersTable = () => {
 
         const attendanceQuery = query(
           collectionGroup(firestore, 'attendanceRecords'), 
-          where('checkInTime', '>=', Timestamp.fromDate(startOfToday)),
-          where('checkInTime', '<', Timestamp.fromDate(endOfToday))
+          where('date', '==', format(today, 'yyyy-MM-dd'))
         );
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();

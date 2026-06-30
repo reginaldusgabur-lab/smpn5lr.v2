@@ -75,8 +75,7 @@ const RecentAttendanceTable = () => {
 
         const attendanceQuery = query(
           collectionGroup(firestore, 'attendanceRecords'),
-          where('checkInTime', '>=', Timestamp.fromDate(startOfToday)),
-          where('checkInTime', '<', Timestamp.fromDate(endOfToday))
+          where('date', '==', format(today, 'yyyy-MM-dd'))
         );
 
         const attendanceSnap = await getDocs(attendanceQuery);
@@ -156,12 +155,20 @@ const RecentAttendanceTable = () => {
   return (
     <div className="w-full space-y-4">
       <Card className="border-none shadow-none rounded-3xl overflow-hidden">
-        <CardHeader className="p-6 flex flex-row items-center justify-between gap-1 text-green-700 border-b border-muted-foreground/5">
-          <div className="flex items-center gap-3">
-            <History className="h-5 w-5" />
-            <CardTitle className="font-bold text-sm tracking-tight">Aktivitas Kehadiran</CardTitle>
+        <CardHeader className="p-6 border-b border-muted-foreground/5">
+          <div className="flex items-start gap-3">
+            <div className="mt-1">
+              <History className="h-5 w-5 text-green-700" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="font-bold text-base tracking-tight text-green-700">
+                Aktivitas Kehadiran
+              </CardTitle>
+              <p className="text-sm font-medium text-muted-foreground">
+                Absensi tercatat pada {todayFormatted}
+              </p>
+            </div>
           </div>
-          <p className="text-[11px] font-bold opacity-80 tracking-widest bg-green-500/10 px-3 py-1 rounded-full">{todayFormatted}</p>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
