@@ -108,8 +108,6 @@ export default function UserReportDetailPage() {
         try {
             const targetDate = parseISO(dateStr);
             const batch = writeBatch(firestore);
-            const now = new Date();
-            const isPast = isBefore(startOfDay(targetDate), startOfDay(now));
             
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const q = query(attendanceRef, where('date', '==', format(targetDate, 'yyyy-MM-dd')));
@@ -123,17 +121,17 @@ export default function UserReportDetailPage() {
             if (newStatus === 'Dinas Pagi' || newStatus === 'Dinas Siang' || newStatus === 'Pulang Cepat') {
                 let realInTime: Date | null = null;
                 let realOutTime: Date | null = null;
-                let isDinasPagi = false;
 
                 if (newStatus === 'Dinas Pagi') {
-                    // SEKARANG: Dinas Pagi tetap mengisi waktu pulang agar terhitung hadir
-                    realInTime = getRandomTime(targetDate, inStart, inEnd);
+                    // Masuk Kosong, Pulang Isi
+                    realInTime = null;
                     realOutTime = getRandomTime(targetDate, outStart, outEnd);
                 } else if (newStatus === 'Dinas Siang') {
-                    // SEKARANG: Dinas Siang mengisi kedua waktu secara otomatis
+                    // Masuk Isi, Pulang Kosong
                     realInTime = getRandomTime(targetDate, inStart, inEnd);
-                    realOutTime = getRandomTime(targetDate, outStart, outEnd); 
+                    realOutTime = null; 
                 } else if (newStatus === 'Pulang Cepat') {
+                    // Masuk Isi, Pulang Kosong
                     realInTime = getRandomTime(targetDate, inStart, inEnd);
                     realOutTime = null; 
                 }

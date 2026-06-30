@@ -119,7 +119,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             let checkInTime: Date | null = null;
             let checkOutTime: Date | null = null;
             let reasonForUpdate: string;
-            let isDinasPagi = false;
 
             if (type === 'hadir') {
                 checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '07:30');
@@ -133,17 +132,17 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 checkOutTime = getRandomTime(recordDate, checkOutStartTime || '14:00', checkOutEndTime || '16:00');
                 reasonForUpdate = 'Terlambat';
             } else if (type === 'dinas-pagi') {
-                // SEKARANG: Dinas Pagi tetap mengisi waktu pulang agar terhitung hadir
-                isDinasPagi = true;
-                checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '07:30');
+                // Masuk Kosong, Pulang Isi
+                checkInTime = null;
                 checkOutTime = getRandomTime(recordDate, checkOutStartTime || '14:00', checkOutEndTime || '16:00');
                 reasonForUpdate = 'Dinas pagi';
             } else if (type === 'dinas-siang') {
-                // SEKARANG: Dinas Siang mengisi kedua waktu secara otomatis
+                // Masuk Isi, Pulang Kosong
                 checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '07:30');
-                checkOutTime = getRandomTime(recordDate, checkOutStartTime || '14:00', checkOutEndTime || '16:00');
+                checkOutTime = null;
                 reasonForUpdate = 'Dinas siang';
             } else { // pulang-cepat
+                // Masuk Isi, Pulang Kosong
                 checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '07:30');
                 checkOutTime = null;
                 reasonForUpdate = 'Pulang cepat';
@@ -157,7 +156,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
                 checkInTime: checkInTime ? Timestamp.fromDate(checkInTime) : null, 
                 checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : null,
-                isDinasPagi,
                 updatedBy: currentUser.uid, updatedAt: Timestamp.now(), reasonForUpdate: reasonForUpdate, manualEntry: true
             }, { merge: true });
 
