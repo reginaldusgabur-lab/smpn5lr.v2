@@ -123,14 +123,6 @@ export default function AbsenPage() {
                 setStatus('success_in');
             }
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
-            if (!todaysRecord?.checkInTime && !todaysRecord?.isDinasPagi) {
-                if (!todaysRecord) {
-                    toast({ variant: 'destructive', title: 'Belum absen masuk', description: 'Silakan hubungi Admin untuk validasi kehadiran Anda.' });
-                    setStatus('idle');
-                    return;
-                }
-            }
-            
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
             
             const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord?.id || '');
@@ -141,7 +133,7 @@ export default function AbsenPage() {
         console.error("Attendance Error:", error);
         setStatus('error_generic');
     }
-}, [user, firestore, schoolConfig, todaysRecord, windowStatus, toast]);
+}, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
   
   const statusRef = useRef(status); statusRef.current = status;
   const handleAttendanceRef = useRef(handleAttendance); handleAttendanceRef.current = handleAttendance;
