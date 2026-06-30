@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -171,7 +172,6 @@ export default function AbsenPage() {
             setIsScannerReady(false);
             const config: Html5QrcodeCameraScanConfig = { 
                 fps: 25,
-                // Omit qrbox for full field detection
             };
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
@@ -200,7 +200,7 @@ export default function AbsenPage() {
 
         <div className="absolute top-8 left-0 right-0 z-50 px-8 text-center pointer-events-none transition-all">
             <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Arahkan kamera ke QR Code</h2>
-            <p className="text-white/80 text-xs font-medium">Dekatkan kode ke area pemindaian</p>
+            <p className="text-white/80 text-xs font-medium">Deteksi aktif di seluruh area layar</p>
         </div>
 
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">

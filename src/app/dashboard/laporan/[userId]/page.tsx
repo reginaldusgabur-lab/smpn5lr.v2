@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -111,21 +112,25 @@ export default function UserReportDetailPage() {
             const now = new Date();
             const isPast = isBefore(startOfDay(targetDate), startOfDay(now));
             
-            if (newStatus === 'Dinas Pagi' || newStatus === 'Pulang Cepat') {
+            // Logika: Dinas dan Pulang Cepat otomatis isi jam masuk/pulang acak agar sinkron
+            if (newStatus === 'Dinas Pagi' || newStatus === 'Dinas Siang' || newStatus === 'Pulang Cepat') {
                 const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
                 const q = query(attendanceRef, where('date', '==', format(targetDate, 'yyyy-MM-dd')));
                 const snap = await getDocs(q);
                 
+                const inStart = schoolConfigData.checkInStartTime || '07:00';
+                const inEnd = schoolConfigData.checkInEndTime || '07:30';
                 const outStart = schoolConfigData.checkOutStartTime || '14:00';
                 const outEnd = schoolConfigData.checkOutEndTime || '16:00';
+                
+                const realInTime = getRandomTime(targetDate, inStart, inEnd);
                 let realOutTime: Date | null = isPast ? getRandomTime(targetDate, outStart, outEnd) : null;
                 
                 if (newStatus === 'Pulang Cepat') realOutTime = null;
 
                 const dataToSave = {
                     userId, date: format(targetDate, 'yyyy-MM-dd'),
-                    checkInTime: null, 
-                    isDinasPagi: newStatus === 'Dinas Pagi',
+                    checkInTime: Timestamp.fromDate(realInTime), 
                     checkOutTime: realOutTime ? Timestamp.fromDate(realOutTime) : null,
                     manualEntry: true, reasonForUpdate: reason,
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp()
@@ -159,25 +164,14 @@ export default function UserReportDetailPage() {
 
     const handleSetLate = async (dateStr: string) => {
         if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
-
-        const targetDate = parseISO(dateStr);
-        const now = new Date();
-        const inEnd = schoolConfigData.checkInEndTime || '08:00';
-        const [endH, endM] = inEnd.split(':').map(Number);
-        const checkInLimit = setMinutes(setHours(startOfDay(targetDate), endH), endM);
-
-        if (isSameDay(targetDate, now) && now < checkInLimit) {
-            toast({ 
-                variant: 'destructive', 
-                title: 'Belum waktunya', 
-                description: 'Absen masuk belum selesai. Status terlambat hanya bisa diatur setelah batas jam masuk berakhir.' 
-            });
-            return;
-        }
-
         setIsMutating(true);
         try {
+            const targetDate = parseISO(dateStr);
+            const now = new Date();
             const isPast = isBefore(startOfDay(targetDate), startOfDay(now));
+
+            const inEnd = schoolConfigData.checkInEndTime || '08:00';
+            const [endH, endM] = inEnd.split(':').map(Number);
             const baseLateTime = new Date(targetDate);
             baseLateTime.setHours(endH, endM, 0);
             const realInTime = addMinutes(baseLateTime, Math.floor(Math.random() * 10) + 1);
@@ -228,7 +222,6 @@ export default function UserReportDetailPage() {
             const outStart = schoolConfigData.checkOutStartTime || '14:00';
             const outEnd = schoolConfigData.checkOutEndTime || '16:00';
             
-            // Logika: Isi jam pulang jika hari sudah lewat, ATAU jika hari ini sudah melewati jam mulai pulang
             const [outH, outM] = outStart.split(':').map(Number);
             const checkoutStartTimeToday = setMinutes(setHours(startOfDay(targetDate), outH), outM);
             const shouldFillCheckout = isPast || now >= checkoutStartTimeToday;
