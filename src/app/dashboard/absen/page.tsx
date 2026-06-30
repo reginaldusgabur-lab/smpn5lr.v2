@@ -123,27 +123,26 @@ export default function AbsenPage() {
                 setStatus('success_in');
             }
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
-            if (!todaysRecord?.checkInTime) {
-                // Allow check-out only if check-in exists OR if admin allows manual direct check-out (defaulting to error for accuracy)
+            if (!todaysRecord?.checkInTime && !todaysRecord?.isDinasPagi) {
+                // Berikan pemberitahuan bahwa absen masuk belum selesai jika tidak ada record masuk dan bukan dinas pagi
                 if (!todaysRecord) {
-                    await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
-                } else {
-                    const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id);
-                    await updateDoc(recordRef, { date: todayStr, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+                    toast({ variant: 'destructive', title: 'Belum absen masuk', description: 'Silakan hubungi Admin untuk validasi kehadiran Anda.' });
+                    setStatus('idle');
+                    return;
                 }
-                setStatus('success_out');
-            } else {
-                if (todaysRecord.checkOutTime) return setStatus('error_already_out');
-                const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id);
-                await updateDoc(recordRef, { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
-                setStatus('success_out');
             }
+            
+            if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
+            
+            const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord?.id || '');
+            await updateDoc(recordRef, { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+            setStatus('success_out');
         }
     } catch (error) {
         console.error("Attendance Error:", error);
         setStatus('error_generic');
     }
-}, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
+}, [user, firestore, schoolConfig, todaysRecord, windowStatus, toast]);
   
   const statusRef = useRef(status); statusRef.current = status;
   const handleAttendanceRef = useRef(handleAttendance); handleAttendanceRef.current = handleAttendance;
@@ -171,7 +170,7 @@ export default function AbsenPage() {
 
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
-            const config: Html5QrcodeCameraScanConfig = { fps: 10, qrbox: 250 };
+            const config: Html5QrcodeCameraScanConfig = { fps: 15, qrbox: 250 };
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
             .catch(err => console.error('Scanner error', err));
@@ -198,8 +197,8 @@ export default function AbsenPage() {
         )}
 
         <div className="absolute top-8 left-0 right-0 z-50 px-8 text-center pointer-events-none transition-all">
-            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Arahkan kamera</h2>
-            <p className="text-white/80 text-xs font-bold">Dekatkan QR Code ke area pemindaian</p>
+            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Arahkan kamera ke QR Code</h2>
+            <p className="text-white/80 text-xs font-medium">Dekatkan kode ke area pemindaian</p>
         </div>
 
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">

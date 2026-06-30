@@ -106,6 +106,7 @@ export default function DashboardPage() {
     const record = todaysAttendance?.[0];
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
+    const isDinasPagi = record?.isDinasPagi || false;
 
     const disabledStyle = "w-full bg-primary/5 text-primary/40 border border-primary/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none shadow-none";
 
@@ -119,6 +120,12 @@ export default function DashboardPage() {
 
     if (isCheckedOut) {
         return <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
+    }
+
+    // IZIN DINAS PAGI: Boleh absen pulang meskipun tidak absen masuk (checkInTime null)
+    if (isDinasPagi && !isCheckedOut) {
+        if (windowStatus === 'CHECK_OUT_OPEN') return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-none active:scale-95 transition-all"><Link href="/dashboard/absen">Absen pulang sekarang</Link></Button>;
+        return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Izin Dinas Pagi - Tunggu jam pulang</div>;
     }
 
     if (!isCheckedIn) {

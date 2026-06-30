@@ -65,8 +65,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
         const attendanceQuery = query(
             collectionGroup(firestore, 'attendanceRecords'),
-            where('checkInTime', '>=', startOfToday),
-            where('checkInTime', '<=', endOfToday)
+            where('date', '==', todayStr)
         );
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();
@@ -204,8 +203,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             return !attDates.has(dayStr) && !leaveDates.has(dayStr);
         }).length;
         
-        const totalPastWorkingDays = pastWorkingDays.length;
-        const denominator = Math.max(1, totalPastWorkingDays - (izinCount + sakitCount));
+        const denominator = Math.max(1, pastWorkingDays.length - (izinCount + sakitCount));
         const finalPercentage = Math.min((hadirScore / denominator) * 100, 100);
 
         const result = {
@@ -235,20 +233,29 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             where('checkInTime', '>=', monthStart), 
             where('checkInTime', '<=', monthEnd)
         );
+        
+        // Tambahkan fallback query jika record menggunakan field 'date' string
+        const attendanceFallbackQuery = query(
+            collection(firestore, 'users', userId, 'attendanceRecords'),
+            where('date', '>=', format(monthStart, 'yyyy-MM-dd')),
+            where('date', '<=', format(monthEnd, 'yyyy-MM-dd'))
+        );
+
         const leaveHistoryQuery = query(
             collection(firestore, 'users', userId, 'leaveRequests'), 
             where('status', '==', 'approved'),
             where('startDate', '<=', monthEnd)
         );
 
-        const [monthlyConfigSnap, attendanceHistorySnap, leaveHistorySnap] = await Promise.all([
+        const [monthlyConfigSnap, attendanceHistorySnap, attendanceFallbackSnap, leaveHistorySnap] = await Promise.all([
             getDoc(monthlyConfigRef),
             getDocs(attendanceHistoryQuery),
+            getDocs(attendanceFallbackQuery),
             getDocs(leaveHistoryQuery),
         ]);
 
         const monthlyConfig = monthlyConfigSnap.data();
-        const attendanceHistory = attendanceHistorySnap.docs.map(d => ({ ...d.data(), id: d.id }));
+        const attendanceHistory = [...attendanceHistorySnap.docs, ...attendanceFallbackSnap.docs].map(d => ({ ...d.data(), id: d.id }));
         const leaveHistory = leaveHistorySnap.docs.map(d => d.data());
 
         const now = new Date();
@@ -256,7 +263,13 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const offDays = schoolConfig.offDays ?? [0, 6];
         const holidays = monthlyConfig?.holidays ?? [];
 
-        const attendanceMap = new Map(attendanceHistory.map(rec => [format((rec as any).checkInTime.toDate(), 'yyyy-MM-dd'), rec]));
+        // Gabungkan records berdasarkan tanggal unik
+        const attendanceMap = new Map();
+        attendanceHistory.forEach(rec => {
+            const d = (rec as any).date || format((rec as any).checkInTime.toDate(), 'yyyy-MM-dd');
+            attendanceMap.set(d, rec);
+        });
+
         const leaveMap = new Map<string, any>();
         leaveHistory.forEach(leave => {
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
@@ -279,10 +292,15 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const leaveRecord = leaveMap.get(dayStr);
 
             if (attendanceRecord) {
-                let checkInTime = attendanceRecord.checkInTime.toDate();
-                let checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
+                const checkInTime = attendanceRecord.checkInTime?.toDate() || null;
+                const checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
+                const isDinasPagi = attendanceRecord.isDinasPagi || false;
                 let description = attendanceRecord.reasonForUpdate || 'Kehadiran penuh';
                 description = cleanDesc(description) || 'Kehadiran penuh';
+
+                if (isDinasPagi) {
+                    return { id: attendanceRecord.id, date: day, checkInTime: null, checkOutTime, status: 'Hadir', description: 'Dinas Pagi', manualEntry: true };
+                }
 
                 if (!checkOutTime && !isToday && isBefore(day, todayStart)) {
                     return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime: null, status: 'Alpa', description: 'Tidak absen pulang', manualEntry: attendanceRecord.manualEntry || false };

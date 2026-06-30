@@ -78,7 +78,7 @@ export default function SchoolReportPage() {
                 getDocs(usersQuery)
             ]);
 
-            const monthlyConfig = monthlySnap.data() || {};
+            const monthlyConfig = monthlySnap.exists() ? monthlySnap.data() : {};
             const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
             const attendanceQuery = query(
@@ -86,22 +86,37 @@ export default function SchoolReportPage() {
                 where('checkInTime', '>=', start),
                 where('checkInTime', '<=', end)
             );
+            
+            // Query fallback untuk record lama
+            const attendanceFallbackQuery = query(
+                collectionGroup(firestore, 'attendanceRecords'),
+                where('date', '>=', format(start, 'yyyy-MM-dd')),
+                where('date', '<=', format(end, 'yyyy-MM-dd'))
+            );
+
             const leaveQuery = query(
                 collectionGroup(firestore, 'leaveRequests'),
                 where('status', '==', 'approved'),
                 where('startDate', '<=', end)
             );
 
-            const [attendanceSnap, leaveSnap] = await Promise.all([
+            const [attendanceSnap, attendanceFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery),
+                getDocs(attendanceFallbackQuery),
                 getDocs(leaveQuery)
             ]);
 
             const attendanceByUserId: Record<string, any[]> = {};
-            attendanceSnap.docs.forEach(d => {
+            [...attendanceSnap.docs, ...attendanceFallbackSnap.docs].forEach(d => {
                 const data = d.data();
                 const uid = data.userId || d.ref.parent.parent?.id;
-                if (uid) (attendanceByUserId[uid] = attendanceByUserId[uid] || []).push(data);
+                if (uid) {
+                    const existing = attendanceByUserId[uid] || [];
+                    const dStr = data.date || format(data.checkInTime.toDate(), 'yyyy-MM-dd');
+                    if (!existing.some(e => (e.date || format(e.checkInTime.toDate(), 'yyyy-MM-dd')) === dStr)) {
+                        attendanceByUserId[uid] = [...existing, data];
+                    }
+                }
             });
 
             const leaveByUserId: Record<string, any[]> = {};
@@ -128,7 +143,7 @@ export default function SchoolReportPage() {
                 let hadirScore = 0;
 
                 uAtt.forEach(att => {
-                    const attDateStr = format(att.checkInTime.toDate(), 'yyyy-MM-dd');
+                    const attDateStr = att.date || format(att.checkInTime.toDate(), 'yyyy-MM-dd');
                     if (workingDaysSet.has(attDateStr)) {
                         hadirScore += 1;
                         attDates.add(attDateStr);
@@ -143,7 +158,7 @@ export default function SchoolReportPage() {
                     eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                         const dayStr = format(day, 'yyyy-MM-dd');
                         if (workingDaysSet.has(dayStr)) {
-                            if (leave.type === 'Pulang Cepat' || leave.type === 'Dinas') {
+                            if (leave.type === 'Pulang Cepat' || leave.type === 'Dinas' || leave.type === 'Dinas Pagi') {
                                 if (!attDates.has(dayStr)) {
                                     hadirScore += 1;
                                     attDates.add(dayStr);
