@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Loader2, Sparkles, Newspaper, MessageSquare } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface QuoteOfTheDayProps {
   category: string | null | undefined;
@@ -17,16 +18,18 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<boolean>(false);
+  const isFetched = useRef(false);
 
   useEffect(() => {
-    if (!category || !attendanceType) {
-      setIsLoading(false);
+    if (!category || !attendanceType || isFetched.current) {
+      if (!category || !attendanceType) setIsLoading(false);
       return;
     }
 
     const fetchQuote = async () => {
       setIsLoading(true);
       setError(false);
+      isFetched.current = true;
       try {
         const response = await fetch('/api/quote', {
           method: 'POST',
@@ -51,8 +54,12 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('Invalid Data Format');
         }
       } catch (e: any) {
-        // Silent error to prevent console spam
         setError(true);
+        // Fallback quotes
+        setQuote({
+          quote: attendanceType === 'in' ? "Awali hari dengan bismillah dan senyuman, karena kopi saja tidak cukup untuk menjaga semangat." : "Kerja kerasmu hari ini luar biasa. Sekarang waktunya istirahat dan berkumpul dengan keluarga.",
+          author: "Tim E-SPENLI"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -62,28 +69,41 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
 
   }, [category, attendanceType]);
 
+  const isNews = quote?.author.toLowerCase().includes('news') || 
+                 quote?.author.toLowerCase().includes('info') || 
+                 quote?.author.toLowerCase().includes('viral');
+
   return (
-    <div className="mt-6 pt-4 border-t border-primary/10">
-      <div className="flex items-center justify-center text-xs font-bold mb-3 text-primary/70">
-        <Sparkles className="h-3.5 w-3.5 mr-2" />
-        Motivasi hari ini
+    <div className="mt-6 pt-5 border-t border-primary/10">
+      <div className="flex items-center justify-center text-[10px] font-bold mb-4 text-primary/60 uppercase tracking-[0.2em]">
+        {isNews ? <Newspaper className="h-3.5 w-3.5 mr-2" /> : <Sparkles className="h-3.5 w-3.5 mr-2" />}
+        Pesan Spesial Hari Ini
       </div>
-      <div className="text-center text-sm min-h-[60px] flex items-center justify-center px-2">
+      
+      <div className="text-center min-h-[70px] flex items-center justify-center px-4 relative">
         {isLoading ? (
-          <div className="flex items-center text-muted-foreground/60">
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Mencari inspirasi...
+          <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Menyiapkan inspirasi...</span>
           </div>
-        ) : error ? (
-            <p className="text-muted-foreground/50 italic">Tetap semangat dan jaga kesehatan!</p>
-        ) : quote ? (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <blockquote className="italic font-medium text-foreground/90">
-              <p>"{quote.quote}"</p>
-            </blockquote>
-            <cite className="block text-right mt-1.5 text-[10px] font-bold text-primary/60">- {quote.author}</cite>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-3 duration-1000 ease-out">
+            <div className={cn(
+              "relative px-4 py-2",
+              isNews ? "bg-primary/5 rounded-2xl border border-primary/5" : ""
+            )}>
+              <blockquote className={cn(
+                "font-bold text-sm text-foreground/90 leading-relaxed",
+                !isNews && "italic"
+              )}>
+                "{quote?.quote}"
+              </blockquote>
+              <cite className="block text-right mt-2 text-[10px] font-black text-primary/70 not-italic">
+                — {quote?.author}
+              </cite>
+            </div>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
