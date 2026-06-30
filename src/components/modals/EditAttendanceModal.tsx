@@ -133,11 +133,13 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 checkOutTime = getRandomTime(recordDate, checkOutStartTime || '14:00', checkOutEndTime || '16:00');
                 reasonForUpdate = 'Terlambat';
             } else if (type === 'dinas-pagi') {
+                // SEKARANG: Dinas Pagi tetap mengisi waktu pulang agar terhitung hadir
                 isDinasPagi = true;
-                checkInTime = null;
+                checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '07:30');
                 checkOutTime = getRandomTime(recordDate, checkOutStartTime || '14:00', checkOutEndTime || '16:00');
                 reasonForUpdate = 'Dinas pagi';
             } else if (type === 'dinas-siang') {
+                // SEKARANG: Dinas Siang mengisi kedua waktu secara otomatis
                 checkInTime = getRandomTime(recordDate, checkInStartTime || '07:00', checkInEndTime || '07:30');
                 checkOutTime = getRandomTime(recordDate, checkOutStartTime || '14:00', checkOutEndTime || '16:00');
                 reasonForUpdate = 'Dinas siang';

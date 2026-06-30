@@ -126,10 +126,11 @@ export default function UserReportDetailPage() {
                 let isDinasPagi = false;
 
                 if (newStatus === 'Dinas Pagi') {
-                    isDinasPagi = true;
-                    realInTime = null; 
+                    // SEKARANG: Dinas Pagi tetap mengisi waktu pulang agar terhitung hadir
+                    realInTime = getRandomTime(targetDate, inStart, inEnd);
                     realOutTime = getRandomTime(targetDate, outStart, outEnd);
                 } else if (newStatus === 'Dinas Siang') {
+                    // SEKARANG: Dinas Siang mengisi kedua waktu secara otomatis
                     realInTime = getRandomTime(targetDate, inStart, inEnd);
                     realOutTime = getRandomTime(targetDate, outStart, outEnd); 
                 } else if (newStatus === 'Pulang Cepat') {
@@ -141,7 +142,6 @@ export default function UserReportDetailPage() {
                     userId, date: format(targetDate, 'yyyy-MM-dd'),
                     checkInTime: realInTime ? Timestamp.fromDate(realInTime) : null, 
                     checkOutTime: realOutTime ? Timestamp.fromDate(realOutTime) : null,
-                    isDinasPagi,
                     manualEntry: true, reasonForUpdate: reason,
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp()
                 };
