@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
@@ -5,7 +6,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle } from 'lucide-react';
+import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -115,6 +116,11 @@ export default function DashboardPage() {
 
     if (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday) {
         return <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Lock className="mr-2 h-4 w-4" /> Sistem nonaktif / hari libur</div>;
+    }
+
+    // PRIORITAS: Jika waktu pulang sudah selesai
+    if (windowStatus === 'CLOSED') {
+        return <div className="w-full bg-blue-500/5 text-blue-600 border border-blue-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><CheckCircle2 className="mr-2 w-4 h-4" /> Aktivitas hari ini telah berakhir</div>;
     }
 
     if (isCheckedOut) {

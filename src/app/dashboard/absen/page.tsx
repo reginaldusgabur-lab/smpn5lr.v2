@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -124,7 +125,6 @@ export default function AbsenPage() {
             }
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
             if (!todaysRecord?.checkInTime && !todaysRecord?.isDinasPagi) {
-                // Berikan pemberitahuan bahwa absen masuk belum selesai jika tidak ada record masuk dan bukan dinas pagi
                 if (!todaysRecord) {
                     toast({ variant: 'destructive', title: 'Belum absen masuk', description: 'Silakan hubungi Admin untuk validasi kehadiran Anda.' });
                     setStatus('idle');
@@ -170,7 +170,7 @@ export default function AbsenPage() {
 
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
-            const config: Html5QrcodeCameraScanConfig = { fps: 15, qrbox: 250 };
+            const config: Html5QrcodeCameraScanConfig = { fps: 20 };
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
             .catch(err => console.error('Scanner error', err));
@@ -202,23 +202,18 @@ export default function AbsenPage() {
         </div>
 
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">
-            <div className="relative w-full aspect-square max-w-[280px]">
+            <div className="relative w-full h-full">
                 {isScannerReady && (
                     <div className={cn(
-                        "absolute left-1 right-1 h-20 transition-all duration-700 animate-scan-line z-20 pointer-events-none",
+                        "absolute left-0 right-0 h-20 transition-all duration-700 animate-scan-line z-20 pointer-events-none",
                         status === 'idle' 
                             ? "bg-gradient-to-b from-transparent via-primary/40 to-transparent shadow-[0_0_15px_rgba(63,81,181,0.2)]" 
                             : "bg-gradient-to-b from-transparent via-green-500/40 to-transparent shadow-[0_0_15px_rgba(34,197,94,0.3)]"
                     )} />
                 )}
 
-                <div className={cn("absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
-                <div className={cn("absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 rounded-tr-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
-                <div className={cn("absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 rounded-bl-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
-                <div className={cn("absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 rounded-br-2xl transition-colors", isScannerReady ? 'border-primary' : 'border-white/40')} />
-
                 {showLoader && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-2xl">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
                         <Loader2 className="h-10 w-10 animate-spin text-white" />
                     </div>
                 )}
