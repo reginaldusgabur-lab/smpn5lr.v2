@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -13,23 +14,26 @@ import { format } from 'date-fns';
 import QuoteOfTheDay from '@/components/layout/quote-of-the-day';
 import { useAttendanceWindow } from '@/hooks/use-attendance-window';
 
-// --- Helper Functions ---
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 6371e3; // metres
+    const R = 6371e3;
     const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
     const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c; // in metres
+    return R * c;
 }
 
 const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosition> =>
-  new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, options));
+  new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+        reject(new Error("Geolocation not supported"));
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
 
-// --- Types ---
 type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'success_out' | 'error_radius' | 'error_time' | 'error_already_in' | 'error_already_out' | 'error_generic' | 'error_location' | 'info_holiday' | 'info_checked_out' | 'info_no_camera';
 
-// --- Main Component ---
 export default function AbsenPage() {
   const [status, setStatus] = useState<FeedbackStatus>('idle');
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -44,7 +48,6 @@ export default function AbsenPage() {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const readerId = "qr-reader-fullscreen";
 
-  // --- Firestore Data Hooks ---
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData } = useDoc(user, userDocRef);
   
@@ -56,7 +59,6 @@ export default function AbsenPage() {
   const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
   const todaysRecord = useMemo(() => todaysAttendance?.[0], [todaysAttendance]);
 
-  // --- Derived State ---
   const isDataLoading = isUserLoading || isAttendanceLoading || windowStatus === 'LOADING';
   const isCameraInitializing = hasCameraPermission === null;
   const isHoliday = windowStatus === 'SESSION_INACTIVE';
@@ -75,7 +77,6 @@ export default function AbsenPage() {
   const showScanner = !isDataLoading && hasCameraPermission && !isHoliday && !hasCompletedAttendance && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
   const showLoader = isDataLoading || isCameraInitializing || (showScanner && !isScannerReady);
 
-  // --- Core Functions ---
   const handleAttendance = useCallback(async () => {
     setLocationError(null);
     if (!user || !firestore || !schoolConfig) {
@@ -95,7 +96,7 @@ export default function AbsenPage() {
         if (schoolConfig.useLocationValidation) {
             setStatus('locating');
             try {
-                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
                 latitude = pos.coords.latitude; longitude = pos.coords.longitude;
                 if (schoolConfig.radius && schoolConfig.latitude && schoolConfig.longitude) {
                     if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) return setStatus('error_radius');
@@ -124,7 +125,6 @@ export default function AbsenPage() {
             }
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
-            
             const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord?.id || '');
             await updateDoc(recordRef, { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
             setStatus('success_out');
@@ -140,7 +140,15 @@ export default function AbsenPage() {
 
   useEffect(() => {
     let isMounted = true;
-    Html5Qrcode.getCameras().then(devices => isMounted && setHasCameraPermission(!!(devices && devices.length))).catch(() => isMounted && setHasCameraPermission(false));
+    const checkCameras = async () => {
+        try {
+            const devices = await Html5Qrcode.getCameras();
+            if (isMounted) setHasCameraPermission(!!(devices && devices.length));
+        } catch (e) {
+            if (isMounted) setHasCameraPermission(false);
+        }
+    }
+    checkCameras();
     return () => { isMounted = false; };
   }, []);
 
@@ -161,18 +169,22 @@ export default function AbsenPage() {
 
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
-            const config: Html5QrcodeCameraScanConfig = { 
-                fps: 30,
-            };
+            const config: Html5QrcodeCameraScanConfig = { fps: 30 };
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
-            .catch(err => console.error('Scanner error', err));
+            .catch(err => {
+                console.error('Scanner start error', err);
+                setIsScannerReady(false);
+            });
         }
     } 
     return () => {
-        if (html5QrCodeRef.current?.isScanning) {
-            html5QrCodeRef.current.stop().then(() => setIsScannerReady(false)).catch(err => console.warn("Stop error", err));
+        if (html5QrCodeRef.current) {
+            if (html5QrCodeRef.current.isScanning) {
+                html5QrCodeRef.current.stop().catch(err => console.warn("Stop error", err));
+            }
             html5QrCodeRef.current = null;
+            setIsScannerReady(false);
         }
     };
   }, [showScanner, status, onScanSuccess]);

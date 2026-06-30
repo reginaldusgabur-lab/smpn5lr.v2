@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -81,11 +82,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
               };
               setUserAuthState({ user: combinedUser, isUserLoading: false, userError: null });
             } else {
-              console.error(`User profile not found in Firestore for UID: ${firebaseUser.uid}`);
-              setUserAuthState({ user: null, isUserLoading: false, userError: new Error('User profile not found in database.') });
+              setUserAuthState({ user: null, isUserLoading: false, userError: null });
             }
           } catch (error) {
-            console.error("FirebaseProvider: Error fetching user document:", error);
             setUserAuthState({ user: null, isUserLoading: false, userError: error as Error });
           }
         } else {
@@ -93,7 +92,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         }
       },
       (error) => {
-        console.error("FirebaseProvider: onAuthStateChanged error:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
@@ -111,11 +109,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // Prevent rendering children until the initial user authentication check is complete.
-  if (userAuthState.isUserLoading) {
-    return null;
-  }
-
+  // IMPORTANT: Do NOT return null during loading to prevent hydration crash on PWA
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
