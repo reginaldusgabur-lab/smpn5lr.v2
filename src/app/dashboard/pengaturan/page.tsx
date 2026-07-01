@@ -15,12 +15,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { Loader2, Camera, Eye, EyeOff, UserCircle } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { invalidateCache } from '@/lib/cache';
 
 export default function PengaturanPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -144,26 +145,43 @@ export default function PengaturanPage() {
     setIsProfileLoading(true);
 
     try {
-      const authUpdates: { displayName?: string } = {};
+      const authUpdates: any = {};
       const firestoreUpdates: any = {};
 
-      if (name && name !== userData?.name) {
-        authUpdates.displayName = name;
-        firestoreUpdates.name = name;
+      // Nama wajib ada
+      if (name.trim()) {
+          if (name !== userData?.name) {
+            authUpdates.displayName = name;
+            firestoreUpdates.name = name;
+          }
       }
-      if (nip !== userData?.nip) firestoreUpdates.nip = nip;
-      if (nisn !== userData?.nisn) firestoreUpdates.nisn = nisn;
-      if (position !== userData?.position) firestoreUpdates.position = position;
+
+      // Update bidang berdasarkan peran - Izinkan perubahan parsial
+      if (userData?.role !== 'admin') {
+          if (isTeacherOrStaff && nip !== (userData?.nip || '')) {
+              firestoreUpdates.nip = nip;
+          }
+          if (isStudent && nisn !== (userData?.nisn || '')) {
+              firestoreUpdates.nisn = nisn;
+          }
+          if (position !== (userData?.position || '')) {
+              firestoreUpdates.position = position;
+          }
+      }
+
       if (photoPreview) {
         firestoreUpdates.photoURL = photoPreview;
+        authUpdates.photoURL = photoPreview;
       }
 
       const updatePromises: Promise<any>[] = [];
       if (Object.keys(authUpdates).length > 0) {
         updatePromises.push(updateProfile(user, authUpdates));
       }
+      
       if (Object.keys(firestoreUpdates).length > 0) {
-        updatePromises.push(updateDoc(userDocRef, firestoreUpdates));
+        // Menggunakan setDoc dengan merge: true agar lebih aman dibanding updateDoc
+        updatePromises.push(setDoc(userDocRef, firestoreUpdates, { merge: true }));
       }
       
       if (updatePromises.length > 0) {
@@ -172,14 +190,22 @@ export default function PengaturanPage() {
             title: 'Berhasil',
             description: 'Profil Anda telah berhasil diperbarui.',
           });
+          // Bersihkan cache agar data baru muncul di seluruh aplikasi
+          invalidateCache();
+      } else {
+          toast({
+            title: 'Informasi',
+            description: 'Tidak ada data baru untuk diperbarui.',
+          });
       }
       
       setPhotoPreview(null);
     } catch (error: any) {
+      console.error("Update Profile Error:", error);
       toast({
         variant: 'destructive',
         title: 'Gagal',
-        description: 'Terjadi kesalahan saat memperbarui profil.',
+        description: error.message || 'Terjadi kesalahan saat memperbarui profil.',
       });
     } finally {
       setIsProfileLoading(false);
@@ -472,7 +498,7 @@ export default function PengaturanPage() {
             <CardHeader className="p-6 text-primary border-b border-muted-foreground/5 bg-muted/20">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="font-bold text-sm tracking-tight uppercase">Pengumumuman & Kutipan Hari Ini</CardTitle>
+                        <CardTitle className="font-bold text-sm tracking-tight uppercase">Pengumuman & Kutipan Hari Ini</CardTitle>
                         <CardDescription className="text-muted-foreground font-medium">Pesan yang muncul di layar semua pengguna.</CardDescription>
                     </div>
                     <div className="flex items-center space-x-2">
