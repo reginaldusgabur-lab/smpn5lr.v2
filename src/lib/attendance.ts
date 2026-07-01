@@ -38,9 +38,11 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const schoolConfig = schoolConfigSnap.data();
         const monthlyConfig = monthlyConfigSnap.data();
 
+        const isManualOff = schoolConfig?.isAttendanceActive === false;
+
         const isHoliday = (() => {
             if (!schoolConfig) return false;
-            if (schoolConfig.isAttendanceActive === false) return true;
+            if (isManualOff) return true;
             const dayOfWeek = today.getDay();
             const offDays: number[] = schoolConfig.offDays ?? [0, 6];
             if (offDays.includes(dayOfWeek)) return true;
@@ -49,7 +51,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         })();
 
         if (isHoliday) {
-            return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: true };
+            return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: !isManualOff, isManualDisabled: isManualOff };
         }
 
         const startOfToday = startOfDay(today);
@@ -114,13 +116,14 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             sakit: sakitCount,
             pending: pendingCount,
             alpa: alpaCount,
-            isHoliday: false
+            isHoliday: false,
+            isManualDisabled: false
         };
 
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
-        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false };
     }
 }
 
@@ -188,7 +191,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 if (desc.includes('dinas')) {
                     point = 1.0;
                 } else if (desc.includes('pulang cepat')) {
-                    point = 0.95; // Sync: Pulang Cepat = 0.95
+                    point = 0.95;
                 } else if (att.checkInTime && att.checkOutTime) {
                     let isLate = false;
                     if (schoolConfig?.useTimeValidation && schoolConfig?.checkInEndTime) {
@@ -218,7 +221,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                     } else if (leave.type === 'Dinas' || leave.type === 'Dinas Pagi' || leave.type === 'Dinas Siang') {
                         point = 1.0;
                     } else if (leave.type === 'Pulang Cepat') {
-                        point = 0.95; // Sync: Pulang Cepat = 0.95
+                        point = 0.95;
                     }
                     totalPoints += point;
                     processedDates.add(dayStr);

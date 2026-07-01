@@ -345,9 +345,8 @@ export default function AdminDashboardPage() {
                     <div className="text-3xl font-bold">{totalUsers}</div>
                     <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase">Personil aktif sistem</p>
                 </CardContent>
-            </Card>
 
-             <Link href="/dashboard/admin/laporan-guru">
+             <Link href="/dashboard/admin/laporan-guru" className="h-full">
                 <Card className="hover:bg-muted/50 transition-colors shadow-none h-full">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Laporan</CardTitle>
@@ -411,4 +410,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-

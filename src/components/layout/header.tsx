@@ -1,4 +1,3 @@
-
 'use client';
 import React from 'react';
 import Link from 'next/link';
@@ -226,7 +225,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                 </p>
             </div>
 
-            <div className="bg-destructive/5 border border-destructive/10 p-4 rounded-xl flex items-start gap-3">
+            <div className="bg-destructive/5 border border-destructive/10 p-4 rounded-xl flex items-start gap-3 mt-4">
                 <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                 <div>
                     <p className="text-xs font-black text-destructive uppercase tracking-widest">Catatan Penting</p>
