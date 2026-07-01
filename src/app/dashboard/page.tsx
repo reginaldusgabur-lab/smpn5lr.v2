@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, where, limit, doc, Timestamp } from 'firebase/firestore';
-import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, limit } from 'firebase/firestore';
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle, CheckCircle2, UserX, FileText } from 'lucide-react';
+import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,48 +45,55 @@ export default function DashboardPage() {
   const { status: windowStatus } = useAttendanceWindow();
   const isMounted = useRef(true);
 
+  const [summaryMonth, setSummaryMonth] = useState(new Date());
   const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false, isCalendarHoliday: false });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
-  const [personalSummary, setPersonalSummary] = useState({ percentage: '0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
+  const [personalSummary, setPersonalSummary] = useState({ percentage: '0.0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
 
   const loadDashboardData = useCallback(async () => {
     if (!firestore || !user?.uid || !isMounted.current) return;
     try {
-        const now = new Date();
-        const [dailyStats, personalStats] = await Promise.all([
-            getDailyStaffAttendanceStats(firestore),
-            calculateAttendanceStats(firestore, user.uid, { start: startOfMonth(now), end: endOfMonth(now) })
-        ]);
-        
+        const dailyStats = await getDailyStaffAttendanceStats(firestore);
         if (isMounted.current) {
             setStats(dailyStats);
-            setPersonalSummary({
-                percentage: personalStats.persentase.replace('%', ''),
-                hadir: Math.ceil(personalStats.totalHadir),
-                izin: personalStats.totalIzin,
-                sakit: personalStats.totalSakit,
-                alpa: personalStats.totalAlpa
-            });
             setIsStatsLoading(false);
-            setIsPersonalSummaryLoading(false);
         }
     } catch (error) {
-        if (isMounted.current) {
-            console.error("Dashboard load failed:", error instanceof Error ? error.message : "Unknown error");
-            setIsStatsLoading(false);
-            setIsPersonalSummaryLoading(false);
-        }
+        if (isMounted.current) setIsStatsLoading(false);
     }
+  }, [firestore, user?.uid]);
+
+  const loadMonthlySummary = useCallback(async (month: Date) => {
+      if (!firestore || !user?.uid || !isMounted.current) return;
+      setIsPersonalSummaryLoading(true);
+      try {
+          const personalStats = await calculateAttendanceStats(firestore, user.uid, { 
+              start: startOfMonth(month), 
+              end: endOfMonth(month) 
+          });
+          if (isMounted.current) {
+              setPersonalSummary({
+                  percentage: personalStats.persentase.replace('%', ''),
+                  hadir: Math.ceil(personalStats.totalHadir),
+                  izin: personalStats.totalIzin,
+                  sakit: personalStats.totalSakit,
+                  alpa: personalStats.totalAlpa
+              });
+          }
+      } finally {
+          if (isMounted.current) setIsPersonalSummaryLoading(false);
+      }
   }, [firestore, user?.uid]);
 
   useEffect(() => {
     isMounted.current = true;
     if (!isUserLoading && user?.uid) {
         loadDashboardData();
+        loadMonthlySummary(summaryMonth);
     }
     return () => { isMounted.current = false; };
-  }, [loadDashboardData, user?.uid, isUserLoading]);
+  }, [loadDashboardData, loadMonthlySummary, summaryMonth, user?.uid, isUserLoading]);
 
   // Check today's personal attendance
   const todaysAttendanceQuery = useMemoFirebase(() => {
@@ -114,10 +121,25 @@ export default function DashboardPage() {
 
   const chartData = useMemo(() => [
     { name: 'Hadir', value: personalSummary.hadir, color: 'hsl(var(--primary))' },
-    { name: 'Izin', value: personalSummary.izin, color: '#3b82f6' },
     { name: 'Sakit', value: personalSummary.sakit, color: '#f59e0b' },
+    { name: 'Izin', value: personalSummary.izin, color: '#3b82f6' },
     { name: 'Alpa', value: personalSummary.alpa, color: '#ef4444' },
   ], [personalSummary]);
+
+  const handlePrevMonth = () => {
+    const minDate = new Date(2026, 0, 1);
+    setSummaryMonth(prev => {
+        const next = subMonths(prev, 1);
+        return next < minDate ? prev : next;
+    });
+  };
+
+  const handleNextMonth = () => {
+      setSummaryMonth(prev => addMonths(prev, 1));
+  };
+
+  const canGoNext = !isSameMonth(summaryMonth, new Date());
+  const canGoPrev = summaryMonth > new Date(2026, 0, 1);
 
   const renderAttendanceButton = () => {
     const record = todaysAttendance?.[0];
@@ -131,27 +153,23 @@ export default function DashboardPage() {
         return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat data...</div>;
     }
 
-    // PRIORITY 1: Approved Leave for today (Disabled)
     if (currentActiveLeave) {
         return (
             <div className="w-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
-                <FileText className="mr-2 w-4 h-4" /> 
+                <Sparkles className="mr-2 w-4 h-4" /> 
                 {currentActiveLeave.type} Disetujui
             </div>
         );
     }
 
-    // PRIORITY 2: Already finished for today (Normal Checkout or Manual Status)
     if (isCheckedOut || isManualFinished) {
         return <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
     }
 
-    // PRIORITY 3: Admin disabled system
     if (windowStatus === 'DISABLED' || stats.isManualDisabled) {
         return <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Lock className="mr-2 h-4 w-4" /> Sistem sedang dinonaktifkan</div>;
     }
 
-    // PRIORITY 4: Holiday status (If not checked in)
     if (!isCheckedIn && (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday)) {
         const label = stats.isCalendarHoliday ? 'Hari libur (Kalender)' : 'Hari libur rutin';
         return (
@@ -161,7 +179,6 @@ export default function DashboardPage() {
         );
     }
 
-    // PRIORITY 5: Check-out window (Active even if missing check-in)
     if (windowStatus === 'CHECK_OUT_OPEN') {
         return (
             <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-none active:scale-95 transition-all bg-blue-600 hover:bg-blue-700">
@@ -170,21 +187,16 @@ export default function DashboardPage() {
         );
     }
 
-    // PRIORITY 6: Check-in window
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
         if (windowStatus === 'CHECK_IN_OPEN') return <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-none active:scale-95 transition-all"><Link href="/dashboard/absen">Absen masuk</Link></Button>;
-        
-        // If it's AFTER_IN but not yet CHECK_OUT_OPEN
         if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
     }
 
-    // PRIORITY 7: In between windows (After check-in, before check-out)
     if (isCheckedIn && !isCheckedOut) {
         if (windowStatus === 'AFTER_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam pulang</div>;
     }
 
-    // PRIORITY 8: Day finished (Overall Closed)
     if (windowStatus === 'CLOSED') {
         return (
             <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
@@ -249,29 +261,63 @@ export default function DashboardPage() {
                 </Card>
 
                 <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
-                    <CardHeader className="p-6 text-primary border-b border-muted-foreground/5">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <TrendingUp className="w-5 h-5" />
-                                <h2 className="text-xs font-bold tracking-widest text-primary uppercase">Ringkasan bulanan</h2>
+                    <CardHeader className="p-6 pb-2">
+                        <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5 text-foreground" />
+                                    <h2 className="text-xl font-bold tracking-tight text-foreground">
+                                        Riwayat Bulan {format(summaryMonth, 'MMMM', { locale: id })}
+                                    </h2>
+                                </div>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    Persentase kehadiran: {isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}
+                                </p>
                             </div>
-                            <p className="text-[10px] font-bold tracking-widest opacity-80 bg-primary/10 px-2 py-1 rounded-lg">
-                                Skor: {isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}
-                            </p>
+                            <div className="flex items-center gap-1">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 rounded-full" 
+                                    onClick={handlePrevMonth} 
+                                    disabled={isPersonalSummaryLoading || !canGoPrev}
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 rounded-full" 
+                                    onClick={handleNextMonth} 
+                                    disabled={isPersonalSummaryLoading || !canGoNext}
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-6 pt-8">
-                        <div className="w-full h-44">
+                    <CardContent className="p-6 pt-4">
+                        <div className="w-full h-56 mt-4">
                             {isPersonalSummaryLoading ? (
                                 <Skeleton className="h-full w-full rounded-xl" />
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={chartData} margin={{ top: 0, right: 0, left: -40, bottom: 0 }}>
+                                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -30, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'currentColor' }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor' }} allowDecimals={false} />
+                                        <XAxis 
+                                            dataKey="name" 
+                                            axisLine={false} 
+                                            tickLine={false} 
+                                            tick={{ fontSize: 11, fontWeight: 'medium', fill: 'currentColor' }} 
+                                        />
+                                        <YAxis 
+                                            axisLine={false} 
+                                            tickLine={false} 
+                                            tick={{ fontSize: 11, fill: 'currentColor' }} 
+                                            allowDecimals={false} 
+                                        />
                                         <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ borderRadius: '12px', border: 'none', shadow: 'none', fontSize: '11px', fontWeight: 'bold' }} />
-                                        <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>
+                                        <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={45}>
                                             {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                                         </Bar>
                                     </BarChart>
