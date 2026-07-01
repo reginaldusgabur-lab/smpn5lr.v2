@@ -20,9 +20,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, TrendingUp, RefreshCw } from 'lucide-react';
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, startOfMonth, endOfMonth } from 'firebase/firestore';
-import { format, isSameMonth, addMonths, subMonths, parseISO } from 'date-fns';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
+import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/attendance';
@@ -152,7 +152,7 @@ export default function LaporanPage() {
                 <Skeleton className="h-4 w-32 mb-2" />
                 <Skeleton className="h-3 w-48" />
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-4 space-y-4">
                 <div className="flex justify-center py-4"><Skeleton className="h-12 w-64 rounded-2xl" /></div>
                 <div className="space-y-2">
                     {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
@@ -164,19 +164,19 @@ export default function LaporanPage() {
 
   return (
     <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
-      <CardHeader className="p-4 text-primary border-b border-muted-foreground/10">
+      <CardHeader className="p-3 sm:p-4 text-primary border-b border-muted-foreground/10">
         <div className="flex items-center justify-between">
             <div>
-                <CardTitle className="font-bold text-xs tracking-tight uppercase">Riwayat Absensi & Izin</CardTitle>
-                <CardDescription className="text-muted-foreground font-medium text-[10px]">Catatan lengkap kehadiran Anda.</CardDescription>
+                <CardTitle className="font-bold text-[10px] tracking-widest uppercase opacity-70">Riwayat Absensi & Izin</CardTitle>
+                <CardDescription className="text-muted-foreground font-bold text-[9px] mt-0.5">Catatan lengkap kehadiran individu.</CardDescription>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleRefresh} disabled={isLoading}>
-                <RefreshCw className={cn("h-4 w-4 text-muted-foreground", isLoading && "animate-spin")} />
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/5" onClick={handleRefresh} disabled={isLoading}>
+                <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", isLoading && "animate-spin")} />
             </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-6 min-h-[400px]">
-        <div className="flex flex-col items-center justify-center gap-4 py-2 mb-4">
+      <CardContent className="p-0 min-h-[400px]">
+        <div className="p-4 flex flex-col items-center justify-center gap-4">
             <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
                 <Button 
                     variant="ghost" 
@@ -195,7 +195,7 @@ export default function LaporanPage() {
                             <span className="text-sm font-black text-primary">{stats.persentase}</span>
                         </div>
                     )}
-                    <span className="font-black text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[140px]">
+                    <span className="font-black text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                         {format(currentMonth, 'MMMM yyyy', { locale: id })}
                     </span>
                 </div>
@@ -211,23 +211,24 @@ export default function LaporanPage() {
                 </Button>
             </div>
         </div>
-        <div className="border rounded-xl overflow-hidden border-muted-foreground/5">
+
+        <div className="border-t border-muted-foreground/5 overflow-x-auto">
             <Table className="min-w-[720px]">
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
-                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
-                        <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Tanggal</TableHead>
-                        <TableHead className="w-[120px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Masuk</TableHead>
-                        <TableHead className="w-[120px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Pulang</TableHead>
-                        <TableHead className="w-[140px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Status</TableHead>
-                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Keterangan</TableHead>
+                        <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
+                        <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest">Tanggal</TableHead>
+                        <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest">Masuk</TableHead>
+                        <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest">Pulang</TableHead>
+                        <TableHead className="w-[140px] text-center font-bold text-[10px] uppercase tracking-widest">Status</TableHead>
+                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Keterangan</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {monthlyReportData.length > 0 ? (
                         monthlyReportData.map((record, index) => (
                             <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
-                                <TableCell className="text-center font-bold text-muted-foreground">{index + 1}</TableCell>
+                                <TableCell className="text-center font-bold text-muted-foreground text-xs">{index + 1}</TableCell>
                                 <TableCell className="font-bold text-sm text-foreground whitespace-nowrap">{record.dateString}</TableCell>
                                 <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkIn}</TableCell>
                                 <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkOut}</TableCell>
@@ -246,7 +247,7 @@ export default function LaporanPage() {
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-medium">Tidak ada riwayat kehadiran.</TableCell>
+                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Tidak ada riwayat kehadiran.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>

@@ -95,12 +95,6 @@ export default function SchoolReportPage() {
                 where('date', '<=', format(end, 'yyyy-MM-dd'))
             );
 
-            const leaveQuery = query(
-                collection(firestore, 'users', user.uid, 'leaveRequests'), // This logic should probably be refined if it needs to work for school report
-                where('status', '==', 'approved'),
-                where('startDate', '<=', end)
-            );
-
             const [attendanceSnap, attendanceFallbackSnap] = await Promise.all([
                 getDocs(attendanceQuery),
                 getDocs(attendanceFallbackQuery)
@@ -118,10 +112,6 @@ export default function SchoolReportPage() {
                     }
                 }
             });
-
-            // We need a more robust way to get leaves for ALL users for school report
-            // but for now let's use the provided structure
-            const leaveByUserId: Record<string, any[]> = {};
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
             const holidays: string[] = monthlyConfig.holidays ?? [];
@@ -459,3 +449,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+
