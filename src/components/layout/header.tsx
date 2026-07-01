@@ -150,21 +150,11 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                 <span className="font-bold">Sistem & Alur Kerja E-SPENLI</span>
             </DialogTitle>
             <DialogDescription className="text-left font-medium">
-              Panduan lengkap penggunaan fitur aplikasi absensi digital untuk Guru, Pegawai, dan Siswa.
+              Panduan lengkap penggunaan fitur aplikasi absensi digital untuk Guru dan Pegawai.
             </DialogDescription>
           </DialogHeader>
           
           <div className="text-sm space-y-6 py-4 pr-2 text-left">
-            <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-                <div>
-                    <p className="text-xs font-black text-destructive uppercase tracking-widest">Peringatan Penting</p>
-                    <p className="text-[11px] font-bold text-destructive/80 leading-relaxed mt-1">
-                        Skor persentase kehadiran Anda hanya akan dihitung dan meningkat <strong>jika Anda berada di area sekolah (GPS Aktif)</strong> saat melakukan absensi.
-                    </p>
-                </div>
-            </div>
-
             <section className="space-y-2">
                 <div className="flex items-center gap-2 font-bold text-foreground">
                     <UserCircle className="h-4 w-4 text-primary" />
@@ -212,6 +202,16 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                     <p className="text-[11px] italic">Rumus: (Total Poin / Total Hari Kerja Sebulan) x 100%. Skor akan terus meningkat seiring bertambahnya kehadiran Anda.</p>
                 </div>
             </section>
+
+            <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <div>
+                    <p className="text-xs font-black text-destructive uppercase tracking-widest">Catatan</p>
+                    <p className="text-[11px] font-bold text-destructive/80 leading-relaxed mt-1">
+                        Skor persentase kehadiran Anda hanya akan dihitung dan meningkat <strong>jika Anda berada di area sekolah (GPS Aktif)</strong> saat melakukan absensi.
+                    </p>
+                </div>
+            </div>
 
             <div className="pt-4 border-t border-muted-foreground/10 flex items-start gap-3 bg-primary/5 p-4 rounded-xl">
                 <ShieldAlert className="h-5 w-5 text-primary shrink-0 mt-0.5" />
