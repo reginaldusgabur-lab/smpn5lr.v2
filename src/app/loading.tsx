@@ -17,7 +17,7 @@ export default function Loading() {
           />
         </div>
         <div className="flex flex-col items-center gap-0.5">
-          <h2 className="text-2xl font-black tracking-tight text-primary">E-SPENLI</h2>
+          <h2 className="text-2xl font-bold tracking-[0.1em] text-primary">E-SPENLI</h2>
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest opacity-60">Memuat sistem...</p>
         </div>
       </div>

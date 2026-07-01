@@ -113,7 +113,7 @@ export default function LoginPage() {
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-md bg-card border border-muted-foreground/10 shadow-none rounded-[2.5rem] overflow-hidden">
           <CardHeader className="text-center pt-12 pb-6">
-            <div className="flex justify-center mb-2">
+            <div className="flex justify-center mb-4">
               <div className="relative w-28 h-28 transition-transform duration-500 hover:scale-105">
                 <Image 
                   src={appLogo?.imageUrl || "/logo-3d-v2.png"} 
@@ -125,9 +125,9 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <div className="space-y-1">
-              <CardTitle className="text-4xl font-black tracking-tight text-primary">E-SPENLI</CardTitle>
-              <CardDescription className="font-medium text-muted-foreground/80 text-[11px] whitespace-nowrap overflow-hidden text-ellipsis px-2">
+            <div className="space-y-1.5">
+              <CardTitle className="text-4xl font-bold tracking-[0.1em] text-primary">E-SPENLI</CardTitle>
+              <CardDescription className="font-normal text-muted-foreground/80 text-[11px] whitespace-nowrap px-2">
                 Aplikasi absensi digital resmi SMP Negeri 5 Langke Rembong
               </CardDescription>
             </div>
