@@ -112,29 +112,29 @@ export default function LoginPage() {
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-background">
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-md bg-card border border-muted-foreground/10 shadow-none rounded-[2.5rem] overflow-hidden">
-          <CardHeader className="text-center pt-12 pb-6">
-            <div className="flex justify-center mb-4">
-              <div className="relative w-28 h-28 transition-transform duration-500 hover:scale-105">
+          <CardHeader className="text-center pt-10 pb-4">
+            <div className="flex justify-center mb-2">
+              <div className="relative w-32 h-32 transition-transform duration-500 hover:scale-105">
                 <Image 
                   src={appLogo?.imageUrl || "/logo-3d-v2.png"} 
                   alt="Logo E-SPENLI" 
                   fill 
-                  sizes="112px" 
+                  sizes="128px" 
                   className="object-contain" 
                   priority 
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <CardTitle className="text-4xl font-bold tracking-[0.1em] text-primary">E-SPENLI</CardTitle>
-              <CardDescription className="font-normal text-muted-foreground/80 text-[11px] whitespace-nowrap px-2">
+            <div className="space-y-0.5">
+              <CardTitle className="text-4xl font-normal tracking-tight text-primary">E-SPENLI</CardTitle>
+              <CardDescription className="font-normal text-muted-foreground/80 text-[10px] whitespace-nowrap px-4">
                 Aplikasi absensi digital resmi SMP Negeri 5 Langke Rembong
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="px-10 pb-10">
+          <CardContent className="px-10 pb-8">
             <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-6">
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-5">
                 <FormField control={loginForm.control} name="email" render={({ field }) => (
                     <FormItem className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Alamat Email</Label>
@@ -142,7 +142,7 @@ export default function LoginPage() {
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 font-bold shadow-none focus:bg-background transition-all" 
+                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 font-medium shadow-none focus:bg-background transition-all" 
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -163,7 +163,7 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 font-bold shadow-none focus:bg-background transition-all" 
+                              className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 font-medium shadow-none focus:bg-background transition-all" 
                             />
                           </FormControl>
                           <Button 
@@ -182,17 +182,17 @@ export default function LoginPage() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-14 text-sm font-bold rounded-2xl shadow-none bg-primary hover:bg-primary/90 mt-4 tracking-widest active:scale-[0.98] transition-all" 
+                  className="w-full h-14 text-sm font-bold rounded-2xl shadow-none bg-primary hover:bg-primary/90 mt-2 tracking-widest active:scale-[0.98] transition-all" 
                   disabled={isLoginLoading}
                 >
-                  {isLoginLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Masuk sekarang"}
+                  {isLoginLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "MASUK SEKARANG"}
                 </Button>
               </form>
             </Form>
           </CardContent>
-          <CardFooter className="flex-col bg-muted/20 py-6 border-t border-muted-foreground/5">
-            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.2em] uppercase opacity-60">
-              © 2026 SMP Negeri 5 Langke Rembong
+          <CardFooter className="flex-col bg-muted/20 py-5 border-t border-muted-foreground/5">
+            <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-60">
+              Copyright © 2026 SMP Negeri 5 Langke Rembong
             </p>
           </CardFooter>
         </Card>
@@ -214,7 +214,7 @@ export default function LoginPage() {
                         <Input 
                           placeholder="email@anda.com" 
                           {...field} 
-                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 font-bold shadow-none" 
+                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 font-medium shadow-none" 
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -230,9 +230,9 @@ export default function LoginPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      <footer className="mt-10 text-center text-[10px] font-bold text-muted-foreground/40 leading-relaxed tracking-[0.2em] uppercase">
-        Dikembangkan oleh <br /> 
-        <span className="text-primary/40">Team Operator SMPN 5 LR</span>
+      <footer className="mt-8 text-center text-[9px] font-bold text-muted-foreground/40 leading-relaxed tracking-[0.2em] uppercase">
+        Sistem Absensi Digital Terintegrasi <br /> 
+        <span className="text-primary/40">SMPN 5 Langke Rembong</span>
       </footer>
     </div>
   );
