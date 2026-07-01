@@ -637,42 +637,61 @@ export default function KonfigurasiAbsenPage() {
                           <p className="text-[10px] text-muted-foreground font-bold">Atur jam pulang berbeda untuk setiap hari.</p>
                           
                           <Accordion type="single" collapsible className="w-full" defaultValue={currentDayValue}>
-                              {daysOfWeek.map((day) => (
-                                  <AccordionItem key={day.value} value={day.value.toString()} className="border-muted-foreground/10">
-                                      <AccordionTrigger className="hover:no-underline py-3 px-1 shadow-none">
-                                          <div className="flex items-center gap-3">
-                                              <div className={cn("w-2 h-2 rounded-full", offDays.includes(day.value) ? "bg-muted-foreground/30" : "bg-primary")} />
-                                              <span className={cn("text-xs font-bold", offDays.includes(day.value) && "text-muted-foreground")}>
-                                                  {day.label} {offDays.includes(day.value) && "(Libur)"}
-                                              </span>
-                                          </div>
-                                      </AccordionTrigger>
-                                      <AccordionContent className="pt-2 pb-4">
-                                          <div className="grid grid-cols-2 gap-4 px-1">
-                                              <div className="space-y-1.5">
-                                                  <Label className="text-[10px] font-bold">Mulai pulang</Label>
-                                                  <Input 
-                                                      type="time" 
-                                                      className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
-                                                      value={dailyCheckOutTimes[day.value]?.start || checkOutStart} 
-                                                      onChange={e => handleDailyCheckOutChange(day.value.toString(), 'start', e.target.value)}
-                                                      disabled={holidayMode || offDays.includes(day.value)}
-                                                  />
+                              {daysOfWeek.map((day) => {
+                                  const isToday = day.value.toString() === currentDayValue;
+                                  return (
+                                      <AccordionItem 
+                                          key={day.value} 
+                                          value={day.value.toString()} 
+                                          className={cn(
+                                              "border-muted-foreground/10 transition-all duration-300 overflow-hidden",
+                                              isToday ? "border-l-4 border-l-primary bg-primary/5 rounded-r-2xl" : "rounded-none"
+                                          )}
+                                      >
+                                          <AccordionTrigger className="hover:no-underline py-3 px-3 shadow-none">
+                                              <div className="flex items-center gap-3">
+                                                  <div className={cn(
+                                                      "w-2.5 h-2.5 rounded-full transition-all", 
+                                                      offDays.includes(day.value) ? "bg-muted-foreground/30" : "bg-primary",
+                                                      isToday && !offDays.includes(day.value) && "animate-pulse shadow-[0_0_8px_rgba(63,81,181,0.5)]"
+                                                  )} />
+                                                  <span className={cn(
+                                                      "text-xs font-bold transition-colors", 
+                                                      offDays.includes(day.value) && "text-muted-foreground",
+                                                      isToday && "text-primary"
+                                                  )}>
+                                                      {day.label} {offDays.includes(day.value) && "(Libur)"}
+                                                      {isToday && <span className="ml-2 opacity-80">(Hari Ini)</span>}
+                                                  </span>
                                               </div>
-                                              <div className="space-y-1.5">
-                                                  <Label className="text-[10px] font-bold">Selesai pulang</Label>
-                                                  <Input 
-                                                      type="time" 
-                                                      className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
-                                                      value={dailyCheckOutTimes[day.value]?.end || checkOutEnd} 
-                                                      onChange={e => handleDailyCheckOutChange(day.value.toString(), 'end', e.target.value)}
-                                                      disabled={holidayMode || offDays.includes(day.value)}
-                                                  />
+                                          </AccordionTrigger>
+                                          <AccordionContent className="pt-2 pb-4 px-3">
+                                              <div className="grid grid-cols-2 gap-4">
+                                                  <div className="space-y-1.5">
+                                                      <Label className="text-[10px] font-bold">Mulai pulang</Label>
+                                                      <Input 
+                                                          type="time" 
+                                                          className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
+                                                          value={dailyCheckOutTimes[day.value]?.start || checkOutStart} 
+                                                          onChange={e => handleDailyCheckOutChange(day.value.toString(), 'start', e.target.value)}
+                                                          disabled={holidayMode || offDays.includes(day.value)}
+                                                      />
+                                                  </div>
+                                                  <div className="space-y-1.5">
+                                                      <Label className="text-[10px] font-bold">Selesai pulang</Label>
+                                                      <Input 
+                                                          type="time" 
+                                                          className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
+                                                          value={dailyCheckOutTimes[day.value]?.end || checkOutEnd} 
+                                                          onChange={e => handleDailyCheckOutChange(day.value.toString(), 'end', e.target.value)}
+                                                          disabled={holidayMode || offDays.includes(day.value)}
+                                                      />
+                                                  </div>
                                               </div>
-                                          </div>
-                                      </AccordionContent>
-                                  </AccordionItem>
-                              ))}
+                                          </AccordionContent>
+                                      </AccordionItem>
+                                  );
+                              })}
                           </Accordion>
                       </div>
                   </div>
