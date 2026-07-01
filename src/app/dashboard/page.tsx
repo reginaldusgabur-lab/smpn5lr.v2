@@ -30,7 +30,7 @@ const CustomTooltip = ({ active, payload }: any) => {
     const data = payload[0].payload;
     return (
       <div className="bg-card border border-border shadow-2xl rounded-2xl p-4 text-center min-w-[120px] animate-in fade-in zoom-in-95 duration-200">
-        <p className="font-black text-foreground text-base tracking-tight leading-none mb-1.5">{data.name}</p>
+        <p className="font-bold text-foreground text-base tracking-tight leading-none mb-1.5">{data.name}</p>
         <p className="text-muted-foreground text-xs font-bold tracking-wide">
           {data.Jumlah} hari
         </p>

@@ -99,7 +99,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                         </Avatar>
                         <div className="hidden sm:flex flex-col justify-center text-left">
                             <p className="text-sm font-bold leading-none tracking-tight">{displayName || 'Pengguna'}</p>
-                            <p className="text-[10px] tracking-widest leading-none text-muted-foreground mt-1.5 font-black uppercase opacity-60">{displayRole || 'User'}</p>
+                            <p className="text-[10px] tracking-widest leading-none text-muted-foreground mt-1.5 font-bold uppercase opacity-60">{displayRole || 'User'}</p>
                         </div>
                     </button>
                 </DropdownMenuTrigger>
@@ -108,7 +108,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                         <div className="flex items-center gap-3">
                             <UserCircle className="h-5 w-5 text-primary opacity-40" />
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-black leading-none text-primary">{displayName || 'Pengguna'}</p>
+                                <p className="text-sm font-bold leading-none text-primary">{displayName || 'Pengguna'}</p>
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                     {displayRole || 'User'}
                                 </p>
@@ -129,7 +129,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                         className="rounded-xl cursor-pointer py-3 px-4 text-destructive focus:bg-destructive/5 focus:text-destructive group"
                     >
                         <Power className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" />
-                        <span className="text-sm font-black uppercase tracking-wider">Keluar</span>
+                        <span className="text-sm font-bold uppercase tracking-wider">Keluar</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

@@ -241,7 +241,7 @@ export default function PengaturanPage() {
         </div>
 
         <form onSubmit={handleProfileUpdate}>
-          <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
+          <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
             <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
               <div className="flex items-center gap-3">
                 <UserCircle className="h-5 w-5 text-primary" />
@@ -261,8 +261,8 @@ export default function PengaturanPage() {
                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                   </div>
                   <div className="text-center sm:text-left space-y-1">
-                     <h3 className="font-black text-xl text-primary tracking-tight">{name || 'User'}</h3>
-                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{userData?.role.replace('_', ' ')}</p>
+                     <h3 className="font-bold text-xl text-primary tracking-tight">{name || 'User'}</h3>
+                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{userData?.role.replace('_', ' ')}</p>
                   </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -344,7 +344,7 @@ export default function PengaturanPage() {
                           <div className="flex items-center gap-3">
                             <BellRing className="h-5 w-5 text-amber-500" />
                             <div>
-                                <Label className="font-black text-xs uppercase tracking-widest">Pengumuman Sistem</Label>
+                                <Label className="font-bold text-xs uppercase tracking-widest">Pengumuman Sistem</Label>
                                 <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Pesan ini akan muncul di dashboard semua pengguna.</p>
                             </div>
                           </div>
