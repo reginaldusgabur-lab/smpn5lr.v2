@@ -99,14 +99,14 @@ const RecentAttendanceTable = () => {
                 rawCheckInTime: checkInDate,
                 checkInTime: checkInDate ? format(checkInDate, 'HH:mm:ss') : '-',
                 checkOutTime: attendanceData.checkOutTime ? format(attendanceData.checkOutTime.toDate(), 'HH:mm:ss') : '-',
-                status: attendanceData.checkOutTime ? 'Pulang' : 'Hadir',
-                keterangan: attendanceData.checkOutTime ? 'Kehadiran penuh' : 'Masih di tempat',
+                status: attendanceData.checkOut ? 'Pulang' : 'Hadir',
+                keterangan: attendanceData.checkOut ? 'Kehadiran penuh' : 'Masih di tempat',
               });
             }
           }
         }
 
-        // SORT: Ascending (A - B) - Yang paling awal datang di posisi teratas
+        // SORT: Ascending (A - B) - First arrive at top
         const sortedActivities = activitiesData.sort((a, b) => {
             const timeA = a.rawCheckInTime?.getTime() || 0;
             const timeB = b.rawCheckInTime?.getTime() || 0;
@@ -187,11 +187,11 @@ const RecentAttendanceTable = () => {
               <Table>
                 <TableHeader className="bg-green-500/5">
                   <TableRow className="border-none">
-                    <TableHead className="w-[60px] text-center font-bold text-[10px] tracking-widest text-green-700">No</TableHead>
-                    <TableHead className="font-bold text-[10px] tracking-widest text-green-700">Nama & NIP</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] tracking-widest text-green-700">Masuk</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] tracking-widest text-green-700">Pulang</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] tracking-widest text-green-700">Status</TableHead>
+                    <TableHead className="w-[60px] text-center font-bold text-[10px] tracking-widest text-green-700 uppercase">No</TableHead>
+                    <TableHead className="font-bold text-[10px] tracking-widest text-green-700 uppercase">Nama & NIP</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] tracking-widest text-green-700 uppercase">Masuk</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] tracking-widest text-green-700 uppercase">Pulang</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] tracking-widest text-green-700 uppercase">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -205,7 +205,7 @@ const RecentAttendanceTable = () => {
                       <TableCell className="text-center font-mono text-xs font-bold text-foreground">{activity.checkInTime}</TableCell>
                       <TableCell className="text-center font-mono text-xs font-bold text-foreground">{activity.checkOutTime}</TableCell>
                        <TableCell className="text-center">
-                        <Badge variant={activity.status === 'Hadir' ? 'default' : 'secondary'} className="text-[9px] font-bold px-3">
+                        <Badge variant={activity.status === 'Hadir' ? 'default' : 'secondary'} className="text-[9px] font-bold px-3 py-0.5 rounded-full">
                             {activity.status}
                         </Badge>
                       </TableCell>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -487,4 +486,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-

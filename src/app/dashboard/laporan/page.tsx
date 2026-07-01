@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -127,7 +125,7 @@ export default function LaporanPage() {
 
         const attendanceRecord = attendanceHistory.find(a => {
             const checkInDate = a.checkInTime?.toDate();
-            const recordDate = a.date || (checkInDate ? format(checkInDate, 'yyyy-MM-dd') : null);
+            const recordDate = a.date || (checkInDate ? format(checkInTime, 'yyyy-MM-dd') : null);
             return recordDate === dayStr;
         });
 
@@ -343,4 +341,3 @@ export default function LaporanPage() {
     </Card>
   );
 }
-

@@ -97,9 +97,7 @@ export default function AbsenPage() {
       return 'idle';
   }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
 
-  // Scanner only shows if window is open AND no restricting condition (holiday, disabled, leave, or finished)
-  const canShowScanner = !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
-  const showScanner = canShowScanner;
+  const showScanner = !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
   const showLoader = isDataLoading || isCameraInitializing || (showScanner && !isScannerReady);
 
   // --- Core Functions ---
