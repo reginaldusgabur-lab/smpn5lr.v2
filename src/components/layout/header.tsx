@@ -210,7 +210,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                   <div className="text-muted-foreground pl-6 space-y-2 leading-relaxed">
                       <p>Agar absensi di sekolah super cepat dan instan:</p>
                       <ul className="list-disc pl-5 space-y-1 text-[11px] font-bold">
-                          <li><strong>Pre-Loading:</strong> Sebelum berangkat sekolah, buka aplikasi sebentar di rumah lalu tutup kembali. Ini akan memuat data konfigurasi lebih awal.</li>
+                          <li><strong>Pre-Loading:</strong> Sebelum berangkat sekolah, buka aplikasi sebentar di rumah lalu tutup/keluarkan aplikasinya (jangan klik Keluar/Logout). Ini akan memuat data konfigurasi lebih awal.</li>
                           <li><strong>Koneksi:</strong> Pastikan paket data aktif dan sinyal dalam kondisi stabil saat melakukan scanning.</li>
                           <li><strong>GPS Aktif:</strong> Aktifkan GPS HP Anda beberapa saat sebelum memasuki area sekolah agar posisi terkunci tepat waktu.</li>
                       </ul>
