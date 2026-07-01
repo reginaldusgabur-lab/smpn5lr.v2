@@ -27,22 +27,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/attendance';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
-
-const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    'Hadir': 'default',
-    'Sakit': 'destructive',
-    'Izin': 'secondary',
-    'Dinas': 'secondary',
-    'Terlambat': 'outline',
-    'Alpa': 'destructive',
-    'Hari Libur': 'secondary',
-};
-
-const approvalStatusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    'approved': 'default',
-    'pending': 'outline',
-    'rejected': 'destructive',
-};
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface ReportItem {
   id: string;
@@ -137,8 +123,8 @@ export default function LaporanPage() {
   const handlePrevMonth = () => {
     const minDate = new Date(2026, 0, 1);
     setCurrentMonth(prev => {
-        const newDate = subMonths(prev, 1);
-        return newDate < minDate ? prev : newDate;
+        const next = subMonths(prev, 1);
+        return next < minDate ? prev : next;
     });
   };
 
@@ -148,6 +134,15 @@ export default function LaporanPage() {
 
   const isLoading = isAuthLoading || isConfigLoading || isReportLoading;
   const canGoPrev = currentMonth > new Date(2026, 0, 1);
+
+  const getStatusBadgeStyle = (status: string) => {
+      const s = status.toLowerCase();
+      if (s === 'alpa') return 'bg-red-600 text-white border-none shadow-sm';
+      if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
+      if (s === 'izin' || s.includes('pribadi')) return 'bg-blue-800 text-white border-none shadow-sm';
+      if (s === 'hadir') return 'bg-green-600 text-white border-none shadow-sm';
+      return 'bg-primary text-white border-none shadow-sm';
+  };
 
   if (isLoading && monthlyReportData.length === 0) {
     return (
@@ -236,11 +231,11 @@ export default function LaporanPage() {
                                 <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkIn}</TableCell>
                                 <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkOut}</TableCell>
                                 <TableCell className="text-center whitespace-nowrap">
-                                    <Badge variant={statusVariant[record.status] || 'default'} className="text-[9px] font-bold uppercase px-2 py-0.5">
+                                    <Badge variant="outline" className={cn("text-[9px] font-bold uppercase px-3 py-1 rounded-full", getStatusBadgeStyle(record.status))}>
                                         {record.status}
                                     </Badge>
-                                    {record.approvalStatus && (
-                                        <Badge variant={approvalStatusVariant[record.approvalStatus] || 'secondary'} className="capitalize ml-1 text-[8px] font-bold">
+                                    {record.approvalStatus && record.approvalStatus !== 'approved' && (
+                                        <Badge variant="outline" className="capitalize ml-1 text-[8px] font-bold py-0.5">
                                             {record.approvalStatus}
                                         </Badge>
                                     )}
@@ -260,4 +255,3 @@ export default function LaporanPage() {
     </Card>
   );
 }
-

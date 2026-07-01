@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface ReportRowData {
     no: number;
