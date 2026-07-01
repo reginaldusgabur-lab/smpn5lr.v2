@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
@@ -275,9 +274,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex flex-col items-stretch gap-3">
                             {renderAttendanceButton()}
-                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
-                                <Link href="/dashboard/laporan">Lihat riwayat lengkap</Link>
-                            </Button>
+                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-bold text-muted-foreground hover:text-primary transition-colors"><Link href="/dashboard/laporan">Lihat riwayat lengkap</Link></Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -296,11 +293,11 @@ export default function DashboardPage() {
                                     Persentase kehadiran: {isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8 rounded-full" 
+                                    className="h-8 w-8 rounded-xl hover:bg-background/50 shadow-none" 
                                     onClick={handlePrevMonth} 
                                     disabled={isPersonalSummaryLoading || !canGoPrev}
                                 >
@@ -309,7 +306,7 @@ export default function DashboardPage() {
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8 rounded-full" 
+                                    className="h-8 w-8 rounded-xl hover:bg-background/50 shadow-none" 
                                     onClick={handleNextMonth} 
                                     disabled={isPersonalSummaryLoading || !canGoNext}
                                 >
@@ -330,7 +327,7 @@ export default function DashboardPage() {
                                             dataKey="name" 
                                             axisLine={{ stroke: 'currentColor', opacity: 0.2 }}
                                             tickLine={false} 
-                                            tick={{ fontSize: 11, fontWeight: 'bold', fill: 'currentColor', opacity: 0.6 }} 
+                                            tick={{ fontSize: 11, fontBold: true, fill: 'currentColor', opacity: 0.6 }} 
                                         />
                                         <YAxis 
                                             axisLine={{ stroke: 'currentColor', opacity: 0.2 }}
@@ -363,6 +360,7 @@ export default function DashboardPage() {
         {isAdminOrKepsek && (
             <div className="w-full space-y-4 pt-4 border-t border-dashed border-border/50 flex flex-col items-stretch">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+                    {/* Hadir Card */}
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold text-green-600 uppercase tracking-wider">Hadir</CardTitle>
@@ -377,6 +375,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Izin / Sakit Card */}
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Izin / Sakit</CardTitle>
@@ -391,6 +390,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Menunggu Card */}
                     <Link href="/dashboard/izin-kepala-sekolah" className="block">
                         <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl hover:bg-muted/30 transition-all group overflow-hidden">
                             <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
@@ -407,6 +407,7 @@ export default function DashboardPage() {
                         </Card>
                     </Link>
 
+                    {/* Alpa Card */}
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Alpa</CardTitle>
