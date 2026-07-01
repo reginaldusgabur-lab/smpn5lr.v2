@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import Link from 'next/link';
@@ -131,6 +132,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
       </div>
 
       <div className="flex items-center gap-4">
+        <NetworkStatusDot />
         <Dialog>
           <DialogTrigger asChild>
             <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full transition-transform active:scale-95">
@@ -239,7 +241,6 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
             </div>
           </DialogContent>
         </Dialog>
-        <NetworkStatusDot />
       </div>
     </header>
   );
