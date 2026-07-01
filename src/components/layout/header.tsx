@@ -27,6 +27,7 @@ import {
 import { LogOut, Settings, ShieldAlert, BookOpen, UserCircle, TrendingUp, QrCode, FileText, Zap, AlertTriangle } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { ModeToggle } from '@/components/theme-toggle';
+import { NetworkStatusDot } from './NetworkStatusDot';
 
 export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const firestore = useFirestore();
@@ -131,7 +132,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
 
       <Dialog>
         <DialogTrigger asChild>
-          <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full transition-transform active:scale-95">
+          <button className="relative focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full transition-transform active:scale-95">
             <Image
               src={appLogo?.imageUrl || '/logo-3d-v2.png'}
               alt="App Logo"
@@ -140,6 +141,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
               priority
               data-ai-hint="app logo"
             />
+            <NetworkStatusDot />
           </button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-xl">
