@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
@@ -143,9 +144,9 @@ export default function DashboardPage() {
 
   const chartData = useMemo(() => [
     { name: 'Hadir', Jumlah: personalSummary.hadir, color: 'hsl(var(--primary))' },
-    { name: 'Sakit', Jumlah: personalSummary.sakit, color: '#f59e0b' },
+    { name: 'Sakit', Jumlah: personalSummary.sakit, color: '#f97316' },
     { name: 'Izin', Jumlah: personalSummary.izin, color: '#3b82f6' },
-    { name: 'Alpa', Jumlah: personalSummary.alpa, color: '#ef4444' },
+    { name: 'Alpa', Jumlah: personalSummary.alpa, color: '#dc2626' },
   ], [personalSummary]);
 
   const handlePrevMonth = () => {
@@ -201,7 +202,6 @@ export default function DashboardPage() {
         );
     }
 
-    // ADAPTIVE LOGIC: If it's checkout time, show checkout even if check-in is missing
     if (windowStatus === 'CHECK_OUT_OPEN') {
         return (
             <Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-none active:scale-95 transition-all bg-blue-600 hover:bg-blue-700 text-white">
@@ -405,8 +405,7 @@ export default function DashboardPage() {
                                     {isStatsLoading ? '...' : stats.pending}
                                 </div>
                             </CardContent>
-                        </Card>
-                    </Link>
+                        </Link>
 
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
