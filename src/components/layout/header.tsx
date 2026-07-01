@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import Link from 'next/link';
@@ -218,6 +219,13 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                 </div>
             </section>
 
+            <div className="pt-4 border-t border-muted-foreground/10 flex items-start gap-3 bg-primary/5 p-4 rounded-xl">
+                <ShieldAlert className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[11px] font-bold text-primary leading-tight">
+                    Kejujuran adalah kunci. Sistem verifikasi otomatis lokasi dan waktu diaktifkan untuk menjaga integritas data di SMPN 5 Langke Rembong.
+                </p>
+            </div>
+
             <div className="bg-destructive/5 border border-destructive/10 p-4 rounded-xl flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                 <div>
@@ -226,13 +234,6 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                         Skor persentase kehadiran Anda hanya akan dihitung dan meningkat <strong>jika Anda berada di area sekolah (GPS Aktif)</strong> saat melakukan absensi.
                     </p>
                 </div>
-            </div>
-
-            <div className="pt-4 border-t border-muted-foreground/10 flex items-start gap-3 bg-primary/5 p-4 rounded-xl">
-                <ShieldAlert className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-[11px] font-bold text-primary leading-tight">
-                    Kejujuran adalah kunci. Sistem verifikasi otomatis lokasi dan waktu diaktifkan untuk menjaga integritas data di SMPN 5 Langke Rembong.
-                </p>
             </div>
           </div>
         </DialogContent>
