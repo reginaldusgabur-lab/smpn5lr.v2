@@ -4,17 +4,17 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* Kembali ke warna asal */
+    --background: 210 40% 98%; /* Ice White Background */
     --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
+    --card: 210 30% 96%; /* Slightly darker card for better definition in light mode */
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
+    --secondary: 210 40% 94%;
     --secondary-foreground: 222 47% 11.2%;
-    --muted: 210 40% 96.1%;
+    --muted: 210 30% 92%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
     --accent-foreground: 222 47% 11.2%;
