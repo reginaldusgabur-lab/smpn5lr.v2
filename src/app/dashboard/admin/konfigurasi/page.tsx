@@ -192,19 +192,29 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                                     {allDaysInMonth.map((day) => {
                                         const dayString = format(day, 'yyyy-MM-dd');
                                         const isChecked = holidays.some(d => format(d, 'yyyy-MM-dd') === dayString);
+                                        const isRecurringOff = (schoolConfig?.offDays ?? []).includes(day.getDay());
 
                                         return (
-                                            <TableRow key={dayString} className="has-[:checked]:bg-primary/5 border-muted-foreground/5">
+                                            <TableRow key={dayString} className={cn(
+                                                "border-muted-foreground/5 transition-colors",
+                                                (isChecked || isRecurringOff) ? "bg-primary/5" : "",
+                                                isRecurringOff && "bg-muted/30"
+                                            )}>
                                                 <TableCell className="w-12 text-center py-2">
                                                     <Checkbox
                                                         id={dayString}
-                                                        checked={isChecked}
+                                                        checked={isChecked || isRecurringOff}
+                                                        disabled={isRecurringOff}
                                                         onCheckedChange={(checked) => handleDayToggle(day, !!checked)}
                                                     />
                                                 </TableCell>
                                                 <TableCell className="py-2">
-                                                    <Label htmlFor={dayString} className="font-bold text-sm cursor-pointer w-full block">
+                                                    <Label htmlFor={dayString} className={cn(
+                                                        "font-bold text-sm block w-full",
+                                                        isRecurringOff ? "cursor-not-allowed opacity-60 italic" : "cursor-pointer"
+                                                    )}>
                                                         {format(day, 'eeee, d MMMM yyyy', { locale: id })}
+                                                        {isRecurringOff && <span className="ml-2 text-[10px] font-medium opacity-70">(Libur rutin)</span>}
                                                     </Label>
                                                 </TableCell>
                                             </TableRow>
