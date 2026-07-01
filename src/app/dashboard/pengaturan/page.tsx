@@ -172,6 +172,8 @@ export default function PengaturanPage() {
           await Promise.all(updatePromises);
           invalidateCache();
           toast({ title: 'Berhasil', description: 'Profil telah diperbarui.' });
+      } else {
+          toast({ title: 'Info', description: 'Tidak ada perubahan data.' });
       }
       setPhotoPreview(null);
     } catch (error: any) {
@@ -225,6 +227,7 @@ export default function PengaturanPage() {
   const getInitials = (n: string | null) => n ? n.split(' ').map(x => x[0]).join('').substring(0, 2).toUpperCase() : 'U';
   const currentPhoto = photoPreview || userData?.photoURL;
   const isTeacherOrStaff = ['guru', 'pegawai', 'kepala_sekolah'].includes(userData?.role || '');
+  const isAdmin = userData?.role === 'admin';
   const positions = isTeacherOrStaff ? ["PNS", "PPPK", "Honorer", "PW"] : ["Pelajar Aktif"];
 
   if (isUserDataLoading || isAuthLoading) return <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;

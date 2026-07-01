@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, TrendingUp, RefreshCw } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { doc, query, orderBy, collection } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -227,6 +227,11 @@ export default function LaporanPage() {
                                     <Badge variant="outline" className={cn("text-[9px] font-bold uppercase px-3 py-1 rounded-full", getStatusBadgeStyle(record.status))}>
                                         {record.status}
                                     </Badge>
+                                    {record.approvalStatus && (
+                                        <Badge variant="outline" className="capitalize ml-1 text-[8px] font-bold">
+                                            {record.approvalStatus}
+                                        </Badge>
+                                    )}
                                 </TableCell>
                                 <TableCell className="text-[11px] font-medium text-muted-foreground italic truncate max-w-[200px]" title={record.description}>{record.description}</TableCell>
                             </TableRow>
