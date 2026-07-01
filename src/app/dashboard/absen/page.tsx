@@ -131,11 +131,9 @@ export default function AbsenPage() {
                 setStatus('success_in');
             }
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
-            // Kita izinkan absen pulang meskipun belum ada absen masuk untuk fleksibilitas (manual diurus admin)
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
             
             const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord?.id || '');
-            // Jika record belum ada sama sekali hari ini (jarang terjadi di jendela pulang tapi mungkin)
             if (!todaysRecord) {
                  await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
             } else {
@@ -183,7 +181,7 @@ export default function AbsenPage() {
 
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
-            const config: Html5QrcodeCameraScanConfig = { fps: 30 }; // Naikkan FPS untuk scan lebih cepat
+            const config: Html5QrcodeCameraScanConfig = { fps: 30 }; 
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
             .catch(err => {

@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff, Lock, UserX } from 'lucide-react';
+import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff, Lock, UserX, BookUser } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -172,15 +172,6 @@ export default function AdminDashboardPage() {
       else if (!isAdmin) { router.replace('/dashboard'); }
     }
   }, [isRoleCheckLoading, user, isAdmin, router]);
-
-  const stats = useMemo(() => {
-    if (!usersData || !isAdmin) return { totalUsers: 0, staffCount: 0 };
-    const staff = usersData.filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
-    return {
-      totalUsers: usersData.length,
-      staffCount: staff.length,
-    };
-  }, [usersData, isAdmin]);
 
   const recentUserActivity = useMemo(() => {
     if (!usersData || !dashboardData.allAttendanceData || !isAdmin) return [];

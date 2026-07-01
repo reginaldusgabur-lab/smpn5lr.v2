@@ -108,7 +108,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
       const dataToSave = {
         id: monthlyConfigId,
         holidays: holidays.map(d => format(d, 'yyyy-MM-dd')),
-        manualWorkDays: calculatedWorkDays, // Simpan hasil hitung sistem
+        manualWorkDays: calculatedWorkDays, 
       };
       await setDoc(monthlyConfigRef, dataToSave, { merge: true });
       toast({ title: 'Berhasil', description: 'Pengaturan hari kerja dan libur telah disimpan.' });
@@ -129,7 +129,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   };
   
   return (
-    <Card className="lg:col-span-3 overflow-hidden border shadow-none rounded-3xl">
+    <Card className="lg:col-span-3 overflow-hidden border shadow-none rounded-xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
             <CardTitle className="font-bold text-sm tracking-tight">Hari kerja & libur bulanan</CardTitle>
             <CardDescription className="text-muted-foreground font-bold">
@@ -139,7 +139,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 sm:p-6">
             <div className="md:col-span-2 space-y-4">
                 {isMonthlyConfigLoading ? (
-                    <div className="w-full h-full flex flex-col gap-2 bg-muted/30 rounded-2xl p-10">
+                    <div className="w-full h-full flex flex-col gap-2 bg-muted/30 rounded-xl p-10">
                         <Skeleton className="h-10 w-full" />
                         <Skeleton className="h-40 w-full" />
                     </div>
@@ -165,7 +165,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                             </Button>
                         </div>
 
-                        <ScrollArea className="h-96 rounded-2xl border bg-muted/10">
+                        <ScrollArea className="h-96 rounded-xl border bg-muted/10">
                             <Table>
                                 <TableBody>
                                     {allDaysInMonth.map((day) => {
@@ -465,7 +465,7 @@ export default function KonfigurasiAbsenPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-1 overflow-hidden border shadow-none rounded-3xl">
+      <Card className="lg:col-span-1 overflow-hidden border shadow-none rounded-xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
           <CardTitle className="font-bold text-sm tracking-tight">Kode QR absensi</CardTitle>
           <CardDescription className="text-muted-foreground font-bold">Gunakan kode QR ini untuk absensi harian.</CardDescription>
@@ -488,7 +488,7 @@ export default function KonfigurasiAbsenPage() {
                     Buat QR baru
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-3xl border-none shadow-none">
+            <AlertDialogContent className="rounded-2xl border-none shadow-none">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="font-bold text-xl">Perbarui kode QR?</AlertDialogTitle>
                     <AlertDialogDescription className="font-bold text-sm">
@@ -507,7 +507,7 @@ export default function KonfigurasiAbsenPage() {
         </CardFooter>
       </Card>
 
-      <Card className="lg:col-span-2 overflow-hidden border shadow-none rounded-3xl">
+      <Card className="lg:col-span-2 overflow-hidden border shadow-none rounded-xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
           <CardTitle className="font-bold text-sm tracking-tight">Pengaturan umum</CardTitle>
           <CardDescription className="text-muted-foreground font-bold">Atur parameter sistem absensi sekolah.</CardDescription>
