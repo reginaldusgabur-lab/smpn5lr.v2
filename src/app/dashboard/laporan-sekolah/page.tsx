@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -111,8 +112,8 @@ export default function SchoolReportPage() {
                 const uid = data.userId || d.ref.parent.parent?.id;
                 if (uid) {
                     const existing = attendanceByUserId[uid] || [];
-                    const dStr = data.date || format(data.checkInTime.toDate(), 'yyyy-MM-dd');
-                    if (!existing.some(e => (e.date || format(e.checkInTime.toDate(), 'yyyy-MM-dd')) === dStr)) {
+                    const dStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : null);
+                    if (dStr && !existing.some(e => (e.date || format(e.checkInTime.toDate(), 'yyyy-MM-dd')) === dStr)) {
                         attendanceByUserId[uid] = [...existing, data];
                     }
                 }
@@ -142,15 +143,19 @@ export default function SchoolReportPage() {
                 let hadirCount = 0;
                 let izinCount = 0;
                 let sakitCount = 0;
+                let alpaCount = 0;
                 const processedDates = new Set<string>();
 
                 uAtt.forEach(att => {
-                    const attDateStr = att.date || format(att.checkInTime.toDate(), 'yyyy-MM-dd');
-                    if (workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
+                    const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : null);
+                    if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
                         let p = 0;
                         const desc = (att.reasonForUpdate || '').toLowerCase();
-                        if (desc.includes('dinas') || desc.includes('pulang cepat')) {
+                        if (desc.includes('dinas')) {
                             p = 1.0;
+                            hadirCount++;
+                        } else if (desc.includes('pulang cepat')) {
+                            p = 0.95; // Pulang cepat = 0.95
                             hadirCount++;
                         } else if (att.checkInTime && att.checkOutTime) {
                             let isLate = false;
@@ -181,8 +186,11 @@ export default function SchoolReportPage() {
                             } else if (leave.type === 'Izin' || leave.type === 'Izin Pribadi') {
                                 p = 0.7;
                                 izinCount++;
-                            } else if (leave.type === 'Dinas' || leave.type === 'Pulang Cepat' || leave.type === 'Dinas Pagi' || leave.type === 'Dinas Siang') {
+                            } else if (leave.type === 'Dinas' || leave.type === 'Dinas Pagi' || leave.type === 'Dinas Siang') {
                                 p = 1.0;
+                                hadirCount++;
+                            } else if (leave.type === 'Pulang Cepat') {
+                                p = 0.95;
                                 hadirCount++;
                             }
                             points += p;
@@ -191,7 +199,7 @@ export default function SchoolReportPage() {
                     });
                 });
 
-                const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+                alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
                 // Denominator: Seluruh hari kerja dalam sebulan untuk progres bertahap
                 const denominator = workingDays.length || 1;

@@ -127,7 +127,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v15_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v16_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -186,8 +186,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 let point = 0;
                 const desc = (att.reasonForUpdate || '').toLowerCase();
                 
-                if (desc.includes('dinas') || desc.includes('pulang cepat')) {
+                if (desc.includes('dinas')) {
                     point = 1.0;
+                } else if (desc.includes('pulang cepat')) {
+                    point = 0.95; // Same as late
                 } else if (att.checkInTime && att.checkOutTime) {
                     let isLate = false;
                     if (schoolConfig?.useTimeValidation && schoolConfig?.checkInEndTime) {
@@ -214,8 +216,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                         point = 0.9;
                     } else if (leave.type === 'Izin' || leave.type === 'Izin Pribadi') {
                         point = 0.7;
-                    } else if (leave.type === 'Dinas' || leave.type === 'Pulang Cepat' || leave.type === 'Dinas Pagi' || leave.type === 'Dinas Siang') {
+                    } else if (leave.type === 'Dinas' || leave.type === 'Dinas Pagi' || leave.type === 'Dinas Siang') {
                         point = 1.0;
+                    } else if (leave.type === 'Pulang Cepat') {
+                        point = 0.95; // Same as late
                     }
                     totalPoints += point;
                     processedDates.add(dayStr);
