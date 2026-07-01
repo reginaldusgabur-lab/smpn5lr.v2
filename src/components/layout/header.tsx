@@ -1,4 +1,3 @@
-
 'use client';
 import React from 'react';
 import Link from 'next/link';
@@ -25,7 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { LogOut, Settings, ShieldAlert } from 'lucide-react';
+import { LogOut, Settings, ShieldAlert, BookOpen, Clock, QrCode, FileText, UserCircle, TrendingUp } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { ModeToggle } from '@/components/theme-toggle';
 
@@ -143,29 +142,82 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
             />
           </button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-                <ShieldAlert className="h-6 w-6 text-destructive" />
-                <span className="font-bold">Aturan & Penegasan Absensi</span>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-xl">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="flex items-center gap-2 text-primary">
+                <BookOpen className="h-6 w-6" />
+                <span className="font-bold">Sistem & Alur Kerja E-SPENLI</span>
             </DialogTitle>
-            <DialogDescription className="pt-4 text-left">
-              Aplikasi ini adalah alat resmi untuk mencatat kehadiran. Pelanggaran terhadap aturan berikut akan dikenakan sanksi sesuai kebijakan sekolah.
+            <DialogDescription className="text-left font-medium">
+              Panduan lengkap penggunaan fitur aplikasi absensi digital untuk Guru, Pegawai, dan Siswa.
             </DialogDescription>
           </DialogHeader>
-          <div className="text-sm space-y-3 py-2 max-h-[60vh] overflow-y-auto pr-4 text-left">
-            <div className="font-bold text-foreground">1. Kejujuran adalah Segalanya</div>
-            <p className="text-muted-foreground pl-4">
-              Setiap pengguna bertanggung jawab penuh atas kebenaran data absensinya. Tindakan manipulasi atau pemalsuan data adalah pelanggaran berat.
-            </p>
-            <div className="font-bold text-foreground">2. Tepat Waktu</div>
-            <p className="text-muted-foreground pl-4">
-              Lakukan absensi masuk dan pulang sesuai dengan rentang waktu yang telah ditetapkan. Keterlambatan akan tercatat otomatis.
-            </p>
-            <div className="font-bold text-foreground">3. QR Code Bersifat Rahasia</div>
-            <p className="text-muted-foreground pl-4">
-              Dilarang keras membagikan atau menyalahgunakan QR Code absensi. Pelanggaran akan ditindaklanjuti.
-            </p>
+          
+          <div className="text-sm space-y-6 py-4 pr-2 text-left">
+            <section className="space-y-2">
+                <div className="flex items-center gap-2 font-bold text-foreground">
+                    <UserCircle className="h-4 w-4 text-primary" />
+                    1. Akses & Login
+                </div>
+                <p className="text-muted-foreground pl-6 leading-relaxed">
+                    Masuk menggunakan <strong>Email dan Kata Sandi</strong> yang telah didaftarkan. Pengguna dapat mengubah profil dan sandi secara mandiri di menu Pengaturan. Admin memiliki wewenang untuk mereset sandi jika pengguna mengalami kendala akses.
+                </p>
+            </section>
+
+            <section className="space-y-2">
+                <div className="flex items-center gap-2 font-bold text-foreground">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    2. Beranda (Dashboard)
+                </div>
+                <p className="text-muted-foreground pl-6 leading-relaxed">
+                    Menampilkan jam digital real-time, ringkasan kehadiran hari ini (Jam Masuk/Pulang), serta <strong>Skor Progres Bulanan</strong>. Skor ini menunjukkan pencapaian kehadiran Anda dibandingkan dengan total hari kerja dalam bulan tersebut.
+                </p>
+            </section>
+
+            <section className="space-y-2">
+                <div className="flex items-center gap-2 font-bold text-foreground">
+                    <QrCode className="h-4 w-4 text-primary" />
+                    3. Absensi QR Code
+                </div>
+                <p className="text-muted-foreground pl-6 leading-relaxed">
+                    Lakukan scan pada QR Code resmi sekolah. Absensi hanya valid jika Anda berada di dalam <strong>Radius Lokasi Sekolah (GPS)</strong> dan dilakukan pada rentang waktu jam masuk atau jam pulang yang telah ditentukan oleh Admin.
+                </p>
+            </section>
+
+            <section className="space-y-2">
+                <div className="flex items-center gap-2 font-bold text-foreground">
+                    <Clock className="h-4 w-4 text-primary" />
+                    4. Izin Pribadi & Sakit
+                </div>
+                <p className="text-muted-foreground pl-6 leading-relaxed">
+                    Pengguna dapat mengajukan izin untuk hari ini atau besok. Status pengajuan dapat dipantau langsung (<strong>Menunggu / Disetujui</strong>). Pengajuan yang masih menunggu dapat dibatalkan secara mandiri jika diperlukan.
+                </p>
+            </section>
+
+            <section className="space-y-2">
+                <div className="flex items-center gap-2 font-bold text-foreground">
+                    <FileText className="h-4 w-4 text-primary" />
+                    5. Laporan & Hitungan Persentase
+                </div>
+                <div className="text-muted-foreground pl-6 space-y-2 leading-relaxed">
+                    <p>Sistem menggunakan perhitungan poin dinamis yang diakumulasikan setiap hari:</p>
+                    <ul className="list-disc pl-5 space-y-1 text-xs font-bold">
+                        <li>Hadir Penuh / Dinas / Pulang Cepat: 1.0 Poin</li>
+                        <li>Terlambat: 0.95 Poin</li>
+                        <li>Sakit: 0.9 Poin</li>
+                        <li>Izin Pribadi: 0.7 Poin</li>
+                        <li>Absen Parsial (Masuk/Pulang saja): 0.5 Poin</li>
+                    </ul>
+                    <p className="text-[11px] italic">Persentase dihitung dari: (Total Poin / Total Hari Kerja Sebulan) x 100%. Skor akan meningkat secara bertahap hingga mencapai 100% pada hari kerja terakhir.</p>
+                </div>
+            </section>
+
+            <div className="pt-4 border-t border-muted-foreground/10 flex items-start gap-3 bg-primary/5 p-4 rounded-xl">
+                <ShieldAlert className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[11px] font-bold text-primary leading-tight">
+                    Seluruh data absensi diverifikasi secara otomatis oleh sistem. Kejujuran adalah tanggung jawab mutlak setiap personil SMPN 5 Langke Rembong.
+                </p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
