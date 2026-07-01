@@ -88,7 +88,6 @@ export default function IzinPage() {
     const targetDateStart = useMemo(() => startOfDay(targetDate), [targetDate]);
     const targetDateEnd = useMemo(() => endOfDay(targetDate), [targetDate]);
 
-    // Query untuk mengecek absensi pada tanggal target
     const attendanceQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(
@@ -99,7 +98,6 @@ export default function IzinPage() {
     }, [user, firestore, targetDateStart, targetDateEnd]);
     const { data: targetDateAttendance, isLoading: isAttendanceLoading } = useCollection(user, attendanceQuery);
     
-    // Query untuk mengecek apakah sudah ada pengajuan izin pada tanggal target
     const existingLeaveQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(
@@ -135,13 +133,13 @@ export default function IzinPage() {
             },
             {
                 value: 'Izin',
-                label: 'Izin',
+                label: 'Izin Pribadi',
                 disabled: hasCheckedIn || (isToday && isPastCheckoutTime) || !!currentDayLeave
             },
             {
                 value: 'Dinas',
                 label: 'Perjalanan Dinas',
-                disabled: hasCheckedIn || !!currentDayLeave
+                disabled: !!currentDayLeave
             },
         ];
     }, [selectedDateValue, hasCheckedIn, hasCheckedOut, isPastCheckoutTime, currentDayLeave]);
@@ -183,6 +181,12 @@ export default function IzinPage() {
                 toast({ variant: 'destructive', title: 'Gagal', description: 'Anda harus absen masuk terlebih dahulu.' });
                 return;
             }
+        } else if (values.type === 'Dinas') {
+             toast({ 
+                title: "Pengajuan Dinas", 
+                description: "Silahkan hubungi atasan untuk pengajuan perjalanan dinas karena fitur tersebut sekarang diinput langsung oleh admin." 
+            });
+            return;
         } else {
             if (hasCheckedIn) {
                 toast({ variant: 'destructive', title: 'Gagal', description: `Anda sudah melakukan absensi hari ini.` });
@@ -313,7 +317,20 @@ export default function IzinPage() {
                                     render={({ field }) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-xs font-bold ml-1">Jenis Pengajuan</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={!!currentDayLeave}>
+                                            <Select 
+                                                onValueChange={(val) => {
+                                                    if (val === 'Dinas') {
+                                                        toast({ 
+                                                            title: "Pengajuan Dinas", 
+                                                            description: "Silahkan hubungi atasan untuk pengajuan perjalanan dinas karena fitur tersebut sekarang diinput langsung oleh admin." 
+                                                        });
+                                                        return;
+                                                    }
+                                                    field.onChange(val);
+                                                }} 
+                                                value={field.value} 
+                                                disabled={!!currentDayLeave}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
                                                         <SelectValue placeholder="Pilih jenis" />
