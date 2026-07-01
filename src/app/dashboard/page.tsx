@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 
 import { calculateAttendanceStats, getDailyStaffAttendanceStats } from '@/lib/attendance';
 import { useAttendanceWindow } from '@/hooks/use-attendance-window';
@@ -24,6 +24,22 @@ const chartConfig = {
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
+
+// Custom Tooltip Component to match the user's provided image exactly
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-card border border-border shadow-2xl rounded-2xl p-4 text-center min-w-[110px] animate-in fade-in zoom-in-95 duration-200">
+        <p className="font-black text-foreground text-base tracking-tight leading-none mb-1.5">{data.name}</p>
+        <p className="text-muted-foreground text-xs font-bold tracking-wide">
+          {data.Jumlah} hari
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 const LiveClockUI = () => {
     const [time, setTime] = useState<Date | null>(null);
@@ -314,7 +330,7 @@ export default function DashboardPage() {
                                             dataKey="name" 
                                             axisLine={false} 
                                             tickLine={false} 
-                                            tick={{ fontSize: 11, fontWeight: 'medium', fill: 'currentColor' }} 
+                                            tick={{ fontSize: 11, fontWeight: 'bold', fill: 'currentColor' }} 
                                         />
                                         <YAxis 
                                             axisLine={false} 
@@ -322,9 +338,9 @@ export default function DashboardPage() {
                                             tick={{ fontSize: 11, fill: 'currentColor' }} 
                                             allowDecimals={false} 
                                         />
-                                        <ChartTooltip 
+                                        <Tooltip 
                                             cursor={{ fill: 'currentColor', opacity: 0.05, radius: 8 }} 
-                                            content={<ChartTooltipContent hideLabel indicator="dot" />}
+                                            content={<CustomTooltip />}
                                         />
                                         <Bar 
                                             dataKey="Jumlah" 
