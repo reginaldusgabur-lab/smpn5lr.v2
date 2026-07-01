@@ -106,11 +106,11 @@ const RecentAttendanceTable = () => {
           }
         }
 
+        // SORT: Ascending (A - B) - Yang paling awal datang di posisi teratas
         const sortedActivities = activitiesData.sort((a, b) => {
-            if (a.rawCheckInTime && b.rawCheckInTime) {
-                return b.rawCheckInTime.getTime() - a.rawCheckInTime.getTime();
-            }
-            return 0;
+            const timeA = a.rawCheckInTime?.getTime() || 0;
+            const timeB = b.rawCheckInTime?.getTime() || 0;
+            return timeA - timeB;
         });
 
         const finalActivities = sortedActivities.map((activity, index) => ({

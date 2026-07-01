@@ -253,7 +253,8 @@ export default function KepalaSekolahDashboardPage() {
     const staffAndTeachers = usersData.filter(u => ['guru', 'kepala_sekolah', 'pegawai'].includes(u.role));
     const presentStaffIds = new Set(allAttendanceData.map(att => att.userId));
     
-    const sortedRecentAttendance = [...allAttendanceData].sort((a, b) => (b.checkInTime?.toDate().getTime() || 0) - (a.checkInTime?.toDate().getTime() || 0));
+    // SORT: Ascending (A - B) - First arrive at top
+    const sortedRecentAttendance = [...allAttendanceData].sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (b.checkInTime?.toDate().getTime() || 0));
 
     const enrichedRecentAttendance = sortedRecentAttendance.map((att, index) => {
         return {

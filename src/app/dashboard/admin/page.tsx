@@ -235,7 +235,8 @@ export default function AdminDashboardPage() {
     });
     const presentStaffIds = new Set(todaysStaffAttendance.map(att => att.userId));
 
-    const sortedRecentActivity = [...allAttendanceData].sort((a, b) => (b.checkInTime?.toDate().getTime() || 0) - (a.checkInTime?.toDate().getTime() || 0));
+    // SORT: Ascending (First arrive = No 1)
+    const sortedRecentActivity = [...allAttendanceData].sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (b.checkInTime?.toDate().getTime() || 0));
 
     const enrichedRecentActivity = sortedRecentActivity.map((att, index) => {
         const userDoc = userMap.get(att.userId);
@@ -247,7 +248,7 @@ export default function AdminDashboardPage() {
             id: att.id,
             sequence: index + 1,
             name: userDoc?.name || 'Pengguna tidak dikenal',
-            role: displayRole, // Add role for display
+            role: displayRole,
             checkInTimeFormatted: att.checkInTime ? att.checkInTime.toDate().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-',
             checkOutTimeFormatted: att.checkOutTime ? att.checkOutTime.toDate().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-',
             status: 'Hadir',
