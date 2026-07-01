@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -97,6 +98,7 @@ export default function AbsenPage() {
       return 'idle';
   }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
 
+  // Scanner only shows if window is open AND no restricting condition (holiday, disabled, leave, or finished)
   const canShowScanner = !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
   const showScanner = canShowScanner;
   const showLoader = isDataLoading || isCameraInitializing || (showScanner && !isScannerReady);
@@ -159,7 +161,7 @@ export default function AbsenPage() {
                     checkOutTime: now, 
                     checkOutLatitude: latitude, 
                     checkOutLongitude: longitude,
-                    reasonForUpdate: 'Absen pulang (Masuk kosong)'
+                    reasonForUpdate: 'Absen pulang (Tanpa masuk)'
                 });
             } else {
                 const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id);
@@ -284,7 +286,7 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leave
             case 'success_in': return { icon: <CheckCircle className="h-16 w-16 text-green-500" />, title: 'Absen masuk berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!', cardClass: 'bg-green-50 dark:bg-green-950/50' };
             case 'success_out': return { icon: <CheckCircle className="h-16 w-16 text-blue-500" />, title: 'Absen pulang berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!', cardClass: 'bg-blue-50 dark:bg-blue-950/50' };
             case 'error_radius': return { icon: <MapPin className="h-16 w-16 text-destructive" />, title: 'Di luar radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.', cardClass: 'bg-destructive/10' };
-            case 'error_time': return { icon: <ClockIcon className="h-16 w-16 text-destructive" />, title: 'Di luar jam absen', desc: 'Waktu absensi belum dibuka atau sudah ditutup.', cardClass: 'bg-destructive/10' };
+            case 'error_time': return { icon: <ClockIcon className="h-16 w-16 text-destructive" />, title: 'Waktu Habis', desc: 'Sesi absensi untuk hari ini telah ditutup.', cardClass: 'bg-destructive/10' };
             case 'error_already_in': return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Sudah absen masuk', desc: 'Anda sudah melakukan absensi masuk hari ini.', cardClass: 'bg-destructive/10' };
             case 'error_already_out': return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Sudah absen pulang', desc: 'Anda sudah melakukan absensi pulang hari ini.', cardClass: 'bg-destructive/10' };
             case 'error_location': return { icon: <MapPin className="h-16 w-16 text-destructive" />, title: 'Lokasi error', desc: locationError || 'Pastikan GPS aktif and berikan izin akses.', cardClass: 'bg-destructive/10' };
