@@ -16,9 +16,9 @@ export default function Loading() {
             sizes="128px"
           />
         </div>
-        <div className="flex flex-col items-center gap-0.5">
+        <div className="flex flex-col items-center gap-1">
           <h2 className="text-2xl font-bold tracking-tight text-primary">E-SPENLI</h2>
-          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-40">Menyiapkan Sistem</p>
+          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">Electronic System</p>
         </div>
       </div>
       <style jsx global>{`

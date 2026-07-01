@@ -127,8 +127,8 @@ export default function LoginPage() {
             </div>
             <div className="space-y-1">
               <CardTitle className="text-4xl font-bold tracking-tight text-primary">E-SPENLI</CardTitle>
-              <CardDescription className="font-normal text-muted-foreground/80 text-[10px] whitespace-nowrap px-4">
-                Aplikasi absensi digital resmi SMP Negeri 5 Langke Rembong
+              <CardDescription className="font-medium text-muted-foreground/80 text-[10px] tracking-tight px-4">
+                Electronic System of SMP Negeri 5 Langke Rembong
               </CardDescription>
             </div>
           </CardHeader>
@@ -190,11 +190,7 @@ export default function LoginPage() {
               </form>
             </Form>
           </CardContent>
-          <CardFooter className="flex-col bg-muted/20 py-5 border-t border-muted-foreground/5">
-            <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-60">
-              Copyright © 2026 SMP Negeri 5 Langke Rembong
-            </p>
-          </CardFooter>
+          <div className="bg-muted/20 py-6 border-t border-muted-foreground/5" />
         </Card>
 
         <DialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
@@ -230,8 +226,13 @@ export default function LoginPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      <footer className="mt-8 text-center text-[9px] font-bold text-muted-foreground/40 leading-relaxed tracking-[0.2em] uppercase">
-        created by team operator | All Rights Reserved.
+      <footer className="mt-8 text-center flex flex-col items-center gap-1.5">
+        <p className="text-[10px] font-bold text-muted-foreground/50 tracking-[0.15em] uppercase">
+          SMP NEGERI 5 LANGKE REMBONG
+        </p>
+        <p className="text-[9px] font-medium text-muted-foreground/30 tracking-widest uppercase">
+          All Rights Reserved.
+        </p>
       </footer>
     </div>
   );
