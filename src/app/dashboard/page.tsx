@@ -5,7 +5,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, limit } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle, CheckCircle2, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,7 +45,7 @@ export default function DashboardPage() {
   const { status: windowStatus } = useAttendanceWindow();
   const isMounted = useRef(true);
 
-  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, isHoliday: false });
+  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [personalSummary, setPersonalSummary] = useState({ percentage: '0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
@@ -169,7 +169,8 @@ export default function DashboardPage() {
 
         {isAdminOrKepsek && (
             <div className="w-full space-y-4 pt-4 border-t border-dashed border-border/50 flex flex-col items-stretch">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+                    {/* Hadir Card */}
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold text-green-600 uppercase tracking-wider">Hadir</CardTitle>
@@ -184,6 +185,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Izin / Sakit Card */}
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Izin / Sakit</CardTitle>
@@ -198,6 +200,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Menunggu Card */}
                     <Link href="/dashboard/izin-kepala-sekolah" className="block">
                         <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl hover:bg-muted/30 transition-all group overflow-hidden">
                             <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
@@ -213,6 +216,21 @@ export default function DashboardPage() {
                             </CardContent>
                         </Card>
                     </Link>
+
+                    {/* Alpa Card */}
+                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
+                        <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
+                            <CardTitle className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Alpa</CardTitle>
+                            <div className="p-1.5 bg-red-50 rounded-lg">
+                                <UserX className="h-3.5 w-3.5 text-red-600" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-1">
+                            <div className="text-3xl font-bold text-red-600 tracking-tighter">
+                                {isStatsLoading ? '...' : stats.alpa}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
                 <div className="w-full space-y-6 flex flex-col items-stretch">
                     <RecentAttendanceTable />

@@ -49,7 +49,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         })();
 
         if (isHoliday) {
-            return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, isHoliday: true };
+            return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: true };
         }
 
         const startOfToday = startOfDay(today);
@@ -81,6 +81,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         let izinCount = 0;
         let sakitCount = 0;
         let pendingCount = 0;
+        let alpaCount = 0;
 
         allStaff.forEach((u: any) => {
             if (presentUserIds.has(u.id)) return;
@@ -98,7 +99,11 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                     else if (leave.type !== 'Pulang Cepat') izinCount++;
                 } else if (leave.status === 'pending' && leave.type !== 'Pulang Cepat') {
                     pendingCount++;
+                } else {
+                    alpaCount++;
                 }
+            } else {
+                alpaCount++;
             }
         });
 
@@ -108,13 +113,14 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             izin: izinCount,
             sakit: sakitCount,
             pending: pendingCount,
+            alpa: alpaCount,
             isHoliday: false
         };
 
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
-        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, isHoliday: false };
+        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
     }
 }
 
@@ -180,7 +186,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 let point = 0;
                 const desc = (att.reasonForUpdate || '').toLowerCase();
                 
-                // Poin: Dinas (Pagi/Siang/Pulang Cepat) = 1.0
                 if (desc.includes('dinas') || desc.includes('pulang cepat')) {
                     point = 1.0;
                 } else if (att.checkInTime && att.checkOutTime) {
@@ -190,10 +195,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                         const deadline = setMinutes(setHours(startOfDay(att.checkInTime.toDate()), h), m);
                         if (att.checkInTime.toDate() > deadline) isLate = true;
                     }
-                    // Poin: Terlambat = 0.95, Hadir Penuh = 1.0
                     point = isLate ? 0.95 : 1.0;
                 } else if (att.checkInTime || att.checkOutTime) {
-                    // Poin: Hanya masuk atau hanya pulang = 0.5
                     point = 0.5;
                 }
                 
@@ -220,7 +223,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             });
         });
 
-        // Denominator: Total Hari Kerja Efektif dalam SEBULAN (Target 100% di akhir bulan)
         const denominator = Math.max(1, workingDaysInMonth.length);
         const finalPercentage = (totalPoints / denominator) * 100;
 
@@ -228,7 +230,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             totalHadir: totalPoints, 
             totalIzin: 0,
             totalSakit: 0,
-            totalAlpa: 0, // Dihitung di laporan detail jika perlu
+            totalAlpa: 0,
             persentase: Math.min(finalPercentage, 100).toFixed(1) + '%',
         };
 
