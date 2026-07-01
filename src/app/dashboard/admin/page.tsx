@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff } from 'lucide-react';
+import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff, Lock, UserX } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -82,6 +82,7 @@ export default function AdminDashboardPage() {
   const { toast } = useToast();
 
   const [isHoliday, setIsHoliday] = useState(false);
+  const [isManualDisabled, setIsManualDisabled] = useState(false);
 
   // --- Data Fetching ---
   const userDocRef = useMemoFirebase(() => {
@@ -120,16 +121,19 @@ export default function AdminDashboardPage() {
         
         try {
             const today = new Date();
-            // Cek Hari Libur
+            // Cek Konfigurasi Sekolah
             const schoolConfigSnap = await getDoc(doc(firestore, 'schoolConfig', 'default'));
             const schoolConfig = schoolConfigSnap.data();
             const monthlyConfigId = format(today, 'yyyy-MM');
             const monthlyConfigSnap = await getDoc(doc(firestore, 'monthlyConfigs', monthlyConfigId));
             const monthlyConfig = monthlyConfigSnap.data();
 
+            const isManualOff = schoolConfig?.isAttendanceActive === false;
+            setIsManualDisabled(isManualOff);
+
             const isHolidayToday = (() => {
                 if (!schoolConfig) return false;
-                if (schoolConfig.isAttendanceActive === false) return true;
+                if (isManualOff) return true; // Secara logika tombol manual mengesampingkan segalanya
                 const todayStr = format(today, 'yyyy-MM-dd');
                 if (monthlyConfig?.holidays?.includes(todayStr)) return true;
                 const offDays: number[] = schoolConfig.offDays ?? [0, 6];
@@ -235,7 +239,7 @@ export default function AdminDashboardPage() {
     });
     const presentStaffIds = new Set(todaysStaffAttendance.map(att => att.userId));
 
-    // SORT: Ascending (First arrive = No 1)
+    // SORT: Ascending (A - B) - First arrive = No 1
     const sortedRecentActivity = [...allAttendanceData].sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (b.checkInTime?.toDate().getTime() || 0));
 
     const enrichedRecentActivity = sortedRecentActivity.map((att, index) => {
@@ -291,50 +295,109 @@ export default function AdminDashboardPage() {
             </Alert>
         )}
         
-        {isHoliday && (
+        {isManualDisabled ? (
+            <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800">
+                <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <AlertTitle className="text-amber-800 dark:text-amber-300 font-bold">Sistem Absensi Dinonaktifkan</AlertTitle>
+                <AlertDescription className="text-amber-700 dark:text-amber-400">
+                    Sistem saat ini sedang dinonaktifkan secara manual oleh Administrator. Pengguna tidak dapat melakukan absensi.
+                </AlertDescription>
+            </Alert>
+        ) : isHoliday && (
             <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
                 <CalendarOff className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Hari Libur Terdeteksi</AlertTitle>
                 <AlertDescription className="text-blue-700 dark:text-blue-400">
-                    Sistem absensi dinonaktifkan hari ini. Tabel ketidakhadiran disembunyikan untuk menjaga akurasi data.
+                    Sistem absensi non-aktif hari ini berdasarkan jadwal libur.
                 </AlertDescription>
             </Alert>
         )}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Main Content: Recent Attendance Table */}
-            <Card className="lg:col-span-2 shadow-none">
-                <CardHeader>
-                    <CardTitle>Aktivitas Pengguna Terbaru</CardTitle>
-                    <CardDescription>Aktivitas kehadiran semua pengguna (guru, staf, dan siswa) yang tercatat hari ini.</CardDescription>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+             <Card className="shadow-none">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Staf Hadir</CardTitle>
+                    <UserCheck className="h-5 w-5 text-green-500" />
                 </CardHeader>
                 <CardContent>
+                    <div className="text-3xl font-bold">{staffPresentToday}<span className="text-xl font-normal text-muted-foreground">/{totalStaff}</span></div>
+                    <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase">Tercatat masuk hari ini</p>
+                </CardContent>
+            </Card>
+
+            <Card className="shadow-none">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Izin Tertunda</CardTitle>
+                    <FileWarning className="h-5 w-5 text-amber-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-3xl font-bold">{pendingLeaveRequestsCount}</div>
+                    <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase">Menunggu persetujuan</p>
+                </CardContent>
+            </Card>
+
+            <Card className="shadow-none">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total Pengguna</CardTitle>
+                    <Users className="h-5 w-5 text-primary" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-3xl font-bold">{totalUsers}</div>
+                    <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase">Personil aktif sistem</p>
+                </CardContent>
+            </Card>
+
+             <Link href="/dashboard/admin/laporan-guru">
+                <Card className="hover:bg-muted/50 transition-colors shadow-none h-full">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Laporan</CardTitle>
+                        <FileText className="h-5 w-5 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-lg font-bold text-blue-600">Akses Cepat</div>
+                        <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase">Kelola laporan harian</p>
+                    </CardContent>
+                </Card>
+            </Link>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+            <Card className="shadow-none rounded-xl overflow-hidden">
+                <CardHeader className="bg-muted/20 border-b border-muted-foreground/5">
+                    <CardTitle className="text-lg font-bold text-primary">Aktivitas Kehadiran Terbaru</CardTitle>
+                    <CardDescription className="font-medium">Urutan kedatangan personil yang tercatat hari ini.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[50px] text-center">No.</TableHead>
-                                    <TableHead>Nama</TableHead>
-                                    <TableHead>Peran</TableHead>
-                                    <TableHead className="text-center">Waktu Masuk</TableHead>
-                                    <TableHead className="text-center">Waktu Pulang</TableHead>
-                                    <TableHead className="text-center">Status</TableHead>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="border-none">
+                                    <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase tracking-widest">Nama Personil</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase tracking-widest">Peran</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Masuk</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Pulang</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Status</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {recentUserActivity.length > 0 ? recentUserActivity.map((item, index) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="text-center font-medium">{item.sequence}</TableCell>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell className="capitalize">{item.role}</TableCell>
-                                        <TableCell className="text-center">{item.checkInTimeFormatted}</TableCell>
-                                        <TableCell className="text-center">{item.checkOutTimeFormatted}</TableCell>
-                                        <TableCell className="text-center"><Badge variant={statusVariant[item.status] || 'default'}>{item.status}</Badge></TableCell>
+                                {recentUserActivity.length > 0 ? recentUserActivity.map((item) => (
+                                    <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
+                                        <TableCell className="text-center font-bold text-muted-foreground">{item.sequence}</TableCell>
+                                        <TableCell className="font-bold text-sm">{item.name}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="secondary" className="text-[9px] font-bold uppercase">{item.role}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-center font-mono text-xs font-bold">{item.checkInTimeFormatted}</TableCell>
+                                        <TableCell className="text-center font-mono text-xs font-bold">{item.checkOutTimeFormatted}</TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge variant={statusVariant[item.status] || 'default'} className="text-[9px] font-bold uppercase">{item.status}</Badge>
+                                        </TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
-                                            {isHoliday ? "Tidak ada aktivitas pada hari libur." : "Belum ada aktivitas kehadiran hari ini."}
+                                        <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold">
+                                            {isHoliday || isManualDisabled ? "Tidak ada aktivitas pada saat sistem non-aktif." : "Belum ada aktivitas kehadiran hari ini."}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -343,53 +406,9 @@ export default function AdminDashboardPage() {
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Sidebar: Summary Cards */}
-            <div className="space-y-6">
-                <Card className="shadow-none">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Guru & Staf Hadir</CardTitle>
-                        <UserCheck className="h-5 w-5 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">{staffPresentToday}<span className="text-xl font-normal text-muted-foreground">/{totalStaff}</span></div>
-                        <p className="text-xs text-muted-foreground">Total guru & staf yang tercatat masuk hari ini</p>
-                    </CardContent>
-                </Card>
-                <Card className="shadow-none">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Permintaan Izin Tertunda</CardTitle>
-                    <FileWarning className="h-5 w-5 text-amber-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{pendingLeaveRequestsCount}</div>
-                    <p className="text-xs text-muted-foreground">Permintaan izin/sakit menunggu persetujuan</p>
-                  </CardContent>
-                </Card>
-                 <Card className="shadow-none">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Total Pengguna Aktif</CardTitle>
-                        <Users className="h-5 w-5 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">{totalUsers}</div>
-                        <p className="text-xs text-muted-foreground">{kepalaSekolahCount} Kepsek, {guruCount} Guru, {pegawaiCount} Pegawai, {siswaCount} Siswa</p>
-                    </CardContent>
-                </Card>
-                <Link href="/dashboard/admin/laporan-guru">
-                    <Card className="hover:bg-muted/50 transition-colors shadow-none">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Laporan Guru</CardTitle>
-                            <FileText className="h-5 w-5 text-blue-500" />
-                        </CardHeader>
-                        <CardContent>
-                             <p className="text-xs text-muted-foreground">Buat dan kelola laporan kehadiran guru.</p>
-                        </CardContent>
-                    </Card>
-                </Link>
-            </div>
         </div>
     </div>
     </div>
   );
 }
+

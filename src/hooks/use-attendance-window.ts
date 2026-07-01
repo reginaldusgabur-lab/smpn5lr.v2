@@ -21,7 +21,8 @@ export interface SchoolConfig {
 
 export type AttendanceWindowStatus =
   | "LOADING"          // Keadaan awal
-  | "SESSION_INACTIVE" // Dinonaktifkan manual atau hari libur
+  | "DISABLED"         // Dinonaktifkan secara manual oleh Admin melalui tombol switch
+  | "SESSION_INACTIVE" // Hari libur terjadwal (rutin mingguan atau spesifik bulanan)
   | "BEFORE_IN"        // Belum jam masuk
   | "CHECK_IN_OPEN"    // Jendela masuk terbuka
   | "AFTER_IN"         // Batas jam masuk berakhir (sebelum jam pulang)
@@ -38,8 +39,14 @@ export const useAttendanceWindow = () => {
       return;
     }
 
-    if (!config || config.isAttendanceActive === false) {
-      setStatus("SESSION_INACTIVE"); 
+    if (!config) {
+      setStatus("LOADING");
+      return;
+    }
+
+    // PRIORITAS 1: Cek apakah dinonaktifkan manual oleh Admin (Switch di Pengaturan)
+    if (config.isAttendanceActive === false) {
+      setStatus("DISABLED"); 
       return;
     }
 
@@ -48,7 +55,7 @@ export const useAttendanceWindow = () => {
         const currentTime = now.getHours() * 60 + now.getMinutes();
         const dayOfWeek = now.getDay();
         
-        // Cek hari libur rutin
+        // PRIORITAS 2: Cek hari libur rutin
         const offDays = config.offDays ?? [0, 6];
         if (offDays.includes(dayOfWeek)) {
             setStatus("SESSION_INACTIVE");

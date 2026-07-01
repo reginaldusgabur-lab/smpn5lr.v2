@@ -45,7 +45,7 @@ export default function DashboardPage() {
   const { status: windowStatus } = useAttendanceWindow();
   const isMounted = useRef(true);
 
-  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false });
+  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [personalSummary, setPersonalSummary] = useState({ percentage: '0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
@@ -113,8 +113,12 @@ export default function DashboardPage() {
         return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat data...</div>;
     }
 
+    if (windowStatus === 'DISABLED' || stats.isManualDisabled) {
+        return <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Lock className="mr-2 h-4 w-4" /> Sistem sedang dinonaktifkan</div>;
+    }
+
     if (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday) {
-        return <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Lock className="mr-2 h-4 w-4" /> Sistem nonaktif / hari libur</div>;
+        return <div className="w-full bg-muted text-muted-foreground border border-border font-bold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Lock className="mr-2 h-4 w-4" /> Hari libur rutin</div>;
     }
 
     if (windowStatus === 'CLOSED') {
@@ -282,7 +286,7 @@ export default function DashboardPage() {
                                     {isStatsLoading ? '...' : stats.pending}
                                 </div>
                             </CardContent>
-                        </Card>
+                        </Link>
                     </Link>
 
                     {/* Alpa Card */}

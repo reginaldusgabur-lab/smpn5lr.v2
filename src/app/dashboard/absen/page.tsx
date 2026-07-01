@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Html5Qrcode, Html5QrcodeCameraScanConfig } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
-import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle } from 'lucide-react';
+import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle, Lock } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -14,13 +13,14 @@ import { format } from 'date-fns';
 import QuoteOfTheDay from '@/components/layout/quote-of-the-day';
 import { useAttendanceWindow } from '@/hooks/use-attendance-window';
 
+// --- Helper Functions ---
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 6371e3;
+    const R = 6371e3; // metres
     const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
     const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
+    return R * c; // in metres
 }
 
 const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosition> =>
@@ -32,8 +32,10 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
     navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
 
-type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'success_out' | 'error_radius' | 'error_time' | 'error_already_in' | 'error_already_out' | 'error_generic' | 'error_location' | 'info_holiday' | 'info_checked_out' | 'info_no_camera';
+// --- Types ---
+type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'success_out' | 'error_radius' | 'error_time' | 'error_already_in' | 'error_already_out' | 'error_generic' | 'error_location' | 'info_holiday' | 'info_checked_out' | 'info_no_camera' | 'info_disabled';
 
+// --- Main Component ---
 export default function AbsenPage() {
   const [status, setStatus] = useState<FeedbackStatus>('idle');
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export default function AbsenPage() {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const readerId = "qr-reader-fullscreen";
 
+  // --- Firestore Data Hooks ---
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData } = useDoc(user, userDocRef);
   
@@ -59,24 +62,28 @@ export default function AbsenPage() {
   const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
   const todaysRecord = useMemo(() => todaysAttendance?.[0], [todaysAttendance]);
 
+  // --- Derived State ---
   const isDataLoading = isUserLoading || isAttendanceLoading || windowStatus === 'LOADING';
   const isCameraInitializing = hasCameraPermission === null;
   const isHoliday = windowStatus === 'SESSION_INACTIVE';
+  const isManualDisabled = windowStatus === 'DISABLED';
   const hasCompletedAttendance = useMemo(() => !!(todaysRecord?.checkInTime && todaysRecord?.checkOutTime), [todaysRecord]);
 
   const effectiveStatus: FeedbackStatus = useMemo(() => {
       if (status !== 'idle') return status;
       if (isDataLoading) return 'idle';
       if (hasCompletedAttendance) return 'info_checked_out';
+      if (isManualDisabled) return 'info_disabled';
       if (isHoliday) return 'info_holiday';
       if (windowStatus === 'BEFORE_IN' || windowStatus === 'AFTER_IN' || windowStatus === 'CLOSED') return 'error_time';
       if (hasCameraPermission === false) return 'info_no_camera';
       return 'idle';
-  }, [status, isDataLoading, hasCompletedAttendance, isHoliday, windowStatus, hasCameraPermission]);
+  }, [status, isDataLoading, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
 
-  const showScanner = !isDataLoading && hasCameraPermission && !isHoliday && !hasCompletedAttendance && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
+  const showScanner = !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
   const showLoader = isDataLoading || isCameraInitializing || (showScanner && !isScannerReady);
 
+  // --- Core Functions ---
   const handleAttendance = useCallback(async () => {
     setLocationError(null);
     if (!user || !firestore || !schoolConfig) {
@@ -124,9 +131,16 @@ export default function AbsenPage() {
                 setStatus('success_in');
             }
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
+            // Kita izinkan absen pulang meskipun belum ada absen masuk untuk fleksibilitas (manual diurus admin)
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
+            
             const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord?.id || '');
-            await updateDoc(recordRef, { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+            // Jika record belum ada sama sekali hari ini (jarang terjadi di jendela pulang tapi mungkin)
+            if (!todaysRecord) {
+                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+            } else {
+                await updateDoc(recordRef, { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
+            }
             setStatus('success_out');
         }
     } catch (error) {
@@ -169,7 +183,7 @@ export default function AbsenPage() {
 
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
-            const config: Html5QrcodeCameraScanConfig = { fps: 30 };
+            const config: Html5QrcodeCameraScanConfig = { fps: 30 }; // Naikkan FPS untuk scan lebih cepat
             qrCode.start({ facingMode: 'environment' }, config, onScanSuccess, undefined)
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
             .catch(err => {
@@ -229,7 +243,7 @@ export default function AbsenPage() {
             <StatusFeedbackOverlay 
                 status={effectiveStatus} 
                 locationError={locationError} 
-                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') || effectiveStatus === 'error_time' || effectiveStatus === 'info_holiday' ? router.push('/dashboard') : setStatus('idle')} 
+                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') || effectiveStatus === 'error_time' || effectiveStatus === 'info_holiday' || effectiveStatus === 'info_disabled' ? router.push('/dashboard') : setStatus('idle')} 
                 userData={userData} 
             />
         )}
@@ -249,6 +263,7 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData }: { s
             case 'error_already_in': return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Sudah absen masuk', desc: 'Anda sudah melakukan absensi masuk hari ini.', cardClass: 'bg-destructive/10' };
             case 'error_already_out': return { icon: <X className="h-16 w-16 text-destructive" />, title: 'Sudah absen pulang', desc: 'Anda sudah melakukan absensi pulang hari ini.', cardClass: 'bg-destructive/10' };
             case 'error_location': return { icon: <MapPin className="h-16 w-16 text-destructive" />, title: 'Lokasi error', desc: locationError || 'Pastikan GPS aktif and berikan izin akses.', cardClass: 'bg-destructive/10' };
+            case 'info_disabled': return { icon: <Lock className="h-16 w-16 text-amber-500" />, title: 'Sistem Dinonaktifkan', desc: 'Admin telah menonaktifkan sistem absensi sementara.', cardClass: 'bg-amber-50 dark:bg-amber-950/50' };
             case 'info_holiday': return { icon: <CalendarOff className="h-16 w-16 text-blue-500" />, title: 'Hari libur', desc: 'Sistem absensi tidak aktif hari ini.', cardClass: 'bg-blue-50 dark:bg-blue-950/50' };
             case 'info_checked_out': return { icon: <CheckCircle className="h-16 w-16 text-green-500" />, title: 'Absensi selesai', desc: 'Anda telah menyelesaikan absensi untuk hari ini.', cardClass: 'bg-green-50 dark:bg-green-950/50' };
             case 'info_no_camera': return { icon: <CameraOff className="h-16 w-16 text-destructive" />, title: 'Kamera tidak tersedia', desc: 'Izinkan akses kamera di pengaturan browser.', cardClass: 'bg-destructive/10' };
