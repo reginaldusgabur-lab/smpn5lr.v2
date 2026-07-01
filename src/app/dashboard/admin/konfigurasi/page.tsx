@@ -38,7 +38,7 @@ import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking,
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
-import { format, getDaysInMonth, startOfMonth, eachDayOfInterval } from 'date-fns';
+import { format, getDaysInMonth, startOfMonth, eachDayOfInterval, startOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
@@ -60,8 +60,6 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   const firestore = useFirestore();
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [holidays, setHolidays] = useState<Date[]>([]);
-  const [manualWorkDays, setManualWorkDays] = useState<string>('');
-  const [calculatedWorkDays, setCalculatedWorkDays] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
   const monthlyConfigId = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
@@ -82,53 +80,35 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   useEffect(() => {
     if (monthlyConfigData) {
       setHolidays((monthlyConfigData.holidays ?? []).map((d: string) => new Date(`${d}T00:00:00`)));
-      setManualWorkDays(monthlyConfigData.manualWorkDays?.toString() ?? '');
     } else {
       setHolidays([]);
-      setManualWorkDays('');
     }
   }, [monthlyConfigData]);
 
-  useEffect(() => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
-    const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-    const recurringOffDays: number[] = schoolConfig?.offDays ?? [0];
+  const calculatedWorkDays = useMemo(() => {
+    if (!schoolConfig) return 0;
+    const recurringOffDays: number[] = schoolConfig.offDays ?? [0];
     const specificHolidays = new Set(holidays.map(d => format(d, 'yyyy-MM-dd')));
 
-    const workDays = allDays.filter(day => {
+    const workDays = allDaysInMonth.filter(day => {
       const isRecurringOff = recurringOffDays.includes(day.getDay());
       const isSpecificHoliday = specificHolidays.has(format(day, 'yyyy-MM-dd'));
       return !isRecurringOff && !isSpecificHoliday;
     });
 
-    setCalculatedWorkDays(workDays.length);
-  }, [currentMonth, holidays, schoolConfig?.offDays]);
+    return workDays.length;
+  }, [allDaysInMonth, holidays, schoolConfig?.offDays]);
 
 
   const handleSave = async () => {
     if (!monthlyConfigRef) return;
     setIsSaving(true);
     
-    const totalDaysInMonth = getDaysInMonth(currentMonth);
-    const manualWorkDaysValue = manualWorkDays === '' ? null : parseInt(manualWorkDays, 10);
-
-    if (manualWorkDaysValue !== null && (isNaN(manualWorkDaysValue) || manualWorkDaysValue < 0 || manualWorkDaysValue > totalDaysInMonth)) {
-        toast({
-            variant: 'destructive',
-            title: 'Input tidak valid',
-            description: `Jumlah hari kerja harus berupa angka antara 0 dan ${totalDaysInMonth}.`
-        });
-        setIsSaving(false);
-        return;
-    }
-
     try {
       const dataToSave = {
         id: monthlyConfigId,
         holidays: holidays.map(d => format(d, 'yyyy-MM-dd')),
-        manualWorkDays: manualWorkDaysValue,
+        manualWorkDays: calculatedWorkDays, // Simpan hasil hitung sistem
       };
       await setDoc(monthlyConfigRef, dataToSave, { merge: true });
       toast({ title: 'Berhasil', description: 'Pengaturan hari kerja dan libur telah disimpan.' });
@@ -146,7 +126,6 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         ? [...prev, day]
         : prev.filter(d => format(d, 'yyyy-MM-dd') !== format(day, 'yyyy-MM-dd'))
     );
-    setManualWorkDays(''); 
   };
   
   return (
@@ -154,7 +133,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
             <CardTitle className="font-bold text-sm tracking-tight">Hari kerja & libur bulanan</CardTitle>
             <CardDescription className="text-muted-foreground font-bold">
-                Tandai hari libur spesifik atau tentukan jumlah hari kerja efektif.
+                Tandai hari libur spesifik untuk menghitung hari kerja efektif bulan ini.
             </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 sm:p-6">
@@ -232,17 +211,12 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                     Jumlah hari kerja efektif di bulan <span className="font-bold">{format(currentMonth, 'MMMM', { locale: id })}</span> digunakan untuk hitung persentase kehadiran.
                 </p>
                 <div className="space-y-2">
-                    <Label htmlFor="manualWorkDays" className="text-xs font-bold">Jumlah hari kerja (Manual)</Label>
-                    <Input
-                        id="manualWorkDays"
-                        type="number"
-                        className="rounded-xl h-11 bg-muted/30 shadow-none font-bold"
-                        value={manualWorkDays}
-                        onChange={(e) => setManualWorkDays(e.target.value)}
-                        placeholder={calculatedWorkDays.toString()}
-                    />
-                     <p className="text-[10px] font-bold text-muted-foreground">
-                        Dihitung otomatis: <span className="text-primary">{calculatedWorkDays} hari</span>.
+                    <Label className="text-xs font-bold ml-1 text-primary">Jumlah hari kerja efektif</Label>
+                    <div className="h-11 w-full rounded-xl bg-muted/40 border border-muted-foreground/10 flex items-center px-4 font-black text-primary shadow-inner">
+                        {isMonthlyConfigLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : `${calculatedWorkDays} hari`}
+                    </div>
+                     <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
+                        Dihitung otomatis berdasarkan hari libur rutin mingguan dan libur spesifik kalender.
                     </p>
                 </div>
             </div>
