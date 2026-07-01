@@ -344,16 +344,16 @@ export default function UserReportDetailPage() {
                                         {stats && (
                                             <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
                                                 <TrendingUp className="h-4 w-4 text-primary" />
-                                                <span className="text-sm font-black text-primary">{stats.persentase}</span>
+                                                <span className="text-sm font-bold text-primary">{stats.persentase}</span>
                                             </div>
                                         )}
-                                        <span className="font-black text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                        <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                                     </div>
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none" onClick={() => changeMonth(1)} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
                             <div className="flex justify-center sm:justify-end">
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-black bg-primary hover:bg-primary/90 shadow-none h-11 rounded-xl text-xs uppercase tracking-wider">
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 shadow-none h-11 rounded-xl text-xs uppercase tracking-wider">
                                     {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
                                 </Button>
                             </div>

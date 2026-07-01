@@ -318,7 +318,7 @@ export default function SchoolReportPage() {
                             <div className="flex flex-col items-center justify-center gap-4">
                                 <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
                                     <Button 
-                                        variant="ghost" 
+                                        variant="outline" 
                                         size="icon" 
                                         className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
                                         onClick={() => setCurrentMonth(prev => {
@@ -329,8 +329,8 @@ export default function SchoolReportPage() {
                                     >
                                         <ChevronLeft className="h-5 w-5 text-primary" />
                                     </Button>
-                                    <span className="w-40 text-center font-black text-xl text-primary tracking-tight capitalize whitespace-nowrap">{monthName}</span>
-                                    <Button variant="ghost" size="icon" className="rounded-xl shrink-0 h-10 w-10 shadow-none hover:bg-background/50" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}>
+                                    <span className="w-40 text-center font-bold text-xl text-primary tracking-tight capitalize whitespace-nowrap">{monthName}</span>
+                                    <Button variant="outline" size="icon" className="rounded-xl shrink-0 h-10 w-10 shadow-none hover:bg-background/50" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}>
                                         <ChevronRight className="h-5 w-5 text-primary" />
                                     </Button>
                                 </div>
@@ -363,7 +363,7 @@ export default function SchoolReportPage() {
                                     </div>
                                 </div>
                                 <Button 
-                                    className="w-full sm:w-auto h-11 rounded-xl font-black shadow-none active:scale-95 transition-all px-6 bg-primary hover:bg-primary/90 text-xs" 
+                                    className="w-full sm:w-auto h-11 rounded-xl font-bold shadow-none active:scale-95 transition-all px-6 bg-primary hover:bg-primary/90 text-xs" 
                                     disabled={isReportLoading || !filteredReports.length || isExporting}
                                     onClick={handleDownloadPdf}
                                 >

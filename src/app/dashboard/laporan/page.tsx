@@ -187,10 +187,10 @@ export default function LaporanPage() {
                             {stats && (
                                 <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
                                     <TrendingUp className="h-4 w-4 text-primary" />
-                                    <span className="text-sm font-black text-primary">{stats.persentase}</span>
+                                    <span className="text-sm font-bold text-primary">{stats.persentase}</span>
                                 </div>
                             )}
-                            <span className="font-black text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
+                            <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
                         </div>

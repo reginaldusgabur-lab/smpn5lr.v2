@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -184,19 +183,19 @@ export default function ReportClientShell({
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none">
-                                <span className="text-2xl font-black text-green-600">{summaryStats.hadir}</span>
+                                <span className="text-2xl font-bold text-green-600">{summaryStats.hadir}</span>
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><CheckCircle2 className="h-3 w-3 text-green-500"/> Hadir</p>
                             </Card>
                              <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none">
-                                <span className="text-2xl font-black text-red-600">{summaryStats.alpa}</span>
+                                <span className="text-2xl font-bold text-red-600">{summaryStats.alpa}</span>
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><XCircle className="h-3 w-3 text-red-500"/> Alpa</p>
                             </Card>
                              <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none">
-                                <span className="text-2xl font-black text-blue-600">{summaryStats.izin}</span>
+                                <span className="text-2xl font-bold text-blue-600">{summaryStats.izin}</span>
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><FileWarning className="h-3 w-3 text-blue-500"/> Izin</p>
                             </Card>
                              <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none">
-                                <span className="text-2xl font-black text-orange-600">{summaryStats.sakit}</span>
+                                <span className="text-2xl font-bold text-orange-600">{summaryStats.sakit}</span>
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><CalendarClock className="h-3 w-3 text-orange-500"/> Sakit</p>
                             </Card>
                         </div>
@@ -222,7 +221,7 @@ export default function ReportClientShell({
                                 >
                                     <ChevronLeft className="h-5 w-5 text-primary" />
                                 </Button>
-                                <span className="w-40 text-center font-black text-xl text-primary tracking-tight capitalize whitespace-nowrap">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                <span className="w-40 text-center font-bold text-xl text-primary tracking-tight capitalize whitespace-nowrap">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
