@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -20,8 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, TrendingUp, RefreshCw } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, isBefore, eachDayOfInterval, startOfDay, endOfDay, isWithinInterval, isSameDay, parseISO } from 'date-fns';
+import { collection, query, orderBy, doc, startOfMonth, endOfMonth } from 'firebase/firestore';
+import { format, isSameMonth, addMonths, subMonths, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/attendance';
