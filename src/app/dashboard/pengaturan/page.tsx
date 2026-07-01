@@ -16,7 +16,7 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -230,118 +230,170 @@ export default function PengaturanPage() {
   const isAdmin = userData?.role === 'admin';
   const positions = isTeacherOrStaff ? ["PNS", "PPPK", "Honorer", "PW"] : ["Pelajar Aktif"];
 
-  if (isUserDataLoading || isAuthLoading) return <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+  if (isUserDataLoading || isAuthLoading || isConfigLoading) return <div className="flex h-full items-center justify-center pt-20"><Loader2 className="animate-spin text-primary" /></div>;
 
   return (
-    <div className="grid gap-6 pb-20 max-w-4xl mx-auto">
-      <form onSubmit={handleProfileUpdate}>
+    <div className="flex-1 pt-2 pb-24 md:p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="px-4 md:px-0">
+          <h1 className="text-2xl font-black tracking-tight text-foreground">Pengaturan</h1>
+          <p className="text-muted-foreground mt-0.5 text-xs font-bold">Kelola profil dan konfigurasi aplikasi.</p>
+        </div>
+
+        <form onSubmit={handleProfileUpdate}>
+          <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
+            <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
+              <div className="flex items-center gap-3">
+                <UserCircle className="h-5 w-5 text-primary" />
+                <CardTitle className="font-bold text-sm uppercase tracking-tight">Profil Pengguna</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-6 pt-8">
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <div className="relative">
+                    <Avatar className="h-24 w-24 border-2 border-primary/10 shadow-xl">
+                      <AvatarImage src={currentPhoto ?? undefined} />
+                      <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{getInitials(name)}</AvatarFallback>
+                    </Avatar>
+                    <Button type="button" size="icon" variant="outline" className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 bg-primary text-white border-none shadow-lg active:scale-95 transition-all" onClick={() => fileInputRef.current?.click()}>
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                  </div>
+                  <div className="text-center sm:text-left space-y-1">
+                     <h3 className="font-black text-xl text-primary tracking-tight">{name || 'User'}</h3>
+                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{userData?.role.replace('_', ' ')}</p>
+                  </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nama Lengkap</Label>
+                      <Input className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10 focus:bg-background transition-all" value={name} onChange={(e) => setName(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
+                      <Input className="h-12 rounded-xl bg-muted/50 font-bold opacity-60 shadow-none border-dashed" value={userData?.email} readOnly />
+                  </div>
+                  {isTeacherOrStaff && (
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP</Label>
+                        <Input className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" value={nip} onChange={(e) => setNip(e.target.value)} />
+                    </div>
+                  )}
+                  {userData?.role === 'siswa' && (
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NISN</Label>
+                        <Input className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" value={nisn} onChange={(e) => setNisn(e.target.value)} />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Status Kepegawaian</Label>
+                      <Select onValueChange={setPosition} value={position}>
+                          <SelectTrigger className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10">
+                            <SelectValue placeholder="Pilih status" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-none shadow-2xl">
+                            {positions.map(p => <SelectItem key={p} value={p} className="rounded-lg">{p}</SelectItem>)}
+                          </SelectContent>
+                      </Select>
+                  </div>
+              </div>
+            </CardContent>
+            <CardFooter className="border-t px-6 py-5 bg-muted/5">
+              <Button type="submit" className="font-black rounded-xl h-12 px-10 shadow-none active:scale-95 transition-all bg-primary" disabled={isProfileLoading}>
+                {isProfileLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                SIMPAN PROFIL
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+
+        {isAdmin && (
+          <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
+              <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
+                  <div className="flex items-center gap-3">
+                    <Settings2 className="h-5 w-5 text-primary" />
+                    <CardTitle className="font-bold text-sm uppercase tracking-tight">Kop Laporan & Pengumuman</CardTitle>
+                  </div>
+              </CardHeader>
+              <CardContent className="grid gap-4 pt-8">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Instansi Pemerintah</Label>
+                        <Input placeholder="Contoh: PEMERINTAH KABUPATEN..." value={governmentAgency} onChange={e => setGovernmentAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Dinas Terkait</Label>
+                        <Input placeholder="Contoh: DINAS PENDIDIKAN..." value={educationAgency} onChange={e => setEducationAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nama Lengkap Sekolah</Label>
+                        <Input placeholder="Nama Sekolah" value={schoolName} onChange={e => setSchoolName(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nama Kepala Sekolah</Label>
+                        <Input placeholder="Nama Kepsek" value={headmasterName} onChange={e => setHeadmasterName(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP Kepala Sekolah</Label>
+                        <Input placeholder="NIP Kepsek" value={headmasterNip} onChange={e => setHeadmasterNip(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                      </div>
+                  </div>
+                  <div className="pt-8 border-t mt-6">
+                      <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-3">
+                            <BellRing className="h-5 w-5 text-amber-500" />
+                            <div>
+                                <Label className="font-black text-xs uppercase tracking-widest">Pengumuman Sistem</Label>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Pesan ini akan muncul di dashboard semua pengguna.</p>
+                            </div>
+                          </div>
+                          <Switch checked={isNotificationActive} onCheckedChange={setIsNotificationActive} />
+                      </div>
+                      <div className="space-y-4">
+                        <Input placeholder="Judul Pengumuman" value={notificationTitle} onChange={e => setNotificationTitle(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
+                        <Textarea placeholder="Tuliskan isi pesan atau kutipan motivasi di sini..." value={notificationContent} onChange={e => setNotificationContent(e.target.value)} className="rounded-xl bg-muted/30 shadow-none min-h-[100px] font-medium" />
+                      </div>
+                  </div>
+              </CardContent>
+              <CardFooter className="border-t px-6 py-5 bg-muted/5 gap-3">
+                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-6 shadow-none">Simpan Kop Laporan</Button>
+                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">Update Pengumuman</Button>
+              </CardFooter>
+          </Card>
+        )}
+
         <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
           <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
             <div className="flex items-center gap-3">
-              <UserCircle className="h-5 w-5 text-primary" />
-              <CardTitle className="font-bold text-sm uppercase tracking-tight">Profil Pengguna</CardTitle>
+              <KeyRound className="h-5 w-5 text-primary" />
+              <CardTitle className="font-bold text-sm uppercase tracking-tight">Ganti Password</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-6 pt-8">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
+          <form onSubmit={handlePasswordChange}>
+            <CardContent className="grid gap-5 pt-8">
                 <div className="relative">
-                  <Avatar className="h-24 w-24 border-2 border-primary/10">
-                    <AvatarImage src={currentPhoto ?? undefined} />
-                    <AvatarFallback className="bg-primary/5 text-primary font-bold">{getInitials(name)}</AvatarFallback>
-                  </Avatar>
-                  <Button type="button" size="icon" variant="outline" className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 bg-primary text-white" onClick={() => fileInputRef.current?.click()}><Camera className="h-4 w-4" /></Button>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                  <Input type={showNewPass ? "text" : "password"} className="h-12 rounded-xl bg-muted/30 pr-12 font-bold shadow-none border-muted-foreground/10" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password Baru" />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none" onClick={() => setShowNewPass(!showNewPass)}>
+                    {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
-                <div className="text-center sm:text-left space-y-1">
-                   <h3 className="font-bold text-lg text-primary">{name || 'User'}</h3>
-                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{userData?.role.replace('_', ' ')}</p>
-                </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold ml-1">Nama Lengkap</Label>
-                    <Input className="h-12 rounded-xl bg-muted/30 font-bold" value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold ml-1">Email</Label>
-                    <Input className="h-12 rounded-xl bg-muted/50 font-bold opacity-60" value={userData?.email} readOnly />
-                </div>
-                {isTeacherOrStaff && (
-                  <div className="space-y-2">
-                      <Label className="text-xs font-bold ml-1">NIP</Label>
-                      <Input className="h-12 rounded-xl bg-muted/30 font-bold" value={nip} onChange={(e) => setNip(e.target.value)} />
-                  </div>
-                )}
-                {userData?.role === 'siswa' && (
-                  <div className="space-y-2">
-                      <Label className="text-xs font-bold ml-1">NISN</Label>
-                      <Input className="h-12 rounded-xl bg-muted/30 font-bold" value={nisn} onChange={(e) => setNisn(e.target.value)} />
-                  </div>
-                )}
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold ml-1">Status</Label>
-                    <Select onValueChange={setPosition} value={position}>
-                        <SelectTrigger className="h-12 rounded-xl bg-muted/30 font-bold"><SelectValue placeholder="Pilih status" /></SelectTrigger>
-                        <SelectContent className="rounded-xl">{positions.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-                    </Select>
-                </div>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t px-6 py-5 bg-muted/5">
-            <Button type="submit" className="font-bold rounded-xl h-12 px-10" disabled={isProfileLoading}>{isProfileLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Simpan Profil</Button>
-          </CardFooter>
-        </Card>
-      </form>
-
-      {isAdmin && (
-        <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
-            <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
-                <CardTitle className="font-bold text-sm uppercase tracking-tight">Kop Laporan & Pengumuman</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 pt-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <Input placeholder="Instansi" value={governmentAgency} onChange={e => setGovernmentAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30" />
-                    <Input placeholder="Dinas" value={educationAgency} onChange={e => setEducationAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30" />
-                    <Input placeholder="Nama Sekolah" value={schoolName} onChange={e => setSchoolName(e.target.value)} className="h-11 rounded-xl bg-muted/30 sm:col-span-2" />
-                    <Input placeholder="Nama Kepsek" value={headmasterName} onChange={e => setHeadmasterName(e.target.value)} className="h-11 rounded-xl bg-muted/30" />
-                    <Input placeholder="NIP Kepsek" value={headmasterNip} onChange={e => setHeadmasterNip(e.target.value)} className="h-11 rounded-xl bg-muted/30" />
-                </div>
-                <div className="pt-6 border-t mt-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <Label className="font-bold">Pengumuman Sistem</Label>
-                        <Switch checked={isNotificationActive} onCheckedChange={setIsNotificationActive} />
-                    </div>
-                    <Input placeholder="Judul" value={notificationTitle} onChange={e => setNotificationTitle(e.target.value)} className="h-11 rounded-xl bg-muted/30 mb-2" />
-                    <Textarea placeholder="Isi pesan" value={notificationContent} onChange={e => setNotificationContent(e.target.value)} className="rounded-xl bg-muted/30" />
+                <div className="relative">
+                  <Input type={showConfirmPass ? "text" : "password"} className="h-12 rounded-xl bg-muted/30 pr-12 font-bold shadow-none border-muted-foreground/10" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Konfirmasi Password Baru" />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none" onClick={() => setShowConfirmPass(!showConfirmPass)}>
+                    {showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
             </CardContent>
-            <CardFooter className="border-t px-6 py-4 bg-muted/5 gap-3">
-                <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl">Simpan Kop</Button>
-                <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl">Simpan Pengumuman</Button>
+            <CardFooter className="border-t px-6 py-5 bg-muted/5">
+              <Button type="submit" className="font-black rounded-xl h-12 px-8 shadow-none active:scale-95 transition-all bg-primary" disabled={isPasswordLoading}>
+                {isPasswordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                GANTI PASSWORD
+              </Button>
             </CardFooter>
+          </form>
         </Card>
-      )}
-
-      <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
-        <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
-          <CardTitle className="font-bold text-sm uppercase tracking-tight">Ganti Password</CardTitle>
-        </CardHeader>
-        <form onSubmit={handlePasswordChange}>
-          <CardContent className="grid gap-5 pt-8">
-              <div className="relative">
-                <Input type={showNewPass ? "text" : "password"} className="h-12 rounded-xl bg-muted/30 pr-10" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password Baru" />
-                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full" onClick={() => setShowNewPass(!showNewPass)}>{showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
-              </div>
-              <div className="relative">
-                <Input type={showConfirmPass ? "text" : "password"} className="h-12 rounded-xl bg-muted/30 pr-10" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Konfirmasi Password" />
-                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full" onClick={() => setShowConfirmPass(!showConfirmPass)}>{showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
-              </div>
-          </CardContent>
-          <CardFooter className="border-t px-6 py-5 bg-muted/5">
-            <Button type="submit" className="font-bold rounded-xl h-12" disabled={isPasswordLoading}>Simpan Password</Button>
-          </CardFooter>
-        </form>
-      </Card>
+      </div>
     </div>
   )
 }

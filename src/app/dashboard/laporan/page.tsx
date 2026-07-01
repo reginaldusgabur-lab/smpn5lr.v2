@@ -56,7 +56,7 @@ export default function LaporanPage() {
   }, [firestore]);
   const { data: schoolConfig, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
 
-  const cacheKey = useMemo(() => user ? `user_report_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
+  const cacheKey = useMemo(() => user ? `user_report_v2_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
 
   const fetchReport = useCallback(async (forceRefresh = false) => {
     if (!user || !firestore || !schoolConfig || !cacheKey) return;
@@ -146,105 +146,111 @@ export default function LaporanPage() {
 
   if (isLoading && monthlyReportData.length === 0) {
     return (
-        <div className="p-4 space-y-4">
-            <Skeleton className="h-12 w-full rounded-xl" />
-            <Skeleton className="h-64 w-full rounded-xl" />
+        <div className="flex-1 pt-2 pb-24 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-4">
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-64 w-full rounded-xl" />
+            </div>
         </div>
     );
   }
 
   return (
-    <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
-      <CardHeader className="p-3 sm:p-4 text-primary border-b border-muted-foreground/10">
-        <div className="flex items-center justify-between">
-            <div>
-                <CardTitle className="font-bold text-[10px] tracking-widest uppercase opacity-70">Riwayat Absensi & Izin</CardTitle>
-                <CardDescription className="text-muted-foreground font-bold text-[9px] mt-0.5">Catatan lengkap kehadiran individu.</CardDescription>
-            </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/5" onClick={handleRefresh} disabled={isLoading}>
-                <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", isLoading && "animate-spin")} />
-            </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0 min-h-[400px]">
-        <div className="p-4 flex flex-col items-center justify-center gap-4">
-            <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
-                    onClick={handlePrevMonth} 
-                    disabled={isLoading || !canGoPrev}
-                >
-                    <ChevronLeft className="h-5 w-5 text-primary" />
-                </Button>
-                
-                <div className="flex items-center gap-3 px-4">
-                    {stats && (
-                        <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
-                            <TrendingUp className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-black text-primary">{stats.persentase}</span>
+    <div className="flex-1 pt-2 pb-24 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
+              <CardHeader className="p-3 sm:p-4 text-primary border-b border-muted-foreground/10">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle className="font-bold text-[10px] tracking-widest uppercase opacity-70">Riwayat Absensi & Izin</CardTitle>
+                        <CardDescription className="text-muted-foreground font-bold text-[9px] mt-0.5">Catatan lengkap kehadiran individu.</CardDescription>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/5 shadow-none" onClick={handleRefresh} disabled={isLoading}>
+                        <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", isLoading && "animate-spin")} />
+                    </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 min-h-[400px]">
+                <div className="p-4 flex flex-col items-center justify-center gap-4">
+                    <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
+                            onClick={handlePrevMonth} 
+                            disabled={isLoading || !canGoPrev}
+                        >
+                            <ChevronLeft className="h-5 w-5 text-primary" />
+                        </Button>
+                        
+                        <div className="flex items-center gap-3 px-4">
+                            {stats && (
+                                <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                    <TrendingUp className="h-4 w-4 text-primary" />
+                                    <span className="text-sm font-black text-primary">{stats.persentase}</span>
+                                </div>
+                            )}
+                            <span className="font-black text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
+                                {format(currentMonth, 'MMMM yyyy', { locale: id })}
+                            </span>
                         </div>
-                    )}
-                    <span className="font-black text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
-                        {format(currentMonth, 'MMMM yyyy', { locale: id })}
-                    </span>
+
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
+                            onClick={handleNextMonth} 
+                            disabled={isSameMonth(currentMonth, new Date())}
+                        >
+                            <ChevronRight className="h-5 w-5 text-primary" />
+                        </Button>
+                    </div>
                 </div>
 
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
-                    onClick={handleNextMonth} 
-                    disabled={isSameMonth(currentMonth, new Date())}
-                >
-                    <ChevronRight className="h-5 w-5 text-primary" />
-                </Button>
-            </div>
-        </div>
-
-        <div className="border-t border-muted-foreground/5 overflow-x-auto">
-            <Table className="min-w-[720px]">
-                <TableHeader className="bg-muted/30">
-                    <TableRow className="border-none">
-                        <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
-                        <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest">Tanggal</TableHead>
-                        <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest">Masuk</TableHead>
-                        <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest">Pulang</TableHead>
-                        <TableHead className="w-[140px] text-center font-bold text-[10px] uppercase tracking-widest">Status</TableHead>
-                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Keterangan</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {monthlyReportData.length > 0 ? (
-                        monthlyReportData.map((record, index) => (
-                            <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
-                                <TableCell className="text-center font-bold text-muted-foreground text-xs">{index + 1}</TableCell>
-                                <TableCell className="font-bold text-sm text-foreground whitespace-nowrap">{record.dateString}</TableCell>
-                                <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkIn}</TableCell>
-                                <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkOut}</TableCell>
-                                <TableCell className="text-center whitespace-nowrap">
-                                    <Badge variant="outline" className={cn("text-[9px] font-bold uppercase px-3 py-1 rounded-full", getStatusBadgeStyle(record.status))}>
-                                        {record.status}
-                                    </Badge>
-                                    {record.approvalStatus && (
-                                        <Badge variant="outline" className="capitalize ml-1 text-[8px] font-bold">
-                                            {record.approvalStatus}
-                                        </Badge>
-                                    )}
-                                </TableCell>
-                                <TableCell className="text-[11px] font-medium text-muted-foreground italic truncate max-w-[200px]" title={record.description}>{record.description}</TableCell>
+                <div className="border-t border-muted-foreground/5 overflow-x-auto">
+                    <Table className="min-w-[720px]">
+                        <TableHeader className="bg-muted/30">
+                            <TableRow className="border-none">
+                                <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
+                                <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest">Tanggal</TableHead>
+                                <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest">Masuk</TableHead>
+                                <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest">Pulang</TableHead>
+                                <TableHead className="w-[140px] text-center font-bold text-[10px] uppercase tracking-widest">Status</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-widest">Keterangan</TableHead>
                             </TableRow>
-                        ))
-                    ) : (
-                        <TableRow>
-                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Tidak ada riwayat kehadiran.</TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {monthlyReportData.length > 0 ? (
+                                monthlyReportData.map((record, index) => (
+                                    <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
+                                        <TableCell className="text-center font-bold text-muted-foreground text-xs">{index + 1}</TableCell>
+                                        <TableCell className="font-bold text-sm text-foreground whitespace-nowrap">{record.dateString}</TableCell>
+                                        <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkIn}</TableCell>
+                                        <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkOut}</TableCell>
+                                        <TableCell className="text-center whitespace-nowrap">
+                                            <Badge variant="outline" className={cn("text-[9px] font-bold uppercase px-3 py-1 rounded-full", getStatusBadgeStyle(record.status))}>
+                                                {record.status}
+                                            </Badge>
+                                            {record.approvalStatus && (
+                                                <Badge variant="outline" className="capitalize ml-1 text-[8px] font-bold">
+                                                    {record.approvalStatus}
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-[11px] font-medium text-muted-foreground italic truncate max-w-[200px]" title={record.description}>{record.description}</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Tidak ada riwayat kehadiran.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+              </CardContent>
+            </Card>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }
