@@ -36,11 +36,12 @@ const generateQuoteFlow = ai.defineFlow(
       KETENTUAN KONTEN:
       1. TEMA ACAK: Pilih secara acak antara: Motivasi pendidikan, Inspirasi, Kata-kata bijak, Humor ringan, Pantun lucu, Semangat bekerja, Kebersamaan, Disiplin, atau Gosip lucu (fiktif).
       2. GAYA ACAK: Pilih gaya: Inspiratif, Bijak, Lucu, Pantun, Satir ringan, Gosip bergaya berita (Info Viral/Breaking News), Pengumuman absurd, atau Fakta "katanya".
-      3. GOSIP FIKTIF: Jika memilih tema gosip, buatlah berita lucu tentang benda mati atau situasi sekolah (misal: "📰 Info Viral: Kursi ruang guru mengaku kangen karena pemiliknya belum sempat duduk sejak pagi"). JANGAN sebut nama orang asli, JANGAN mengandung fitnah, SARA, atau politik.
-      4. KONTEKS WAKTU:
+      3. NETRALITAS: JANGAN mengandung unsur agama atau istilah keagamaan tertentu (seperti bismillah, doa, dll). Gunakan bahasa yang universal, profesional, dan inklusif.
+      4. GOSIP FIKTIF: Jika memilih tema gosip, buatlah berita lucu tentang benda mati atau situasi sekolah (misal: "📰 Info Viral: Kursi ruang guru mengaku kangen karena pemiliknya belum sempat duduk sejak pagi"). JANGAN sebut nama orang asli, JANGAN mengandung fitnah, SARA, atau politik.
+      5. KONTEKS WAKTU:
          - Jika MASUK: Berikan semangat, candaan pagi, atau energi positif untuk memulai hari.
          - Jika PULANG: Berikan apresiasi kerja keras, ucapan terima kasih, atau humor santai pelepas lelah.
-      5. FORMAT: Kalimat harus natural, menarik, dan maksimal 18 kata.
+      6. FORMAT: Kalimat harus natural, menarik, dan maksimal 18 kata.
 
       Berikan output bervariasi setiap kali diminta agar tidak monoton.`,
       output: { schema: QuoteOutputSchema },
@@ -48,7 +49,7 @@ const generateQuoteFlow = ai.defineFlow(
 
     if (!output || !output.quote) {
       return {
-        quote: input.attendanceType === 'in' ? "Awali hari dengan bismillah dan senyuman, karena senyummu adalah energi bagi sekolah kita!" : "Kerja kerasmu hari ini luar biasa. Sekarang waktunya istirahat dan berkumpul dengan keluarga.",
+        quote: input.attendanceType === 'in' ? "Awali hari dengan semangat dan senyuman, karena energi positif Anda adalah penggerak sekolah kita." : "Kerja kerasmu hari ini luar biasa. Sekarang waktunya istirahat dan berkumpul dengan keluarga.",
         author: "Tim E-SPENLI"
       };
     }

@@ -43,7 +43,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       } catch (e: any) {
         setError(true);
         setQuote({
-          quote: attendanceType === 'in' ? "Awali hari dengan bismillah dan senyuman, karena kopi saja tidak cukup untuk menjaga semangat." : "Kerja kerasmu hari ini luar biasa. Sekarang waktunya istirahat dan berkumpul dengan keluarga.",
+          quote: attendanceType === 'in' ? "Awali hari dengan semangat dan senyuman, karena energi positif Anda adalah penggerak sekolah kita." : "Kerja kerasmu hari ini luar biasa. Sekarang waktunya istirahat dan berkumpul dengan keluarga.",
           author: "Tim E-SPENLI"
         });
       } finally {
@@ -59,9 +59,9 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
 
   return (
     <div className="mt-6 pt-5 border-t border-primary/10">
-      <div className="flex items-center justify-center text-[10px] font-bold mb-4 text-primary/60 uppercase tracking-[0.2em]">
+      <div className="flex items-center justify-center text-[10px] font-bold mb-4 text-primary uppercase tracking-[0.2em]">
         {isNews ? <Newspaper className="h-3.5 w-3.5 mr-2" /> : <Sparkles className="h-3.5 w-3.5 mr-2" />}
-        Pesan Spesial Hari Ini
+        Kutipan Hari Ini
       </div>
       
       <div className="text-center min-h-[70px] flex items-center justify-center px-4">
