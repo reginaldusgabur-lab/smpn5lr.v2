@@ -472,7 +472,7 @@ export default function PengaturanPage() {
             <CardHeader className="p-6 text-primary border-b border-muted-foreground/5 bg-muted/20">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="font-bold text-sm tracking-tight uppercase">Pengumuman & Kutipan Hari Ini</CardTitle>
+                        <CardTitle className="font-bold text-sm tracking-tight uppercase">Pengumumuman & Kutipan Hari Ini</CardTitle>
                         <CardDescription className="text-muted-foreground font-medium">Pesan yang muncul di layar semua pengguna.</CardDescription>
                     </div>
                     <div className="flex items-center space-x-2">

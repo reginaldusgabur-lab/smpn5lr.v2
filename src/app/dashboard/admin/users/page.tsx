@@ -29,6 +29,7 @@ import {
   Trash2,
   Power,
   AlertCircle,
+  KeyRound,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -76,6 +77,7 @@ import { doc, collection } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { Skeleton } from '@/components/ui/skeleton';
+import { resetUserPassword } from '@/app/actions/admin-actions';
 
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
@@ -97,9 +99,12 @@ export default function AdminUsersPage() {
     const [userSearch, setUserSearch] = useState('');
     const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isResetPassDialogOpen, setIsResetPassDialogOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editingUser, setEditingUser] = useState<any | null>(null);
     const [userToDelete, setUserToDelete] = useState<any | null>(null);
+    const [userForReset, setUserForReset] = useState<any | null>(null);
+    const [newPassInput, setNewPassInput] = useState('');
 
     const usersRef = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
     const { data: usersData, isLoading: isUsersLoading } = useCollection(user, usersRef);
@@ -208,6 +213,25 @@ export default function AdminUsersPage() {
         }
     };
 
+    const handleManualResetPassword = async () => {
+        if (!userForReset || newPassInput.length < 6) return;
+        setIsSaving(true);
+        try {
+            const result = await resetUserPassword(userForReset.id, newPassInput);
+            if (result.success) {
+                toast({ title: 'Berhasil', description: `Kata sandi untuk ${userForReset.name} telah diperbarui.` });
+                setIsResetPassDialogOpen(false);
+                setNewPassInput('');
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Gagal', description: e.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-8">
@@ -222,7 +246,7 @@ export default function AdminUsersPage() {
                     </Button>
                 </div>
 
-                <Card className="w-full border shadow-none rounded-3xl overflow-hidden bg-card">
+                <Card className="w-full border shadow-none rounded-xl overflow-hidden bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
                         <CardTitle className="font-bold text-sm tracking-tight">Daftar pengguna sistem</CardTitle>
                         <CardDescription className="text-muted-foreground font-bold">Informasi akun dan hak akses pengguna aktif.</CardDescription>
@@ -254,7 +278,7 @@ export default function AdminUsersPage() {
                             </div>
                         </div>
 
-                        <div className="border rounded-2xl overflow-hidden border-muted-foreground/5">
+                        <div className="border rounded-xl overflow-hidden border-muted-foreground/5">
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
@@ -310,11 +334,15 @@ export default function AdminUsersPage() {
                                                             <MoreHorizontal className="h-5 w-5" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-none border-none">
+                                                    <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-none border border-muted-foreground/10">
                                                         <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 mb-1">Aksi pengguna</DropdownMenuLabel>
                                                         <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}>
                                                             <Edit2 className="mr-3 h-4 w-4 text-primary" />
                                                             <span className="text-xs font-bold">Ubah data</span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5" onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}>
+                                                            <KeyRound className="mr-3 h-4 w-4 text-primary" />
+                                                            <span className="text-xs font-bold">Reset kata sandi</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5" onClick={() => handleToggleStatus(u)}>
                                                             <Power className={`mr-3 h-4 w-4 ${u.status === 'Aktif' ? 'text-orange-500' : 'text-green-500'}`} />
@@ -342,6 +370,40 @@ export default function AdminUsersPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Dialog Reset Password */}
+            <Dialog open={isResetPassDialogOpen} onOpenChange={setIsResetPassDialogOpen}>
+                <DialogContent className="rounded-2xl border-none max-w-sm shadow-none">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-primary">Reset kata sandi</DialogTitle>
+                        <DialogDescription className="text-xs font-bold">
+                            Setel kata sandi baru untuk <strong>{userForReset?.name}</strong>. Berikan info ini kepada pengguna setelah berhasil.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="new-pass" className="text-xs font-bold ml-1">Kata sandi baru</Label>
+                            <Input 
+                                id="new-pass" 
+                                type="text" 
+                                placeholder="Minimal 6 karakter" 
+                                value={newPassInput} 
+                                onChange={e => setNewPassInput(e.target.value)}
+                                className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold shadow-none"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            className="w-full h-12 rounded-xl font-bold shadow-none active:scale-95 transition-all" 
+                            disabled={isSaving || newPassInput.length < 6}
+                            onClick={handleManualResetPassword}
+                        >
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Simpan kata sandi baru'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Dialog Tambah/Edit User */}
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
