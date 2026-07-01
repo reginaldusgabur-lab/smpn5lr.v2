@@ -26,7 +26,6 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-// Custom Tooltip Component centered, bold title, muted subtitle with "hari"
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -405,7 +404,8 @@ export default function DashboardPage() {
                                     {isStatsLoading ? '...' : stats.pending}
                                 </div>
                             </CardContent>
-                        </Link>
+                        </Card>
+                    </Link>
 
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
                         <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
