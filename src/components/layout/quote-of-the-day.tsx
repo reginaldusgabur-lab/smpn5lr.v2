@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -70,6 +71,8 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
             <Loader2 className="h-5 w-5 animate-spin" />
             <span className="text-[10px] font-bold uppercase tracking-widest">Menyiapkan inspirasi...</span>
           </div>
+        ) : error ? (
+           <p className="text-destructive/80 text-xs font-bold animate-in fade-in">Gagal memuat kutipan saat ini.</p>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-3 duration-1000 ease-out w-full">
             <div className={cn("relative px-4 py-2", isNews ? "bg-primary/5 rounded-xl border border-primary/5" : "")}>
