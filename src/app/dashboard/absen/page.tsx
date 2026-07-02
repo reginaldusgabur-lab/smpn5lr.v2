@@ -285,8 +285,8 @@ export default function AbsenPage() {
 
 const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leaveType }: { status: FeedbackStatus, locationError: string | null, onClose: () => void, userData: any, leaveType?: string }) => {
     const feedback = useMemo(() => {
-        const iconSize = "h-12 w-12";
-        const iconWrapper = "p-4 rounded-full border-[0.5px] transition-colors duration-500 mb-8";
+        const iconSize = "h-10 w-10";
+        const iconWrapper = "p-6 rounded-full border-[0.5px] transition-colors duration-500 mb-10";
         
         switch (status) {
             case 'processing': return { icon: <div className={cn(iconWrapper, "border-primary/20")}><Loader2 className={cn(iconSize, "animate-spin text-primary")} /></div>, title: 'Memproses...', desc: 'Sedang memvalidasi absensi Anda.' };
@@ -312,22 +312,15 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leave
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-10">
             <div className={cn(
-                "w-full max-w-[340px] text-center p-12 rounded-[2.5rem] shadow-2xl relative",
-                "bg-[#0f1715] border border-green-500/30 shadow-green-500/10 transition-all duration-700 animate-in fade-in zoom-in-95"
+                "w-full max-w-[360px] text-center p-12 rounded-[2.5rem] shadow-2xl relative",
+                "bg-[#0a0f0d] border border-green-500/20 transition-all duration-700 animate-in fade-in zoom-in-95"
             )} onClick={(e) => e.stopPropagation()}>
                 
-                <button 
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-white/40 hover:text-white transition-colors"
-                >
-                    <X className="h-5 w-5" />
-                </button>
-
                 <div className="flex flex-col items-center">
                     <div className="mb-2">{feedback.icon}</div>
                     <div className="space-y-4 mb-10">
-                        <h3 className="text-2xl font-bold tracking-tight text-white leading-tight">{feedback.title}</h3>
-                        <p className="text-white/40 text-xs font-medium leading-relaxed px-4">{feedback.desc}</p>
+                        <h3 className="text-2xl font-black tracking-tight text-white leading-tight">{feedback.title}</h3>
+                        <p className="text-zinc-500 text-xs font-bold leading-relaxed px-4">{feedback.desc}</p>
                     </div>
                     
                     {isSuccess && (
@@ -336,14 +329,12 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leave
                         </div>
                     )}
                     
-                    {!isSuccess && (
-                        <Button 
-                            className="w-full font-bold rounded-2xl h-14 text-xs shadow-xl active:scale-95 transition-all bg-primary hover:bg-primary/90 text-white border-none tracking-widest uppercase" 
-                            onClick={onClose}
-                        >
-                            TUTUP
-                        </Button>
-                    )}
+                    <Button 
+                        className="w-full font-black rounded-2xl h-14 text-xs shadow-xl active:scale-95 transition-all bg-[#2563eb] hover:bg-[#1d4ed8] text-white border-none tracking-widest uppercase mt-4" 
+                        onClick={onClose}
+                    >
+                        TUTUP
+                    </Button>
                 </div>
             </div>
         </div>
