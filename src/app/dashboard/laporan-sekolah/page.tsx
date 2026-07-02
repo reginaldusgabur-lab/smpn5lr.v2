@@ -8,7 +8,7 @@ import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, st
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, Filter, Eye } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, Filter, Eye, TrendingUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -16,10 +16,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/select";
-import { Input } from "@/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/card';
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
