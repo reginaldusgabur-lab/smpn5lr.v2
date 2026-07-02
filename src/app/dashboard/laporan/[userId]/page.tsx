@@ -165,11 +165,11 @@ export default function UserReportDetailPage() {
         }
     };
 
-    const handleSetLate = async (dateStr: string) => {
+    const handleSetLate = async (item: MonthlyReportData) => {
         if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
         setIsMutating(true);
         try {
-            const targetDate = parseISO(dateStr);
+            const targetDate = parseISO(item.date);
             const inEnd = schoolConfigData.checkInEndTime || '08:00';
             const [endH, endM] = inEnd.split(':').map(Number);
             const baseLateTime = new Date(targetDate);
@@ -180,12 +180,17 @@ export default function UserReportDetailPage() {
             const q = query(attendanceRef, where('date', '==', format(targetDate, 'yyyy-MM-dd')));
             const snap = await getDocs(q);
 
-            const data = {
+            const data: any = {
                 userId, date: format(targetDate, 'yyyy-MM-dd'),
                 checkInTime: Timestamp.fromDate(realInTime),
                 manualEntry: true, reasonForUpdate: 'Terlambat',
                 updatedBy: currentUser.uid, updatedAt: serverTimestamp()
             };
+
+            // Jika lupa masuk tapi sudah ada jam pulang, jangan hapus jam pulangnya
+            if (item.checkOutTime) {
+                data.checkOutTime = Timestamp.fromDate(parseISO(item.checkOutTime));
+            }
 
             if (!snap.empty) await writeBatch(firestore).update(snap.docs[0].ref, data).commit();
             else await writeBatch(firestore).set(doc(attendanceRef), data).commit();
@@ -200,33 +205,51 @@ export default function UserReportDetailPage() {
         }
     };
 
-    const handleSetHadir = async (dateStr: string) => {
+    const handleSetHadir = async (item: MonthlyReportData) => {
         if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
         setIsMutating(true);
         try {
-            const targetDate = parseISO(dateStr);
+            const targetDate = parseISO(item.date);
+            const batch = writeBatch(firestore);
+            
             const inStart = schoolConfigData.checkInStartTime || '07:00';
             const inEnd = schoolConfigData.checkInEndTime || '07:30';
-            const checkInTime = getRandomTime(targetDate, inStart, inEnd);
+            const outStart = schoolConfigData.checkOutStartTime || '14:00';
+            const outEnd = schoolConfigData.checkOutEndTime || '16:00';
 
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const q = query(attendanceRef, where('date', '==', format(targetDate, 'yyyy-MM-dd')));
             const snap = await getDocs(q);
 
-            const dataToSave = {
+            const dataToSave: any = {
                 userId: userId, date: format(targetDate, 'yyyy-MM-dd'),
-                checkInTime: Timestamp.fromDate(checkInTime), 
                 manualEntry: true,
                 reasonForUpdate: 'Kehadiran penuh',
                 updatedBy: currentUser.uid,
                 updatedAt: serverTimestamp()
             };
 
-            if (!snap.empty) await writeBatch(firestore).update(snap.docs[0].ref, dataToSave).commit();
-            else await writeBatch(firestore).set(doc(attendanceRef), dataToSave).commit();
+            // Jika Lupa Pulang (Sudah ada masuk)
+            if (item.checkInTime) {
+                dataToSave.checkInTime = Timestamp.fromDate(parseISO(item.checkInTime));
+                dataToSave.checkOutTime = Timestamp.fromDate(getRandomTime(targetDate, outStart, outEnd));
+            } 
+            // Jika Lupa Masuk (Sudah ada pulang)
+            else if (item.checkOutTime) {
+                dataToSave.checkInTime = Timestamp.fromDate(getRandomTime(targetDate, inStart, inEnd));
+                dataToSave.checkOutTime = Timestamp.fromDate(parseISO(item.checkOutTime));
+            }
+            // Jika Alpa Murni
+            else {
+                dataToSave.checkInTime = Timestamp.fromDate(getRandomTime(targetDate, inStart, inEnd));
+                dataToSave.checkOutTime = Timestamp.fromDate(getRandomTime(targetDate, outStart, outEnd));
+            }
+
+            if (!snap.empty) await batch.update(snap.docs[0].ref, dataToSave).commit();
+            else await batch.set(doc(attendanceRef), dataToSave).commit();
 
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Ditandai sebagai hadir.' });
+            toast({ title: 'Berhasil', description: 'Kehadiran berhasil dilengkapi.' });
             fetchData();
         } catch (err) {
             toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan.' });
@@ -387,48 +410,58 @@ export default function UserReportDetailPage() {
                                         ) : error ? (
                                             <TableRow><TableCell colSpan={6} className="h-48 text-center text-destructive font-bold"><p>{error}</p></TableCell></TableRow>
                                         ) : monthlyReportData.length > 0 ? (
-                                            monthlyReportData.map((item, index) => (
-                                                <TableRow key={item.id} className={cn("border-muted-foreground/5 hover:bg-muted/20 transition-colors", item.status === 'Alpa' && "bg-destructive/5")}>
-                                                    <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                                    <TableCell className="whitespace-nowrap font-bold text-sm">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                                    <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
-                                                    <TableCell className="text-center">
-                                                        {isAdmin && (item.status === 'Alpa' || item.description === 'Tidak absen pulang' || item.description === 'Belum absen pulang' || item.description === 'Absen pulang (Tanpa masuk)') ? (
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button variant="outline" size="sm" className={cn("font-bold text-[9px] h-7 rounded-lg shadow-none", item.status === 'Alpa' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200')}>
-                                                                        {item.status === 'Alpa' ? 'Alpa' : 'Hadir'} <MoreVertical className="h-3 w-3 ml-1" />
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
-                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-3 py-2 opacity-50">Koreksi Hadir</DropdownMenuLabel>
-                                                                    <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleSetHadir(item.date)}>
-                                                                        {item.description.includes('Tanpa masuk') ? 'Lengkapi Masuk' : (item.description.includes('Tanpa pulang') ? 'Lengkapi Pulang' : 'Jadikan Hadir')}
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleSetLate(item.date)}>
-                                                                        Set Terlambat
-                                                                    </DropdownMenuItem>
-                                                                    
-                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
-                                                                    
-                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-3 py-2 opacity-50">Ubah Status</DropdownMenuLabel>
-                                                                    <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Sakit (0.9)</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Izin Pribadi', 'Izin Pribadi')}>Izin (0.7)</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Dinas Pagi', 'Dinas Pagi')}>Dinas Pagi (1.0)</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Dinas Siang', 'Dinas Siang')}>Dinas Siang (1.0)</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang Cepat')}>Pulang Cepat (0.95)</DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        ) : (
-                                                            <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-bold", item.status === 'Hadir' ? 'bg-green-100 text-green-700' : item.status === 'Alpa' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700')}>
-                                                                {item.status}
-                                                            </span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className="text-[11px] text-muted-foreground font-bold italic">{item.description || '-'}</TableCell>
-                                                </TableRow>
-                                            ))
+                                            monthlyReportData.map((item, index) => {
+                                                const isMissingOut = item.description.toLowerCase().includes('absen pulang');
+                                                const isMissingIn = item.description.toLowerCase().includes('tanpa masuk');
+                                                const isAlpa = item.status === 'Alpa';
+
+                                                return (
+                                                    <TableRow key={item.id} className={cn("border-muted-foreground/5 hover:bg-muted/20 transition-colors", item.status === 'Alpa' && "bg-destructive/5")}>
+                                                        <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
+                                                        <TableCell className="whitespace-nowrap font-bold text-sm">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
+                                                        <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                                        <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                        <TableCell className="text-center">
+                                                            {isAdmin && (isAlpa || isMissingOut || isMissingIn) ? (
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button variant="outline" size="sm" className={cn("font-bold text-[9px] h-7 rounded-lg shadow-none", item.status === 'Alpa' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200')}>
+                                                                            {item.status === 'Alpa' ? 'Alpa' : 'Hadir'} <MoreVertical className="h-3 w-3 ml-1" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
+                                                                        <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-3 py-2 opacity-50">Koreksi Hadir</DropdownMenuLabel>
+                                                                        
+                                                                        <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleSetHadir(item)}>
+                                                                            {isMissingIn ? 'Lengkapi Masuk' : (isMissingOut ? 'Lengkapi Pulang' : 'Jadikan Hadir')}
+                                                                        </DropdownMenuItem>
+
+                                                                        {!isMissingOut && (
+                                                                            <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleSetLate(item)}>
+                                                                                Set Terlambat
+                                                                            </DropdownMenuItem>
+                                                                        )}
+                                                                        
+                                                                        <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                        
+                                                                        <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-3 py-2 opacity-50">Ubah Status</DropdownMenuLabel>
+                                                                        <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Sakit (0.9)</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Izin Pribadi', 'Izin Pribadi')}>Izin (0.7)</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Dinas Pagi', 'Dinas Pagi')}>Dinas Pagi (1.0)</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Dinas Siang', 'Dinas Siang')}>Dinas Siang (1.0)</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 font-bold text-xs" disabled={isMutating} onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang Cepat')}>Pulang Cepat (0.95)</DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            ) : (
+                                                                <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-bold", item.status === 'Hadir' ? 'bg-green-100 text-green-700' : item.status === 'Alpa' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700')}>
+                                                                    {item.status}
+                                                                </span>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="text-[11px] text-muted-foreground font-bold italic">{item.description || '-'}</TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
                                         ) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold">Tidak ada data untuk periode ini.</TableCell></TableRow>}
                                     </TableBody>
                                 </Table>
