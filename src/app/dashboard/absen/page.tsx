@@ -244,30 +244,21 @@ export default function AbsenPage() {
             <p className="text-white/60 text-xs font-medium">Tempatkan kamera tepat di depan QR Code</p>
         </div>
 
-        <button 
-            onClick={() => router.push('/dashboard')}
-            className="absolute top-6 right-6 z-[60] p-2 bg-black/40 hover:bg-black/60 rounded-full text-white/80 transition-colors"
-        >
-            <X className="h-6 w-6" />
-        </button>
+        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+            {isScannerReady && (
+                <div className={cn(
+                    "absolute left-0 right-0 h-24 transition-all duration-700 animate-scan-line z-20 pointer-events-none",
+                    status === 'idle' 
+                        ? "bg-gradient-to-b from-transparent via-primary/40 to-transparent shadow-[0_0_20px_rgba(63,81,181,0.3)]" 
+                        : "bg-gradient-to-b from-transparent via-green-500/40 to-transparent shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+                )} />
+            )}
 
-        <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">
-            <div className="relative w-full h-full">
-                {isScannerReady && (
-                    <div className={cn(
-                        "absolute left-0 right-0 h-20 transition-all duration-700 animate-scan-line z-20 pointer-events-none",
-                        status === 'idle' 
-                            ? "bg-gradient-to-b from-transparent via-primary/40 to-transparent shadow-[0_0_15px_rgba(63,81,181,0.2)]" 
-                            : "bg-gradient-to-b from-transparent via-green-500/40 to-transparent shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                    )} />
-                )}
-
-                {showLoader && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
-                        <Loader2 className="h-10 w-10 animate-spin text-white" />
-                    </div>
-                )}
-            </div>
+            {showLoader && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+                    <Loader2 className="h-10 w-10 animate-spin text-white" />
+                </div>
+            )}
         </div>
 
         {effectiveStatus !== 'idle' && (
@@ -330,7 +321,7 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leave
                     )}
                     
                     <Button 
-                        className="w-full font-black rounded-2xl h-14 text-xs shadow-xl active:scale-95 transition-all bg-[#2563eb] hover:bg-[#1d4ed8] text-white border-none tracking-widest uppercase mt-4" 
+                        className="w-full font-black rounded-xl h-14 text-xs shadow-xl active:scale-95 transition-all bg-[#2563eb] hover:bg-[#1d4ed8] text-white border-none tracking-widest uppercase mt-4" 
                         onClick={onClose}
                     >
                         TUTUP
