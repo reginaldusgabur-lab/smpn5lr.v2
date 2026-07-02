@@ -54,35 +54,29 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
     fetchQuote();
   }, [category, attendanceType]);
 
-  const isNews = quote?.author.toLowerCase().includes('news') || 
-                 quote?.author.toLowerCase().includes('info') || 
-                 quote?.author.toLowerCase().includes('viral');
-
   return (
-    <div className="mt-6 pt-5 border-t border-primary/10">
-      <div className="flex items-center justify-center text-[10px] font-bold mb-4 text-primary uppercase tracking-[0.2em]">
-        {isNews ? <Newspaper className="h-3.5 w-3.5 mr-2" /> : <Sparkles className="h-3.5 w-3.5 mr-2" />}
+    <div className="mt-4 pt-6 border-t border-white/5">
+      <div className="flex items-center justify-center text-[10px] font-bold mb-4 text-white/40 uppercase tracking-[0.2em]">
+        <Sparkles className="h-3 w-3 mr-2" />
         Kutipan Hari Ini
       </div>
       
-      <div className="text-center min-h-[70px] flex items-center justify-center px-4">
+      <div className="text-center min-h-[60px] flex items-center justify-center">
         {isLoading ? (
-          <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Menyiapkan inspirasi...</span>
+          <div className="flex items-center gap-2 text-white/20">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Inspirasi...</span>
           </div>
         ) : error ? (
-           <p className="text-destructive/80 text-xs font-bold animate-in fade-in">Gagal memuat kutipan saat ini.</p>
+           <p className="text-white/20 text-xs italic animate-in fade-in">Tetap semangat hari ini!</p>
         ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-3 duration-1000 ease-out w-full">
-            <div className={cn("relative px-4 py-2", isNews ? "bg-primary/5 rounded-xl border border-primary/5" : "")}>
-              <blockquote className={cn("font-bold text-sm text-foreground/90 leading-relaxed", !isNews && "italic")}>
-                "{quote?.quote}"
-              </blockquote>
-              <cite className="block text-right mt-2 text-[10px] font-black text-primary/70 not-italic uppercase">
-                — {quote?.author}
-              </cite>
-            </div>
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-1000 ease-out w-full">
+            <blockquote className="font-bold text-sm text-white/90 leading-relaxed italic">
+              "{quote?.quote}"
+            </blockquote>
+            <cite className="block text-right mt-3 text-[10px] font-bold text-white/40 not-italic">
+              - {quote?.author.includes('Spenli') ? quote.author : `Sistem E-Spenli`}
+            </cite>
           </div>
         )}
       </div>

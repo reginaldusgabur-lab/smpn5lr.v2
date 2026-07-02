@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Html5Qrcode, Html5QrcodeCameraScanConfig } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
-import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle, Lock, FileText, AlertCircle } from 'lucide-react';
+import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle, Lock, FileText, Sparkles } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -228,7 +228,7 @@ export default function AbsenPage() {
   }, [showScanner, status, onScanSuccess]);
 
   return (
-    <div className="fixed inset-0 z-40 bg-black overflow-hidden" style={{ touchAction: 'none' }}>
+    <div className="fixed inset-0 z-40 bg-[#0a0a0b] overflow-hidden" style={{ touchAction: 'none' }}>
         {(showScanner || isCameraInitializing) && (
             <div className="absolute inset-0">
                 <div id={readerId} className="w-full h-full" />
@@ -240,9 +240,16 @@ export default function AbsenPage() {
         )}
 
         <div className="absolute top-8 left-0 right-0 z-50 px-8 text-center pointer-events-none transition-all">
-            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Scan QR Code</h2>
-            <p className="text-white/80 text-xs font-medium">Deteksi aktif di seluruh layar</p>
+            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Pindai QR Code</h2>
+            <p className="text-white/60 text-xs font-medium">Tempatkan kamera tepat di depan QR Code</p>
         </div>
+
+        <button 
+            onClick={() => router.push('/dashboard')}
+            className="absolute top-6 right-6 z-[60] p-2 bg-black/40 hover:bg-black/60 rounded-full text-white/80 transition-colors"
+        >
+            <X className="h-6 w-6" />
+        </button>
 
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none pb-20">
             <div className="relative w-full h-full">
@@ -278,52 +285,65 @@ export default function AbsenPage() {
 
 const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leaveType }: { status: FeedbackStatus, locationError: string | null, onClose: () => void, userData: any, leaveType?: string }) => {
     const feedback = useMemo(() => {
-        const iconSize = "h-10 w-10";
-        const iconWrapper = "p-6 rounded-full border-[0.5px] mb-8 transition-colors duration-500";
+        const iconSize = "h-12 w-12";
+        const iconWrapper = "p-4 rounded-full border-[0.5px] transition-colors duration-500 mb-8";
+        
         switch (status) {
             case 'processing': return { icon: <div className={cn(iconWrapper, "border-primary/20")}><Loader2 className={cn(iconSize, "animate-spin text-primary")} /></div>, title: 'Memproses...', desc: 'Sedang memvalidasi absensi Anda.' };
             case 'locating': return { icon: <div className={cn(iconWrapper, "border-primary/20")}><Loader2 className={cn(iconSize, "animate-spin text-primary")} /></div>, title: 'Mencari Lokasi...', desc: 'Mohon tunggu, sedang mendapatkan data GPS.' };
-            case 'success_in': return { icon: <div className={cn(iconWrapper, "border-primary/20")}><CheckCircle className={cn(iconSize, "text-primary")} /></div>, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
-            case 'success_out': return { icon: <div className={cn(iconWrapper, "border-primary/20")}><CheckCircle className={cn(iconSize, "text-primary")} /></div>, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
-            case 'error_radius': return { icon: <div className={cn(iconWrapper, "border-destructive/20")}><MapPin className={cn(iconSize, "text-destructive")} /></div>, title: 'Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
-            case 'error_time': return { icon: <div className={cn(iconWrapper, "border-destructive/20")}><ClockIcon className={cn(iconSize, "text-destructive")} /></div>, title: 'Waktu Habis', desc: 'Sesi absensi untuk hari ini telah ditutup.' };
-            case 'error_already_in': return { icon: <div className={cn(iconWrapper, "border-destructive/20")}><X className={cn(iconSize, "text-destructive")} /></div>, title: 'Sudah Absen Masuk', desc: 'Anda sudah melakukan absensi masuk hari ini.' };
-            case 'error_already_out': return { icon: <div className={cn(iconWrapper, "border-destructive/20")}><X className={cn(iconSize, "text-destructive")} /></div>, title: 'Sudah Absen Pulang', desc: 'Anda sudah melakukan absensi pulang hari ini.' };
-            case 'error_location': return { icon: <div className={cn(iconWrapper, "border-destructive/20")}><MapPin className={cn(iconSize, "text-destructive")} /></div>, title: 'Lokasi Error', desc: locationError || 'Pastikan GPS aktif and berikan izin akses.' };
-            case 'info_disabled': return { icon: <div className={cn(iconWrapper, "border-amber-500/20")}><Lock className={cn(iconSize, "text-amber-500")} /></div>, title: 'Sistem Dinonaktifkan', desc: 'Admin telah menonaktifkan sistem absensi sementara.' };
-            case 'info_holiday': return { icon: <div className={cn(iconWrapper, "border-blue-500/20")}><CalendarOff className={cn(iconSize, "text-blue-500")} /></div>, title: 'Hari Libur', desc: 'Sistem absensi tidak aktif hari ini.' };
-            case 'info_checked_out': return { icon: <div className={cn(iconWrapper, "border-green-500/20")}><CheckCircle className={cn(iconSize, "text-green-500")} /></div>, title: 'Absensi Selesai', desc: 'Anda telah menyelesaikan absensi untuk hari ini.' };
-            case 'info_no_camera': return { icon: <div className={cn(iconWrapper, "border-destructive/20")}><CameraOff className={cn(iconSize, "text-destructive")} /></div>, title: 'Kamera Error', desc: 'Izinkan akses kamera di pengaturan browser.' };
-            case 'info_leave': return { icon: <div className={cn(iconWrapper, "border-blue-500/20")}><FileText className={cn(iconSize, "text-blue-500")} /></div>, title: `${leaveType} Disetujui`, desc: `Anda memiliki izin/sakit sah yang berlaku hari ini.` };
-            default: return { icon: <div className={cn(iconWrapper, "border-destructive/20")}><X className={cn(iconSize, "text-destructive")} /></div>, title: 'Gagal', desc: 'Terjadi kesalahan sistem. Silakan coba lagi.' };
+            case 'success_in': return { icon: <div className={cn(iconWrapper, "border-green-500/30")}><CheckCircle className={cn(iconSize, "text-green-500")} /></div>, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
+            case 'success_out': return { icon: <div className={cn(iconWrapper, "border-green-500/30")}><CheckCircle className={cn(iconSize, "text-green-500")} /></div>, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
+            case 'error_radius': return { icon: <div className={cn(iconWrapper, "border-destructive/30")}><MapPin className={cn(iconSize, "text-destructive")} /></div>, title: 'Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
+            case 'error_time': return { icon: <div className={cn(iconWrapper, "border-destructive/30")}><ClockIcon className={cn(iconSize, "text-destructive")} /></div>, title: 'Waktu Habis', desc: 'Sesi absensi untuk hari ini telah ditutup.' };
+            case 'error_already_in': return { icon: <div className={cn(iconWrapper, "border-destructive/30")}><X className={cn(iconSize, "text-destructive")} /></div>, title: 'Sudah Absen Masuk', desc: 'Anda sudah melakukan absensi masuk hari ini.' };
+            case 'error_already_out': return { icon: <div className={cn(iconWrapper, "border-destructive/30")}><X className={cn(iconSize, "text-destructive")} /></div>, title: 'Sudah Absen Pulang', desc: 'Anda sudah melakukan absensi pulang hari ini.' };
+            case 'error_location': return { icon: <div className={cn(iconWrapper, "border-destructive/30")}><MapPin className={cn(iconSize, "text-destructive")} /></div>, title: 'Lokasi Error', desc: locationError || 'Pastikan GPS aktif and berikan izin akses.' };
+            case 'info_disabled': return { icon: <div className={cn(iconWrapper, "border-amber-500/30")}><Lock className={cn(iconSize, "text-amber-500")} /></div>, title: 'Sistem Dinonaktifkan', desc: 'Admin telah menonaktifkan sistem absensi sementara.' };
+            case 'info_holiday': return { icon: <div className={cn(iconWrapper, "border-blue-500/30")}><CalendarOff className={cn(iconSize, "text-blue-500")} /></div>, title: 'Hari Libur', desc: 'Sistem absensi tidak aktif hari ini.' };
+            case 'info_checked_out': return { icon: <div className={cn(iconWrapper, "border-green-500/30")}><CheckCircle className={cn(iconSize, "text-green-500")} /></div>, title: 'Absensi Selesai', desc: 'Anda telah menyelesaikan absensi untuk hari ini.' };
+            case 'info_no_camera': return { icon: <div className={cn(iconWrapper, "border-destructive/30")}><CameraOff className={cn(iconSize, "text-destructive")} /></div>, title: 'Kamera Error', desc: 'Izinkan akses kamera di pengaturan browser.' };
+            case 'info_leave': return { icon: <div className={cn(iconWrapper, "border-blue-500/30")}><FileText className={cn(iconSize, "text-blue-500")} /></div>, title: `${leaveType} Disetujui`, desc: `Anda memiliki izin/sakit sah yang berlaku hari ini.` };
+            default: return { icon: <div className={cn(iconWrapper, "border-destructive/30")}><X className={cn(iconSize, "text-destructive")} /></div>, title: 'Gagal', desc: 'Terjadi kesalahan sistem. Silakan coba lagi.' };
         }
     }, [status, locationError, leaveType]);
 
+    const isSuccess = status.startsWith('success');
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-10">
             <div className={cn(
                 "w-full max-w-[340px] text-center p-12 rounded-[2.5rem] shadow-2xl relative",
-                "bg-[#0a0a0b] border border-white/5 transition-all duration-700 animate-in fade-in zoom-in-95"
+                "bg-[#0f1715] border border-green-500/30 shadow-green-500/10 transition-all duration-700 animate-in fade-in zoom-in-95"
             )} onClick={(e) => e.stopPropagation()}>
+                
+                <button 
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 text-white/40 hover:text-white transition-colors"
+                >
+                    <X className="h-5 w-5" />
+                </button>
+
                 <div className="flex flex-col items-center">
                     <div className="mb-2">{feedback.icon}</div>
-                    <div className="space-y-4 mb-12">
-                        <h3 className="text-3xl font-black tracking-tight text-white leading-tight">{feedback.title}</h3>
-                        <p className="text-zinc-500 text-sm font-bold leading-relaxed px-4">{feedback.desc}</p>
+                    <div className="space-y-4 mb-10">
+                        <h3 className="text-2xl font-bold tracking-tight text-white leading-tight">{feedback.title}</h3>
+                        <p className="text-white/40 text-xs font-medium leading-relaxed px-4">{feedback.desc}</p>
                     </div>
                     
-                    {(status.startsWith('success')) && (
-                        <div className="w-full mb-8 border-t border-white/5 pt-6">
+                    {isSuccess && (
+                        <div className="w-full">
                             <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_in' ? 'in' : 'out'} />
                         </div>
                     )}
                     
-                    <Button 
-                        className="w-full font-black rounded-2xl h-16 text-sm shadow-xl active:scale-95 transition-all bg-primary hover:bg-primary/90 text-white border-none tracking-[0.2em] uppercase" 
-                        onClick={onClose}
-                    >
-                        TUTUP
-                    </Button>
+                    {!isSuccess && (
+                        <Button 
+                            className="w-full font-bold rounded-2xl h-14 text-xs shadow-xl active:scale-95 transition-all bg-primary hover:bg-primary/90 text-white border-none tracking-widest uppercase" 
+                            onClick={onClose}
+                        >
+                            TUTUP
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>
