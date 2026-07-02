@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -304,14 +303,14 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leave
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-10">
             <div className={cn(
                 "w-full max-w-[360px] text-center p-12 rounded-xl shadow-2xl relative",
-                "bg-[#121c19]/95 border border-emerald-500/30 transition-all duration-700 animate-in fade-in zoom-in-95"
+                "bg-[#243b35]/95 border border-emerald-500/30 transition-all duration-700 animate-in fade-in zoom-in-95"
             )} onClick={(e) => e.stopPropagation()}>
                 
                 <div className="flex flex-col items-center">
                     <div className="mb-2">{feedback.icon}</div>
                     <div className="space-y-4 mb-10">
                         <h3 className="text-2xl font-black tracking-tight text-white leading-tight">{feedback.title}</h3>
-                        <p className="text-zinc-500 text-xs font-bold leading-relaxed px-4">{feedback.desc}</p>
+                        <p className="text-emerald-100/60 text-xs font-bold leading-relaxed px-4">{feedback.desc}</p>
                     </div>
                     
                     {isSuccess && (
