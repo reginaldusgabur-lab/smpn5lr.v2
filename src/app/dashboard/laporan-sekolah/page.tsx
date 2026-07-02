@@ -4,11 +4,11 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, isBefore, isSameDay, eachDayOfInterval, setHours, setMinutes } from 'date-fns';
+import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, isBefore, isSameDay, eachDayOfInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, Filter, Eye, TrendingUp } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, Filter, Eye } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,7 +23,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 interface ReportRowData {
     no: number;
@@ -153,10 +152,12 @@ export default function SchoolReportPage() {
                             hadirCount++;
                         } else if (att.checkInTime && att.checkOutTime) {
                             let isLate = false;
+                            const checkInDate = att.checkInTime.toDate();
                             if (schoolConfigData.useTimeValidation && schoolConfigData.checkInEndTime) {
                                 const [h, m] = schoolConfigData.checkInEndTime.split(':').map(Number);
-                                const deadline = setMinutes(setHours(startOfDay(att.checkInTime.toDate()), h), m);
-                                if (att.checkInTime.toDate() > deadline) isLate = true;
+                                const deadline = new Date(checkInDate);
+                                deadline.setHours(h, m, 0, 0);
+                                if (checkInDate > deadline) isLate = true;
                             }
                             p = isLate ? 0.95 : 1.0;
                             hadirCount++;
@@ -361,7 +362,7 @@ export default function SchoolReportPage() {
                             <div className="flex flex-col items-center justify-center gap-4">
                                 <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
                                     <Button 
-                                        variant="outline" 
+                                        variant="ghost" 
                                         size="icon" 
                                         className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
                                         onClick={() => setCurrentMonth(prev => {
@@ -373,7 +374,7 @@ export default function SchoolReportPage() {
                                         <ChevronLeft className="h-5 w-5 text-primary" />
                                     </Button>
                                     <span className="w-40 text-center font-bold text-xl text-primary tracking-tight capitalize whitespace-nowrap">{monthName}</span>
-                                    <Button variant="outline" size="icon" className="rounded-xl shrink-0 h-10 w-10 shadow-none hover:bg-background/50" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}>
+                                    <Button variant="ghost" size="icon" className="rounded-xl shrink-0 h-10 w-10 shadow-none hover:bg-background/50" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}>
                                         <ChevronRight className="h-5 w-5 text-primary" />
                                     </Button>
                                 </div>

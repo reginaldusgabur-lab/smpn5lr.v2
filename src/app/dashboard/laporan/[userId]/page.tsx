@@ -187,7 +187,6 @@ export default function UserReportDetailPage() {
                 updatedBy: currentUser.uid, updatedAt: serverTimestamp()
             };
 
-            // Jika lupa masuk tapi sudah ada jam pulang, jangan hapus jam pulangnya
             if (item.checkOutTime) {
                 data.checkOutTime = Timestamp.fromDate(parseISO(item.checkOutTime));
             }
@@ -229,18 +228,13 @@ export default function UserReportDetailPage() {
                 updatedAt: serverTimestamp()
             };
 
-            // Jika Lupa Pulang (Sudah ada masuk)
             if (item.checkInTime) {
                 dataToSave.checkInTime = Timestamp.fromDate(parseISO(item.checkInTime));
                 dataToSave.checkOutTime = Timestamp.fromDate(getRandomTime(targetDate, outStart, outEnd));
-            } 
-            // Jika Lupa Masuk (Sudah ada pulang)
-            else if (item.checkOutTime) {
+            } else if (item.checkOutTime) {
                 dataToSave.checkInTime = Timestamp.fromDate(getRandomTime(targetDate, inStart, inEnd));
                 dataToSave.checkOutTime = Timestamp.fromDate(parseISO(item.checkOutTime));
-            }
-            // Jika Alpa Murni
-            else {
+            } else {
                 dataToSave.checkInTime = Timestamp.fromDate(getRandomTime(targetDate, inStart, inEnd));
                 dataToSave.checkOutTime = Timestamp.fromDate(getRandomTime(targetDate, outStart, outEnd));
             }

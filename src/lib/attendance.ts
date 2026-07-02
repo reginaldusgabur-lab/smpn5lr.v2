@@ -195,10 +195,12 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                     point = 0.95;
                 } else if (att.checkInTime && att.checkOutTime) {
                     let isLate = false;
+                    const checkInDate = att.checkInTime.toDate();
                     if (schoolConfig?.useTimeValidation && schoolConfig?.checkInEndTime) {
                         const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
-                        const deadline = setMinutes(setHours(startOfDay(att.checkInTime.toDate()), h), m);
-                        if (att.checkInTime.toDate() > deadline) isLate = true;
+                        const deadline = new Date(checkInDate);
+                        deadline.setHours(h, m, 0, 0);
+                        if (checkInDate > deadline) isLate = true;
                     }
                     point = isLate ? 0.95 : 1.0;
                 } else if (att.checkInTime || att.checkOutTime) {
