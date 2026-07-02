@@ -360,11 +360,11 @@ export default function SchoolReportPage() {
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-4">
                             <div className="flex flex-col items-center justify-center gap-4">
-                                <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                                <div className="flex items-center bg-muted/40 rounded-xl border border-muted-foreground/5 p-1 shrink-0">
                                     <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
+                                        className="h-10 w-10 rounded-lg hover:bg-background/50 shadow-none shrink-0" 
                                         onClick={() => setCurrentMonth(prev => {
                                             const n = subMonths(prev, 1);
                                             return n < minDate ? prev : n;
@@ -374,7 +374,7 @@ export default function SchoolReportPage() {
                                         <ChevronLeft className="h-5 w-5 text-primary" />
                                     </Button>
                                     <span className="w-40 text-center font-bold text-xl text-primary tracking-tight capitalize whitespace-nowrap">{monthName}</span>
-                                    <Button variant="ghost" size="icon" className="rounded-xl shrink-0 h-10 w-10 shadow-none hover:bg-background/50" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}>
+                                    <Button variant="ghost" size="icon" className="rounded-lg shrink-0 h-10 w-10 shadow-none hover:bg-background/50" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}>
                                         <ChevronRight className="h-5 w-5 text-primary" />
                                     </Button>
                                 </div>

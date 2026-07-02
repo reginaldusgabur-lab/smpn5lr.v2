@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-card border border-border shadow-2xl rounded-2xl p-4 text-center min-w-[120px] animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-card border border-border shadow-2xl rounded-xl p-4 text-center min-w-[120px] animate-in fade-in zoom-in-95 duration-200">
         <p className="font-bold text-foreground text-base tracking-tight leading-none mb-1.5">{data.name}</p>
         <p className="text-muted-foreground text-xs font-bold tracking-wide">
           {data.Jumlah} hari
@@ -293,11 +293,11 @@ export default function DashboardPage() {
                                     Persentase kehadiran: {isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}
                                 </p>
                             </div>
-                            <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
+                            <div className="flex items-center bg-muted/40 rounded-xl border border-muted-foreground/5 p-1">
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8 rounded-xl hover:bg-background/50 shadow-none" 
+                                    className="h-8 w-8 rounded-lg hover:bg-background/50 shadow-none" 
                                     onClick={handlePrevMonth} 
                                     disabled={isPersonalSummaryLoading || !canGoPrev}
                                 >
@@ -306,7 +306,7 @@ export default function DashboardPage() {
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8 rounded-xl hover:bg-background/50 shadow-none" 
+                                    className="h-8 w-8 rounded-lg hover:bg-background/50 shadow-none" 
                                     onClick={handleNextMonth} 
                                     disabled={isPersonalSummaryLoading || !canGoNext}
                                 >

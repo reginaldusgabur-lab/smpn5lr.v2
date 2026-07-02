@@ -119,7 +119,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-background text-foreground">
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-md bg-card border border-muted-foreground/10 shadow-none rounded-[2.5rem] overflow-hidden">
+        <Card className="w-full max-w-md bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
           <CardHeader className="text-center space-y-2 pt-10 pb-4">
             <div className="flex justify-center mb-4">
               <div className="relative w-32 h-32 transition-all duration-500 hover:scale-105">
@@ -151,7 +151,7 @@ export default function LoginPage() {
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-bold shadow-none"
+                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-bold shadow-none"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -178,7 +178,7 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-bold shadow-none"
+                              className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-bold shadow-none"
                             />
                           </FormControl>
                           <Button
@@ -199,7 +199,7 @@ export default function LoginPage() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-14 text-sm font-bold rounded-2xl shadow-none transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-4 tracking-widest" 
+                  className="w-full h-14 text-sm font-bold rounded-xl shadow-none transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-4 tracking-widest" 
                   disabled={isLoginLoading}
                 >
                   {isLoginLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "MASUK SEKARANG"}
@@ -210,7 +210,7 @@ export default function LoginPage() {
           <div className="bg-muted/20 py-4 border-t border-muted-foreground/5" />
         </Card>
 
-        <DialogContent className="rounded-[2.5rem] border-none p-10 shadow-none">
+        <DialogContent className="rounded-xl border-none p-10 shadow-none">
           <DialogHeader>
             <DialogTitle className="font-bold text-2xl tracking-tighter text-primary">Atur ulang sandi</DialogTitle>
             <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">
@@ -231,7 +231,7 @@ export default function LoginPage() {
                           id="reset-email" 
                           placeholder="email@anda.com" 
                           {...field} 
-                          className="h-12 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background shadow-none font-bold"
+                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background shadow-none font-bold"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -243,7 +243,7 @@ export default function LoginPage() {
                 <Button 
                   type="submit" 
                   disabled={isResetLoading} 
-                  className="w-full h-12 rounded-2xl font-bold tracking-widest shadow-none"
+                  className="w-full h-12 rounded-xl font-bold tracking-widest shadow-none"
                 >
                   {isResetLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim link pemulihan"}
                 </Button>

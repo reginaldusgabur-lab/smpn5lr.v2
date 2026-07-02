@@ -334,7 +334,7 @@ export default function AdminUsersPage() {
                                                             <MoreHorizontal className="h-5 w-5" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-none border border-muted-foreground/10">
+                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 shadow-none border border-muted-foreground/10">
                                                         <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 mb-1">Aksi pengguna</DropdownMenuLabel>
                                                         <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}>
                                                             <Edit2 className="mr-3 h-4 w-4 text-primary" />
@@ -373,7 +373,7 @@ export default function AdminUsersPage() {
 
             {/* Dialog Reset Password */}
             <Dialog open={isResetPassDialogOpen} onOpenChange={setIsResetPassDialogOpen}>
-                <DialogContent className="rounded-2xl border-none max-w-sm shadow-none">
+                <DialogContent className="rounded-xl border-none max-w-sm shadow-none">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold text-primary">Reset kata sandi</DialogTitle>
                         <DialogDescription className="text-xs font-bold">
@@ -407,7 +407,7 @@ export default function AdminUsersPage() {
 
             {/* Dialog Tambah/Edit User */}
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
-                <DialogContent className="rounded-3xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-none">
+                <DialogContent className="rounded-xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-none">
                     <DialogHeader className="p-6 pb-2 border-b border-muted-foreground/5">
                         <DialogTitle className="text-xl font-bold text-primary">
                             {editingUser ? 'Perbarui data' : 'Tambah personil'}
@@ -506,7 +506,7 @@ export default function AdminUsersPage() {
 
             {/* Alert Dialog Hapus User */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setUserToDelete(null); }}>
-                <AlertDialogContent className="rounded-3xl border-none shadow-none">
+                <AlertDialogContent className="rounded-xl border-none shadow-none">
                     <AlertDialogHeader>
                         <div className="flex items-center gap-3 text-destructive mb-2">
                             <AlertCircle className="h-6 w-6" />
