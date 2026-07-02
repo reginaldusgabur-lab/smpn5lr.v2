@@ -310,10 +310,10 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leave
     const isSuccess = status.startsWith('success');
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-10">
             <div className={cn(
                 "w-full max-w-[360px] text-center p-12 rounded-xl shadow-2xl relative",
-                "bg-[#0a0f0d] border border-green-500/20 transition-all duration-700 animate-in fade-in zoom-in-95"
+                "bg-[#121c19]/95 border border-emerald-500/30 transition-all duration-700 animate-in fade-in zoom-in-95"
             )} onClick={(e) => e.stopPropagation()}>
                 
                 <div className="flex flex-col items-center">
