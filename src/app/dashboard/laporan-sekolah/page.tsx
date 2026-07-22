@@ -88,7 +88,7 @@ export default function SchoolReportPage() {
 
             const [attendanceSnap, attendanceFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackSnap), 
+                getDocs(attendanceFallbackQuery), 
                 getDocs(leaveQuery)
             ]);
 
