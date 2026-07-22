@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
 import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, isBefore, isSameDay, eachDayOfInterval, setHours, setMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -88,7 +88,7 @@ export default function SchoolReportPage() {
 
             const [attendanceSnap, attendanceFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackQuery), 
+                getDocs(attendanceFallbackSnap), 
                 getDocs(leaveQuery)
             ]);
 
@@ -245,7 +245,6 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
-            // Footer Profesional untuk semua halaman
             const totalPages = (doc as any).internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
@@ -287,8 +286,15 @@ export default function SchoolReportPage() {
                             <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
                                 <div className="flex flex-col sm:flex-row gap-2 flex-1 w-full">
                                     <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                        <SelectTrigger className="w-full sm:w-[160px] h-11 rounded-xl bg-muted/30 font-bold text-xs"><SelectValue placeholder="Peran" /></SelectTrigger>
-                                        <SelectContent className="rounded-xl border-none"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent>
+                                        <SelectTrigger className="w-full sm:w-[160px] h-11 rounded-xl bg-muted/30 font-bold text-xs">
+                                          <SelectValue placeholder="Peran" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-none">
+                                          <SelectItem value="all">Semua peran</SelectItem>
+                                          <SelectItem value="guru">Guru</SelectItem>
+                                          <SelectItem value="pegawai">Pegawai</SelectItem>
+                                          <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                        </SelectContent>
                                     </Select>
                                     <div className="flex-1 relative w-full">
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />

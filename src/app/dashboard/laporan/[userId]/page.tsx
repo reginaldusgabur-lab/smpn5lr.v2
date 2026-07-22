@@ -9,8 +9,8 @@ import { format, isValid, parseISO, startOfDay, endOfDay, isSameMonth, startOfMo
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
@@ -22,7 +22,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
@@ -209,70 +209,6 @@ export default function UserReportDetailPage() {
         finally { setIsMutating(false); }
     };
 
-    const handleSetIn = async (item: MonthlyReportData) => {
-        if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
-        setIsMutating(true);
-        try {
-            const targetDate = parseISO(item.date);
-            const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
-            const [h, m] = inEnd.split(':').map(Number);
-            const limitIn = setMinutes(setHours(startOfDay(targetDate), h), m);
-            
-            const randomSeconds = Math.floor(Math.random() * 299) + 1;
-            const realIn = new Date(limitIn.getTime() - randomSeconds * 1000);
-            
-            const q = query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '==', format(targetDate, 'yyyy-MM-dd')));
-            const snap = await getDocs(q);
-
-            if (!snap.empty) {
-                await writeBatch(firestore).update(snap.docs[0].ref, {
-                    checkInTime: Timestamp.fromDate(realIn),
-                    updatedBy: currentUser.uid,
-                    updatedAt: serverTimestamp(),
-                    reasonForUpdate: 'Kehadiran penuh',
-                    manualEntry: true
-                }).commit();
-                invalidateCache();
-                toast({ title: 'Berhasil', description: 'Absen masuk dilengkapi.' });
-                fetchData();
-            }
-        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' }); }
-        finally { setIsMutating(false); }
-    };
-
-    const handleSetLate = async (item: MonthlyReportData) => {
-        if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
-        setIsMutating(true);
-        try {
-            const targetDate = parseISO(item.date);
-            const now = new Date();
-            const isToday = isSameDay(targetDate, now);
-            const outStart = getDailyOutStart(targetDate);
-            const [hO, mO] = outStart.split(':').map(Number);
-            const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            
-            const fillOut = !isToday || (isToday && now > limitOutStart);
-
-            const data: any = {
-                userId, date: format(targetDate, 'yyyy-MM-dd'),
-                manualEntry: true, reasonForUpdate: 'Terlambat',
-                updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
-                checkInTime: null,
-                checkOutTime: fillOut ? generateRandomOutTime(targetDate) : null
-            };
-
-            const q = query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '==', format(targetDate, 'yyyy-MM-dd')));
-            const snap = await getDocs(q);
-            if (!snap.empty) await writeBatch(firestore).update(snap.docs[0].ref, data).commit();
-            else await writeBatch(firestore).set(doc(collection(firestore, 'users', userId, 'attendanceRecords')), data).commit();
-
-            invalidateCache();
-            toast({ title: 'Berhasil', description: 'Ditandai sebagai terlambat.' });
-            fetchData();
-        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' }); }
-        finally { setIsMutating(false); }
-    };
-
     const handleDownloadPdf = () => {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
@@ -344,7 +280,6 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
-        // Footer Profesional untuk semua halaman
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
@@ -437,7 +372,6 @@ export default function UserReportDetailPage() {
                                             const isAlpa = item.status === 'Alpa';
                                             const hasIn = !!item.checkInTime;
                                             const hasOut = !!item.checkOutTime;
-                                            const isNoIn = !hasIn && hasOut;
                                             const isLeave = ['Sakit', 'Izin', 'Dinas'].some(s => item.status.includes(s));
                                             const isComplete = hasIn && hasOut;
                                             const isManualLate = item.status === 'Terlambat' && !hasIn;
@@ -464,12 +398,8 @@ export default function UserReportDetailPage() {
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
-                                                                    {isNoIn ? (
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleSetIn(item)}>Lengkapi absen masuk</DropdownMenuItem>
-                                                                    ) : (
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleSetHadir(item)}>{hasIn ? 'Lengkapi absen pulang' : 'Jadikan Hadir'}</DropdownMenuItem>
-                                                                    )}
-                                                                    {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleSetLate(item)}>Set Terlambat</DropdownMenuItem>}
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleSetHadir(item)}>{hasIn ? 'Lengkapi absen pulang' : 'Jadikan Hadir'}</DropdownMenuItem>
+                                                                    {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Terlambat', 'Terlambat')}>Set Terlambat</DropdownMenuItem>}
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Ubah Status</DropdownMenuLabel>
                                                                     {!hasIn && (
