@@ -244,6 +244,18 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
+            // Professional Footer
+            const pageCount = (doc as any).internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setLineWidth(0.2);
+                doc.line(margin, doc.internal.pageSize.getHeight() - 15, pageWidth - margin, doc.internal.pageSize.getHeight() - 15);
+                doc.setFontSize(8).setFont('times', 'italic');
+                doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, doc.internal.pageSize.getHeight() - 10);
+                doc.setFontSize(9).setFont('times', 'normal');
+                doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+            }
+
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
         } finally { setIsExporting(false); }
     };
@@ -278,7 +290,7 @@ export default function SchoolReportPage() {
                                     <div className="flex-1 relative w-full">
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                         <Input 
-                                            placeholder="Cari personil..." 
+                                            placeholder="Cari nama..." 
                                             className="pl-11 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold text-xs shadow-none" 
                                             value={searchTerm} 
                                             onChange={e => setSearchTerm(e.target.value)} 

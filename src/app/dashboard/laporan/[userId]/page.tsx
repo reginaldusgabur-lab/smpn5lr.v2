@@ -98,7 +98,6 @@ export default function UserReportDetailPage() {
         const outStart = getDailyOutStart(date);
         const [h, m] = outStart.split(':').map(Number);
         const base = setMinutes(setHours(startOfDay(date), h), m);
-        // Random 5-25 menit setelah jam pulang mulai
         const randomMins = Math.floor(Math.random() * 20) + 5;
         const randomSecs = Math.floor(Math.random() * 60);
         return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
@@ -138,7 +137,6 @@ export default function UserReportDetailPage() {
                     dataToSave.checkInTime = null;
                     dataToSave.checkOutTime = generateRandomOutTime(targetDate);
                 } else {
-                    // Acak dalam 5 menit sebelum absen selesai (Jadikan Hadir)
                     const randomSeconds = Math.floor(Math.random() * 299) + 1; 
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
                     dataToSave.checkOutTime = null;
@@ -192,7 +190,6 @@ export default function UserReportDetailPage() {
                 updatedBy: currentUser.uid, updatedAt: serverTimestamp()
             };
 
-            // ACAK 5 MENIT SEBELUM ABSEN SELESAI
             const randomSeconds = Math.floor(Math.random() * 299) + 1;
             data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
             data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
@@ -253,13 +250,13 @@ export default function UserReportDetailPage() {
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
             
-            const fillOut = !isToday || (isToday && now >= limitOutStart);
+            const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const data: any = {
                 userId, date: format(targetDate, 'yyyy-MM-dd'),
                 manualEntry: true, reasonForUpdate: 'Terlambat',
                 updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
-                checkInTime: null, // JANGAN GANGGU - SET KE NULL SESUAI PERMINTAAN USER
+                checkInTime: null,
                 checkOutTime: fillOut ? generateRandomOutTime(targetDate) : null
             };
 
@@ -327,7 +324,7 @@ export default function UserReportDetailPage() {
         });
 
         let finalY = (doc as any).lastAutoTable.finalY || currentY;
-        if (finalY > doc.internal.pageSize.getHeight() - 60) {
+        if (finalY > doc.internal.pageSize.getHeight() - 65) {
             doc.addPage();
             finalY = 20;
         }
@@ -345,6 +342,18 @@ export default function UserReportDetailPage() {
         doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
+
+        // Professional Footer
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setLineWidth(0.2);
+            doc.line(margin, doc.internal.pageSize.getHeight() - 15, pageWidth - margin, doc.internal.pageSize.getHeight() - 15);
+            doc.setFontSize(8).setFont('times', 'italic');
+            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, doc.internal.pageSize.getHeight() - 10);
+            doc.setFontSize(9).setFont('times', 'normal');
+            doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+        }
 
         doc.save(`Laporan_Individu_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
