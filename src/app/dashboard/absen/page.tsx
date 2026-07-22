@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Html5Qrcode } from 'html5-qrcode';
-import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle, Lock, FileText, Sparkles } from 'lucide-react';
+import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle, Lock, FileText } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -253,7 +253,7 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leave
             case 'processing': return { icon: <div className={iconWrapper}><Loader2 className={cn(iconSize, "animate-spin text-primary")} /></div>, title: 'Memproses...', desc: 'Sedang memvalidasi absensi Anda.' };
             case 'locating': return { icon: <div className={iconWrapper}><Loader2 className={cn(iconSize, "animate-spin text-primary")} /></div>, title: 'Mencari Lokasi...', desc: 'Mohon tunggu, sedang mendapatkan data GPS.' };
             case 'success_in': return { icon: <div className={iconWrapper}><CheckCircle className={cn(iconSize, theme.iconColor)} /></div>, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
-            case 'success_out': return { icon: <div className={iconWrapper}><CheckCircle className={cn(iconSize, theme.iconColor)} /></div>, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hate di jalan!' };
+            case 'success_out': return { icon: <div className={iconWrapper}><CheckCircle className={cn(iconSize, theme.iconColor)} /></div>, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
             case 'error_radius': return { icon: <div className={iconWrapper}><MapPin className={cn(iconSize, theme.iconColor)} /></div>, title: 'Gagal: Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
             case 'error_time': return { icon: <div className={iconWrapper}><ClockIcon className={cn(iconSize, theme.iconColor)} /></div>, title: 'Gagal: Waktu Habis', desc: 'Sesi absensi untuk hari ini telah ditutup.' };
             case 'error_already_in': return { icon: <div className={iconWrapper}><X className={cn(iconSize, theme.iconColor)} /></div>, title: 'Sudah Absen Masuk', desc: 'Anda sudah melakukan absensi masuk hari ini.' };

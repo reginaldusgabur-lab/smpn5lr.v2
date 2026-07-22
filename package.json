@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "push": "((git remote add origin https://github.com/reginaldusgabur-lab/smpn5lr.v2.git || git remote set-url origin https://github.com/reginaldusgabur-lab/smpn5lr.v2.git) && git add . && (git commit -m \"pushed to github\" || echo \"No changes to commit\") && git push -u origin main)"
+    "push": "((git remote add origin https://github.com/reginaldusgabur-lab/smpn5lr.v2.git || git remote set-url origin https://github.com/reginaldusgabur-lab/smpn5lr.v2.git) && git add . && (git commit -m \"pushed to github\" || echo \"No changes to commit\") && git push -u origin main --force)"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
