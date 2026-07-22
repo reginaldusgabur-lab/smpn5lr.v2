@@ -1,7 +1,6 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { schoolLogoBase64 } from '@/assets/school-logo';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
@@ -87,6 +86,7 @@ export function exportToPdf(
 
         const doc = new jsPDF();
         const pageCenter = doc.internal.pageSize.getWidth() / 2;
+        const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 14;
 
         const config = reportConfig || {};
@@ -109,7 +109,7 @@ export function exportToPdf(
         doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
 
-        // Title: Two lines
+        // Title
         doc.setFontSize(14);
         doc.setFont('times', 'bold');
         let currentY = 50;
@@ -187,16 +187,18 @@ export function exportToPdf(
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
 
-        // Footer
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for(let i = 1; i <= pageCount; i++) {
+        // Professional Footer logic for all pages
+        const totalPages = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
+            const pageHeight = doc.internal.pageSize.getHeight();
             doc.setLineWidth(0.2);
-            doc.line(margin, doc.internal.pageSize.getHeight() - 15, doc.internal.pageSize.getWidth() - margin, doc.internal.pageSize.getHeight() - 15);
+            doc.setDrawColor(200, 200, 200);
+            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
-            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, doc.internal.pageSize.getHeight() - 10);
+            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
             doc.setFontSize(9).setFont('times', 'normal');
-            doc.text(`Halaman ${i} dari ${pageCount}`, doc.internal.pageSize.getWidth() - margin, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
         }
 
         doc.save(fileName);

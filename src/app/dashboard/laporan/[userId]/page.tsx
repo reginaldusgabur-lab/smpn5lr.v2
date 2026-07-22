@@ -343,16 +343,18 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
-        // Professional Footer
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
+        // Professional Footer logic for all pages
+        const totalPages = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
+            const pageHeight = doc.internal.pageSize.getHeight();
             doc.setLineWidth(0.2);
-            doc.line(margin, doc.internal.pageSize.getHeight() - 15, pageWidth - margin, doc.internal.pageSize.getHeight() - 15);
+            doc.setDrawColor(200, 200, 200);
+            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
-            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, doc.internal.pageSize.getHeight() - 10);
+            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
             doc.setFontSize(9).setFont('times', 'normal');
-            doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
         }
 
         doc.save(`Laporan_Individu_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
