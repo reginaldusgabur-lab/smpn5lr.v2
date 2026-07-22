@@ -128,7 +128,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(recordDate), hO), mO);
 
-            // Cek apakah jam pulang harus diisi
             const fillOut = !isToday || (isToday && now > limitOutStart);
 
             let data: any = {
@@ -137,11 +136,8 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 reasonForUpdate: 'Kehadiran penuh'
             };
 
-            const randomSecs = () => Math.floor(Math.random() * 60);
-
             if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'dinas-siang') {
-                // ACAK 5 MENIT SEBELUM ABSEN SELESAI (Contoh: 25:01, 26:08...)
-                const randomOffsetSecs = Math.floor(Math.random() * 300) + 1; // 1s - 300s
+                const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
                 data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                 
                 if (type === 'hadir' || type === 'lengkapi-masuk') {
@@ -151,9 +147,8 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                    data.reasonForUpdate = 'Dinas siang';
                 }
             } else if (type === 'terlambat') {
-                // ACAK 5 MENIT SETELAH JAM SELESAI MASUK
-                const randomOffsetSecs = Math.floor(Math.random() * 300) + 1;
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() + randomOffsetSecs * 1000));
+                // JANGAN GANGGU - SET KE NULL SESUAI PERMINTAAN USER
+                data.checkInTime = null;
                 data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
                 data.reasonForUpdate = 'Terlambat';
             } else if (type === 'dinas-pagi') {
@@ -161,7 +156,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 data.checkOutTime = Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5));
                 data.reasonForUpdate = 'Dinas pagi';
             } else { // pulang-cepat
-                const randomOffsetSecs = Math.floor(Math.random() * 300) + 1;
+                const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
                 data.checkInTime = day.checkInTime ? Timestamp.fromDate(parseISO(day.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                 data.checkOutTime = null;
                 data.reasonForUpdate = 'Pulang cepat';

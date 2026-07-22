@@ -13,24 +13,6 @@ import { parse, format, startOfDay, endOfDay, addMinutes, isSameDay, setHours, s
 import { id } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
-const getRandomTime = (baseDate: Date, startTimeStr: string, endTimeStr: string): Date => {
-    const [startH, startM] = startTimeStr.split(':').map(Number);
-    const [endH, endM] = endTimeStr.split(':').map(Number);
-    const startDate = new Date(baseDate.getTime());
-    startDate.setHours(startH, startM, 0, 0);
-    const endDate = new Date(baseDate.getTime());
-    endDate.setHours(endH, endM, 0, 0);
-    
-    if (endDate.getTime() <= startDate.getTime()) {
-        endDate.setDate(endDate.getDate() + 1);
-    }
-    
-    const randomTimestamp = startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime());
-    const res = new Date(randomTimestamp);
-    res.setSeconds(Math.floor(Math.random() * 60));
-    return res;
-};
-
 export default function ManualAttendancePage() {
     const router = useRouter();
     const params = useParams();
@@ -95,14 +77,6 @@ export default function ManualAttendancePage() {
         setIsSubmitting(true);
         try {
             const recordDate = startOfDay(date);
-            const inEnd = schoolConfig.checkInEndTime || '07:30';
-            const [hE, mE] = inEnd.split(':').map(Number);
-            const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
-
-            // ACAK 5 MENIT SETELAH JAM SELESAI MASUK
-            const randomSeconds = Math.floor(Math.random() * 300) + 1;
-            const checkInTime = new Date(limitIn.getTime() + randomSeconds * 1000);
-
             const outStart = schoolConfig.checkOutStartTime || '14:00';
             const [outH, outM] = outStart.split(':').map(Number);
             const checkOutLimit = setMinutes(setHours(startOfDay(recordDate), outH), outM);
@@ -113,7 +87,7 @@ export default function ManualAttendancePage() {
             const attendanceData: any = {
                 userId, 
                 date: format(date, 'yyyy-MM-dd'),
-                checkInTime: Timestamp.fromDate(checkInTime), 
+                checkInTime: null, // JANGAN GANGGU - SET KE NULL SESUAI PERMINTAAN USER
                 checkOutTime: Timestamp.fromDate(checkOutTime),
                 manualEntry: true, 
                 reasonForUpdate: 'Terlambat',
@@ -142,7 +116,7 @@ export default function ManualAttendancePage() {
             const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
 
             // ACAK 5 MENIT SEBELUM ABSEN SELESAI
-            const randomSeconds = Math.floor(Math.random() * 300) + 1;
+            const randomSeconds = Math.floor(Math.random() * 299) + 1;
             const checkInTime = new Date(limitIn.getTime() - randomSeconds * 1000);
 
             const outStart = schoolConfig.checkOutStartTime || '14:00';
@@ -155,7 +129,7 @@ export default function ManualAttendancePage() {
             const attendanceData: any = {
                 userId, 
                 date: format(date, 'yyyy-MM-dd'),
-                checkInTime: Timestamp.fromDate(checkInTime),
+                checkInTime: Timestamp.fromDate(checkInTime), 
                 checkOutTime: Timestamp.fromDate(checkOutTime),
                 manualEntry: true, 
                 reasonForUpdate: 'Kehadiran penuh',
