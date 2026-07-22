@@ -122,7 +122,8 @@ export default function UserReportDetailPage() {
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (['Dinas Pagi', 'Dinas Siang', 'Pulang Cepat'].includes(newStatus)) {
+            // LOGIKA DIPERBAIKI: Terlambat masuk kategori AttendanceRecord dengan checkIn null
+            if (['Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Terlambat'].includes(newStatus)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
@@ -134,7 +135,7 @@ export default function UserReportDetailPage() {
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                if (newStatus === 'Dinas Pagi') {
+                if (newStatus === 'Dinas Pagi' || newStatus === 'Terlambat') {
                     dataToSave.checkInTime = null;
                     dataToSave.checkOutTime = generateRandomOutTime(targetDate);
                 } else {

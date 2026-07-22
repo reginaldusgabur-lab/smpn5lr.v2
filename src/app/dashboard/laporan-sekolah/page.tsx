@@ -86,6 +86,7 @@ export default function SchoolReportPage() {
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
             const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
 
+            // FIX BUG: Destructuring from Promise.all correctly
             const [attendanceSnap, attendanceFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
                 getDocs(attendanceFallbackQuery), 
@@ -127,7 +128,7 @@ export default function SchoolReportPage() {
                 const processedDates = new Set<string>();
 
                 (attendanceByUserId[u.id] || []).forEach(att => {
-                    const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : null);
+                    const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
                     if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
                         let p = 0;
                         const desc = (att.reasonForUpdate || '').toLowerCase();
@@ -245,6 +246,7 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
+            // FOOTER PDF PROFESIONAL
             const totalPages = (doc as any).internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
