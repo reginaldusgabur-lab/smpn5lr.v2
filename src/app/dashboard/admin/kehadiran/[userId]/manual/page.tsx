@@ -95,31 +95,26 @@ export default function ManualAttendancePage() {
         setIsSubmitting(true);
         try {
             const recordDate = startOfDay(date);
-            const now = new Date();
-            const isToday = isSameDay(recordDate, now);
+            const inEnd = schoolConfig.checkInEndTime || '07:30';
+            const [hE, mE] = inEnd.split(':').map(Number);
+            const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
 
-            // Logic jam pulang (menyesuaikan hari spesifik)
-            let checkOutTime: Date | null = null;
-            const dayOfWeekIndex = recordDate.getDay().toString();
-            const dailyOut = schoolConfig.dailyCheckOutTimes?.[dayOfWeekIndex];
-            const outStart = dailyOut?.start || schoolConfig.checkOutStartTime || '14:00';
-            
+            // ACAK 5 MENIT SETELAH JAM SELESAI MASUK
+            const randomSeconds = Math.floor(Math.random() * 300) + 1;
+            const checkInTime = new Date(limitIn.getTime() + randomSeconds * 1000);
+
+            const outStart = schoolConfig.checkOutStartTime || '14:00';
             const [outH, outM] = outStart.split(':').map(Number);
             const checkOutLimit = setMinutes(setHours(startOfDay(recordDate), outH), outM);
 
-            // Hanya isi jam pulang jika sudah lewat waktunya
-            if (!isToday || (isToday && now >= checkOutLimit)) {
-                // Set jam pulang acak 5-25 menit setelah mulai pulang
-                const randomOffset = Math.floor(Math.random() * 20) + 5;
-                const randomSecs = Math.floor(Math.random() * 60);
-                checkOutTime = addMinutes(new Date(checkOutLimit.getTime() + randomSecs * 1000), randomOffset);
-            }
+            const randomOutOffset = Math.floor(Math.random() * 20) + 5;
+            const checkOutTime = addMinutes(new Date(checkOutLimit.getTime() + Math.floor(Math.random() * 60) * 1000), randomOutOffset);
 
             const attendanceData: any = {
                 userId, 
                 date: format(date, 'yyyy-MM-dd'),
-                checkInTime: null, 
-                checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : (existingRecord?.checkOutTime || null),
+                checkInTime: Timestamp.fromDate(checkInTime), 
+                checkOutTime: Timestamp.fromDate(checkOutTime),
                 manualEntry: true, 
                 reasonForUpdate: 'Terlambat',
                 lastModifiedBy: authUser?.uid, 
@@ -142,36 +137,26 @@ export default function ManualAttendancePage() {
         setIsSubmitting(true);
         try {
             const recordDate = startOfDay(date);
-            const now = new Date();
-            const isToday = isSameDay(recordDate, now);
-
-            // Logic jam masuk normal (Gunakan acak di rentang yang tersedia)
-            const inStart = schoolConfig.checkInStartTime || '07:00';
             const inEnd = schoolConfig.checkInEndTime || '07:30';
-            const checkInTime = getRandomTime(recordDate, inStart, inEnd);
+            const [hE, mE] = inEnd.split(':').map(Number);
+            const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
 
-            // Logic jam pulang (menyesuaikan hari spesifik)
-            let checkOutTime: Date | null = null;
-            const dayOfWeekIndex = recordDate.getDay().toString();
-            const dailyOut = schoolConfig.dailyCheckOutTimes?.[dayOfWeekIndex];
-            const outStart = dailyOut?.start || schoolConfig.checkOutStartTime || '14:00';
-            
+            // ACAK 5 MENIT SEBELUM ABSEN SELESAI
+            const randomSeconds = Math.floor(Math.random() * 300) + 1;
+            const checkInTime = new Date(limitIn.getTime() - randomSeconds * 1000);
+
+            const outStart = schoolConfig.checkOutStartTime || '14:00';
             const [outH, outM] = outStart.split(':').map(Number);
             const checkOutLimit = setMinutes(setHours(startOfDay(recordDate), outH), outM);
 
-            // Hanya isi jam pulang jika sudah lewat waktunya
-            if (!isToday || (isToday && now >= checkOutLimit)) {
-                // Set jam pulang acak 5-25 menit setelah mulai pulang
-                const randomOffset = Math.floor(Math.random() * 20) + 5;
-                const randomSecs = Math.floor(Math.random() * 60);
-                checkOutTime = addMinutes(new Date(checkOutLimit.getTime() + randomSecs * 1000), randomOffset);
-            }
+            const randomOutOffset = Math.floor(Math.random() * 20) + 5;
+            const checkOutTime = addMinutes(new Date(checkOutLimit.getTime() + Math.floor(Math.random() * 60) * 1000), randomOutOffset);
 
             const attendanceData: any = {
                 userId, 
                 date: format(date, 'yyyy-MM-dd'),
                 checkInTime: Timestamp.fromDate(checkInTime),
-                checkOutTime: checkOutTime ? Timestamp.fromDate(checkOutTime) : (existingRecord?.checkOutTime || null),
+                checkOutTime: Timestamp.fromDate(checkOutTime),
                 manualEntry: true, 
                 reasonForUpdate: 'Kehadiran penuh',
                 lastModifiedBy: authUser?.uid, 
@@ -219,7 +204,6 @@ export default function ManualAttendancePage() {
             const [inH, inM] = checkIn ? checkIn.split(':').map(Number) : [null, null];
             const [outH, outM] = checkOut ? checkOut.split(':').map(Number) : [null, null];
             
-            // Tambahkan detik acak jika Admin mengisi jam manual tapi ingin terlihat real
             const randomSecIn = Math.floor(Math.random() * 60);
             const randomSecOut = Math.floor(Math.random() * 60);
 

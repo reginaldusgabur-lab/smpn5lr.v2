@@ -123,16 +123,13 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
 
             const inEnd = schoolConfig.checkInEndTime || '07:30';
             const outStart = schoolConfig.checkOutStartTime || '14:00';
-            const outEnd = schoolConfig.checkOutEndTime || '16:00';
             const [hE, mE] = inEnd.split(':').map(Number);
             const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(recordDate), hO), mO);
-            const [hEO, mEO] = outEnd.split(':').map(Number);
-            const limitOutEnd = setMinutes(setHours(startOfDay(recordDate), hEO), mEO);
 
             // Cek apakah jam pulang harus diisi
-            const fillOut = !isToday || (isToday && now > limitOutEnd);
+            const fillOut = !isToday || (isToday && now > limitOutStart);
 
             let data: any = {
                 userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
@@ -140,32 +137,32 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 reasonForUpdate: 'Kehadiran penuh'
             };
 
-            // Randomisasi waktu untuk kesan nyata
-            const randomInBefore = Math.floor(Math.random() * 15) + 5; // 5-20 min sebelum deadline
-            const randomInAfter = Math.floor(Math.random() * 10) + 2;  // 2-12 min setelah deadline
-            const randomOutAfter = Math.floor(Math.random() * 20) + 5; // 5-25 min setelah jam keluar
             const randomSecs = () => Math.floor(Math.random() * 60);
 
-            if (type === 'hadir') {
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - (randomInBefore * 60000) + randomSecs() * 1000));
-                data.checkOutTime = fillOut ? Timestamp.fromDate(new Date(limitOutStart.getTime() + (randomOutAfter * 60000) + randomSecs() * 1000)) : null;
+            if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'dinas-siang') {
+                // ACAK 5 MENIT SEBELUM ABSEN SELESAI (Contoh: 25:01, 26:08...)
+                const randomOffsetSecs = Math.floor(Math.random() * 300) + 1; // 1s - 300s
+                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                
+                if (type === 'hadir' || type === 'lengkapi-masuk') {
+                   data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
+                } else {
+                   data.checkOutTime = null;
+                   data.reasonForUpdate = 'Dinas siang';
+                }
             } else if (type === 'terlambat') {
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() + (randomInAfter * 60000) + randomSecs() * 1000));
-                data.checkOutTime = fillOut ? Timestamp.fromDate(new Date(limitOutStart.getTime() + (randomOutAfter * 60000) + randomSecs() * 1000)) : null;
+                // ACAK 5 MENIT SETELAH JAM SELESAI MASUK
+                const randomOffsetSecs = Math.floor(Math.random() * 300) + 1;
+                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() + randomOffsetSecs * 1000));
+                data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
                 data.reasonForUpdate = 'Terlambat';
-            } else if (type === 'lengkapi-masuk') {
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - (randomInBefore * 60000) + randomSecs() * 1000));
-                data.reasonForUpdate = 'Kehadiran penuh';
             } else if (type === 'dinas-pagi') {
                 data.checkInTime = null;
-                data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + (randomOutAfter * 60000) + randomSecs() * 1000));
+                data.checkOutTime = Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5));
                 data.reasonForUpdate = 'Dinas pagi';
-            } else if (type === 'dinas-siang') {
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - (randomInBefore * 60000) + randomSecs() * 1000));
-                data.checkOutTime = null;
-                data.reasonForUpdate = 'Dinas siang';
             } else { // pulang-cepat
-                data.checkInTime = day.checkInTime ? Timestamp.fromDate(parseISO(day.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - (randomInBefore * 60000) + randomSecs() * 1000));
+                const randomOffsetSecs = Math.floor(Math.random() * 300) + 1;
+                data.checkInTime = day.checkInTime ? Timestamp.fromDate(parseISO(day.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                 data.checkOutTime = null;
                 data.reasonForUpdate = 'Pulang cepat';
             }
