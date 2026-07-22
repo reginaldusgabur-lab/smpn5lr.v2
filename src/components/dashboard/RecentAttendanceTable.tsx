@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, collectionGroup, Timestamp, doc, getDoc } from 'firebase/firestore';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { collection, query, where, getDocs, collectionGroup, doc, getDoc } from 'firebase/firestore';
+import { format } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
-import { Loader2, WifiOff, AlertCircle, CalendarOff, History } from 'lucide-react';
+import { Loader2, WifiOff, CalendarOff, History } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -50,9 +50,17 @@ const RecentAttendanceTable = () => {
         const today = new Date();
         const todayStr = format(today, 'yyyy-MM-dd');
 
-        const schoolConfigSnap = await getDoc(doc(firestore, 'schoolConfig', 'default'));
+        // 1. Ambil konfigurasi libur (Parallel)
+        const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
+        const monthlyConfigId = format(today, 'yyyy-MM');
+        const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthlyConfigId);
+
+        const [schoolConfigSnap, monthlyConfigSnap] = await Promise.all([
+          getDoc(schoolConfigRef),
+          getDoc(monthlyConfigRef)
+        ]);
+
         const schoolConfig = schoolConfigSnap.data();
-        const monthlyConfigSnap = await getDoc(doc(firestore, 'monthlyConfigs', format(today, 'yyyy-MM')));
         const monthlyConfig = monthlyConfigSnap.data();
 
         const isHolidayToday = (() => {
@@ -70,42 +78,58 @@ const RecentAttendanceTable = () => {
             return;
         }
 
-        const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
-        const attendanceSnap = await getDocs(attendanceQuery);
+        // 2. OPTIMASI: Ambil data user secara massal & data absensi hari ini (Parallel)
+        const usersQuery = query(
+            collection(firestore, 'users'), 
+            where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
+            where('status', '==', 'Aktif')
+        );
+        
+        const attendanceQuery = query(
+            collectionGroup(firestore, 'attendanceRecords'), 
+            where('date', '==', todayStr)
+        );
+
+        const [usersSnap, attendanceSnap] = await Promise.all([
+            getDocs(usersQuery),
+            getDocs(attendanceQuery)
+        ]);
+
+        // Buat peta user untuk akses instan di memori
+        const userMap = new Map();
+        usersSnap.forEach(d => userMap.set(d.id, d.data()));
+
         const activitiesData: Omit<Activity, 'no'>[] = [];
 
-        for (const attendanceDoc of attendanceSnap.docs) {
+        // 3. Proses data di memori (Sangat Cepat)
+        attendanceSnap.docs.forEach(attendanceDoc => {
           const attendanceData = attendanceDoc.data();
           const userId = attendanceData.userId || attendanceDoc.ref.parent.parent?.id;
+          const userData = userMap.get(userId);
 
-          if (userId) {
-            const userRef = doc(firestore, 'users', userId);
-            const userSnap = await getDoc(userRef);
+          if (userData) {
+            const checkInDate = attendanceData.checkInTime ? attendanceData.checkInTime.toDate() : null;
+            const checkOutDate = attendanceData.checkOutTime ? attendanceData.checkOutTime.toDate() : null;
+            const reason = (attendanceData.reasonForUpdate || '').toLowerCase();
+            
+            const isSpecial = reason.includes('dinas') || reason.includes('pulang cepat');
+            
+            let statusLabel = checkOutDate ? 'Pulang' : 'Hadir';
+            if (isSpecial) statusLabel = attendanceData.reasonForUpdate;
 
-            if (userSnap.exists()) {
-              const userData = userSnap.data();
-              const checkInDate = attendanceData.checkInTime ? attendanceData.checkInTime.toDate() : null;
-              const checkOutDate = attendanceData.checkOutTime ? attendanceData.checkOutTime.toDate() : null;
-              const reason = (attendanceData.reasonForUpdate || '').toLowerCase();
-              
-              const isSpecial = reason.includes('dinas') || reason.includes('pulang cepat');
-              
-              let statusLabel = checkOutDate ? 'Pulang' : 'Hadir';
-              if (isSpecial) statusLabel = attendanceData.reasonForUpdate;
-
-              activitiesData.push({
-                name: userData.name || '-',
-                nip: userData.nip || '-',
-                rawCheckInTime: checkInDate || checkOutDate, 
-                checkInTime: checkInDate ? format(checkInDate, 'HH:mm:ss') : '-',
-                checkOutTime: isSpecial ? '-' : (checkOutDate ? format(checkOutDate, 'HH:mm:ss') : '-'),
-                status: statusLabel,
-                keterangan: attendanceData.reasonForUpdate || (checkOutDate ? 'Absensi selesai' : 'Sedang bertugas'),
-              });
-            }
+            activitiesData.push({
+              name: userData.name || '-',
+              nip: userData.nip || '-',
+              rawCheckInTime: checkInDate || checkOutDate, 
+              checkInTime: checkInDate ? format(checkInDate, 'HH:mm:ss') : '-',
+              checkOutTime: isSpecial ? '-' : (checkOutDate ? format(checkOutDate, 'HH:mm:ss') : '-'),
+              status: statusLabel,
+              keterangan: attendanceData.reasonForUpdate || (checkOutDate ? 'Absensi selesai' : 'Sedang bertugas'),
+            });
           }
-        }
+        });
 
+        // Urutkan berdasarkan waktu terbaru
         const sortedActivities = activitiesData.sort((a, b) => {
             const tA = a.rawCheckInTime?.getTime() || 0;
             const tB = b.rawCheckInTime?.getTime() || 0;
