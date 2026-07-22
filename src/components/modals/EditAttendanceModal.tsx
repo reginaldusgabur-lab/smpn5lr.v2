@@ -75,9 +75,9 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const todayStr = format(targetDate, 'yyyy-MM-dd');
             
             const attendanceRef = collection(firestore, 'users', user.uid, 'attendanceRecords');
-            const q = query(attendanceRef, where('date', '==', todayStr));
-            const snap = await getDocs(q);
-            snap.forEach(d => batch.delete(d.ref));
+            const qA = query(attendanceRef, where('date', '==', todayStr));
+            const snapA = await getDocs(qA);
+            snapA.forEach(d => batch.delete(d.ref));
 
             const leaveRef = collection(firestore, 'users', user.uid, 'leaveRequests');
             const qL = query(leaveRef, where('startDate', '==', Timestamp.fromDate(startOfDay(targetDate))));
@@ -140,26 +140,32 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 reasonForUpdate: 'Kehadiran penuh'
             };
 
+            // Randomisasi waktu untuk kesan nyata
+            const randomInBefore = Math.floor(Math.random() * 15) + 5; // 5-20 min sebelum deadline
+            const randomInAfter = Math.floor(Math.random() * 10) + 2;  // 2-12 min setelah deadline
+            const randomOutAfter = Math.floor(Math.random() * 20) + 5; // 5-25 min setelah jam keluar
+            const randomSecs = () => Math.floor(Math.random() * 60);
+
             if (type === 'hadir') {
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - Math.floor(Math.random() * 5 * 60 * 1000)));
-                data.checkOutTime = fillOut ? Timestamp.fromDate(new Date(limitOutStart.getTime() + Math.floor(Math.random() * 5 * 60 * 1000))) : null;
+                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - (randomInBefore * 60000) + randomSecs() * 1000));
+                data.checkOutTime = fillOut ? Timestamp.fromDate(new Date(limitOutStart.getTime() + (randomOutAfter * 60000) + randomSecs() * 1000)) : null;
             } else if (type === 'terlambat') {
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() + Math.floor(Math.random() * 5 * 60 * 1000)));
-                data.checkOutTime = fillOut ? Timestamp.fromDate(new Date(limitOutStart.getTime() + Math.floor(Math.random() * 5 * 60 * 1000))) : null;
+                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() + (randomInAfter * 60000) + randomSecs() * 1000));
+                data.checkOutTime = fillOut ? Timestamp.fromDate(new Date(limitOutStart.getTime() + (randomOutAfter * 60000) + randomSecs() * 1000)) : null;
                 data.reasonForUpdate = 'Terlambat';
             } else if (type === 'lengkapi-masuk') {
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - Math.floor(Math.random() * 5 * 60 * 1000)));
+                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - (randomInBefore * 60000) + randomSecs() * 1000));
                 data.reasonForUpdate = 'Kehadiran penuh';
             } else if (type === 'dinas-pagi') {
                 data.checkInTime = null;
-                data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + Math.floor(Math.random() * 5 * 60 * 1000)));
+                data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + (randomOutAfter * 60000) + randomSecs() * 1000));
                 data.reasonForUpdate = 'Dinas pagi';
             } else if (type === 'dinas-siang') {
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - Math.floor(Math.random() * 5 * 60 * 1000)));
+                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - (randomInBefore * 60000) + randomSecs() * 1000));
                 data.checkOutTime = null;
                 data.reasonForUpdate = 'Dinas siang';
             } else { // pulang-cepat
-                data.checkInTime = day.checkInTime ? Timestamp.fromDate(parseISO(day.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - Math.floor(Math.random() * 5 * 60 * 1000)));
+                data.checkInTime = day.checkInTime ? Timestamp.fromDate(parseISO(day.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - (randomInBefore * 60000) + randomSecs() * 1000));
                 data.checkOutTime = null;
                 data.reasonForUpdate = 'Pulang cepat';
             }
@@ -183,7 +189,9 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             
             for (const day of problematicDays.filter(d => selectedDays[d.id])) {
                 const limitOutStart = setMinutes(setHours(startOfDay(parseISO(day.date)), hO), mO);
-                const realOut = new Date(limitOutStart.getTime() + Math.floor(Math.random() * 5 * 60 * 1000));
+                const randomMins = Math.floor(Math.random() * 20) + 5;
+                const randomSecs = Math.floor(Math.random() * 60);
+                const realOut = new Date(limitOutStart.getTime() + (randomMins * 60000) + (randomSecs * 1000));
                 
                 batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
                     checkOutTime: Timestamp.fromDate(realOut), 

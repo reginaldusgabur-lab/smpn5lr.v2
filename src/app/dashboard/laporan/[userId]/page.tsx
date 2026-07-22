@@ -98,7 +98,10 @@ export default function UserReportDetailPage() {
         const outStart = getDailyOutStart(date);
         const [h, m] = outStart.split(':').map(Number);
         const base = setMinutes(setHours(startOfDay(date), h), m);
-        return Timestamp.fromDate(addMinutes(base, Math.floor(Math.random() * 5) + 1));
+        // Random offset antara 5 sampai 25 menit setelah jam pulang mulai
+        const randomMins = Math.floor(Math.random() * 20) + 5;
+        const randomSecs = Math.floor(Math.random() * 60);
+        return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
     }, [getDailyOutStart]);
 
     const handleStatusChange = async (dateStr: string, newStatus: string, reason: string) => {
@@ -135,7 +138,9 @@ export default function UserReportDetailPage() {
                     dataToSave.checkInTime = null;
                     dataToSave.checkOutTime = generateRandomOutTime(targetDate);
                 } else {
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 5 * 60000));
+                    // Random 5-15 menit sebelum batas absen masuk
+                    const randomOffset = Math.floor(Math.random() * 10) + 5;
+                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffset * 60000));
                     dataToSave.checkOutTime = null;
                 }
 
@@ -187,7 +192,9 @@ export default function UserReportDetailPage() {
                 updatedBy: currentUser.uid, updatedAt: serverTimestamp()
             };
 
-            data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 5 * 60000));
+            // Random 5-20 menit sebelum batas absen masuk
+            const randomInOffset = Math.floor(Math.random() * 15) + 5;
+            data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 60000));
             data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
 
             const q = query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '==', format(targetDate, 'yyyy-MM-dd')));
@@ -212,7 +219,10 @@ export default function UserReportDetailPage() {
             const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
             const [h, m] = inEnd.split(':').map(Number);
             const limitIn = setMinutes(setHours(startOfDay(targetDate), h), m);
-            const realIn = new Date(limitIn.getTime() - 5 * 60000);
+            
+            // Random 5-20 menit sebelum batas
+            const randomInOffset = Math.floor(Math.random() * 15) + 5;
+            const realIn = new Date(limitIn.getTime() - randomInOffset * 60000);
             
             const q = query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '==', format(targetDate, 'yyyy-MM-dd')));
             const snap = await getDocs(q);
