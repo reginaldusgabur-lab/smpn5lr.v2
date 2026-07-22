@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Function ---
+    function isRole(role) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    // --- Collection: users ---
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId || isRole('admin') || isRole('kepala_sekolah');
+      allow list: if isRole('admin') || isRole('kepala_sekolah');
+      allow create: if isRole('admin');
+      allow update: if request.auth.uid == userId || isRole('admin');
+      allow delete: if isRole('admin');
+    }
+
+    // --- Sub-collections under users (attendance, leave requests) ---
+    // --- FINAL & CORRECTED RULES ---
+    match /users/{userId}/{subCollection}/{docId} {
+      
+      // READ: A user can read their own data. Admin and Kepsek can read anyone's data.
+      allow read: if request.auth.uid == userId || isRole('admin') || isRole('kepala_sekolah');
+      
+      // CREATE: A user can create their own records. An admin can also create records for others.
+      // This is the rule that fixes the "Ubah Kehadiran" feature for admins.
+      allow create: if request.auth.uid == userId || isRole('admin');
+      
+      // UPDATE: A user can update their own records. Admin and Kepsek can also update records for others.
+      allow update: if request.auth.uid == userId || isRole('admin') || isRole('kepala_sekolah');
+      
+      // DELETE: A user can delete their own records. An admin can also delete records for others.
+      allow delete: if request.auth.uid == userId || isRole('admin');
+    }
+    
+    // --- Global Configuration & Other Collections ---
+    match /schoolConfig/{docId} {
+      allow read: if isRole('admin') || isRole('kepala_sekolah');
+      allow write: if isRole('admin');
+    }
+
+    match /monthlyConfigs/{docId} {
+      allow read: if isRole('admin') || isRole('kepala_sekolah');
+      allow write: if isRole('admin');
+    }
+
+    match /quotes/{quoteId} {
+      allow read: if request.auth != null; // Any signed-in user
+      allow write: if isRole('admin');
+    }
+
+    match /activities/{activityId} {
+      allow read: if isRole('admin') || isRole('kepala_sekolah');
+      allow create: if request.auth != null; // Any signed-in user
+    }
+  }
+}

@@ -1,0 +1,686 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import QRCode from 'qrcode';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
+import { Checkbox } from '@/components/ui/checkbox';
+import { format, getDaysInMonth, startOfMonth, eachDayOfInterval, startOfDay } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const daysOfWeek = [
+    { value: 0, label: 'Minggu' },
+    { value: 1, label: 'Senin' },
+    { value: 2, label: 'Selasa' },
+    { value: 3, label: 'Rabu' },
+    { value: 4, label: 'Kamis' },
+    { value: 5, label: 'Jumat' },
+    { value: 6, label: 'Sabtu' },
+];
+
+function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig: any }) {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const [holidays, setHolidays] = useState<Date[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const monthlyConfigId = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
+  const monthlyConfigRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'monthlyConfigs', monthlyConfigId);
+  }, [firestore, monthlyConfigId]);
+  
+  const { data: monthlyConfigData, isLoading: isMonthlyConfigLoading } = useDoc(user, monthlyConfigRef);
+  
+  const allDaysInMonth = useMemo(() => {
+    return eachDayOfInterval({
+        start: startOfMonth(currentMonth),
+        end: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
+    });
+  }, [currentMonth]);
+
+  useEffect(() => {
+    if (monthlyConfigData) {
+      setHolidays((monthlyConfigData.holidays ?? []).map((d: string) => new Date(`${d}T00:00:00`)));
+    } else {
+      setHolidays([]);
+    }
+  }, [monthlyConfigData]);
+
+  const calculatedWorkDays = useMemo(() => {
+    if (!schoolConfig) return 0;
+    const recurringOffDays: number[] = schoolConfig.offDays ?? [0];
+    const specificHolidays = new Set(holidays.map(d => format(d, 'yyyy-MM-dd')));
+
+    const workDays = allDaysInMonth.filter(day => {
+      const isRecurringOff = recurringOffDays.includes(day.getDay());
+      const isSpecificHoliday = specificHolidays.has(format(day, 'yyyy-MM-dd'));
+      return !isRecurringOff && !isSpecificHoliday;
+    });
+
+    return workDays.length;
+  }, [allDaysInMonth, holidays, schoolConfig?.offDays]);
+
+
+  const handleSave = async () => {
+    if (!monthlyConfigRef) return;
+    setIsSaving(true);
+    
+    try {
+      const dataToSave = {
+        id: monthlyConfigId,
+        holidays: holidays.map(d => format(d, 'yyyy-MM-dd')),
+        manualWorkDays: calculatedWorkDays, 
+      };
+      await setDoc(monthlyConfigRef, dataToSave, { merge: true });
+      toast({ title: 'Berhasil', description: 'Pengaturan hari kerja dan libur telah disimpan.' });
+    } catch (error) {
+      console.error('Error saving monthly config:', error);
+      toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal menyimpan pengaturan.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDayToggle = (day: Date, checked: boolean) => {
+    setHolidays(prev => 
+        checked 
+        ? [...prev, day]
+        : prev.filter(d => format(d, 'yyyy-MM-dd') !== format(day, 'yyyy-MM-dd'))
+    );
+  };
+  
+  return (
+    <Card className="lg:col-span-3 overflow-hidden border shadow-none rounded-xl">
+        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+            <CardTitle className="font-bold text-sm tracking-tight">Hari kerja & libur bulanan</CardTitle>
+            <CardDescription className="text-muted-foreground font-bold">
+                Tandai hari libur spesifik untuk menghitung hari kerja efektif bulan ini.
+            </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 sm:p-6">
+            <div className="md:col-span-2 space-y-4">
+                {isMonthlyConfigLoading ? (
+                    <div className="w-full h-full flex flex-col gap-2 bg-muted/30 rounded-xl p-10">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-40 w-full" />
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex items-center justify-center gap-4">
+                            <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="rounded-full shadow-none"
+                                onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <span className="font-bold text-center w-32">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                            <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="rounded-full shadow-none"
+                                onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+
+                        <ScrollArea className="h-96 rounded-xl border bg-muted/10">
+                            <Table>
+                                <TableBody>
+                                    {allDaysInMonth.map((day) => {
+                                        const dayString = format(day, 'yyyy-MM-dd');
+                                        const isChecked = holidays.some(d => format(d, 'yyyy-MM-dd') === dayString);
+                                        const isRecurringOff = (schoolConfig?.offDays ?? []).includes(day.getDay());
+
+                                        return (
+                                            <TableRow key={dayString} className={cn(
+                                                "border-muted-foreground/5 transition-colors",
+                                                (isChecked || isRecurringOff) ? "bg-primary/5" : "",
+                                                isRecurringOff && "bg-muted/30"
+                                            )}>
+                                                <TableCell className="w-12 text-center py-2">
+                                                    <Checkbox
+                                                        id={dayString}
+                                                        checked={isChecked || isRecurringOff}
+                                                        disabled={isRecurringOff}
+                                                        onCheckedChange={(checked) => handleDayToggle(day, !!checked)}
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="py-2">
+                                                    <Label htmlFor={dayString} className={cn(
+                                                        "font-bold text-sm block w-full",
+                                                        isRecurringOff ? "cursor-not-allowed opacity-60 italic" : "cursor-pointer"
+                                                    )}>
+                                                        {format(day, 'eeee, d MMMM yyyy', { locale: id })}
+                                                        {isRecurringOff && <span className="ml-2 text-[10px] font-medium opacity-70">(Libur rutin)</span>}
+                                                    </Label>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </>
+                )}
+            </div>
+            <div className="md:col-span-1 space-y-4 border-l-0 md:border-l md:pl-6 border-muted-foreground/10">
+                <h3 className="font-bold text-sm tracking-tight text-primary">Status bulan ini</h3>
+                 <p className="text-xs text-muted-foreground leading-relaxed font-bold">
+                    Jumlah hari kerja efektif di bulan <span className="font-bold">{format(currentMonth, 'MMMM', { locale: id })}</span> digunakan untuk hitung persentase kehadiran.
+                </p>
+                <div className="space-y-2">
+                    <Label className="text-xs font-bold ml-1 text-primary">Jumlah hari kerja efektif</Label>
+                    <div className="h-11 w-full rounded-xl bg-muted/40 border border-muted-foreground/10 flex items-center px-4 font-black text-primary shadow-inner">
+                        {isMonthlyConfigLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : `${calculatedWorkDays} hari`}
+                    </div>
+                     <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
+                        Dihitung otomatis berdasarkan hari libur rutin mingguan dan libur spesifik kalender.
+                    </p>
+                </div>
+            </div>
+        </CardContent>
+         <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
+            <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 shadow-none" disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan pengaturan bulan ini
+            </Button>
+        </CardFooter>
+    </Card>
+  );
+}
+
+
+export default function KonfigurasiAbsenPage() {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user, isUserLoading: isAuthLoading } = useUser();
+  const router = useRouter();
+  
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [isQrLoading, setIsQrLoading] = useState(true);
+
+  // Form State
+  const [holidayMode, setHolidayMode] = useState(false);
+  const [offDays, setOffDays] = useState<number[]>([]);
+
+  const [useLocationValidation, setUseLocationValidation] = useState(true);
+  const [useTimeValidation, setUseTimeValidation] = useState(true);
+  const [latitude, setLatitude] = useState('-8.58333');
+  const [longitude, setLongitude] = useState('120.46667');
+  const [radius, setRadius] = useState(100);
+  const [checkInStart, setCheckInStart] = useState('06:00');
+  const [checkInEnd, setCheckInEnd] = useState('08:00');
+  const [lateTolerance, setLateTolerance] = useState(15);
+  const [checkOutStart, setCheckOutStart] = useState('14:00');
+  const [checkOutEnd, setCheckOutEnd] = useState('16:00');
+  const [qrCodeValue, setQrCodeValue] = useState('');
+  
+  // Daily check-out times state
+  const [dailyCheckOutTimes, setDailyCheckOutTimes] = useState<Record<string, { start: string, end: string }>>({
+      "0": { start: '14:00', end: '16:00' },
+      "1": { start: '14:00', end: '16:00' },
+      "2": { start: '14:00', end: '16:00' },
+      "3": { start: '14:00', end: '16:00' },
+      "4": { start: '14:00', end: '16:00' },
+      "5": { start: '14:00', end: '16:00' },
+      "6": { start: '14:00', end: '16:00' },
+  });
+  
+  const schoolConfigRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'schoolConfig', 'default');
+  }, [firestore, user]);
+  const { data: schoolConfigData, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
+
+  const isLoading = isAuthLoading || isConfigLoading || isUserDataLoading;
+  const isAdmin = !isLoading && userData?.role === 'admin';
+
+  // Memastikan accordion jam pulang terbuka sesuai hari saat ini (0-6)
+  const currentDayValue = useMemo(() => new Date().getDay().toString(), []);
+  
+
+  useEffect(() => {
+    if (!isLoading && !isAdmin) {
+      router.replace('/dashboard');
+    }
+  }, [isLoading, isAdmin, router]);
+
+  useEffect(() => {
+    if (schoolConfigData) {
+      setHolidayMode(schoolConfigData.isAttendanceActive === false);
+      setOffDays(schoolConfigData.offDays ?? [0, 6]);
+
+      setUseLocationValidation(schoolConfigData.useLocationValidation ?? true);
+      setUseTimeValidation(schoolConfigData.useTimeValidation ?? true);
+      setLatitude(schoolConfigData.latitude?.toString() ?? '-8.58333');
+      setLongitude(schoolConfigData.longitude?.toString() ?? '120.46667');
+      setRadius(schoolConfigData.radius ?? 100);
+      setCheckInStart(schoolConfigData.checkInStartTime ?? '06:00');
+      setCheckInEnd(schoolConfigData.checkInEndTime ?? '08:00');
+      setLateTolerance(schoolConfigData.lateTolerance ?? 15);
+      setCheckOutStart(schoolConfigData.checkOutStartTime ?? '14:00');
+      setCheckOutEnd(schoolConfigData.checkOutEndTime ?? '16:00');
+      
+      if (schoolConfigData.dailyCheckOutTimes) {
+          setDailyCheckOutTimes(schoolConfigData.dailyCheckOutTimes);
+      }
+
+      if (schoolConfigData.qrCodeValue) {
+        setQrCodeValue(schoolConfigData.qrCodeValue);
+      } else if (user && schoolConfigRef && !isConfigLoading) {
+        const newQrValue = Math.random().toString(36).substring(2, 15);
+        setQrCodeValue(newQrValue);
+        updateDocumentNonBlocking(schoolConfigRef, { qrCodeValue: newQrValue });
+      }
+    }
+  }, [schoolConfigData, user, schoolConfigRef, isConfigLoading]);
+
+  useEffect(() => {
+    const generateQrCode = async () => {
+      if (qrCodeValue) {
+        setIsQrLoading(true);
+        try {
+          const url = await QRCode.toDataURL(qrCodeValue, {
+            width: 300,
+            margin: 2,
+            errorCorrectionLevel: 'H'
+          });
+          setQrCodeDataUrl(url);
+        } catch (err) {
+          toast({
+            variant: 'destructive',
+            title: 'Gagal membuat kode QR',
+            description: 'Terjadi kesalahan saat menyiapkan kode QR.',
+          });
+        } finally {
+          setIsQrLoading(false);
+        }
+      } else {
+        setIsQrLoading(!isConfigLoading);
+      }
+    };
+
+    generateQrCode();
+  }, [qrCodeValue, toast, isConfigLoading]);
+
+
+  const downloadQRCode = async () => {
+    if (!qrCodeDataUrl) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal mengunduh',
+        description: 'Kode QR belum siap. Mohon tunggu sejenak.',
+      });
+      return;
+    }
+    const downloadLink = document.createElement('a');
+    downloadLink.href = qrCodeDataUrl;
+    downloadLink.download = 'absensi-qrcode.png';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    
+    toast({ title: 'Berhasil', description: `Kode QR berhasil diunduh sebagai PNG.` });
+  };
+  
+  const handleGenerateNewQr = () => {
+    if (!user || !schoolConfigRef) return;
+    setIsQrLoading(true);
+    const newQrValue = Math.random().toString(36).substring(2, 15);
+    updateDocumentNonBlocking(schoolConfigRef, { qrCodeValue: newQrValue });
+    setQrCodeValue(newQrValue);
+    toast({ title: 'Kode QR diperbarui', description: 'Kode QR absensi baru telah berhasil dibuat.' });
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        variant: 'destructive',
+        title: 'Layanan tidak didukung',
+        description: 'Browser Anda tidak mendukung pengambilan lokasi.',
+      });
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude.toFixed(6));
+        setLongitude(position.coords.longitude.toFixed(6));
+        setIsLocating(false);
+        toast({ title: 'Lokasi ditemukan', description: 'Koordinat latitude dan longitude telah diperbarui.' });
+      },
+      (error) => {
+        setIsLocating(false);
+        let description = 'Terjadi kesalahan saat mengambil lokasi.';
+        if (error.code === 1) description = 'Akses lokasi ditolak. Aktifkan izin lokasi di browser.';
+        toast({ variant: 'destructive', title: 'Gagal mendapatkan lokasi', description });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+
+  const handleSave = () => {
+    if (!user || !schoolConfigRef) return;
+    setIsSaving(true);
+    setDocumentNonBlocking(schoolConfigRef, {
+      isAttendanceActive: !holidayMode,
+      offDays: offDays,
+      useLocationValidation,
+      useTimeValidation,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      radius: Number(radius),
+      checkInStartTime: checkInStart,
+      checkInEndTime: checkInEnd,
+      lateTolerance: Number(lateTolerance),
+      checkOutStartTime: checkOutStart,
+      checkOutEndTime: checkOutEnd,
+      dailyCheckOutTimes: dailyCheckOutTimes,
+    }, { merge: true });
+    toast({ title: 'Pengaturan disimpan', description: 'Konfigurasi absensi telah berhasil diperbarui.' });
+    setIsSaving(false);
+  };
+
+  const handleDayToggle = (dayValue: number, checked: boolean | 'indeterminate') => {
+    if (checked) {
+        setOffDays(prev => [...prev, dayValue].sort());
+    } else {
+        setOffDays(prev => prev.filter(d => d !== dayValue));
+    }
+  };
+  
+  const handleDailyCheckOutChange = (dayIndex: string, field: 'start' | 'end', value: string) => {
+      setDailyCheckOutTimes(prev => ({
+          ...prev,
+          [dayIndex]: {
+              ...prev[dayIndex],
+              [field]: value
+          }
+      }));
+  };
+
+  if (isLoading || !isAdmin) {
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Skeleton className="h-96 rounded-3xl" />
+                <Skeleton className="lg:col-span-2 h-96 rounded-3xl" />
+            </div>
+            <Skeleton className="h-96 rounded-3xl" />
+        </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <Card className="lg:col-span-1 overflow-hidden border shadow-none rounded-xl">
+        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+          <CardTitle className="font-bold text-sm tracking-tight">Kode QR absensi</CardTitle>
+          <CardDescription className="text-muted-foreground font-bold">Gunakan kode QR ini untuk absensi harian.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center gap-4 p-4 sm:p-6">
+          <div className="p-4 border rounded-2xl bg-white aspect-square w-full max-w-[256px] relative shadow-none">
+            {isQrLoading || !qrCodeDataUrl ? (
+              <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-xl">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <Image src={qrCodeDataUrl} alt="Kode QR Absensi" width={224} height={224} className="w-full h-full" />
+            )}
+          </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full max-w-[256px] rounded-xl font-bold shadow-none" disabled={isQrLoading}>
+                    {isQrLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Buat QR baru
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-2xl border-none shadow-none">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="font-bold text-xl">Perbarui kode QR?</AlertDialogTitle>
+                    <AlertDialogDescription className="font-bold text-sm">
+                        Kode QR lama tidak akan bisa digunakan lagi setelah Anda membuat yang baru. Apakah Anda yakin ingin membuat kode QR baru?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel className="rounded-xl font-bold shadow-none">Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleGenerateNewQr} className="rounded-xl font-bold bg-primary hover:bg-primary/90 shadow-none">Ya, buat baru</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-2 border-t p-4 sm:p-6 bg-muted/5">
+          <Button variant="outline" className="w-full rounded-xl font-bold h-11 shadow-none" onClick={downloadQRCode} disabled={isQrLoading}>Unduh PNG</Button>
+        </CardFooter>
+      </Card>
+
+      <Card className="lg:col-span-2 overflow-hidden border shadow-none rounded-xl">
+        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
+          <CardTitle className="font-bold text-sm tracking-tight">Pengaturan umum</CardTitle>
+          <CardDescription className="text-muted-foreground font-bold">Atur parameter sistem absensi sekolah.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6 p-4 sm:p-6">
+          <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
+              <div className="flex items-center justify-between">
+                  <div>
+                      <Label htmlFor="holiday-mode" className="font-bold text-sm">Nonaktifkan absensi</Label>
+                      <p className="text-xs text-muted-foreground font-bold">Sistem absensi akan dinonaktifkan sementara untuk semua.</p>
+                  </div>
+                  <Switch
+                      id="holiday-mode"
+                      checked={holidayMode}
+                      onCheckedChange={setHolidayMode}
+                  />
+              </div>
+              <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
+                  <Label className='text-xs font-bold opacity-70'>Hari libur rutin</Label>
+                  <p className="text-xs text-muted-foreground font-bold">Pilih hari libur mingguan tetap.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {daysOfWeek.map(day => (
+                        <div key={day.value} className="flex items-center space-x-2">
+                        <Checkbox
+                            id={`day-${day.value}`}
+                            checked={offDays.includes(day.value)}
+                            onCheckedChange={(checked) => handleDayToggle(day.value, checked)}
+                            disabled={holidayMode}
+                        />
+                        <Label htmlFor={`day-${day.value}`} className="font-bold text-xs">{day.label}</Label>
+                        </div>
+                    ))}
+                  </div>
+              </div>
+          </div>
+
+          <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="use-location" className="font-bold text-sm">Validasi lokasi (GPS)</Label>
+                <p className="text-xs text-muted-foreground font-bold">Wajibkan pengguna berada di area sekolah.</p>
+              </div>
+              <Switch id="use-location" checked={useLocationValidation} onCheckedChange={setUseLocationValidation} disabled={holidayMode} />
+            </div>
+            {useLocationValidation && (
+              <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <Label className="text-xs font-bold">Koordinat sekolah</Label>
+                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-bold shadow-none" onClick={handleGetCurrentLocation} disabled={isLocating || holidayMode}>
+                      Dapatkan lokasi
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="latitude" className="text-[10px] font-bold text-muted-foreground">Latitude</Label>
+                        <Input id="latitude" type="text" className="h-10 rounded-xl bg-muted/30 font-bold shadow-none" value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="-8.58333" disabled={holidayMode || isLocating} />
+                    </div>
+                    <div>
+                        <Label htmlFor="longitude" className="text-[10px] font-bold text-muted-foreground">Longitude</Label>
+                        <Input id="longitude" type="text" className="h-10 rounded-xl bg-muted/30 font-bold shadow-none" value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="120.46667" disabled={holidayMode || isLocating} />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="radius" className="text-xs font-bold">Radius sekolah (Meter)</Label>
+                  <Input id="radius" type="number" className="h-10 rounded-xl bg-muted/30 font-bold shadow-none" value={radius} onChange={(e) => setRadius(Number(e.target.value))} placeholder="100" disabled={holidayMode} />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="rounded-2xl border p-4 space-y-4 bg-muted/5">
+              <div className="flex items-center justify-between">
+                  <div>
+                      <Label htmlFor="use-time" className="font-bold text-sm">Validasi jam kerja</Label>
+                      <p className="text-xs text-muted-foreground font-bold">Wajibkan pengguna absen sesuai jadwal.</p>
+                  </div>
+                  <Switch id="use-time" checked={useTimeValidation} onCheckedChange={setUseTimeValidation} disabled={holidayMode} />
+              </div>
+              {useTimeValidation && (
+                  <div className="space-y-6 pt-4 border-t border-muted-foreground/10">
+                      <div className="space-y-4">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Masuk</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                  <Label htmlFor="checkin-start" className="text-[10px] font-bold">Mulai masuk</Label>
+                                  <Input id="checkin-start" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInStart} onChange={e => setCheckInStart(e.target.value)} disabled={holidayMode} />
+                              </div>
+                              <div className="space-y-1.5">
+                                  <Label htmlFor="checkin-end" className="text-[10px] font-bold">Selesai masuk</Label>
+                                  <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
+                              </div>
+                          </div>
+                      </div>
+
+                      <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Pulang Spesifik</Label>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground font-bold">Atur jam pulang berbeda untuk setiap hari.</p>
+                          
+                          <Accordion type="single" collapsible className="w-full" defaultValue={currentDayValue}>
+                              {daysOfWeek.map((day) => {
+                                  const isToday = day.value.toString() === currentDayValue;
+                                  return (
+                                      <AccordionItem 
+                                          key={day.value} 
+                                          value={day.value.toString()} 
+                                          className={cn(
+                                              "border-muted-foreground/10 transition-all duration-300 overflow-hidden",
+                                              isToday ? "border-l-4 border-l-primary bg-primary/5 rounded-r-2xl" : "rounded-none"
+                                          )}
+                                      >
+                                          <AccordionTrigger className="hover:no-underline py-3 px-3 shadow-none">
+                                              <div className="flex items-center gap-3">
+                                                  <div className={cn(
+                                                      "w-2.5 h-2.5 rounded-full transition-all", 
+                                                      offDays.includes(day.value) ? "bg-muted-foreground/30" : "bg-primary",
+                                                      isToday && !offDays.includes(day.value) && "animate-pulse shadow-[0_0_8px_rgba(63,81,181,0.5)]"
+                                                  )} />
+                                                  <span className={cn(
+                                                      "text-xs font-bold transition-colors", 
+                                                      offDays.includes(day.value) && "text-muted-foreground",
+                                                      isToday && "text-primary"
+                                                  )}>
+                                                      {day.label} {offDays.includes(day.value) && "(Libur)"}
+                                                      {isToday && <span className="ml-2 opacity-80">(Hari Ini)</span>}
+                                                  </span>
+                                              </div>
+                                          </AccordionTrigger>
+                                          <AccordionContent className="pt-2 pb-4 px-3">
+                                              <div className="grid grid-cols-2 gap-4">
+                                                  <div className="space-y-1.5">
+                                                      <Label className="text-[10px] font-bold">Mulai pulang</Label>
+                                                      <Input 
+                                                          type="time" 
+                                                          className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
+                                                          value={dailyCheckOutTimes[day.value]?.start || checkOutStart} 
+                                                          onChange={e => handleDailyCheckOutChange(day.value.toString(), 'start', e.target.value)}
+                                                          disabled={holidayMode || offDays.includes(day.value)}
+                                                      />
+                                                  </div>
+                                                  <div className="space-y-1.5">
+                                                      <Label className="text-[10px] font-bold">Selesai pulang</Label>
+                                                      <Input 
+                                                          type="time" 
+                                                          className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
+                                                          value={dailyCheckOutTimes[day.value]?.end || checkOutEnd} 
+                                                          onChange={e => handleDailyCheckOutChange(day.value.toString(), 'end', e.target.value)}
+                                                          disabled={holidayMode || offDays.includes(day.value)}
+                                                      />
+                                                  </div>
+                                              </div>
+                                          </AccordionContent>
+                                      </AccordionItem>
+                                  );
+                              })}
+                          </Accordion>
+                      </div>
+                  </div>
+              )}
+          </div>
+        </CardContent>
+         <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
+           <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 shadow-none" disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Simpan pengaturan umum
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {schoolConfigData && <MonthlyConfigCalendar user={user} schoolConfig={schoolConfigData} />}
+    </div>
+  );
+}

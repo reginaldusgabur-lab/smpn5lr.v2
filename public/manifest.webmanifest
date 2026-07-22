@@ -1,0 +1,22 @@
+{
+  "short_name": "E-SPENLI",
+  "name": "E-SPENLI: Absensi Digital SMPN 5 Langke Rembong",
+  "description": "Aplikasi Absensi Digital untuk Guru dan Pegawai di SMPN 5 Langke Rembong",
+  "icons": [
+    {
+      "src": "/logo-3d-v2.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo-3d-v2.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "theme_color_dark": "#10172A"
+}

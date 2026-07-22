@@ -1,0 +1,68 @@
+
+const withPWA = require("@ducanh2912/next-pwa").default({
+  dest: "public",
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: false,
+  reloadOnOnline: false,
+  swcMinify: true,
+  disable: process.env.NODE_ENV === "development",
+  workboxOptions: {
+    disableDevLogs: true,
+    skipWaiting: false,
+    clientsClaim: true,
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "google-fonts",
+          expiration: {
+            maxEntries: 4,
+            maxAgeSeconds: 365 * 24 * 60 * 60,
+          },
+        },
+      },
+      {
+        urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
+        handler: "StaleWhileRevalidate",
+        options: {
+          cacheName: "static-image-assets",
+          expiration: {
+            maxEntries: 64,
+            maxAgeSeconds: 24 * 60 * 60,
+          },
+        },
+      },
+    ],
+  },
+});
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
+      { protocol: "https", hostname: "picsum.photos", pathname: "/**" },
+      { protocol: "https", hostname: "storage.googleapis.com", pathname: "/**" },
+      { protocol: "https", hostname: "firebasestorage.googleapis.com", pathname: "/**" },
+    ],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        net: false,
+        fs: false,
+        tls: false,
+      };
+    }
+    return config;
+  },
+};
+
+module.exports = withPWA(nextConfig);
