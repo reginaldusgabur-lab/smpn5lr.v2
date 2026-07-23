@@ -122,7 +122,6 @@ export default function UserReportDetailPage() {
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            // LOGIKA DIPERBAIKI: Terlambat masuk kategori AttendanceRecord dengan checkIn null
             if (['Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Terlambat'].includes(newStatus)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
@@ -232,7 +231,14 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').setFontSize(14);
         let currentY = 58;
         doc.text(`LAPORAN KEHADIRAN INDIVIDU BULAN ${format(currentMonth, 'MMMM yyyy', { locale: id }).toUpperCase()}`, centerX, currentY, { align: 'center' });
-        currentY += 15;
+        
+        if (config.academicYear) {
+            currentY += 6;
+            doc.setFontSize(11);
+            doc.text(`Tahun Ajaran ${config.academicYear}`, centerX, currentY, { align: 'center' });
+        }
+        
+        currentY += 12;
 
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;

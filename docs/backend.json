@@ -253,6 +253,10 @@
           "type": "string",
           "description": "The city name to be displayed in the report signature block, e.g., 'Mando'."
         },
+        "academicYear": {
+          "type": "string",
+          "description": "Tahun ajaran aktif, misal: 2025/2026."
+        },
         "qrCodeValue": {
           "type": "string",
           "description": "The secret value embedded in the QR code for attendance validation."

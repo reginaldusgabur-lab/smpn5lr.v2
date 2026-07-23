@@ -117,6 +117,7 @@ export function exportToPdf(
         doc.text(`LAPORAN KEHADIRAN ${tabName.toUpperCase()} BULAN ${monthName.toUpperCase()}`, pageCenter, currentY, { align: 'center' });
         if (config.academicYear) {
             currentY += 7;
+            doc.setFontSize(11);
             doc.text(`TAHUN AJARAN ${config.academicYear.toUpperCase()}`, pageCenter, currentY, { align: 'center' });
         }
 
@@ -188,7 +189,6 @@ export function exportToPdf(
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
 
-        // Footer Profesional untuk semua halaman
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);

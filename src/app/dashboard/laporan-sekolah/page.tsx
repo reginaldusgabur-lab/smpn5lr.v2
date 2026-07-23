@@ -86,7 +86,6 @@ export default function SchoolReportPage() {
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
             const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
 
-            // FIX BUG: Destructuring from Promise.all correctly
             const [attendanceSnap, attendanceFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
                 getDocs(attendanceFallbackQuery), 
@@ -212,13 +211,18 @@ export default function SchoolReportPage() {
 
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text(`Laporan Kehadiran Sekolah Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 58, { align: 'center' });
+            
+            if (config.academicYear) {
+                doc.setFontSize(11);
+                doc.text(`Tahun Ajaran ${config.academicYear}`, centerX, 64, { align: 'center' });
+            }
 
             const tableRows = filteredReports.map((item, index) => [
                 index + 1, item.name, item.nip, item.position, Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, item.persentase
             ]);
 
             autoTable(doc, {
-                startY: 70,
+                startY: config.academicYear ? 70 : 66,
                 head: [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', '%']],
                 body: tableRows,
                 theme: 'grid',
@@ -246,7 +250,6 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal');
             doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
-            // FOOTER PDF PROFESIONAL
             const totalPages = (doc as any).internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);

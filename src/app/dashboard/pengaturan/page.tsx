@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button'
@@ -337,6 +338,14 @@ export default function PengaturanPage() {
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP Kepala Sekolah</Label>
                         <Input placeholder="NIP Kepsek" value={headmasterNip} onChange={e => setHeadmasterNip(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Kota Laporan</Label>
+                        <Input placeholder="Contoh: Mando" value={reportCity} onChange={e => setReportCity(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran</Label>
+                        <Input placeholder="Contoh: 2025/2026" value={academicYear} onChange={e => setAcademicYear(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
                       </div>
                   </div>
                   <div className="pt-8 border-t mt-6">
