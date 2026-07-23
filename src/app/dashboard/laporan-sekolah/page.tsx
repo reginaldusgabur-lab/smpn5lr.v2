@@ -209,7 +209,7 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
             doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
 
-            // Judul Laporan & Tahun Ajaran
+            // Judul Laporan
             doc.setFont('times', 'bold').setFontSize(12);
             doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
             doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
@@ -255,13 +255,13 @@ export default function SchoolReportPage() {
                 columnStyles: { 
                   0: { halign: 'center', cellWidth: 8 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 35 }, 
-                  3: { halign: 'center', cellWidth: 18 }, 
+                  2: { halign: 'left', cellWidth: 42 }, // Perlebar NIP agar tetap 1 baris
+                  3: { halign: 'center', cellWidth: 22 }, // Perlebar Status
                   4: { halign: 'center', cellWidth: 15 }, 
-                  5: { halign: 'center', cellWidth: 12 }, 
+                  5: { halign: 'center', cellWidth: 14 }, 
                   6: { halign: 'center', cellWidth: 15 }, 
-                  7: { halign: 'center', cellWidth: 12 }, 
-                  8: { halign: 'right', cellWidth: 13 } 
+                  7: { halign: 'center', cellWidth: 14 }, 
+                  8: { halign: 'right', cellWidth: 14 } 
                 }
             });
 
