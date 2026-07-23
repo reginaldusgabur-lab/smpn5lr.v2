@@ -238,7 +238,7 @@ export default function SchoolReportPage() {
                 theme: 'grid',
                 styles: { 
                   font: 'times', 
-                  fontSize: 11, // Set to 11
+                  fontSize: 11,
                   cellPadding: 1.5,
                   valign: 'middle',
                   textColor: [0, 0, 0],
@@ -253,15 +253,15 @@ export default function SchoolReportPage() {
                     minCellHeight: 12
                 },
                 columnStyles: { 
-                  0: { halign: 'center', cellWidth: 10 }, 
+                  0: { halign: 'center', cellWidth: 8 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 42 }, 
-                  3: { halign: 'center', cellWidth: 20 }, 
-                  4: { halign: 'center', cellWidth: 15 }, 
-                  5: { halign: 'center', cellWidth: 12 }, 
-                  6: { halign: 'center', cellWidth: 12 }, 
-                  7: { halign: 'center', cellWidth: 12 }, 
-                  8: { halign: 'right', cellWidth: 16 } 
+                  2: { halign: 'left', cellWidth: 38 }, 
+                  3: { halign: 'center', cellWidth: 18 }, 
+                  4: { halign: 'center', cellWidth: 12 }, 
+                  5: { halign: 'center', cellWidth: 11 }, 
+                  6: { halign: 'center', cellWidth: 11 }, 
+                  7: { halign: 'center', cellWidth: 11 }, 
+                  8: { halign: 'right', cellWidth: 13 } 
                 }
             });
 
