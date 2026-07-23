@@ -218,17 +218,24 @@ export default function UserReportDetailPage() {
         const config = schoolConfigData || ({} as any);
 
         doc.setFont('times', 'bold').setFontSize(14);
-        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 20, { align: 'center' });
-        doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 27, { align: 'center' });
+        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+        doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
         doc.setFontSize(12);
-        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 34, { align: 'center' });
+        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
         doc.setFont('times', 'normal').setFontSize(9);
-        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 39, { align: 'center' });
+        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
         
-        doc.setLineWidth(0.8).line(margin, 43, pageWidth - margin, 43);
-        doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
+        doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
+        doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-        let currentY = 55;
+        // Judul Laporan & Tahun Ajaran
+        doc.setFont('times', 'bold').setFontSize(12);
+        doc.text('LAPORAN KEHADIRAN INDIVIDU', centerX, 48, { align: 'center' });
+        doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
+        doc.setFontSize(10).setFont('times', 'normal');
+        doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+
+        let currentY = 70;
 
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
@@ -411,7 +418,7 @@ export default function UserReportDetailPage() {
                                                                     {!hasIn && (
                                                                         <>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Izin', 'Izin pribadi')}>Jadikan Izin</SelectItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Izin', 'Izin pribadi')}>Jadikan Izin</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Dinas Pagi', 'Dinas pagi')}>Dinas pagi</DropdownMenuItem>
                                                                         </>
                                                                     )}

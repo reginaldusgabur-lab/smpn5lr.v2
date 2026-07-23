@@ -99,7 +99,7 @@ export default function SchoolReportPage() {
                 if (uid) {
                     const existing = attendanceByUserId[uid] || [];
                     const dStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : null);
-                    if (dStr && !existing.some(e => (e.date || format(e.checkInTime.toDate(), 'yyyy-MM-dd')) === dStr)) {
+                    if (dStr && !existing.some(e => (e.date || (e.checkInTime ? format(e.checkInTime.toDate(), 'yyyy-MM-dd') : '')) === dStr)) {
                         attendanceByUserId[uid] = [...existing, data];
                     }
                 }
@@ -113,7 +113,7 @@ export default function SchoolReportPage() {
             });
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
-            const holidays: string[] = monthlyConfig.holidays ?? [];
+            const holidays: string[] = (monthlyConfig as any)?.holidays ?? [];
             const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(workingDays.map(d => format(d, 'yyyy-MM-dd')));
             const today = startOfDay(new Date());
@@ -136,7 +136,7 @@ export default function SchoolReportPage() {
                             let isLate = false;
                             const checkInDate = att.checkInTime.toDate();
                             if (schoolConfigData.useTimeValidation && schoolConfigData.checkInEndTime) {
-                                const [h, m] = schoolConfigData.checkInEndTime.split(':').map(Number);
+                                const [h, m] = (schoolConfigData as any).checkInEndTime.split(':').map(Number);
                                 const deadline = setMinutes(setHours(startOfDay(checkInDate), h), m);
                                 if (checkInDate > deadline) isLate = true;
                             }
@@ -199,17 +199,25 @@ export default function SchoolReportPage() {
             const margin = 14;
             const config = schoolConfigData || ({} as any);
 
+            // Kop Surat
             doc.setFont('times', 'bold').setFontSize(14);
-            doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 20, { align: 'center' });
-            doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 27, { align: 'center' });
+            doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+            doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
             doc.setFontSize(12);
-            doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 34, { align: 'center' });
+            doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
             doc.setFont('times', 'normal').setFontSize(9);
-            doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 39, { align: 'center' });
-            doc.setLineWidth(0.8).line(margin, 43, pageWidth - margin, 43);
-            doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
+            doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+            doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
+            doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
 
-            const currentY = 50;
+            // Judul Laporan & Tahun Ajaran
+            doc.setFont('times', 'bold').setFontSize(12);
+            doc.text('REKAPITULASI KEHADIRAN GURU DAN PEGAWAI', centerX, 48, { align: 'center' });
+            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
+            doc.setFontSize(10).setFont('times', 'normal');
+            doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+
+            const currentY = 68;
             const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
 
             const tableRows = filteredReports.map((item, index) => [
@@ -243,12 +251,12 @@ export default function SchoolReportPage() {
                   0: { halign: 'center', cellWidth: 8 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
                   2: { halign: 'left', cellWidth: 32 }, 
-                  3: { halign: 'center', cellWidth: 22 }, 
+                  3: { halign: 'center', cellWidth: 20 }, 
                   4: { halign: 'center', cellWidth: 12 }, 
                   5: { halign: 'center', cellWidth: 11 }, 
                   6: { halign: 'center', cellWidth: 11 }, 
                   7: { halign: 'center', cellWidth: 11 }, 
-                  8: { halign: 'right', cellWidth: 12 } 
+                  8: { halign: 'right', cellWidth: 14 } 
                 }
             });
 

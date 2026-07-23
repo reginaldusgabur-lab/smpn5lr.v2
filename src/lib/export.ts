@@ -76,7 +76,7 @@ export function exportToPdf(
     try {
         const monthName = currentMonth.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
         const tabName = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
-        const fileName = `Laporan Kehadiran - ${tabName} - ${monthName}.pdf`;
+        const fileName = `Laporan_Kehadiran_${tabName}_${monthName.replace(/\s+/g, '_')}.pdf`;
         
         const dataToExport = summaryData[activeTab] || [];
         if (dataToExport.length === 0) {
@@ -106,12 +106,19 @@ export function exportToPdf(
         doc.text(sekolah, pageCenter, 28, { align: 'center' });
         doc.setFont('times', 'normal').setFontSize(9);
         doc.text(`Alamat: ${alamat}`, pageCenter, 34, { align: 'center' });
-        doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
-        doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
+        doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
+        doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-        let currentY = 45;
+        // Judul Laporan & Tahun Ajaran
+        doc.setFont('times', 'bold').setFontSize(12);
+        doc.text(`REKAPITULASI KEHADIRAN ${tabName.toUpperCase()}`, pageCenter, 48, { align: 'center' });
+        doc.text(`Bulan ${monthName}`, pageCenter, 54, { align: 'center' });
+        doc.setFontSize(10).setFont('times', 'normal');
+        doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, pageCenter, 60, { align: 'center' });
 
-        // Table Headings: No, Nama, NIP, Status, Hadir, Izin, Sakit, Alpa, %
+        let currentY = 68;
+
+        // Table Headings
         const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
         
         const tableRows = dataToExport.map((user, index) => [
@@ -144,12 +151,12 @@ export function exportToPdf(
                 0: { halign: 'center', cellWidth: 8 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
                 2: { halign: 'left', cellWidth: 32 },
-                3: { halign: 'center', cellWidth: 22 },
+                3: { halign: 'center', cellWidth: 20 },
                 4: { halign: 'center', cellWidth: 12 },
                 5: { halign: 'center', cellWidth: 11 },
                 6: { halign: 'center', cellWidth: 11 },
                 7: { halign: 'center', cellWidth: 11 },
-                8: { halign: 'right', cellWidth: 12 }
+                8: { halign: 'right', cellWidth: 14 }
             }
         });
 
@@ -160,7 +167,7 @@ export function exportToPdf(
         }
 
         const signatureY = finalTableY + 15;
-        const signatureX = doc.internal.pageSize.getWidth() - 85;
+        const signatureX = pageWidth - 85;
         const today = format(new Date(), 'd MMMM yyyy', { locale: id });
 
         doc.setFontSize(10);
