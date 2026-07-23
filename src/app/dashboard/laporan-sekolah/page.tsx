@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -212,7 +211,7 @@ export default function SchoolReportPage() {
 
             // Judul Laporan & Tahun Ajaran
             doc.setFont('times', 'bold').setFontSize(12);
-            doc.text('REKAPITULASI KEHADIRAN GURU DAN PEGAWAI', centerX, 48, { align: 'center' });
+            doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
             doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, centerX, 60, { align: 'center' });
@@ -246,7 +245,13 @@ export default function SchoolReportPage() {
                   lineColor: [200, 200, 200],
                   lineWidth: 0.1
                 },
-                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
+                headStyles: { 
+                    fillColor: [52, 152, 219], 
+                    textColor: 255, 
+                    halign: 'center', 
+                    fontStyle: 'bold',
+                    minCellHeight: 10
+                },
                 columnStyles: { 
                   0: { halign: 'center', cellWidth: 8 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 

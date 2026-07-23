@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -111,7 +110,7 @@ export function exportToPdf(
 
         // Judul Laporan & Tahun Ajaran
         doc.setFont('times', 'bold').setFontSize(12);
-        doc.text(`REKAPITULASI KEHADIRAN ${tabName.toUpperCase()}`, pageCenter, 48, { align: 'center' });
+        doc.text('LAPORAN KEHADIRAN GURU/TENDIK', pageCenter, 48, { align: 'center' });
         doc.text(`Bulan ${monthName}`, pageCenter, 54, { align: 'center' });
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, pageCenter, 60, { align: 'center' });
@@ -138,7 +137,13 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'grid',
-            headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            headStyles: { 
+                fillColor: [52, 152, 219], 
+                textColor: 255, 
+                fontStyle: 'bold', 
+                halign: 'center',
+                minCellHeight: 10
+            },
             styles: { 
               cellPadding: 1.5,
               fontSize: 9, 
