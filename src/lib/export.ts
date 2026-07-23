@@ -19,6 +19,7 @@ function triggerDownload(data: any, fileName: string, fileType: string) {
 // Helper to sanitize position names for PDF
 const sanitizePosition = (pos: string) => {
     if (!pos) return '-';
+    // Menyingkat PPPK Paruh Waktu (PW) menjadi PPPK PW agar hemat ruang
     return pos.replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
 };
 
@@ -143,6 +144,8 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'grid',
+            // Margin bawah 35mm untuk mendorong 2-3 baris terakhir ke halaman 2 bersama tanda tangan
+            margin: { bottom: 35 },
             headStyles: { 
                 fillColor: [52, 152, 219], 
                 textColor: 255, 
@@ -153,23 +156,23 @@ export function exportToPdf(
             },
             styles: { 
               cellPadding: 1.2,
-              fontSize: 10, // Font set to 10
+              fontSize: 10, // Font diatur ke 10 sesuai instruksi
               font: 'times', 
               textColor: [0, 0, 0],
-              lineColor: [200, 200, 200], // Grey grid lines
+              lineColor: [200, 200, 200], // Garis tabel abu-abu
               lineWidth: 0.1,
               valign: 'middle'
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 7 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
-                2: { halign: 'left', cellWidth: 38 }, // NIP adjusted for font 10
-                3: { halign: 'center', cellWidth: 18 }, // Status adjusted for "PPPK PW"
-                4: { halign: 'center', cellWidth: 14 },
-                5: { halign: 'center', cellWidth: 12 },
-                6: { halign: 'center', cellWidth: 13 },
-                7: { halign: 'center', cellWidth: 12 },
-                8: { halign: 'right', cellWidth: 12 }
+                2: { halign: 'left', cellWidth: 38 }, 
+                3: { halign: 'center', cellWidth: 18 }, 
+                4: { halign: 'center', cellWidth: 12 },
+                5: { halign: 'center', cellWidth: 10 },
+                6: { halign: 'center', cellWidth: 11 },
+                7: { halign: 'center', cellWidth: 10 },
+                8: { halign: 'right', cellWidth: 10 }
             }
         });
 

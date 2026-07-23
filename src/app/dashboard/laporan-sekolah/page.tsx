@@ -236,13 +236,15 @@ export default function SchoolReportPage() {
                 head: tableHead,
                 body: tableRows,
                 theme: 'grid',
+                // Margin bawah 35mm untuk mendorong 2-3 baris ke halaman 2 bersama tanda tangan
+                margin: { bottom: 35 },
                 styles: { 
                   font: 'times', 
-                  fontSize: 10, // Font set to 10
+                  fontSize: 10, 
                   cellPadding: 1.2,
                   valign: 'middle',
                   textColor: [0, 0, 0],
-                  lineColor: [200, 200, 200], // Grey lines
+                  lineColor: [200, 200, 200], 
                   lineWidth: 0.1
                 },
                 headStyles: { 
@@ -256,13 +258,13 @@ export default function SchoolReportPage() {
                 columnStyles: { 
                   0: { halign: 'center', cellWidth: 7 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 38 }, // NIP adjusted for font 10
-                  3: { halign: 'center', cellWidth: 18 }, // Status adjusted
-                  4: { halign: 'center', cellWidth: 14 }, 
-                  5: { halign: 'center', cellWidth: 12 }, 
-                  6: { halign: 'center', cellWidth: 13 }, 
-                  7: { halign: 'center', cellWidth: 12 }, 
-                  8: { halign: 'right', cellWidth: 12 } 
+                  2: { halign: 'left', cellWidth: 38 }, 
+                  3: { halign: 'center', cellWidth: 18 }, 
+                  4: { halign: 'center', cellWidth: 12 }, 
+                  5: { halign: 'center', cellWidth: 10 }, 
+                  6: { halign: 'center', cellWidth: 11 }, 
+                  7: { halign: 'center', cellWidth: 10 }, 
+                  8: { halign: 'right', cellWidth: 10 } 
                 }
             });
 

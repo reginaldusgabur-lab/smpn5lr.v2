@@ -260,13 +260,15 @@ export default function UserReportDetailPage() {
             head: tableHead,
             body: tableRows,
             theme: 'grid',
+            // Margin bawah 35mm untuk mendorong beberapa baris ke halaman 2 bersama tanda tangan
+            margin: { bottom: 35 },
             styles: { 
               font: 'times', 
-              fontSize: 10, // Font set to 10
+              fontSize: 10, 
               cellPadding: 1.2,
               valign: 'middle',
               textColor: [0, 0, 0],
-              lineColor: [200, 200, 200], // Grey
+              lineColor: [200, 200, 200], 
               lineWidth: 0.1
             },
             headStyles: { 
