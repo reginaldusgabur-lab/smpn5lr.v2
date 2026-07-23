@@ -210,7 +210,7 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
 
             const currentY = 50;
-            const tableHead = [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', '%']];
+            const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
 
             const tableRows = filteredReports.map((item, index) => [
                 item.sequenceNumber || index + 1, 
@@ -240,15 +240,15 @@ export default function SchoolReportPage() {
                 },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
                 columnStyles: { 
-                  0: { halign: 'center', cellWidth: 10 }, 
+                  0: { halign: 'center', cellWidth: 8 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
                   2: { halign: 'left', cellWidth: 32 }, 
                   3: { halign: 'center', cellWidth: 22 }, 
                   4: { halign: 'center', cellWidth: 12 }, 
-                  5: { halign: 'center', cellWidth: 10 }, 
-                  6: { halign: 'center', cellWidth: 10 }, 
-                  7: { halign: 'center', cellWidth: 10 }, 
-                  8: { halign: 'right', cellWidth: 15 } 
+                  5: { halign: 'center', cellWidth: 11 }, 
+                  6: { halign: 'center', cellWidth: 11 }, 
+                  7: { halign: 'center', cellWidth: 11 }, 
+                  8: { halign: 'right', cellWidth: 12 } 
                 }
             });
 
@@ -343,10 +343,10 @@ export default function SchoolReportPage() {
                                     <TableRow className="border-none">
                                         <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Nama & NIP</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">H</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">I</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">S</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">A</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Hadir</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Izin</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Sakit</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Alpa</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase">%</TableHead>
                                         <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase">Aksi</TableHead>
                                     </TableRow>
@@ -379,4 +379,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-

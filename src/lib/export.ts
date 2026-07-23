@@ -111,8 +111,8 @@ export function exportToPdf(
 
         let currentY = 45;
 
-        // Table Headings: No, Nama, NIP, Status, H, I, S, A, %
-        const tableHead = [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', '%']];
+        // Table Headings: No, Nama, NIP, Status, Hadir, Izin, Sakit, Alpa, %
+        const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
         
         const tableRows = dataToExport.map((user, index) => [
             user.sequenceNumber || index + 1,
@@ -141,15 +141,15 @@ export function exportToPdf(
               lineWidth: 0.1
             },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 10 },
+                0: { halign: 'center', cellWidth: 8 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
                 2: { halign: 'left', cellWidth: 32 },
                 3: { halign: 'center', cellWidth: 22 },
                 4: { halign: 'center', cellWidth: 12 },
-                5: { halign: 'center', cellWidth: 10 },
-                6: { halign: 'center', cellWidth: 10 },
-                7: { halign: 'center', cellWidth: 10 },
-                8: { halign: 'right', cellWidth: 15 }
+                5: { halign: 'center', cellWidth: 11 },
+                6: { halign: 'center', cellWidth: 11 },
+                7: { halign: 'center', cellWidth: 11 },
+                8: { halign: 'right', cellWidth: 12 }
             }
         });
 
@@ -193,4 +193,3 @@ export function exportToPdf(
         alert("Terjadi kesalahan saat mengekspor ke PDF. Silakan coba lagi.");
     }
 }
-

@@ -411,7 +411,7 @@ export default function UserReportDetailPage() {
                                                                     {!hasIn && (
                                                                         <>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Izin', 'Izin pribadi')}>Jadikan Izin</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Izin', 'Izin pribadi')}>Jadikan Izin</SelectItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Dinas Pagi', 'Dinas pagi')}>Dinas pagi</DropdownMenuItem>
                                                                         </>
                                                                     )}
@@ -444,4 +444,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
