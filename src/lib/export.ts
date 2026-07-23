@@ -98,7 +98,7 @@ export function exportToPdf(
         const namaKepsek = config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr';
         const nipKepsek = config.headmasterNip || '198507272011011020';
 
-        // Header
+        // Header (Kop Surat)
         doc.setFont('times', 'bold').setFontSize(14);
         doc.text(instansi, pageCenter, 15, { align: 'center' });
         doc.text(dinas, pageCenter, 21, { align: 'center' });
@@ -109,7 +109,8 @@ export function exportToPdf(
         doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
 
-        let currentY = 50;
+        // Start table directly after the header line
+        let currentY = 45;
 
         // Table
         const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']];
@@ -137,7 +138,7 @@ export function exportToPdf(
               fontSize: 9, 
               font: 'times', 
               textColor: [0, 0, 0],
-              lineColor: [0, 0, 0],
+              lineColor: [200, 200, 200], // Grey color for grid lines
               lineWidth: 0.1
             },
             columnStyles: {

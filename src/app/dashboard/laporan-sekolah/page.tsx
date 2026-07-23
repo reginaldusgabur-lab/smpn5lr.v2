@@ -235,7 +235,7 @@ export default function SchoolReportPage() {
                   cellPadding: 1.5,
                   valign: 'middle',
                   textColor: [0, 0, 0],
-                  lineColor: [0, 0, 0],
+                  lineColor: [200, 200, 200], // Grey color for grid lines
                   lineWidth: 0.1
                 },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },

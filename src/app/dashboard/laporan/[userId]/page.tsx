@@ -259,7 +259,7 @@ export default function UserReportDetailPage() {
               cellPadding: 1.5,
               valign: 'middle',
               textColor: [0, 0, 0],
-              lineColor: [0, 0, 0],
+              lineColor: [200, 200, 200], // Grey color for grid lines
               lineWidth: 0.1
             },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
@@ -410,8 +410,8 @@ export default function UserReportDetailPage() {
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Ubah Status</DropdownMenuLabel>
                                                                     {!hasIn && (
                                                                         <>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Izin Pribadi', 'Izin pribadi')}>Jadikan Izin</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(day, 'Sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(day, 'Izin')}>Jadikan Izin</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Dinas Pagi', 'Dinas pagi')}>Dinas pagi</DropdownMenuItem>
                                                                         </>
                                                                     )}
