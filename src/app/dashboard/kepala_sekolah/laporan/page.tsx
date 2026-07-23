@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -25,8 +24,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, collectionGroup } from 'firebase/firestore';
 import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, isBefore, eachDayOfInterval, startOfDay, isWithinInterval, setHours, setMinutes, isSameDay } from 'date-fns';
@@ -195,7 +195,14 @@ function StaffReportView() {
   const [activeTab, setActiveTab] = useState('guru');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
+  const [academicYear, setAcademicYear] = useState('');
   const { summary, isLoading, schoolConfig } = useStaffAttendanceSummary(currentMonth);
+
+  useEffect(() => {
+    if (schoolConfig?.academicYear) {
+      setAcademicYear(schoolConfig.academicYear);
+    }
+  }, [schoolConfig]);
 
   const minDate = new Date(2026, 0, 1);
   const filteredData = useMemo(() => (summary[activeTab] || []).filter((u: any) => u.name.toLowerCase().includes(searchQuery.toLowerCase())), [summary, activeTab, searchQuery]);
@@ -212,7 +219,7 @@ function StaffReportView() {
                     <DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto font-normal"><Download className="mr-2 h-4 w-4" />Unduh Laporan<ChevronDown className="ml-2 h-4 w-4" /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => exportToExcel(summary, currentMonth, activeTab)} disabled={isLoading}>Unduh Excel</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => exportToPdf(summary, currentMonth, activeTab, schoolConfig)} disabled={isLoading || !schoolConfig}>Unduh PDF</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => exportToPdf(summary, currentMonth, activeTab, schoolConfig, academicYear)} disabled={isLoading || !schoolConfig}>Unduh PDF</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
@@ -225,9 +232,26 @@ function StaffReportView() {
                         <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={currentMonth <= minDate}><ChevronLeft className="h-4 w-4" /></Button>
                         <span className="font-semibold text-center w-32 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                         <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4" /></Button>
-                        <div className="relative w-full md:w-auto"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input placeholder="Cari nama..." className="pl-8 w-full" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div>
                     </div>
                 </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5 mb-6">
+                    <div className="space-y-1.5 md:col-span-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari Nama</Label>
+                        <div className="relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                            <Input placeholder="Cari nama..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran</Label>
+                        <div className="relative">
+                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                            <Input placeholder="Tahun Ajaran" className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
+                        </div>
+                    </div>
+                </div>
+
                 <TabsContent value="guru"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
                 <TabsContent value="pegawai"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
                 <TabsContent value="kepala_sekolah"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
@@ -255,4 +279,3 @@ export default function HeadmasterStaffReportPage() {
     if (isUserLoading || isUserDataLoading || userData?.role !== 'kepala_sekolah') return <div className="flex items-center justify-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     return <StaffReportView />;
 }
-

@@ -77,7 +77,8 @@ export function exportToPdf(
   summaryData: { [key: string]: any[] },
   currentMonth: Date,
   activeTab: string,
-  reportConfig: any
+  reportConfig: any,
+  academicYearOverride?: string
 ) {
     try {
         const monthName = currentMonth.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
@@ -103,6 +104,7 @@ export function exportToPdf(
         const kotaLaporan = config.reportCity || 'Mando';
         const namaKepsek = config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr';
         const nipKepsek = config.headmasterNip || '198507272011011020';
+        const tahunAjaran = academicYearOverride || config.academicYear || '-';
 
         // Header (Kop Surat)
         doc.setFont('times', 'bold').setFontSize(14);
@@ -120,7 +122,7 @@ export function exportToPdf(
         doc.text('LAPORAN KEHADIRAN GURU/TENDIK', pageCenter, 48, { align: 'center' });
         doc.text(`Bulan ${monthName}`, pageCenter, 54, { align: 'center' });
         doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, pageCenter, 60, { align: 'center' });
+        doc.text(`Tahun Ajaran: ${tahunAjaran}`, pageCenter, 60, { align: 'center' });
 
         let currentY = 68;
 
@@ -144,7 +146,6 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'grid',
-            // Margin bawah 35mm untuk mendorong 2-3 baris terakhir ke halaman 2 bersama tanda tangan
             margin: { bottom: 35 },
             headStyles: { 
                 fillColor: [52, 152, 219], 
@@ -155,7 +156,7 @@ export function exportToPdf(
                 minCellHeight: 12
             },
             styles: { 
-              cellPadding: 1.2,
+              cellPadding: 1.5,
               fontSize: 10,
               font: 'times', 
               textColor: [0, 0, 0],
@@ -164,14 +165,14 @@ export function exportToPdf(
               valign: 'middle'
             },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 7 },
+                0: { halign: 'center', cellWidth: 8 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
-                2: { halign: 'left', cellWidth: 38 }, 
+                2: { halign: 'left', cellWidth: 40 }, 
                 3: { halign: 'center', cellWidth: 18 }, 
                 4: { halign: 'center', cellWidth: 15 },
-                5: { halign: 'center', cellWidth: 10 },
+                5: { halign: 'center', cellWidth: 12 },
                 6: { halign: 'center', cellWidth: 15 },
-                7: { halign: 'center', cellWidth: 10 },
+                7: { halign: 'center', cellWidth: 12 },
                 8: { halign: 'right', cellWidth: 13 }
             }
         });

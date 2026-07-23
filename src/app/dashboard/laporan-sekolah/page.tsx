@@ -8,8 +8,9 @@ import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, st
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -50,10 +51,17 @@ export default function SchoolReportPage() {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
+    const [academicYear, setAcademicYear] = useState("");
     const isMounted = useRef(true);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(user, schoolConfigRef);
+
+    useEffect(() => {
+        if (schoolConfigData?.academicYear) {
+            setAcademicYear(schoolConfigData.academicYear);
+        }
+    }, [schoolConfigData]);
 
     const loadData = useCallback(async () => {
         if (!firestore || !user?.uid || !isMounted.current || !schoolConfigData) return;
@@ -214,7 +222,7 @@ export default function SchoolReportPage() {
             doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
             doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
             doc.setFontSize(10).setFont('times', 'normal');
-            doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+            doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
             const currentY = 68;
             const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
@@ -236,12 +244,11 @@ export default function SchoolReportPage() {
                 head: tableHead,
                 body: tableRows,
                 theme: 'grid',
-                // Margin bawah 35mm untuk mendorong 2-3 baris ke halaman 2 bersama tanda tangan
                 margin: { bottom: 35 },
                 styles: { 
                   font: 'times', 
                   fontSize: 10, 
-                  cellPadding: 1.2,
+                  cellPadding: 1.5,
                   valign: 'middle',
                   textColor: [0, 0, 0],
                   lineColor: [200, 200, 200], 
@@ -256,14 +263,14 @@ export default function SchoolReportPage() {
                     minCellHeight: 12
                 },
                 columnStyles: { 
-                  0: { halign: 'center', cellWidth: 7 }, 
+                  0: { halign: 'center', cellWidth: 8 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 38 }, 
+                  2: { halign: 'left', cellWidth: 40 }, 
                   3: { halign: 'center', cellWidth: 18 }, 
                   4: { halign: 'center', cellWidth: 15 }, 
-                  5: { halign: 'center', cellWidth: 10 }, 
+                  5: { halign: 'center', cellWidth: 12 }, 
                   6: { halign: 'center', cellWidth: 15 }, 
-                  7: { halign: 'center', cellWidth: 10 }, 
+                  7: { halign: 'center', cellWidth: 12 }, 
                   8: { halign: 'right', cellWidth: 13 } 
                 }
             });
@@ -317,7 +324,7 @@ export default function SchoolReportPage() {
                         <CardTitle className="font-bold text-xs uppercase">Rekapitulasi kehadiran</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 min-h-[500px]">
-                        <div className="p-4 space-y-4">
+                        <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4">
                                 <div className="flex items-center bg-muted/40 rounded-xl border border-muted-foreground/5 p-1">
                                     <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
@@ -326,30 +333,51 @@ export default function SchoolReportPage() {
                                 </div>
                             </div>
                             
-                            <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
-                                <div className="flex flex-col sm:flex-row gap-2 flex-1 w-full">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Saring Peran</Label>
                                     <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                        <SelectTrigger className="w-full sm:w-[160px] h-11 rounded-xl bg-muted/30 font-bold text-xs">
-                                          <SelectValue placeholder="Peran" />
+                                        <SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10">
+                                          <SelectValue placeholder="Semua" />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-none">
-                                          <SelectItem value="all">Semua peran</SelectItem>
-                                          <SelectItem value="guru">Guru</SelectItem>
-                                          <SelectItem value="pegawai">Pegawai</SelectItem>
-                                          <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                        <SelectContent className="rounded-xl border-none shadow-2xl">
+                                          <SelectItem value="all" className="rounded-lg">Semua peran</SelectItem>
+                                          <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
+                                          <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
+                                          <SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    <div className="flex-1 relative w-full">
+                                </div>
+                                <div className="space-y-1.5 md:col-span-2">
+                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari Nama</Label>
+                                    <div className="relative">
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                         <Input 
-                                            placeholder="Cari nama..." 
-                                            className="pl-11 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold text-xs shadow-none" 
+                                            placeholder="Masukkan nama personil..." 
+                                            className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs shadow-none" 
                                             value={searchTerm} 
                                             onChange={e => setSearchTerm(e.target.value)} 
                                         />
                                     </div>
                                 </div>
-                                <Button className="w-full sm:w-auto h-11 rounded-xl font-normal bg-primary text-xs uppercase" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>{isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF</Button>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran</Label>
+                                    <div className="relative">
+                                        <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                                        <Input 
+                                            placeholder="Contoh: 2025/2026" 
+                                            className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs shadow-none" 
+                                            value={academicYear} 
+                                            onChange={e => setAcademicYear(e.target.value)} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end">
+                                <Button className="w-full sm:w-auto h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-xs uppercase tracking-widest shadow-none" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
+                                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
+                                </Button>
                             </div>
                         </div>
 
