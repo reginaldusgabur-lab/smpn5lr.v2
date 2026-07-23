@@ -238,7 +238,7 @@ export default function SchoolReportPage() {
                 theme: 'grid',
                 styles: { 
                   font: 'times', 
-                  fontSize: 12, 
+                  fontSize: 11, // Set to 11
                   cellPadding: 1.5,
                   valign: 'middle',
                   textColor: [0, 0, 0],

@@ -146,7 +146,7 @@ export function exportToPdf(
             },
             styles: { 
               cellPadding: 1.5,
-              fontSize: 12, 
+              fontSize: 11, // Set to 11
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200],

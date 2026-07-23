@@ -236,7 +236,7 @@ export default function UserReportDetailPage() {
 
         let currentY = 70;
 
-        doc.setFontSize(10).setFont('times', 'normal');
+        doc.setFontSize(11).setFont('times', 'normal');
         doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
         doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 6;
         
@@ -261,7 +261,7 @@ export default function UserReportDetailPage() {
             theme: 'grid',
             styles: { 
               font: 'times', 
-              fontSize: 12, 
+              fontSize: 11, // Set to 11
               cellPadding: 1.5,
               valign: 'middle',
               textColor: [0, 0, 0],
