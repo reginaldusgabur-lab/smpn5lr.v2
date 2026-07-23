@@ -241,10 +241,11 @@ export default function SchoolReportPage() {
                 styles: { 
                   font: 'times', 
                   fontSize: 9, 
-                  cellPadding: 3, 
+                  cellPadding: 1.5, // Mepet
                   valign: 'middle',
-                  textColor: [0, 0, 0], // Kolom teks warna hitam
-                  lineColor: [200, 200, 200] // Garis tabel terang
+                  textColor: [0, 0, 0], // Teks hitam
+                  lineColor: [0, 0, 0], // Garis hitam pekat
+                  lineWidth: 0.1
                 },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
                 columnStyles: { 
@@ -282,7 +283,7 @@ export default function SchoolReportPage() {
                 doc.setPage(i);
                 const pageHeight = doc.internal.pageSize.getHeight();
                 doc.setLineWidth(0.2);
-                doc.setDrawColor(200, 200, 200);
+                doc.setDrawColor(0, 0, 0); // Footer line hitam
                 doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
                 doc.setFontSize(8).setFont('times', 'italic');
                 doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
