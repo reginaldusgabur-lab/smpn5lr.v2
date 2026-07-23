@@ -1,5 +1,3 @@
-
-
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -40,13 +38,12 @@ export function exportToExcel(
       'No.': user.sequenceNumber || index + 1,
       'Nama': user.name,
       'NIP': user.nip || '-',
-      'Status Kepegawaian': user.position || '-',
+      'Status': user.position || '-',
       'Hadir': user.hadir,
       'Izin': user.izin,
       'Sakit': user.sakit,
       'Alpa': user.alpa,
-      'Terlambat': user.terlambat,
-      'Presentasi': user.presentasi,
+      'Persen': user.presentasi,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -54,8 +51,8 @@ export function exportToExcel(
     XLSX.utils.book_append_sheet(workbook, worksheet, tabName);
 
     const colWidths = [
-        { wch: 5 }, { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 10 }, 
-        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }
+        { wch: 5 }, { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 8 }, 
+        { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 }
     ];
     worksheet['!cols'] = colWidths;
 
@@ -119,22 +116,13 @@ export function exportToPdf(
         
         if (config.academicYear) {
             currentY += 7;
-            doc.setFontSize(11);
+            doc.setFontSize(10);
+            doc.setFont('times', 'normal');
             doc.text(`Tahun Ajaran ${config.academicYear}`, pageCenter, currentY, { align: 'center' });
         }
 
         // Table
-        const tableHead = [
-            [
-                { content: 'No.', rowSpan: 2, styles: { halign: 'left', valign: 'middle' } },
-                { content: 'Nama', rowSpan: 2, styles: { halign: 'left', valign: 'middle' } },
-                { content: 'NIP', rowSpan: 2, styles: { halign: 'left', valign: 'middle' } },
-                { content: 'Status Kepegawaian', rowSpan: 2, styles: { halign: 'left', valign: 'middle' } },
-                { content: 'Rekap Kehadiran', colSpan: 5, styles: { halign: 'center' } },
-                { content: 'Presentasi', rowSpan: 2, styles: { halign: 'right', valign: 'middle' } }
-            ],
-            ['Hadir', 'Izin', 'Sakit', 'Alpa', 'Terlambat']
-        ];
+        const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']];
         
         const tableRows = dataToExport.map((user, index) => [
             user.sequenceNumber || index + 1,
@@ -145,7 +133,6 @@ export function exportToPdf(
             user.izin, 
             user.sakit, 
             user.alpa, 
-            user.terlambat, 
             user.presentasi
         ]);
 
@@ -154,19 +141,24 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'grid',
-            headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold', halign: 'center', lineWidth: 0 },
-            styles: { cellPadding: 2, fontSize: 8, font: 'times' },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            styles: { 
+              cellPadding: 3, 
+              fontSize: 9, 
+              font: 'times', 
+              textColor: [0, 0, 0], // Warna hitam untuk isi kolom
+              lineColor: [200, 200, 200] // Garis tabel sedikit terang
+            },
             columnStyles: {
-                0: { halign: 'left', cellWidth: 7 },
-                1: { halign: 'left', cellWidth: 40 },
-                2: { halign: 'left', cellWidth: 25 },
-                3: { halign: 'left', cellWidth: 25 },
-                4: { halign: 'center' },
-                5: { halign: 'center' },
-                6: { halign: 'center' },
-                7: { halign: 'center' },
-                8: { halign: 'center' },
-                9: { halign: 'right', cellWidth: 20 }
+                0: { halign: 'center', cellWidth: 10 },
+                1: { halign: 'left', cellWidth: 'auto' },
+                2: { halign: 'left', cellWidth: 35 },
+                3: { halign: 'center', cellWidth: 20 },
+                4: { halign: 'center', cellWidth: 15 },
+                5: { halign: 'center', cellWidth: 15 },
+                6: { halign: 'center', cellWidth: 15 },
+                7: { halign: 'center', cellWidth: 15 },
+                8: { halign: 'right', cellWidth: 18 }
             }
         });
 
@@ -211,4 +203,3 @@ export function exportToPdf(
         alert("Terjadi kesalahan saat mengekspor ke PDF. Silakan coba lagi.");
     }
 }
-

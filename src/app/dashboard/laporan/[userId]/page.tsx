@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -235,7 +233,8 @@ export default function UserReportDetailPage() {
         
         if (config.academicYear) {
             currentY += 6;
-            doc.setFontSize(11);
+            doc.setFontSize(10);
+            doc.setFont('times', 'normal');
             doc.text(`Tahun Ajaran ${config.academicYear}`, centerX, currentY, { align: 'center' });
         }
         
@@ -249,6 +248,7 @@ export default function UserReportDetailPage() {
         doc.text(`Jabatan/Status : ${displayRole} / ${userData.position || '-'}`, margin, currentY);
         currentY += 10;
 
+        const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
             safeFormat(item.date, 'eeee, dd MMMM yyyy'),
@@ -260,10 +260,17 @@ export default function UserReportDetailPage() {
 
         autoTable(doc, {
             startY: currentY,
-            head: [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']],
+            head: tableHead,
             body: tableRows,
             theme: 'grid',
-            styles: { font: 'times', fontSize: 9, cellPadding: 3, valign: 'middle' },
+            styles: { 
+              font: 'times', 
+              fontSize: 9, 
+              cellPadding: 3, 
+              valign: 'middle',
+              textColor: [0, 0, 0], // Kolom teks warna hitam
+              lineColor: [200, 200, 200]
+            },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'center', cellWidth: 25 } }
         });
@@ -446,4 +453,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-

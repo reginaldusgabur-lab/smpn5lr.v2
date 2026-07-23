@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -214,26 +213,51 @@ export default function SchoolReportPage() {
             doc.text(`LAPORAN KEHADIRAN SEKOLAH BULAN ${format(currentMonth, 'MMMM yyyy', { locale: id }).toUpperCase()}`, centerX, currentY, { align: 'center' });
             
             if (config.academicYear) {
-                currentY += 6;
-                doc.setFontSize(11);
+                currentY += 7;
+                doc.setFontSize(10);
+                doc.setFont('times', 'normal');
                 doc.text(`Tahun Ajaran ${config.academicYear}`, centerX, currentY, { align: 'center' });
             }
 
+            const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']];
+
             const tableRows = filteredReports.map((item, index) => [
-                index + 1, item.name, item.nip, item.position, Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, item.persentase
+                index + 1, 
+                item.name, 
+                item.nip, 
+                item.position, 
+                Math.ceil(item.totalHadir), 
+                item.totalIzin, 
+                item.totalSakit, 
+                item.totalAlpa, 
+                item.persentase
             ]);
 
             autoTable(doc, {
-                startY: currentY + 8,
-                head: [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', '%']],
+                startY: currentY + 10,
+                head: tableHead,
                 body: tableRows,
                 theme: 'grid',
-                styles: { font: 'times', fontSize: 9, cellPadding: 3, valign: 'middle' },
+                styles: { 
+                  font: 'times', 
+                  fontSize: 9, 
+                  cellPadding: 3, 
+                  valign: 'middle',
+                  textColor: [0, 0, 0], // Kolom teks warna hitam
+                  lineColor: [200, 200, 200] // Garis tabel terang
+                },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
-                columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 4: { halign: 'center' }, 5: { halign: 'center' }, 6: { halign: 'center' }, 7: { halign: 'center' }, 8: { halign: 'center' } }
+                columnStyles: { 
+                  0: { halign: 'center', cellWidth: 10 }, 
+                  4: { halign: 'center', cellWidth: 15 }, 
+                  5: { halign: 'center', cellWidth: 15 }, 
+                  6: { halign: 'center', cellWidth: 15 }, 
+                  7: { halign: 'center', cellWidth: 15 }, 
+                  8: { halign: 'right', cellWidth: 18 } 
+                }
             });
 
-            let finalY = (doc as any).lastAutoTable.finalY || currentY + 10;
+            let finalY = (doc as any).lastAutoTable.finalY || currentY + 12;
             if (finalY > doc.internal.pageSize.getHeight() - 65) {
                 doc.addPage();
                 finalY = 20;
@@ -360,4 +384,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-
