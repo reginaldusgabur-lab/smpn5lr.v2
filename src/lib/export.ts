@@ -113,7 +113,7 @@ export function exportToPdf(
         let currentY = 45;
 
         // Table
-        const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']];
+        const tableHead = [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', '%']];
         
         const tableRows = dataToExport.map((user, index) => [
             user.sequenceNumber || index + 1,
@@ -138,19 +138,19 @@ export function exportToPdf(
               fontSize: 9, 
               font: 'times', 
               textColor: [0, 0, 0],
-              lineColor: [200, 200, 200], // Grey color for grid lines
+              lineColor: [200, 200, 200],
               lineWidth: 0.1
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 10 },
-                1: { halign: 'left', cellWidth: 'auto' },
-                2: { halign: 'left', cellWidth: 35 },
-                3: { halign: 'center', cellWidth: 20 },
-                4: { halign: 'center', cellWidth: 15 },
-                5: { halign: 'center', cellWidth: 15 },
-                6: { halign: 'center', cellWidth: 15 },
-                7: { halign: 'center', cellWidth: 15 },
-                8: { halign: 'right', cellWidth: 18 }
+                1: { halign: 'left', cellWidth: 'auto' }, // Nama gets most space
+                2: { halign: 'left', cellWidth: 32 },
+                3: { halign: 'center', cellWidth: 22 },
+                4: { halign: 'center', cellWidth: 12 },
+                5: { halign: 'center', cellWidth: 10 },
+                6: { halign: 'center', cellWidth: 10 },
+                7: { halign: 'center', cellWidth: 10 },
+                8: { halign: 'right', cellWidth: 15 }
             }
         });
 

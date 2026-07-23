@@ -88,7 +88,7 @@ export default function SchoolReportPage() {
 
             const [attendanceSnap, attendanceFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackQuery), 
+                getDocs(attendanceFallbackSnap), 
                 getDocs(leaveQuery)
             ]);
 
@@ -209,11 +209,11 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.8).line(margin, 43, pageWidth - margin, 43);
             doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
 
-            const currentY = 55;
-            const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']];
+            const currentY = 50;
+            const tableHead = [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', '%']];
 
             const tableRows = filteredReports.map((item, index) => [
-                index + 1, 
+                item.sequenceNumber || index + 1, 
                 item.name, 
                 item.nip, 
                 item.position, 
@@ -235,17 +235,20 @@ export default function SchoolReportPage() {
                   cellPadding: 1.5,
                   valign: 'middle',
                   textColor: [0, 0, 0],
-                  lineColor: [200, 200, 200], // Grey color for grid lines
+                  lineColor: [200, 200, 200],
                   lineWidth: 0.1
                 },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
                 columnStyles: { 
                   0: { halign: 'center', cellWidth: 10 }, 
-                  4: { halign: 'center', cellWidth: 15 }, 
-                  5: { halign: 'center', cellWidth: 15 }, 
-                  6: { halign: 'center', cellWidth: 15 }, 
-                  7: { halign: 'center', cellWidth: 15 }, 
-                  8: { halign: 'right', cellWidth: 18 } 
+                  1: { halign: 'left', cellWidth: 'auto' }, // Nama gets most space
+                  2: { halign: 'left', cellWidth: 32 }, 
+                  3: { halign: 'center', cellWidth: 22 }, 
+                  4: { halign: 'center', cellWidth: 12 }, 
+                  5: { halign: 'center', cellWidth: 10 }, 
+                  6: { halign: 'center', cellWidth: 10 }, 
+                  7: { halign: 'center', cellWidth: 10 }, 
+                  8: { halign: 'right', cellWidth: 15 } 
                 }
             });
 
