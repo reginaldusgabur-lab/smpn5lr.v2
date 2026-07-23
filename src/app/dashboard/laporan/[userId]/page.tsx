@@ -229,7 +229,7 @@ export default function UserReportDetailPage() {
 
         // Judul Laporan & Tahun Ajaran
         doc.setFont('times', 'bold').setFontSize(12);
-        doc.text('LAPORAN KEHADIRAN INDIVIDU', centerX, 48, { align: 'center' });
+        doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, centerX, 60, { align: 'center' });
@@ -261,7 +261,7 @@ export default function UserReportDetailPage() {
             theme: 'grid',
             styles: { 
               font: 'times', 
-              fontSize: 9, 
+              fontSize: 12, 
               cellPadding: 1.5,
               valign: 'middle',
               textColor: [0, 0, 0],
@@ -273,9 +273,9 @@ export default function UserReportDetailPage() {
                 textColor: 255, 
                 halign: 'center', 
                 fontStyle: 'bold',
-                minCellHeight: 10
+                minCellHeight: 12
             },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'center', cellWidth: 25 } }
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
         });
 
         let finalY = (doc as any).lastAutoTable.finalY || currentY;

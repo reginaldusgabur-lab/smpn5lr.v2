@@ -85,14 +85,14 @@ export default function SchoolReportPage() {
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
             const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
 
-            const [attendanceSnap, attendanceFallbackSnap, leaveSnap] = await Promise.all([
+            const [attSnap, attFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
                 getDocs(attendanceFallbackQuery), 
                 getDocs(leaveQuery)
             ]);
 
             const attendanceByUserId: Record<string, any[]> = {};
-            [...attendanceSnap.docs, ...attendanceFallbackSnap.docs].forEach(d => {
+            [...attSnap.docs, ...attFallbackSnap.docs].forEach(d => {
                 const data = d.data();
                 const uid = data.userId || d.ref.parent.parent?.id;
                 if (uid) {
@@ -238,7 +238,7 @@ export default function SchoolReportPage() {
                 theme: 'grid',
                 styles: { 
                   font: 'times', 
-                  fontSize: 9, 
+                  fontSize: 12, 
                   cellPadding: 1.5,
                   valign: 'middle',
                   textColor: [0, 0, 0],
@@ -250,18 +250,18 @@ export default function SchoolReportPage() {
                     textColor: 255, 
                     halign: 'center', 
                     fontStyle: 'bold',
-                    minCellHeight: 10
+                    minCellHeight: 12
                 },
                 columnStyles: { 
-                  0: { halign: 'center', cellWidth: 8 }, 
+                  0: { halign: 'center', cellWidth: 10 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 32 }, 
+                  2: { halign: 'left', cellWidth: 42 }, 
                   3: { halign: 'center', cellWidth: 20 }, 
-                  4: { halign: 'center', cellWidth: 12 }, 
-                  5: { halign: 'center', cellWidth: 11 }, 
-                  6: { halign: 'center', cellWidth: 11 }, 
-                  7: { halign: 'center', cellWidth: 11 }, 
-                  8: { halign: 'right', cellWidth: 14 } 
+                  4: { halign: 'center', cellWidth: 15 }, 
+                  5: { halign: 'center', cellWidth: 12 }, 
+                  6: { halign: 'center', cellWidth: 12 }, 
+                  7: { halign: 'center', cellWidth: 12 }, 
+                  8: { halign: 'right', cellWidth: 16 } 
                 }
             });
 

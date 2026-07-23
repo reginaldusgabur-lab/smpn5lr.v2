@@ -142,26 +142,26 @@ export function exportToPdf(
                 textColor: 255, 
                 fontStyle: 'bold', 
                 halign: 'center',
-                minCellHeight: 10
+                minCellHeight: 12
             },
             styles: { 
               cellPadding: 1.5,
-              fontSize: 9, 
+              fontSize: 12, 
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200],
               lineWidth: 0.1
             },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 8 },
+                0: { halign: 'center', cellWidth: 10 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
-                2: { halign: 'left', cellWidth: 32 },
+                2: { halign: 'left', cellWidth: 42 },
                 3: { halign: 'center', cellWidth: 20 },
-                4: { halign: 'center', cellWidth: 12 },
-                5: { halign: 'center', cellWidth: 11 },
-                6: { halign: 'center', cellWidth: 11 },
-                7: { halign: 'center', cellWidth: 11 },
-                8: { halign: 'right', cellWidth: 14 }
+                4: { halign: 'center', cellWidth: 15 },
+                5: { halign: 'center', cellWidth: 12 },
+                6: { halign: 'center', cellWidth: 12 },
+                7: { halign: 'center', cellWidth: 12 },
+                8: { halign: 'right', cellWidth: 16 }
             }
         });
 
