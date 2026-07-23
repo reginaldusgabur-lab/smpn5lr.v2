@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -88,7 +88,7 @@ export default function SchoolReportPage() {
 
             const [attendanceSnap, attendanceFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackSnap), 
+                getDocs(attendanceFallbackQuery), 
                 getDocs(leaveQuery)
             ]);
 
@@ -241,7 +241,7 @@ export default function SchoolReportPage() {
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
                 columnStyles: { 
                   0: { halign: 'center', cellWidth: 10 }, 
-                  1: { halign: 'left', cellWidth: 'auto' }, // Nama gets most space
+                  1: { halign: 'left', cellWidth: 'auto' }, 
                   2: { halign: 'left', cellWidth: 32 }, 
                   3: { halign: 'center', cellWidth: 22 }, 
                   4: { halign: 'center', cellWidth: 12 }, 
@@ -354,7 +354,7 @@ export default function SchoolReportPage() {
                                 <TableBody>
                                     {isReportLoading ? [...Array(6)].map((_, i) => <TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell></TableRow>) : filteredReports.length > 0 ? filteredReports.map((item) => (
                                         <TableRow key={item.uid} className="hover:bg-primary/5">
-                                            <TableCell className="text-center font-bold text-muted-foreground text-xs">{item.no}</TableCell>
+                                            <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.no}</TableCell>
                                             <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{item.name}</span><span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span></div></TableCell>
                                             <TableCell className="text-center font-bold text-green-600/80">{Math.ceil(item.totalHadir)}</TableCell>
                                             <TableCell className="text-center font-bold text-blue-500/80">{item.totalIzin}</TableCell>
@@ -379,3 +379,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+

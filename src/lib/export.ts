@@ -109,10 +109,9 @@ export function exportToPdf(
         doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
 
-        // Start table directly after the header line
         let currentY = 45;
 
-        // Table
+        // Table Headings: No, Nama, NIP, Status, H, I, S, A, %
         const tableHead = [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', '%']];
         
         const tableRows = dataToExport.map((user, index) => [
@@ -143,7 +142,7 @@ export function exportToPdf(
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 10 },
-                1: { halign: 'left', cellWidth: 'auto' }, // Nama gets most space
+                1: { halign: 'left', cellWidth: 'auto' }, 
                 2: { halign: 'left', cellWidth: 32 },
                 3: { halign: 'center', cellWidth: 22 },
                 4: { halign: 'center', cellWidth: 12 },
@@ -154,7 +153,6 @@ export function exportToPdf(
             }
         });
 
-        // Signature
         let finalTableY = (doc as any).lastAutoTable.finalY;
         if (finalTableY > doc.internal.pageSize.getHeight() - 65) {
             doc.addPage();
@@ -195,3 +193,4 @@ export function exportToPdf(
         alert("Terjadi kesalahan saat mengekspor ke PDF. Silakan coba lagi.");
     }
 }
+
