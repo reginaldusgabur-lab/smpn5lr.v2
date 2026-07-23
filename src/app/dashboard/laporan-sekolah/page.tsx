@@ -210,11 +210,13 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
 
             doc.setFont('times', 'bold').setFontSize(14);
-            doc.text(`Laporan Kehadiran Sekolah Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 58, { align: 'center' });
+            let currentY = 58;
+            doc.text(`LAPORAN KEHADIRAN SEKOLAH BULAN ${format(currentMonth, 'MMMM yyyy', { locale: id }).toUpperCase()}`, centerX, currentY, { align: 'center' });
             
             if (config.academicYear) {
+                currentY += 6;
                 doc.setFontSize(11);
-                doc.text(`Tahun Ajaran ${config.academicYear}`, centerX, 64, { align: 'center' });
+                doc.text(`Tahun Ajaran ${config.academicYear}`, centerX, currentY, { align: 'center' });
             }
 
             const tableRows = filteredReports.map((item, index) => [
@@ -222,15 +224,16 @@ export default function SchoolReportPage() {
             ]);
 
             autoTable(doc, {
-                startY: config.academicYear ? 70 : 66,
+                startY: currentY + 8,
                 head: [['No', 'Nama', 'NIP', 'Status', 'H', 'I', 'S', 'A', '%']],
                 body: tableRows,
                 theme: 'grid',
-                styles: { font: 'times', fontSize: 9 },
-                headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: 'center' }
+                styles: { font: 'times', fontSize: 9, cellPadding: 3, valign: 'middle' },
+                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
+                columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 4: { halign: 'center' }, 5: { halign: 'center' }, 6: { halign: 'center' }, 7: { halign: 'center' }, 8: { halign: 'center' } }
             });
 
-            let finalY = (doc as any).lastAutoTable.finalY || 70;
+            let finalY = (doc as any).lastAutoTable.finalY || currentY + 10;
             if (finalY > doc.internal.pageSize.getHeight() - 65) {
                 doc.addPage();
                 finalY = 20;
@@ -357,3 +360,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+

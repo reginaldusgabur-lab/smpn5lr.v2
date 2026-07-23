@@ -1,4 +1,5 @@
 
+
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -115,10 +116,11 @@ export function exportToPdf(
         doc.setFont('times', 'bold');
         let currentY = 50;
         doc.text(`LAPORAN KEHADIRAN ${tabName.toUpperCase()} BULAN ${monthName.toUpperCase()}`, pageCenter, currentY, { align: 'center' });
+        
         if (config.academicYear) {
             currentY += 7;
             doc.setFontSize(11);
-            doc.text(`TAHUN AJARAN ${config.academicYear.toUpperCase()}`, pageCenter, currentY, { align: 'center' });
+            doc.text(`Tahun Ajaran ${config.academicYear}`, pageCenter, currentY, { align: 'center' });
         }
 
         // Table
@@ -152,7 +154,7 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'grid',
-            headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold', halign: 'center', lineWidth: 0 },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold', halign: 'center', lineWidth: 0 },
             styles: { cellPadding: 2, fontSize: 8, font: 'times' },
             columnStyles: {
                 0: { halign: 'left', cellWidth: 7 },
@@ -209,3 +211,4 @@ export function exportToPdf(
         alert("Terjadi kesalahan saat mengekspor ke PDF. Silakan coba lagi.");
     }
 }
+

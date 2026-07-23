@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -263,7 +264,7 @@ export default function UserReportDetailPage() {
             body: tableRows,
             theme: 'grid',
             styles: { font: 'times', fontSize: 9, cellPadding: 3, valign: 'middle' },
-            headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: 'center', fontStyle: 'bold' },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'center', cellWidth: 25 } }
         });
 
@@ -445,3 +446,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+
