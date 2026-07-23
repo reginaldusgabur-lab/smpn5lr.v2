@@ -240,8 +240,9 @@ export default function UserReportDetailPage() {
         doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
         doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 6;
         
+        const posLabel = (userData.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
         const displayRole = (userData.role || 'user').replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        doc.text(`Jabatan/Status : ${displayRole} / ${userData.position || '-'}`, margin, currentY);
+        doc.text(`Jabatan/Status : ${displayRole} / ${posLabel}`, margin, currentY);
         currentY += 10;
 
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
@@ -261,17 +262,18 @@ export default function UserReportDetailPage() {
             theme: 'grid',
             styles: { 
               font: 'times', 
-              fontSize: 11,
-              cellPadding: 1.5,
+              fontSize: 10, // Font set to 10
+              cellPadding: 1.2,
               valign: 'middle',
               textColor: [0, 0, 0],
-              lineColor: [200, 200, 200],
+              lineColor: [200, 200, 200], // Grey
               lineWidth: 0.1
             },
             headStyles: { 
                 fillColor: [52, 152, 219], 
                 textColor: 255, 
                 halign: 'center', 
+                valign: 'middle',
                 fontStyle: 'bold',
                 minCellHeight: 12
             },

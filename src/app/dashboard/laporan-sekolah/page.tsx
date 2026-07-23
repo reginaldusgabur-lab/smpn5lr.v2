@@ -134,7 +134,7 @@ export default function SchoolReportPage() {
                         else if (att.checkInTime && att.checkOutTime) {
                             let isLate = false;
                             const checkInDate = att.checkInTime.toDate();
-                            if (schoolConfigData.useTimeValidation && schoolConfigData.checkInEndTime) {
+                            if (schoolConfigData.useTimeValidation && (schoolConfigData as any).checkInEndTime) {
                                 const [h, m] = (schoolConfigData as any).checkInEndTime.split(':').map(Number);
                                 const deadline = setMinutes(setHours(startOfDay(checkInDate), h), m);
                                 if (checkInDate > deadline) isLate = true;
@@ -223,7 +223,7 @@ export default function SchoolReportPage() {
                 item.sequenceNumber || index + 1, 
                 item.name, 
                 item.nip, 
-                item.position, 
+                (item.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW'), 
                 Math.ceil(item.totalHadir), 
                 item.totalIzin, 
                 item.totalSakit, 
@@ -238,30 +238,31 @@ export default function SchoolReportPage() {
                 theme: 'grid',
                 styles: { 
                   font: 'times', 
-                  fontSize: 11,
-                  cellPadding: 1.5,
+                  fontSize: 10, // Font set to 10
+                  cellPadding: 1.2,
                   valign: 'middle',
                   textColor: [0, 0, 0],
-                  lineColor: [200, 200, 200],
+                  lineColor: [200, 200, 200], // Grey lines
                   lineWidth: 0.1
                 },
                 headStyles: { 
                     fillColor: [52, 152, 219], 
                     textColor: 255, 
                     halign: 'center', 
+                    valign: 'middle',
                     fontStyle: 'bold',
                     minCellHeight: 12
                 },
                 columnStyles: { 
-                  0: { halign: 'center', cellWidth: 8 }, 
+                  0: { halign: 'center', cellWidth: 7 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 42 }, // Perlebar NIP agar tetap 1 baris
-                  3: { halign: 'center', cellWidth: 22 }, // Perlebar Status
-                  4: { halign: 'center', cellWidth: 15 }, 
-                  5: { halign: 'center', cellWidth: 14 }, 
-                  6: { halign: 'center', cellWidth: 15 }, 
-                  7: { halign: 'center', cellWidth: 14 }, 
-                  8: { halign: 'right', cellWidth: 14 } 
+                  2: { halign: 'left', cellWidth: 38 }, // NIP adjusted for font 10
+                  3: { halign: 'center', cellWidth: 18 }, // Status adjusted
+                  4: { halign: 'center', cellWidth: 14 }, 
+                  5: { halign: 'center', cellWidth: 12 }, 
+                  6: { halign: 'center', cellWidth: 13 }, 
+                  7: { halign: 'center', cellWidth: 12 }, 
+                  8: { halign: 'right', cellWidth: 12 } 
                 }
             });
 

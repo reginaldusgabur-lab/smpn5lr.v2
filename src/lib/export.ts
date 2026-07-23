@@ -16,6 +16,12 @@ function triggerDownload(data: any, fileName: string, fileType: string) {
   document.body.removeChild(link);
 }
 
+// Helper to sanitize position names for PDF
+const sanitizePosition = (pos: string) => {
+    if (!pos) return '-';
+    return pos.replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
+};
+
 // --- SUMMARY EXCEL EXPORT --- //
 export function exportToExcel(
   summaryData: { [key: string]: any[] },
@@ -124,7 +130,7 @@ export function exportToPdf(
             user.sequenceNumber || index + 1,
             user.name,
             user.nip || '-',
-            user.position || '-',
+            sanitizePosition(user.position || '-'),
             user.hadir, 
             user.izin, 
             user.sakit, 
@@ -142,27 +148,28 @@ export function exportToPdf(
                 textColor: 255, 
                 fontStyle: 'bold', 
                 halign: 'center',
+                valign: 'middle',
                 minCellHeight: 12
             },
             styles: { 
-              cellPadding: 1.5,
-              fontSize: 11,
+              cellPadding: 1.2,
+              fontSize: 10, // Font set to 10
               font: 'times', 
               textColor: [0, 0, 0],
-              lineColor: [200, 200, 200],
+              lineColor: [200, 200, 200], // Grey grid lines
               lineWidth: 0.1,
               valign: 'middle'
             },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 8 },
+                0: { halign: 'center', cellWidth: 7 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
-                2: { halign: 'left', cellWidth: 42 }, // NIP diperlebar ke 42mm agar 1 baris
-                3: { halign: 'center', cellWidth: 22 }, // Status diperlebar
-                4: { halign: 'center', cellWidth: 15 },
-                5: { halign: 'center', cellWidth: 14 },
-                6: { halign: 'center', cellWidth: 15 },
-                7: { halign: 'center', cellWidth: 14 },
-                8: { halign: 'right', cellWidth: 14 }
+                2: { halign: 'left', cellWidth: 38 }, // NIP adjusted for font 10
+                3: { halign: 'center', cellWidth: 18 }, // Status adjusted for "PPPK PW"
+                4: { halign: 'center', cellWidth: 14 },
+                5: { halign: 'center', cellWidth: 12 },
+                6: { halign: 'center', cellWidth: 13 },
+                7: { halign: 'center', cellWidth: 12 },
+                8: { halign: 'right', cellWidth: 12 }
             }
         });
 
