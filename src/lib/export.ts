@@ -1,3 +1,4 @@
+
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -108,18 +109,7 @@ export function exportToPdf(
         doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
 
-        // Title
-        doc.setFontSize(14);
-        doc.setFont('times', 'bold');
         let currentY = 50;
-        doc.text(`LAPORAN KEHADIRAN ${tabName.toUpperCase()} BULAN ${monthName.toUpperCase()}`, pageCenter, currentY, { align: 'center' });
-        
-        if (config.academicYear) {
-            currentY += 7;
-            doc.setFontSize(10);
-            doc.setFont('times', 'normal');
-            doc.text(`Tahun Ajaran ${config.academicYear}`, pageCenter, currentY, { align: 'center' });
-        }
 
         // Table
         const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Persen']];
@@ -137,17 +127,17 @@ export function exportToPdf(
         ]);
 
         (doc as any).autoTable({
-            startY: currentY + 10,
+            startY: currentY,
             head: tableHead,
             body: tableRows,
             theme: 'grid',
             headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold', halign: 'center' },
             styles: { 
-              cellPadding: 1.5, // Mepet
+              cellPadding: 1.5,
               fontSize: 9, 
               font: 'times', 
-              textColor: [0, 0, 0], // Teks hitam
-              lineColor: [0, 0, 0], // Garis hitam pekat
+              textColor: [0, 0, 0],
+              lineColor: [0, 0, 0],
               lineWidth: 0.1
             },
             columnStyles: {
@@ -189,7 +179,7 @@ export function exportToPdf(
             doc.setPage(i);
             const pageHeight = doc.internal.pageSize.getHeight();
             doc.setLineWidth(0.2);
-            doc.setDrawColor(0, 0, 0); // Footer line hitam
+            doc.setDrawColor(0, 0, 0);
             doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
             doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);

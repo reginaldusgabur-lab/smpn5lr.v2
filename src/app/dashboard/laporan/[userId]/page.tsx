@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -227,18 +228,7 @@ export default function UserReportDetailPage() {
         doc.setLineWidth(0.8).line(margin, 43, pageWidth - margin, 43);
         doc.setLineWidth(0.2).line(margin, 43.8, pageWidth - margin, 43.8);
 
-        doc.setFont('times', 'bold').setFontSize(14);
-        let currentY = 58;
-        doc.text(`LAPORAN KEHADIRAN INDIVIDU BULAN ${format(currentMonth, 'MMMM yyyy', { locale: id }).toUpperCase()}`, centerX, currentY, { align: 'center' });
-        
-        if (config.academicYear) {
-            currentY += 6;
-            doc.setFontSize(10);
-            doc.setFont('times', 'normal');
-            doc.text(`Tahun Ajaran ${config.academicYear}`, centerX, currentY, { align: 'center' });
-        }
-        
-        currentY += 12;
+        let currentY = 55;
 
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
@@ -266,10 +256,10 @@ export default function UserReportDetailPage() {
             styles: { 
               font: 'times', 
               fontSize: 9, 
-              cellPadding: 1.5, // Mepet
+              cellPadding: 1.5,
               valign: 'middle',
-              textColor: [0, 0, 0], // Teks hitam
-              lineColor: [0, 0, 0], // Garis hitam pekat
+              textColor: [0, 0, 0],
+              lineColor: [0, 0, 0],
               lineWidth: 0.1
             },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold' },
@@ -301,7 +291,7 @@ export default function UserReportDetailPage() {
             doc.setPage(i);
             const pageHeight = doc.internal.pageSize.getHeight();
             doc.setLineWidth(0.2);
-            doc.setDrawColor(0, 0, 0); // Footer line hitam
+            doc.setDrawColor(0, 0, 0);
             doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
             doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
