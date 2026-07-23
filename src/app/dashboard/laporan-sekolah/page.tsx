@@ -260,11 +260,11 @@ export default function SchoolReportPage() {
                   1: { halign: 'left', cellWidth: 'auto' }, 
                   2: { halign: 'left', cellWidth: 38 }, 
                   3: { halign: 'center', cellWidth: 18 }, 
-                  4: { halign: 'center', cellWidth: 12 }, 
+                  4: { halign: 'center', cellWidth: 15 }, 
                   5: { halign: 'center', cellWidth: 10 }, 
-                  6: { halign: 'center', cellWidth: 11 }, 
+                  6: { halign: 'center', cellWidth: 15 }, 
                   7: { halign: 'center', cellWidth: 10 }, 
-                  8: { halign: 'right', cellWidth: 10 } 
+                  8: { halign: 'right', cellWidth: 13 } 
                 }
             });
 

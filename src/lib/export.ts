@@ -156,10 +156,10 @@ export function exportToPdf(
             },
             styles: { 
               cellPadding: 1.2,
-              fontSize: 10, // Font diatur ke 10 sesuai instruksi
+              fontSize: 10,
               font: 'times', 
               textColor: [0, 0, 0],
-              lineColor: [200, 200, 200], // Garis tabel abu-abu
+              lineColor: [200, 200, 200], 
               lineWidth: 0.1,
               valign: 'middle'
             },
@@ -168,11 +168,11 @@ export function exportToPdf(
                 1: { halign: 'left', cellWidth: 'auto' }, 
                 2: { halign: 'left', cellWidth: 38 }, 
                 3: { halign: 'center', cellWidth: 18 }, 
-                4: { halign: 'center', cellWidth: 12 },
+                4: { halign: 'center', cellWidth: 15 },
                 5: { halign: 'center', cellWidth: 10 },
-                6: { halign: 'center', cellWidth: 11 },
+                6: { halign: 'center', cellWidth: 15 },
                 7: { halign: 'center', cellWidth: 10 },
-                8: { halign: 'right', cellWidth: 10 }
+                8: { halign: 'right', cellWidth: 13 }
             }
         });
 
