@@ -255,12 +255,12 @@ export default function SchoolReportPage() {
                 columnStyles: { 
                   0: { halign: 'center', cellWidth: 8 }, 
                   1: { halign: 'left', cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 38 }, 
+                  2: { halign: 'left', cellWidth: 35 }, 
                   3: { halign: 'center', cellWidth: 18 }, 
-                  4: { halign: 'center', cellWidth: 12 }, 
-                  5: { halign: 'center', cellWidth: 11 }, 
-                  6: { halign: 'center', cellWidth: 11 }, 
-                  7: { halign: 'center', cellWidth: 11 }, 
+                  4: { halign: 'center', cellWidth: 15 }, 
+                  5: { halign: 'center', cellWidth: 12 }, 
+                  6: { halign: 'center', cellWidth: 15 }, 
+                  7: { halign: 'center', cellWidth: 12 }, 
                   8: { halign: 'right', cellWidth: 13 } 
                 }
             });
