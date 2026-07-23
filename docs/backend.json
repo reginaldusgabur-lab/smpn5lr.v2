@@ -320,6 +320,10 @@
             "type": "string",
             "format": "date"
           }
+        },
+        "academicYear": {
+          "type": "string",
+          "description": "Tahun ajaran khusus untuk bulan ini, misal: 2025/2026."
         }
       },
       "required": [

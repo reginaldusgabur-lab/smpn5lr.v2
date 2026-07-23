@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -28,11 +29,11 @@ import {
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@/accordion";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -60,6 +61,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   const firestore = useFirestore();
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [holidays, setHolidays] = useState<Date[]>([]);
+  const [academicYear, setAcademicYear] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const monthlyConfigId = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
@@ -80,10 +82,12 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   useEffect(() => {
     if (monthlyConfigData) {
       setHolidays((monthlyConfigData.holidays ?? []).map((d: string) => new Date(`${d}T00:00:00`)));
+      setAcademicYear(monthlyConfigData.academicYear || schoolConfig?.academicYear || '');
     } else {
       setHolidays([]);
+      setAcademicYear(schoolConfig?.academicYear || '');
     }
-  }, [monthlyConfigData]);
+  }, [monthlyConfigData, schoolConfig]);
 
   const calculatedWorkDays = useMemo(() => {
     if (!schoolConfig) return 0;
@@ -97,7 +101,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
     });
 
     return workDays.length;
-  }, [allDaysInMonth, holidays, schoolConfig?.offDays]);
+  }, [allDaysInMonth, holidays, schoolConfig]);
 
 
   const handleSave = async () => {
@@ -109,9 +113,10 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         id: monthlyConfigId,
         holidays: holidays.map(d => format(d, 'yyyy-MM-dd')),
         manualWorkDays: calculatedWorkDays, 
+        academicYear: academicYear,
       };
       await setDoc(monthlyConfigRef, dataToSave, { merge: true });
-      toast({ title: 'Berhasil', description: 'Pengaturan hari kerja dan libur telah disimpan.' });
+      toast({ title: 'Berhasil', description: 'Pengaturan bulanan telah disimpan.' });
     } catch (error) {
       console.error('Error saving monthly config:', error);
       toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal menyimpan pengaturan.' });
@@ -131,9 +136,9 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   return (
     <Card className="lg:col-span-3 overflow-hidden border shadow-none rounded-xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-            <CardTitle className="font-bold text-sm tracking-tight">Hari kerja & libur bulanan</CardTitle>
+            <CardTitle className="font-bold text-sm tracking-tight uppercase">Kalender Kerja & Tahun Ajaran Bulanan</CardTitle>
             <CardDescription className="text-muted-foreground font-bold">
-                Tandai hari libur spesifik untuk menghitung hari kerja efektif bulan ini.
+                Tentukan hari libur dan tahun ajaran spesifik untuk bulan ini.
             </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 sm:p-6">
@@ -205,26 +210,40 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                     </>
                 )}
             </div>
-            <div className="md:col-span-1 space-y-4 border-l-0 md:border-l md:pl-6 border-muted-foreground/10">
-                <h3 className="font-bold text-sm tracking-tight text-primary">Status bulan ini</h3>
-                 <p className="text-xs text-muted-foreground leading-relaxed font-bold">
-                    Jumlah hari kerja efektif di bulan <span className="font-bold">{format(currentMonth, 'MMMM', { locale: id })}</span> digunakan untuk hitung persentase kehadiran.
-                </p>
+            <div className="md:col-span-1 space-y-6 border-l-0 md:border-l md:pl-6 border-muted-foreground/10">
                 <div className="space-y-2">
-                    <Label className="text-xs font-bold ml-1 text-primary">Jumlah hari kerja efektif</Label>
-                    <div className="h-11 w-full rounded-xl bg-muted/40 border border-muted-foreground/10 flex items-center px-4 font-black text-primary shadow-inner">
-                        {isMonthlyConfigLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : `${calculatedWorkDays} hari`}
-                    </div>
-                     <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
-                        Dihitung otomatis berdasarkan hari libur rutin mingguan dan libur spesifik kalender.
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                        <CalendarRange className="w-3.5 h-3.5" /> Tahun Ajaran
+                    </Label>
+                    <Input 
+                        placeholder="Contoh: 2026/2027" 
+                        value={academicYear} 
+                        onChange={e => setAcademicYear(e.target.value)}
+                        className="h-11 rounded-xl bg-muted/40 font-bold shadow-none"
+                    />
+                    <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
+                        Input ini akan menjadi Tahun Ajaran otomatis saat mengunduh laporan bulan ini.
                     </p>
+                </div>
+
+                <div className="pt-4 border-t border-muted-foreground/10 space-y-4">
+                    <h3 className="font-bold text-[10px] uppercase tracking-widest text-primary">Status bulan ini</h3>
+                    <div className="space-y-2">
+                        <Label className="text-xs font-bold ml-1 text-primary">Hari kerja efektif</Label>
+                        <div className="h-11 w-full rounded-xl bg-muted/40 border border-muted-foreground/10 flex items-center px-4 font-black text-primary shadow-inner">
+                            {isMonthlyConfigLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : `${calculatedWorkDays} hari`}
+                        </div>
+                        <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
+                            Dihitung otomatis untuk akurasi persentase kehadiran.
+                        </p>
+                    </div>
                 </div>
             </div>
         </CardContent>
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
-            <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 shadow-none" disabled={isSaving}>
+            <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 px-8 shadow-none" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Simpan pengaturan bulan ini
+                SIMPAN PENGATURAN BULANAN
             </Button>
         </CardFooter>
     </Card>
@@ -254,7 +273,6 @@ export default function KonfigurasiAbsenPage() {
   const [radius, setRadius] = useState(100);
   const [checkInStart, setCheckInStart] = useState('06:00');
   const [checkInEnd, setCheckInEnd] = useState('08:00');
-  const [lateTolerance, setLateTolerance] = useState(15);
   const [checkOutStart, setCheckOutStart] = useState('14:00');
   const [checkOutEnd, setCheckOutEnd] = useState('16:00');
   const [qrCodeValue, setQrCodeValue] = useState('');
@@ -307,7 +325,6 @@ export default function KonfigurasiAbsenPage() {
       setRadius(schoolConfigData.radius ?? 100);
       setCheckInStart(schoolConfigData.checkInStartTime ?? '06:00');
       setCheckInEnd(schoolConfigData.checkInEndTime ?? '08:00');
-      setLateTolerance(schoolConfigData.lateTolerance ?? 15);
       setCheckOutStart(schoolConfigData.checkOutStartTime ?? '14:00');
       setCheckOutEnd(schoolConfigData.checkOutEndTime ?? '16:00');
       
@@ -424,7 +441,6 @@ export default function KonfigurasiAbsenPage() {
       radius: Number(radius),
       checkInStartTime: checkInStart,
       checkInEndTime: checkInEnd,
-      lateTolerance: Number(lateTolerance),
       checkOutStartTime: checkOutStart,
       checkOutEndTime: checkOutEnd,
       dailyCheckOutTimes: dailyCheckOutTimes,

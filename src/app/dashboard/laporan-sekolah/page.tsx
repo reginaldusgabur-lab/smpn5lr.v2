@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -57,12 +58,6 @@ export default function SchoolReportPage() {
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(user, schoolConfigRef);
 
-    useEffect(() => {
-        if (schoolConfigData?.academicYear) {
-            setAcademicYear(schoolConfigData.academicYear);
-        }
-    }, [schoolConfigData]);
-
     const loadData = useCallback(async () => {
         if (!firestore || !user?.uid || !isMounted.current || !schoolConfigData) return;
         
@@ -88,6 +83,11 @@ export default function SchoolReportPage() {
 
             const monthlyConfig = monthlySnap.exists() ? monthlySnap.data() : {};
             const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // Update academic year based on monthly config, fallback to school config
+            if (isMounted.current) {
+                setAcademicYear(monthlyConfig.academicYear || schoolConfigData.academicYear || "");
+            }
 
             const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('checkInTime', '>=', start), where('checkInTime', '<=', end));
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
@@ -365,10 +365,10 @@ export default function SchoolReportPage() {
                                     <div className="relative">
                                         <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                         <Input 
-                                            placeholder="Contoh: 2025/2026" 
-                                            className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs shadow-none" 
+                                            placeholder="Deteksi otomatis..." 
+                                            className="pl-11 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold text-xs shadow-none opacity-80" 
                                             value={academicYear} 
-                                            onChange={e => setAcademicYear(e.target.value)} 
+                                            readOnly 
                                         />
                                     </div>
                                 </div>
