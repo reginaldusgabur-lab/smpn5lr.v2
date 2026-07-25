@@ -121,7 +121,7 @@ export default function SchoolReportPage() {
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
             const holidays: string[] = (monthlyConfig as any)?.holidays ?? [];
             const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
-            const workingDaysSet = new Set(workingDays.map(d => format(d, 'yyyy-MM-dd')));
+            const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
             const today = startOfDay(new Date());
             const pastWorkingDays = workingDays.filter(day => isBefore(day, today) || isSameDay(day, today));
 
@@ -303,38 +303,39 @@ export default function SchoolReportPage() {
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-10 w-10 rounded-xl shrink-0" 
-                                        onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
-                                        disabled={isReportLoading || currentMonth < minDate}
-                                    >
-                                        <ChevronLeft className="h-5 w-5 text-primary" />
-                                    </Button>
-                                    
-                                    <div className="flex items-center gap-3 px-4">
-                                        <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
-                                            <CalendarDays className="h-4 w-4 text-primary" />
+                                    <div className="flex items-center gap-2">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-10 w-10 rounded-xl shrink-0" 
+                                            onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
+                                            disabled={isReportLoading || currentMonth < minDate}
+                                        >
+                                            <ChevronLeft className="h-5 w-5 text-primary" />
+                                        </Button>
+                                        <div className="flex items-center gap-1.5 px-3 border-l border-muted-foreground/10">
+                                            <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col">
                                                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
-                                                <span className="text-[11px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                                <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
                                             </div>
                                         </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
                                         <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                                             {format(currentMonth, 'MMMM yyyy', { locale: id })}
                                         </span>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-10 w-10 rounded-xl shrink-0" 
+                                            onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
+                                            disabled={isReportLoading || isSameMonth(currentMonth, new Date())}
+                                        >
+                                            <ChevronRight className="h-5 w-5 text-primary" />
+                                        </Button>
                                     </div>
-
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-10 w-10 rounded-xl shrink-0" 
-                                        onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
-                                        disabled={isReportLoading || isSameMonth(currentMonth, new Date())}
-                                    >
-                                        <ChevronRight className="h-5 w-5 text-primary" />
-                                    </Button>
                                 </div>
                             </div>
                             
@@ -378,14 +379,14 @@ export default function SchoolReportPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase">Nama & NIP</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Hadir</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Izin</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Sakit</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Alpa</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">%</TableHead>
-                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase">Aksi</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Nama & NIP</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Hadir</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Izin</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Sakit</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Alpa</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">%</TableHead>
+                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -416,4 +417,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-

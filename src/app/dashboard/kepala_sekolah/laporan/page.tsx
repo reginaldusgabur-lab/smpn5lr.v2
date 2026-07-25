@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -69,7 +68,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             }
             
             setIsLoading(true);
-            
             setAcademicYear(monthlyConfig?.academicYear || schoolConfig.academicYear || "");
 
             const start = startOfMonth(currentMonth);
@@ -230,22 +228,24 @@ function StaffReportView() {
                     
                     <div className="flex w-full items-center justify-center md:justify-end gap-2 md:w-auto">
                          <div className="flex items-center justify-between w-full md:w-auto bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || currentMonth <= minDate}><ChevronLeft className="h-4 w-4 text-primary" /></Button>
-                            
-                            <div className="flex items-center gap-3 px-4">
-                                <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
-                                    <CalendarDays className="h-4 w-4 text-primary" />
+                            <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || currentMonth <= minDate}><ChevronLeft className="h-4 w-4 text-primary" /></Button>
+                                
+                                <div className="flex items-center gap-1.5 px-2 border-l border-muted-foreground/10">
+                                    <CalendarDays className="h-3.5 w-3.5 text-primary/70" />
                                     <div className="flex flex-col">
-                                        <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
-                                        <span className="text-[11px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                        <span className="text-[6px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                        <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
                                 <span className="font-bold text-base text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[100px]">
                                     {format(currentMonth, 'MMMM yyyy', { locale: id })}
                                 </span>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4 text-primary" /></Button>
                             </div>
-
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4 text-primary" /></Button>
                         </div>
                     </div>
                 </div>
@@ -287,4 +287,3 @@ export default function HeadmasterStaffReportPage() {
     if (isUserLoading || isUserDataLoading || userData?.role !== 'kepala_sekolah') return <div className="flex items-center justify-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     return <StaffReportView />;
 }
-

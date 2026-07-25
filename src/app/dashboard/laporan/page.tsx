@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, TrendingUp, RefreshCw, CalendarDays } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -182,44 +182,46 @@ export default function LaporanPage() {
               <CardContent className="p-0 min-h-[400px]">
                 <div className="p-4 flex flex-col items-center justify-center">
                     <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 rounded-xl shrink-0" 
-                            onClick={handlePrevMonth} 
-                            disabled={isLoading || !canGoPrev}
-                        >
-                            <ChevronLeft className="h-5 w-5 text-primary" />
-                        </Button>
-                        
-                        <div className="flex items-center gap-3 px-4 overflow-hidden">
-                            <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
-                                <CalendarDays className="h-4 w-4 text-primary" />
+                        <div className="flex items-center gap-2">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-10 w-10 rounded-xl shrink-0" 
+                                onClick={handlePrevMonth} 
+                                disabled={isLoading || !canGoPrev}
+                            >
+                                <ChevronLeft className="h-5 w-5 text-primary" />
+                            </Button>
+                            
+                            <div className="flex items-center gap-2 px-3 border-l border-muted-foreground/10">
+                                <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col">
                                     <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
-                                    <span className="text-[11px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                    <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
                                 </div>
                             </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
                             {stats && (
-                                <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
+                                <div className="hidden sm:flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
                                     <TrendingUp className="h-4 w-4 text-primary" />
                                     <span className="text-sm font-bold text-primary">{stats.persentase}</span>
                                 </div>
                             )}
-                            <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px] overflow-hidden text-ellipsis">
+                            <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-10 w-10 rounded-xl shrink-0" 
+                                onClick={handleNextMonth} 
+                                disabled={isSameMonth(currentMonth, new Date())}
+                            >
+                                <ChevronRight className="h-5 w-5 text-primary" />
+                            </Button>
                         </div>
-
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 rounded-xl shrink-0" 
-                            onClick={handleNextMonth} 
-                            disabled={isSameMonth(currentMonth, new Date())}
-                        >
-                            <ChevronRight className="h-5 w-5 text-primary" />
-                        </Button>
                     </div>
                 </div>
 
@@ -241,7 +243,7 @@ export default function LaporanPage() {
                                     const isManualLate = record.status === 'Terlambat' && record.checkIn === '-';
                                     return (
                                         <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
-                                            <TableCell className="text-center font-bold text-muted-foreground text-xs">{index + 1}</TableCell>
+                                            <TableCell className="text-center font-bold text-muted-foreground text-sm">{index + 1}</TableCell>
                                             <TableCell className="font-bold text-sm text-foreground whitespace-nowrap">{record.dateString}</TableCell>
                                             <TableCell className="text-center font-mono text-xs font-bold text-foreground">
                                                 {isManualLate ? <span className="text-red-600 font-black">-</span> : record.checkIn}
@@ -275,4 +277,3 @@ export default function LaporanPage() {
     </div>
   );
 }
-
