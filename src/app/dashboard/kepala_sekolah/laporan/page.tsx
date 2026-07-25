@@ -231,11 +231,11 @@ function StaffReportView() {
                             <div className="flex items-center gap-2">
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || currentMonth <= minDate}><ChevronLeft className="h-4 w-4 text-primary" /></Button>
                                 
-                                <div className="flex items-center gap-1.5 px-2 border-l border-muted-foreground/10">
+                                <div className="flex items-center gap-1.5 px-2 border-l border-muted-foreground/10 min-w-max">
                                     <CalendarDays className="h-3.5 w-3.5 text-primary/70" />
-                                    <div className="flex flex-col">
+                                    <div className="flex flex-col min-w-max">
                                         <span className="text-[6px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
-                                        <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                        <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                     </div>
                                 </div>
                             </div>
@@ -262,7 +262,7 @@ function StaffReportView() {
 
                 <TabsContent value="guru"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
                 <TabsContent value="pegawai"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
-                <TabsContent value="kepala_sekolah"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
+                <TabsContent value="kepala_sekolah"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></StaffReportTable>
             </Tabs>
           </CardContent>
         </Card>

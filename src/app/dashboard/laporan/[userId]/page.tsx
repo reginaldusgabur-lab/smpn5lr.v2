@@ -369,11 +369,11 @@ export default function UserReportDetailPage() {
                                         >
                                             <ChevronLeft className="h-5 w-5 text-primary" />
                                         </Button>
-                                        <div className="flex items-center gap-2 px-3 border-l border-muted-foreground/10">
+                                        <div className="flex items-center gap-2 px-3 border-l border-muted-foreground/10 min-w-max">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
-                                            <div className="flex flex-col">
+                                            <div className="flex flex-col min-w-max">
                                                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
-                                                <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                                <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                             </div>
                                         </div>
                                     </div>
