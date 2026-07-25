@@ -40,7 +40,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-// Stabilized LiveClock component to prevent GPU flickering
+// Stabilized LiveClock component with GPU isolation
 const LiveClockUI = memo(() => {
     const [time, setTime] = useState<Date | null>(null);
     useEffect(() => {
@@ -254,7 +254,7 @@ export default function DashboardPage() {
 
         {/* SECTION 1: Personal Attendance (Stabilized GPU Isolation) */}
         {!isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card isolation-isolate" style={{ transform: 'translateZ(0)' }}>
+            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card isolate" style={{ transform: 'translateZ(0)' }}>
                 <CardHeader className="p-6 text-center border-b border-muted-foreground/5">
                     <CardTitle className="text-xl font-normal tracking-tight text-primary">Kehadiran hari ini</CardTitle>
                 </CardHeader>

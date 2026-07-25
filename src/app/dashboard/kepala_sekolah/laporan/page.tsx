@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -30,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, collectionGroup } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, isBefore, eachDayOfInterval, startOfDay, isWithinInterval, setHours, setMinutes, isSameDay } from 'date-fns';
+import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, setHours, setMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -234,7 +233,7 @@ function StaffReportView() {
                                 <div className="flex items-center gap-1.5 px-2 border-l border-muted-foreground/10 min-w-max">
                                     <CalendarDays className="h-3.5 w-3.5 text-primary/70" />
                                     <div className="flex flex-col min-w-max">
-                                        <span className="text-[6px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                        <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
                                         <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                     </div>
                                 </div>
@@ -262,7 +261,7 @@ function StaffReportView() {
 
                 <TabsContent value="guru"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
                 <TabsContent value="pegawai"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
-                <TabsContent value="kepala_sekolah"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></StaffReportTable>
+                <TabsContent value="kepala_sekolah"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
             </Tabs>
           </CardContent>
         </Card>
