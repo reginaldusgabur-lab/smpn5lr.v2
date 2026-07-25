@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -51,7 +51,7 @@ const LiveClockUI = () => {
     if (!time) return <div className="h-16 w-full flex items-center justify-center"><Skeleton className="h-10 w-40" /></div>;
 
     return (
-        <div className="flex flex-col items-center justify-center pt-0 pb-2 w-full">
+        <div className="flex flex-col items-center justify-center py-2 w-full">
             <h2 className="text-4xl font-bold tracking-tight tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
@@ -250,9 +250,9 @@ export default function DashboardPage() {
             </p>
         </div>
 
-        {/* SECTION 1: Personal Attendance (For everyone except Admin) */}
+        {/* SECTION 1: Personal Attendance (Untuk semua personil kecuali Admin Murni) */}
         {!isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
+            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                 <CardHeader className="p-6 text-center border-b border-muted-foreground/5">
                     <CardTitle className="text-xl font-normal tracking-tight text-primary">Kehadiran hari ini</CardTitle>
                 </CardHeader>
@@ -286,7 +286,7 @@ export default function DashboardPage() {
             </Card>
         )}
 
-        {/* SECTION 2: Monitoring Stats (For Admin and Kepsek) */}
+        {/* SECTION 2: Monitoring Stats (Hanya untuk Admin dan Kepala Sekolah) */}
         {(isAdmin || isKepsek) && (
             <div className="w-full space-y-4 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
@@ -332,8 +332,8 @@ export default function DashboardPage() {
             </div>
         )}
 
-        {/* SECTION 3: Personal Monthly Chart (For Staff Only - Not Admin/Kepsek to reduce mobile load) */}
-        {isStaffOnly && (
+        {/* SECTION 3: Personal Monthly Chart (Tampilkan Riwayat Grafik untuk Staf & Siswa) */}
+        {isStaffOnly && !isAdmin && (
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card mt-2">
                 <CardHeader className="p-6 pb-2">
                     <div className="flex items-start justify-between">
