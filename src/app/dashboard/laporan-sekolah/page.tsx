@@ -247,7 +247,7 @@ export default function SchoolReportPage() {
                 columnStyles: { 
                     0: { halign: 'center', cellWidth: 8 }, 
                     1: { halign: 'left', cellWidth: 'auto' }, 
-                    2: { halign: 'left', cellWidth: 38 }, 
+                    2: { halign: 'left', cellWidth: 40 }, 
                     3: { halign: 'center', cellWidth: 18 }, 
                     4: { halign: 'center', cellWidth: 15 }, 
                     5: { halign: 'center', cellWidth: 12 }, 
@@ -291,9 +291,20 @@ export default function SchoolReportPage() {
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
-                <div className="px-4 md:px-0">
-                    <h1 className="text-2xl font-normal tracking-tight">Laporan sekolah</h1>
-                    <p className="text-sm text-muted-foreground">Laporan kehadiran guru/tendik</p>
+                <div className="px-4 md:px-0 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-normal tracking-tight">Laporan sekolah</h1>
+                        <p className="text-sm text-muted-foreground">Laporan kehadiran guru/tendik</p>
+                    </div>
+                    
+                    {/* Academic Year Display aligned with Title */}
+                    <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-xl border border-muted-foreground/10 h-11 min-w-[140px] justify-center transition-all animate-in fade-in slide-in-from-right-4 duration-700">
+                        <CalendarDays className="h-4 w-4 text-primary" />
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none mb-0.5">Tahun Ajaran</span>
+                            <span className="text-sm font-black text-foreground leading-none">{academicYear || "..."}</span>
+                        </div>
+                    </div>
                 </div>
 
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
@@ -307,7 +318,7 @@ export default function SchoolReportPage() {
                                 </div>
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Saring Peran</Label>
                                     <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -331,18 +342,6 @@ export default function SchoolReportPage() {
                                             className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs shadow-none" 
                                             value={searchTerm} 
                                             onChange={e => setSearchTerm(e.target.value)} 
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran</Label>
-                                    <div className="relative">
-                                        <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                        <Input 
-                                            placeholder="Deteksi otomatis..." 
-                                            className="pl-11 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold text-xs shadow-none opacity-80" 
-                                            value={academicYear} 
-                                            readOnly 
                                         />
                                     </div>
                                 </div>
