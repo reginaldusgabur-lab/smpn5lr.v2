@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
@@ -40,7 +40,8 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const LiveClockUI = () => {
+// Stabilized LiveClock component to prevent GPU flickering
+const LiveClockUI = memo(() => {
     const [time, setTime] = useState<Date | null>(null);
     useEffect(() => {
         setTime(new Date());
@@ -51,7 +52,7 @@ const LiveClockUI = () => {
     if (!time) return <div className="h-16 w-full flex items-center justify-center"><Skeleton className="h-10 w-40" /></div>;
 
     return (
-        <div className="flex flex-col items-center justify-center py-2 w-full">
+        <div className="flex flex-col items-center justify-center py-2 w-full min-h-[80px]" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
             <h2 className="text-4xl font-bold tracking-tight tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
@@ -60,7 +61,8 @@ const LiveClockUI = () => {
             </p>
         </div>
     );
-};
+});
+LiveClockUI.displayName = 'LiveClockUI';
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -250,16 +252,16 @@ export default function DashboardPage() {
             </p>
         </div>
 
-        {/* SECTION 1: Personal Attendance (Untuk semua personil kecuali Admin Murni) */}
+        {/* SECTION 1: Personal Attendance (Stabilized GPU Isolation) */}
         {!isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card">
+            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card isolation-isolate" style={{ transform: 'translateZ(0)' }}>
                 <CardHeader className="p-6 text-center border-b border-muted-foreground/5">
                     <CardTitle className="text-xl font-normal tracking-tight text-primary">Kehadiran hari ini</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4 pt-4 text-center">
                     <LiveClockUI />
                     <div className="grid grid-cols-2 gap-4 w-full">
-                        <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center">
+                        <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
                             <div className="flex items-center justify-center gap-2 mb-1.5">
                                 <LogIn className="w-3.5 h-3.5 text-primary" />
                                 <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Masuk</p>
@@ -268,7 +270,7 @@ export default function DashboardPage() {
                                 {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                             </p>
                         </div>
-                        <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center">
+                        <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
                             <div className="flex items-center justify-center gap-2 mb-1.5">
                                 <LogOut className="w-3.5 h-3.5 text-primary" />
                                 <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Pulang</p>
@@ -332,7 +334,7 @@ export default function DashboardPage() {
             </div>
         )}
 
-        {/* SECTION 3: Personal Monthly Chart (Tampilkan Riwayat Grafik untuk Staf & Siswa) */}
+        {/* SECTION 3: Personal Monthly Chart */}
         {isStaffOnly && !isAdmin && (
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card mt-2">
                 <CardHeader className="p-6 pb-2">
