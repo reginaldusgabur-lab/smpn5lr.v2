@@ -301,12 +301,12 @@ export default function SchoolReportPage() {
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
-                            <div className="flex flex-col items-center justify-center gap-4">
-                                <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                            <div className="flex flex-col items-center justify-center">
+                                <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="h-10 w-10 rounded-xl" 
+                                        className="h-10 w-10 rounded-xl shrink-0" 
                                         onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
                                         disabled={isReportLoading || currentMonth < minDate}
                                     >
@@ -329,7 +329,7 @@ export default function SchoolReportPage() {
                                     <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="h-10 w-10 rounded-xl" 
+                                        className="h-10 w-10 rounded-xl shrink-0" 
                                         onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
                                         disabled={isReportLoading || isSameMonth(currentMonth, new Date())}
                                     >
@@ -416,3 +416,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+

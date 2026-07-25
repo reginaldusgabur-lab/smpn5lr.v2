@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -238,7 +239,6 @@ export default function UserReportDetailPage() {
         doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-        // Judul Laporan & Tahun Ajaran
         doc.setFont('times', 'bold').setFontSize(12);
         doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
@@ -358,20 +358,20 @@ export default function UserReportDetailPage() {
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardContent className="p-0">
                         <div className="p-4 space-y-6">
-                            <div className="flex flex-col items-center justify-center gap-4 py-2">
-                                <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                            <div className="flex flex-col items-center justify-center">
+                                <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="h-10 w-10 rounded-xl shadow-none" 
+                                        className="h-10 w-10 rounded-xl shrink-0" 
                                         onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
                                         disabled={isLoading || !canGoPrev}
                                     >
                                         <ChevronLeft className="h-5 w-5 text-primary" />
                                     </Button>
                                     
-                                    <div className="flex items-center gap-3 px-4">
-                                        <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                    <div className="flex items-center gap-3 px-4 overflow-hidden">
+                                        <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
                                             <CalendarDays className="h-4 w-4 text-primary" />
                                             <div className="flex flex-col">
                                                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
@@ -379,12 +379,12 @@ export default function UserReportDetailPage() {
                                             </div>
                                         </div>
                                         {stats && (
-                                            <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                            <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
                                                 <TrendingUp className="h-4 w-4 text-primary" />
                                                 <span className="text-sm font-bold text-primary">{stats.persentase}</span>
                                             </div>
                                         )}
-                                        <span className="font-bold text-xl text-primary capitalize whitespace-nowrap min-w-[120px] text-center">
+                                        <span className="font-bold text-xl text-primary capitalize whitespace-nowrap min-w-[120px] text-center overflow-hidden text-ellipsis">
                                             {format(currentMonth, 'MMMM yyyy', { locale: id })}
                                         </span>
                                     </div>
@@ -392,7 +392,7 @@ export default function UserReportDetailPage() {
                                     <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="h-10 w-10 rounded-xl shadow-none" 
+                                        className="h-10 w-10 rounded-xl shrink-0" 
                                         onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
                                         disabled={isLoading || !canGoNext}
                                     >
@@ -502,3 +502,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+

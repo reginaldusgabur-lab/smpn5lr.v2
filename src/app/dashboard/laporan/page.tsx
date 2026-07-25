@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, TrendingUp, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, RefreshCw, CalendarDays } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -49,6 +50,7 @@ export default function LaporanPage() {
   const [monthlyReportData, setMonthlyReportData] = useState<ReportItem[]>([]);
   const [stats, setStats] = useState<{ persentase: string } | null>(null);
   const [isReportLoading, setIsReportLoading] = useState(true);
+  const [academicYear, setAcademicYear] = useState("");
 
   const schoolConfigRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -88,6 +90,12 @@ export default function LaporanPage() {
 
         setMonthlyReportData(formattedReport);
         setInCache(cacheKey, formattedReport);
+
+        const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
+        const mSnap = await getDoc(monthlyConfigRef);
+        const mData = mSnap.exists() ? mSnap.data() : {};
+        setAcademicYear(mData.academicYear || schoolConfig.academicYear || "");
+
     } catch (error) {
         console.error("Failed to fetch monthly report:", error);
         toast({ title: "Gagal Memuat Laporan", description: "Terjadi kesalahan saat mengambil data.", variant: "destructive" });
@@ -141,7 +149,7 @@ export default function LaporanPage() {
       if (s === 'sakit') return 'bg-orange-50 text-white border-none shadow-sm';
       if (s === 'izin' || s.includes('pribadi')) return 'bg-blue-800 text-white border-none shadow-sm';
       if (s === 'hadir') return 'bg-green-600 text-white border-none shadow-sm';
-      if (s === 'terlambat') return 'bg-yellow-500 text-white border-none shadow-sm';
+      if (s === 'terlambat') return 'bg-yellow-50 text-white border-none shadow-sm';
       return 'bg-primary text-white border-none shadow-sm';
   };
 
@@ -172,26 +180,33 @@ export default function LaporanPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0 min-h-[400px]">
-                <div className="p-4 flex flex-col items-center justify-center gap-4">
-                    <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                <div className="p-4 flex flex-col items-center justify-center">
+                    <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
+                            className="h-10 w-10 rounded-xl shrink-0" 
                             onClick={handlePrevMonth} 
                             disabled={isLoading || !canGoPrev}
                         >
                             <ChevronLeft className="h-5 w-5 text-primary" />
                         </Button>
                         
-                        <div className="flex items-center gap-3 px-4">
+                        <div className="flex items-center gap-3 px-4 overflow-hidden">
+                            <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
+                                <CalendarDays className="h-4 w-4 text-primary" />
+                                <div className="flex flex-col">
+                                    <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                    <span className="text-[11px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                </div>
+                            </div>
                             {stats && (
-                                <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
                                     <TrendingUp className="h-4 w-4 text-primary" />
                                     <span className="text-sm font-bold text-primary">{stats.persentase}</span>
                                 </div>
                             )}
-                            <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
+                            <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px] overflow-hidden text-ellipsis">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
                         </div>
@@ -199,7 +214,7 @@ export default function LaporanPage() {
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
+                            className="h-10 w-10 rounded-xl shrink-0" 
                             onClick={handleNextMonth} 
                             disabled={isSameMonth(currentMonth, new Date())}
                         >
@@ -260,3 +275,4 @@ export default function LaporanPage() {
     </div>
   );
 }
+

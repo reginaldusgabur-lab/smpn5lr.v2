@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -69,7 +70,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             
             setIsLoading(true);
             
-            // Set academic year based on hierarchy
             setAcademicYear(monthlyConfig?.academicYear || schoolConfig.academicYear || "");
 
             const start = startOfMonth(currentMonth);
@@ -229,8 +229,8 @@ function StaffReportView() {
                     <TabsList className="overflow-x-auto whitespace-nowrap"><TabsTrigger value="guru">Data Guru</TabsTrigger><TabsTrigger value="pegawai">Data Pegawai</TabsTrigger><TabsTrigger value="kepala_sekolah">Kepala Sekolah</TabsTrigger></TabsList>
                     
                     <div className="flex w-full items-center justify-center md:justify-end gap-2 md:w-auto">
-                         <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || currentMonth <= minDate}><ChevronLeft className="h-4 w-4 text-primary" /></Button>
+                         <div className="flex items-center justify-between w-full md:w-auto bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || currentMonth <= minDate}><ChevronLeft className="h-4 w-4 text-primary" /></Button>
                             
                             <div className="flex items-center gap-3 px-4">
                                 <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
@@ -245,7 +245,7 @@ function StaffReportView() {
                                 </span>
                             </div>
 
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4 text-primary" /></Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4 text-primary" /></Button>
                         </div>
                     </div>
                 </div>
@@ -287,3 +287,4 @@ export default function HeadmasterStaffReportPage() {
     if (isUserLoading || isUserDataLoading || userData?.role !== 'kepala_sekolah') return <div className="flex items-center justify-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     return <StaffReportView />;
 }
+
