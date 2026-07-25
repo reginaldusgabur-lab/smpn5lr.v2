@@ -29,7 +29,7 @@ import {
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
-} from "@/accordion";
+} from "@/components/ui/accordion";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -296,7 +297,7 @@ export default function SchoolReportPage() {
 
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardHeader className="p-4 border-b border-muted-foreground/10 text-primary">
-                        <CardTitle className="font-bold text-xs uppercase">Rekapitulasi kehadiran</CardTitle>
+                        <CardTitle className="font-bold text-xs uppercase">Laporan Kehadiran Guru/Tendik</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
