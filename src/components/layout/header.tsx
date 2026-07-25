@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
@@ -22,24 +21,23 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { 
   Settings, 
   ShieldAlert, 
   BookOpen, 
   UserCircle, 
-  TrendingUp, 
   QrCode, 
   FileText, 
   Zap, 
-  AlertTriangle, 
   Power, 
   HelpCircle,
-  CheckCircle2,
   Info,
   MapPin,
-  Lock
+  Lock,
+  Camera,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { ModeToggle } from '@/components/theme-toggle';
@@ -186,9 +184,9 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                   <BookOpen className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">E-SPENLI FAQ</DialogTitle>
+                  <DialogTitle className="text-2xl font-bold tracking-tight text-primary">Panduan & FAQ E-SPENLI</DialogTitle>
                   <DialogDescription className="font-bold text-xs text-muted-foreground uppercase tracking-widest">
-                    Pusat Bantuan & Panduan Pengguna
+                    Pusat bantuan pengguna aplikasi
                   </DialogDescription>
                 </div>
               </div>
@@ -201,36 +199,46 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                 <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
                   <div className="flex items-center gap-3 text-left">
                     <Info className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-bold text-sm">Apa itu aplikasi E-SPENLI?</span>
+                    <span className="font-bold text-sm">Apa kegunaan aplikasi E-SPENLI?</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
-                  E-SPENLI adalah sistem absensi digital modern yang dirancang khusus untuk SMPN 5 Langke Rembong. Aplikasi ini bertujuan untuk meningkatkan kedisiplinan, akurasi data kehadiran, dan transparansi laporan bagi seluruh warga sekolah.
+                  E-SPENLI adalah sistem absensi digital modern untuk SMPN 5 Langke Rembong. Aplikasi ini mendokumentasikan kehadiran secara real-time berdasarkan QR Code, lokasi GPS, dan waktu absensi untuk menjamin akurasi data staf dan guru.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-2" className="border-none mb-2">
                 <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
                   <div className="flex items-center gap-3 text-left">
-                    <QrCode className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-bold text-sm">Bagaimana cara melakukan absensi?</span>
+                    <Camera className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-bold text-sm">Masalah izin kamera (Camera blocked)?</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl space-y-3">
                   <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-                    1. Masuk ke halaman <strong>Absen</strong>.<br/>
-                    2. Izinkan aplikasi mengakses kamera HP Anda.<br/>
-                    3. Arahkan kamera ke QR Code resmi yang disediakan sekolah.<br/>
-                    4. Tunggu hingga muncul notifikasi sukses berwarna hijau.
+                    Jika kamera tidak muncul, kemungkinan besar Anda telah menolak izin akses kamera sebelumnya. Untuk mengatasinya:
                   </p>
-                  <div className="p-3 bg-amber-500/10 rounded-xl flex gap-3">
-                    <Zap className="h-4 w-4 text-amber-600 shrink-0" />
-                    <p className="text-[10px] font-bold text-amber-700">Tips: Buka aplikasi 5 menit sebelum sampai sekolah agar data ter-load lebih cepat saat proses scan.</p>
-                  </div>
+                  <ul className="text-[11px] font-bold text-muted-foreground list-disc pl-4 space-y-1">
+                    <li>Klik ikon "Gembok" di bilah alamat browser (URL).</li>
+                    <li>Pastikan "Kamera" dalam posisi Izinkan (Allowed).</li>
+                    <li>Segarkan (Refresh) halaman dan coba scan kembali.</li>
+                  </ul>
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-3" className="border-none mb-2">
+                <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
+                  <div className="flex items-center gap-3 text-left">
+                    <Clock className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-bold text-sm">Kendala batas waktu absensi?</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
+                  Tombol absen hanya akan muncul saat jadwal masuk (pagi) atau jadwal pulang (sore) telah dibuka oleh Admin. Jika Anda berada di luar jendela waktu tersebut, aplikasi akan menampilkan pesan "Batas jam masuk berakhir" atau "Belum waktu jam pulang". Pastikan Anda melakukan absen tepat waktu.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-4" className="border-none mb-2">
                 <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
                   <div className="flex items-center gap-3 text-left">
                     <MapPin className="h-4 w-4 text-primary shrink-0" />
@@ -238,31 +246,36 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
-                  Pastikan <strong>GPS/Layanan Lokasi</strong> di HP Anda sudah aktif dengan akurasi tinggi. Jika masih gagal, cobalah untuk keluar sejenak ke tempat yang lebih terbuka (tidak terhalang bangunan beton tebal) agar sinyal satelit GPS lebih kuat mengunci posisi Anda dalam radius sekolah.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4" className="border-none mb-2">
-                <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
-                  <div className="flex items-center gap-3 text-left">
-                    <FileText className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-bold text-sm">Bagaimana cara mengajukan izin/sakit?</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
-                  Gunakan menu <strong>Izin</strong>. Pilih tanggal (Hari ini atau Besok), tentukan kategori (Sakit/Izin/Dinas), dan tuliskan alasan yang jelas. Admin atau Kepala Sekolah akan meninjau pengajuan Anda. Status persetujuan dapat dilihat secara real-time di halaman Laporan.
+                  Aplikasi mewajibkan Anda berada dalam radius sekolah. Jika gagal, pastikan GPS di HP aktif. Cobalah untuk berpindah ke area yang lebih terbuka agar sinyal satelit dapat mengunci posisi Anda dengan lebih akurat.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-5" className="border-none mb-2">
                 <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
                   <div className="flex items-center gap-3 text-left">
+                    <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-bold text-sm">Apa saja fitur unggulan lainnya?</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl space-y-3">
+                  <ul className="text-[11px] font-bold text-muted-foreground list-disc pl-4 space-y-1">
+                    <li><strong>Laporan PDF</strong>: Unduh riwayat kehadiran pribadi dalam format dokumen resmi.</li>
+                    <li><strong>Grafik Statistik</strong>: Pantau performa kehadiran bulanan Anda secara visual.</li>
+                    <li><strong>Izin Online</strong>: Ajukan sakit atau izin dinas langsung dari HP tanpa kertas.</li>
+                    <li><strong>Kutipan AI</strong>: Dapatkan pesan motivasi unik setiap kali berhasil melakukan absensi.</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-6" className="border-none mb-2">
+                <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
+                  <div className="flex items-center gap-3 text-left">
                     <Lock className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-bold text-sm">Bagaimana jika saya lupa kata sandi?</span>
+                    <span className="font-bold text-sm">Lupa kata sandi?</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
-                  Demi keamanan, Anda disarankan untuk segera menghubungi <strong>Administrator Sistem</strong> di kantor sekolah untuk dilakukan reset kata sandi secara manual. Setelah mendapatkan sandi baru, segera ganti dengan sandi pribadi Anda di menu Pengaturan.
+                  Untuk alasan keamanan, silakan hubungi Administrator Sistem di kantor sekolah untuk mereset kata sandi Anda secara manual. Setelah masuk, segera ganti dengan sandi pribadi di menu Pengaturan.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
