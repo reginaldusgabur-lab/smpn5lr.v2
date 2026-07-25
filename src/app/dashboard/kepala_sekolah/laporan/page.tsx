@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -41,6 +42,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
 
     const [summary, setSummary] = useState<{ [key: string]: any[] }>({});
     const [isLoading, setIsLoading] = useState(true);
+    const [academicYear, setAcademicYear] = useState("");
 
     const usersQuery = useMemoFirebase(() => 
         query(
@@ -66,6 +68,10 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             }
             
             setIsLoading(true);
+            
+            // Set academic year based on hierarchy
+            setAcademicYear(monthlyConfig?.academicYear || schoolConfig.academicYear || "");
+
             const start = startOfMonth(currentMonth);
             const end = endOfMonth(currentMonth);
 
@@ -141,7 +147,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
         fetchAllData();
     }, [firestore, user, users, schoolConfig, monthlyConfig, currentMonth, isUsersLoading, isConfigLoading, isMonthlyConfigLoading]);
 
-    return { summary, isLoading, schoolConfig };
+    return { summary, isLoading, academicYear, schoolConfig };
 }
 
 const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLoading: boolean, currentMonth: Date }) => {
@@ -195,14 +201,7 @@ function StaffReportView() {
   const [activeTab, setActiveTab] = useState('guru');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
-  const [academicYear, setAcademicYear] = useState('');
-  const { summary, isLoading, schoolConfig } = useStaffAttendanceSummary(currentMonth);
-
-  useEffect(() => {
-    if (schoolConfig?.academicYear) {
-      setAcademicYear(schoolConfig.academicYear);
-    }
-  }, [schoolConfig]);
+  const { summary, isLoading, academicYear, schoolConfig } = useStaffAttendanceSummary(currentMonth);
 
   const minDate = new Date(2026, 0, 1);
   const filteredData = useMemo(() => (summary[activeTab] || []).filter((u: any) => u.name.toLowerCase().includes(searchQuery.toLowerCase())), [summary, activeTab, searchQuery]);
@@ -228,26 +227,35 @@ function StaffReportView() {
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                     <TabsList className="overflow-x-auto whitespace-nowrap"><TabsTrigger value="guru">Data Guru</TabsTrigger><TabsTrigger value="pegawai">Data Pegawai</TabsTrigger><TabsTrigger value="kepala_sekolah">Kepala Sekolah</TabsTrigger></TabsList>
-                    <div className="flex w-full items-center gap-2 md:w-auto">
-                        <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={currentMonth <= minDate}><ChevronLeft className="h-4 w-4" /></Button>
-                        <span className="font-semibold text-center w-32 capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                        <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4" /></Button>
+                    
+                    <div className="flex w-full items-center justify-center md:justify-end gap-2 md:w-auto">
+                         <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || currentMonth <= minDate}><ChevronLeft className="h-4 w-4 text-primary" /></Button>
+                            
+                            <div className="flex items-center gap-3 px-4">
+                                <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                    <CalendarDays className="h-4 w-4 text-primary" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                        <span className="text-[11px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                    </div>
+                                </div>
+                                <span className="font-bold text-base text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[100px]">
+                                    {format(currentMonth, 'MMMM yyyy', { locale: id })}
+                                </span>
+                            </div>
+
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4 text-primary" /></Button>
+                        </div>
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5 mb-6">
-                    <div className="space-y-1.5 md:col-span-2">
+                <div className="bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5 mb-6">
+                    <div className="space-y-1.5 max-w-md">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari Nama</Label>
                         <div className="relative">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                            <Input placeholder="Cari nama..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran</Label>
-                        <div className="relative">
-                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                            <Input placeholder="Tahun Ajaran" className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
+                            <Input placeholder="Cari nama personil..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                         </div>
                     </div>
                 </div>

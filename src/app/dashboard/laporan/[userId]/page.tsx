@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -58,29 +59,30 @@ export default function UserReportDetailPage() {
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
 
-    useEffect(() => {
-        if (schoolConfigData?.academicYear) {
-            setAcademicYear(schoolConfigData.academicYear);
-        }
-    }, [schoolConfigData]);
-
     const fetchData = useCallback(async () => {
         if (!firestore || !userId || !schoolConfigData || !currentUser || !isMounted.current) return;
         setIsLoading(true);
         setError(null);
         try {
             const userRef = doc(firestore, 'users', userId);
-            const [userSnap, reportData, reportStats] = await Promise.all([
+            const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
+            
+            const [userSnap, reportData, reportStats, monthlyConfigSnap] = await Promise.all([
                 getDoc(userRef),
                 fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData),
-                calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })
+                calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) }),
+                getDoc(monthlyConfigRef)
             ]);
 
             if (!userSnap.exists()) throw new Error('Profil staf tidak ditemukan.');
+            
             if (isMounted.current) {
                 setUserData(userSnap.data());
                 setMonthlyReportData(reportData);
                 setStats(reportStats);
+                
+                const mData = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
+                setAcademicYear(mData.academicYear || schoolConfigData.academicYear || "");
             }
         } catch (err: any) {
             console.error("Fetch Data Error:", err);
@@ -92,9 +94,9 @@ export default function UserReportDetailPage() {
 
     useEffect(() => {
         isMounted.current = true;
-        fetchData();
+        if (schoolConfigData) fetchData();
         return () => { isMounted.current = false; };
-    }, [fetchData]);
+    }, [fetchData, schoolConfigData]);
 
     const getDailyOutStart = useCallback((date: Date) => {
         if (!schoolConfigData) return '14:00';
@@ -357,30 +359,50 @@ export default function UserReportDetailPage() {
                     <CardContent className="p-0">
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4 py-2">
-                                <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shadow-none" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 rounded-xl shadow-none" 
+                                        onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
+                                        disabled={isLoading || !canGoPrev}
+                                    >
+                                        <ChevronLeft className="h-5 w-5 text-primary" />
+                                    </Button>
+                                    
                                     <div className="flex items-center gap-3 px-4">
-                                        {stats && <span className="text-sm font-bold text-primary border-r border-muted-foreground/20 pr-3">{stats.persentase}</span>}
-                                        <span className="font-bold text-xl text-primary capitalize whitespace-nowrap min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                        <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                            <CalendarDays className="h-4 w-4 text-primary" />
+                                            <div className="flex flex-col">
+                                                <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                                <span className="text-[11px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                            </div>
+                                        </div>
+                                        {stats && (
+                                            <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                                <TrendingUp className="h-4 w-4 text-primary" />
+                                                <span className="text-sm font-bold text-primary">{stats.persentase}</span>
+                                            </div>
+                                        )}
+                                        <span className="font-bold text-xl text-primary capitalize whitespace-nowrap min-w-[120px] text-center">
+                                            {format(currentMonth, 'MMMM yyyy', { locale: id })}
+                                        </span>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shadow-none" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 rounded-xl shadow-none" 
+                                        onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
+                                        disabled={isLoading || !canGoNext}
+                                    >
+                                        <ChevronRight className="h-5 w-5 text-primary" />
+                                    </Button>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5 max-w-2xl mx-auto">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran</Label>
-                                    <div className="relative">
-                                        <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                        <Input 
-                                            placeholder="Contoh: 2025/2026" 
-                                            className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs shadow-none" 
-                                            value={academicYear} 
-                                            onChange={e => setAcademicYear(e.target.value)} 
-                                        />
-                                    </div>
-                                </div>
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs uppercase tracking-widest shadow-none active:scale-95 transition-all">
+                            <div className="flex justify-end max-w-2xl mx-auto">
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs uppercase tracking-widest shadow-none active:scale-95 transition-all">
                                     {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
                                 </Button>
                             </div>

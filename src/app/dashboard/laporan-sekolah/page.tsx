@@ -296,25 +296,45 @@ export default function SchoolReportPage() {
                         <h1 className="text-2xl font-normal tracking-tight">Laporan sekolah</h1>
                         <p className="text-sm text-muted-foreground">Laporan kehadiran guru/tendik</p>
                     </div>
-                    
-                    {/* Academic Year Display aligned with Title */}
-                    <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-xl border border-muted-foreground/10 h-11 min-w-[140px] justify-center transition-all animate-in fade-in slide-in-from-right-4 duration-700">
-                        <CalendarDays className="h-4 w-4 text-primary" />
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none mb-0.5">Tahun Ajaran</span>
-                            <span className="text-sm font-black text-foreground leading-none">{academicYear || "..."}</span>
-                        </div>
-                    </div>
                 </div>
 
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4">
-                                <div className="flex items-center bg-muted/40 rounded-xl border border-muted-foreground/5 p-1">
-                                    <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                                    <span className="w-40 text-center font-bold text-xl text-primary tracking-tight">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+                                <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 rounded-xl" 
+                                        onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
+                                        disabled={isReportLoading || currentMonth < minDate}
+                                    >
+                                        <ChevronLeft className="h-5 w-5 text-primary" />
+                                    </Button>
+                                    
+                                    <div className="flex items-center gap-3 px-4">
+                                        <div className="flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20">
+                                            <CalendarDays className="h-4 w-4 text-primary" />
+                                            <div className="flex flex-col">
+                                                <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                                <span className="text-[11px] font-black text-primary leading-none mt-0.5">{academicYear || "..."}</span>
+                                            </div>
+                                        </div>
+                                        <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
+                                            {format(currentMonth, 'MMMM yyyy', { locale: id })}
+                                        </span>
+                                    </div>
+
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 rounded-xl" 
+                                        onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
+                                        disabled={isReportLoading || isSameMonth(currentMonth, new Date())}
+                                    >
+                                        <ChevronRight className="h-5 w-5 text-primary" />
+                                    </Button>
                                 </div>
                             </div>
                             
