@@ -167,13 +167,15 @@ export default function SchoolReportPage() {
                 });
 
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const persentase = Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%';
+                const persentaseNum = Math.min((points / (workingDays.length || 1)) * 100, 100);
+                const persentase = persentaseNum.toFixed(1) + '%';
 
                 return {
                     uid: u.id, name: (u as any).name || '', nip: (u as any).nip || '-',
                     position: (u as any).position || '-', role: (u as any).role || '',
                     sequenceNumber: (u as any).sequenceNumber || null,
-                    totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa, persentase
+                    totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa, 
+                    persentaseNum, persentase
                 };
             });
 
@@ -196,7 +198,6 @@ export default function SchoolReportPage() {
 
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
 
-    // LOGIKA GRAFIK & HIGHLIGHT
     const statsData = useMemo(() => {
         const totals = filteredReports.reduce((acc, curr) => {
             acc.hadir += curr.totalHadir;
@@ -213,19 +214,25 @@ export default function SchoolReportPage() {
             { name: 'Alpa', value: totals.alpa, color: '#ef4444' },
         ].filter(item => item.value > 0);
 
-        // Cari yang paling rajin (persentase tertinggi)
-        const sortedByPercent = [...filteredReports].sort((a, b) => parseFloat(b.persentase) - parseFloat(a.persentase));
-        const rajin = sortedByPercent[0];
+        // Top 3 Paling Rajin
+        const topRajin = [...filteredReports]
+            .sort((a, b) => b.persentaseNum - a.persentaseNum)
+            .slice(0, 3)
+            .filter(u => u.persentaseNum > 0);
 
-        // Cari yang paling sering sakit
-        const sortedBySakit = [...filteredReports].sort((a, b) => b.totalSakit - a.totalSakit);
-        const sakit = sortedBySakit[0]?.totalSakit > 0 ? sortedBySakit[0] : null;
+        // Top 3 Sering Sakit
+        const topSakit = [...filteredReports]
+            .sort((a, b) => b.totalSakit - a.totalSakit)
+            .slice(0, 3)
+            .filter(u => u.totalSakit > 0);
 
-        // Cari yang paling sering alpa
-        const sortedByAlpa = [...filteredReports].sort((a, b) => b.totalAlpa - a.totalAlpa);
-        const alpa = sortedByAlpa[0]?.totalAlpa > 0 ? sortedByAlpa[0] : null;
+        // Top 3 Sering Alpa
+        const topAlpa = [...filteredReports]
+            .sort((a, b) => b.totalAlpa - a.totalAlpa)
+            .slice(0, 3)
+            .filter(u => u.totalAlpa > 0);
 
-        return { pie, rajin, sakit, alpa };
+        return { pie, topRajin, topSakit, topAlpa };
     }, [filteredReports]);
 
     const handleDownloadPdf = async () => {
@@ -447,7 +454,7 @@ export default function SchoolReportPage() {
                     </CardContent>
                 </Card>
 
-                {/* SEKSI GRAFIK & HIGHLIGHT */}
+                {/* SEKSI GRAFIK & HIGHLIGHT TERPERBAIKI (LEBIH DARI 1) */}
                 {!isReportLoading && filteredReports.length > 0 && (
                     <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
@@ -462,7 +469,7 @@ export default function SchoolReportPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                                 {/* Pie Chart */}
                                 <div className="h-[300px] w-full flex flex-col items-center">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -493,41 +500,62 @@ export default function SchoolReportPage() {
                                     </ResponsiveContainer>
                                 </div>
 
-                                {/* Highlights Section */}
+                                {/* Highlights Section (Top 3) */}
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex items-center gap-4">
-                                        <div className="p-3 bg-green-500/10 rounded-xl">
+                                    {/* Top Rajin */}
+                                    <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex items-start gap-4">
+                                        <div className="p-3 bg-green-500/10 rounded-xl shrink-0">
                                             <Award className="h-6 w-6 text-green-600" />
                                         </div>
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-green-600/60">Paling Rajin</p>
-                                            <h4 className="font-bold text-sm text-foreground">{statsData.rajin?.name || '-'}</h4>
-                                            <p className="text-[10px] font-bold text-muted-foreground">Persentase: {statsData.rajin?.persentase}</p>
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-green-600/60">Paling Rajin (Top 3)</p>
+                                            <div className="mt-2 space-y-1.5">
+                                                {statsData.topRajin.map((u, idx) => (
+                                                    <div key={u.uid} className="flex justify-between items-center group">
+                                                        <span className="font-bold text-sm text-foreground truncate max-w-[180px] group-hover:text-green-600 transition-colors">{idx + 1}. {u.name}</span>
+                                                        <span className="text-[10px] font-black text-green-600 shrink-0 ml-2">{u.persentase}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {statsData.sakit && (
-                                        <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-center gap-4">
-                                            <div className="p-3 bg-orange-500/10 rounded-xl">
+                                    {/* Top Sakit */}
+                                    {statsData.topSakit.length > 0 && (
+                                        <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-start gap-4">
+                                            <div className="p-3 bg-orange-500/10 rounded-xl shrink-0">
                                                 <Thermometer className="h-6 w-6 text-orange-600" />
                                             </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Sering Sakit</p>
-                                                <h4 className="font-bold text-sm text-foreground">{statsData.sakit.name}</h4>
-                                                <p className="text-[10px] font-bold text-muted-foreground">Total: {statsData.sakit.totalSakit} hari</p>
+                                            <div className="flex-1">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Sering Sakit (Top 3)</p>
+                                                <div className="mt-2 space-y-1.5">
+                                                    {statsData.topSakit.map((u, idx) => (
+                                                        <div key={u.uid} className="flex justify-between items-center group">
+                                                            <span className="font-bold text-sm text-foreground truncate max-w-[180px] group-hover:text-orange-600 transition-colors">{idx + 1}. {u.name}</span>
+                                                            <span className="text-[10px] font-black text-orange-600 shrink-0 ml-2">{u.totalSakit} hari</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
 
-                                    {statsData.alpa && (
-                                        <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-center gap-4">
-                                            <div className="p-3 bg-red-500/10 rounded-xl">
+                                    {/* Top Alpa */}
+                                    {statsData.topAlpa.length > 0 && (
+                                        <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-start gap-4">
+                                            <div className="p-3 bg-red-500/10 rounded-xl shrink-0">
                                                 <AlertCircle className="h-6 w-6 text-red-600" />
                                             </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-red-600/60">Sering Alpa</p>
-                                                <h4 className="font-bold text-sm text-foreground">{statsData.alpa.name}</h4>
-                                                <p className="text-[10px] font-bold text-muted-foreground">Total: {statsData.alpa.totalAlpa} hari</p>
+                                            <div className="flex-1">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-red-600/60">Sering Alpa (Top 3)</p>
+                                                <div className="mt-2 space-y-1.5">
+                                                    {statsData.topAlpa.map((u, idx) => (
+                                                        <div key={u.uid} className="flex justify-between items-center group">
+                                                            <span className="font-bold text-sm text-foreground truncate max-w-[180px] group-hover:text-red-600 transition-colors">{idx + 1}. {u.name}</span>
+                                                            <span className="text-[10px] font-black text-red-600 shrink-0 ml-2">{u.totalAlpa} hari</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
