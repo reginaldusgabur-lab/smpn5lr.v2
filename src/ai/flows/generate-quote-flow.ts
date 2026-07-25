@@ -35,7 +35,7 @@ const generateQuoteFlow = ai.defineFlow(
     const jenisAbsen = input.attendanceType === 'in' ? 'Mulai Tugas (Pagi)' : 'Selesai Tugas (Sore/Pulang)';
     const peran = (input.category || 'Guru').replace('_', ' ');
     
-    // Daftar topik mikro untuk variasi prompt yang cerdas
+    // Daftar topik mikro untuk variasi prompt yang cerdas dan relatable
     const topics = [
       "Drama sinkronisasi Dapodik yang tidak kunjung biru",
       "Misteri pulpen di meja kantor yang sering pindah alam",
@@ -64,7 +64,7 @@ const generateQuoteFlow = ai.defineFlow(
       "Koleksi tumbler di atas meja yang mulai menyerupai toko pecah belah"
     ];
     
-    // Memilih topik berdasarkan seed untuk menjamin variasi
+    // Memilih topik berdasarkan seed untuk menjamin variasi lintas pengguna dan sesi
     const selectedTopic = topics[(input.seed || 0) % topics.length];
 
     try {
@@ -76,18 +76,17 @@ KONTEKS:
 - Pengguna: ${peran}
 - Waktu: ${jenisAbsen}
 - Topik Mikro Khusus Hari Ini: ${selectedTopic}
-- Seed Sesi: ${input.seed}
+- Seed Sesi Unik: ${input.seed}
 
 MISI:
-Buat kutipan 1-2 kalimat yang SANGAT SPESIFIK untuk peran ${peran}.
-- WAJIB masukkan unsur HUMOR ringan atau sindiran lucu seputar profesi (Dapodik, RPP, spidol, bel, absen, meja kantor, dll).
-- JANGAN gunakan kata-kata motivasi klise. Gunakan gaya bahasa "curhatan cerdas" yang relatable.
-- BAHASA: Indonesia yang santai, natural, hangat, tidak kaku (seperti ngobrol akrab di ruang guru).
+Buat kutipan 1-2 kalimat pendek yang SANGAT SPESIFIK untuk peran ${peran}.
+- WAJIB masukkan unsur HUMOR ringan atau sindiran lucu seputar profesi (Dapodik, RPP, spidol macet, bel sekolah, absen, meja kantor berantakan, dll).
+- JANGAN gunakan kata-kata motivasi klise seperti "Masa depan ada di tanganmu". Gunakan gaya bahasa "curhatan cerdas" yang hangat dan akrab.
+- BAHASA: Indonesia yang santai, natural, seperti sedang mengobrol akrab di ruang guru.
 
 PENTING:
-- Jangan sebutkan nama tokoh manual.
-- Hasil harus UNIK dan berbeda dari sebelumnya berdasarkan seed: ${input.seed}.
-- Fokus pada elemen ${selectedTopic}.
+- Jangan sebutkan nama tokoh.
+- Hasil harus UNIK dan berbeda dari hasil sebelumnya. Manfaatkan elemen ${selectedTopic} sebagai bumbu utama.
 
 OUTPUT:
 Berikan JSON dengan field 'quote' and 'author' (isi author dengan "AI E-SPENLI").`,

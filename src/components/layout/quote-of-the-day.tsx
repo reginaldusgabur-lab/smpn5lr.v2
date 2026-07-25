@@ -32,6 +32,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   const isFetched = useRef(false);
 
   useEffect(() => {
+    // Jalankan hanya jika parameter tersedia dan belum di-fetch untuk sesi ini
     if (!category || !attendanceType || isFetched.current) {
       if (!category || !attendanceType) setIsLoading(false);
       return;
@@ -41,7 +42,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       setIsLoading(true);
       isFetched.current = true;
       try {
-        // Menghasilkan seed yang sangat unik berdasarkan waktu milidetik
+        // Menghasilkan seed yang sangat unik berdasarkan waktu milidetik dan angka acak besar
         const seedValue = Math.floor(Date.now() + Math.random() * 1000000);
         
         const response = await fetch('/api/quote', {
@@ -61,6 +62,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('AI_FAILURE');
         }
       } catch (e: any) {
+        // Fallback jika AI gagal merespon
         const roleKey = (category || 'default').toLowerCase();
         const fallbackList = FALLBACK_QUOTES[roleKey] || FALLBACK_QUOTES.default;
         setQuote(fallbackList[Math.floor(Math.random() * fallbackList.length)]);
@@ -74,14 +76,14 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   return (
     <div className="mt-2 pt-4 border-t border-border/10">
       <div className="flex items-center justify-center text-[9px] font-bold mb-3 text-muted-foreground/60 uppercase tracking-[0.2em]">
-        <Sparkles className="h-3 w-3 mr-2 animate-pulse" />
+        <Sparkles className="h-3 w-3 mr-2 animate-pulse text-amber-500" />
         Kutipan Hari Ini
       </div>
       <div className="text-center min-h-[70px] flex flex-col items-center justify-center px-2">
         {isLoading ? (
           <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-[9px] font-black uppercase tracking-widest">Memuat kutipan...</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Meracik inspirasi...</span>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-1000 ease-out w-full space-y-3">
@@ -89,7 +91,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
               "{quote?.quote}"
             </blockquote>
             <p className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/40">
-              — AI E-SPENLI
+              — {quote?.author || "AI E-SPENLI"}
             </p>
           </div>
         )}
