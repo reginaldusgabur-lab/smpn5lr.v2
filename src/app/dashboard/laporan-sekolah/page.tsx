@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -206,7 +205,6 @@ export default function SchoolReportPage() {
             const margin = 14;
             const config = schoolConfigData || ({} as any);
 
-            // Kop Surat
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
             doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
@@ -217,7 +215,6 @@ export default function SchoolReportPage() {
             doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
             doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
 
-            // Judul Laporan
             doc.setFont('times', 'bold').setFontSize(12);
             doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
             doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
@@ -245,34 +242,9 @@ export default function SchoolReportPage() {
                 body: tableRows,
                 theme: 'grid',
                 margin: { bottom: 35 },
-                styles: { 
-                  font: 'times', 
-                  fontSize: 10, 
-                  cellPadding: 1.5,
-                  valign: 'middle',
-                  textColor: [0, 0, 0],
-                  lineColor: [200, 200, 200], 
-                  lineWidth: 0.1
-                },
-                headStyles: { 
-                    fillColor: [52, 152, 219], 
-                    textColor: 255, 
-                    halign: 'center', 
-                    valign: 'middle',
-                    fontStyle: 'bold',
-                    minCellHeight: 12
-                },
-                columnStyles: { 
-                  0: { halign: 'center', cellWidth: 8 }, 
-                  1: { halign: 'left', cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 40 }, 
-                  3: { halign: 'center', cellWidth: 18 }, 
-                  4: { halign: 'center', cellWidth: 15 }, 
-                  5: { halign: 'center', cellWidth: 12 }, 
-                  6: { halign: 'center', cellWidth: 15 }, 
-                  7: { halign: 'center', cellWidth: 12 }, 
-                  8: { halign: 'right', cellWidth: 13 } 
-                }
+                styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 },
+                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', valign: 'middle', fontStyle: 'bold', minCellHeight: 12 },
+                columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 1: { halign: 'left', cellWidth: 'auto' }, 2: { halign: 'left', cellWidth: 40 }, 3: { halign: 'center', cellWidth: 18 }, 4: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 12 }, 6: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 12 }, 8: { halign: 'right', cellWidth: 13 } }
             });
 
             let finalY = (doc as any).lastAutoTable.finalY || currentY;
@@ -284,12 +256,10 @@ export default function SchoolReportPage() {
             const signatureX = pageWidth - 85;
             const signatureY = finalY + 15;
             const today = format(new Date(), 'd MMMM yyyy', { locale: id });
-
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`${config.reportCity || 'Mando'}, ${today}`, signatureX, signatureY);
             doc.text('Mengetahui,', signatureX, signatureY + 6);
             doc.text('Kepala Sekolah', signatureX, signatureY + 12);
-            
             doc.setFont('times', 'bold');
             doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
             doc.setFont('times', 'normal');
@@ -299,13 +269,9 @@ export default function SchoolReportPage() {
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
                 const pageHeight = doc.internal.pageSize.getHeight();
-                doc.setLineWidth(0.2);
-                doc.setDrawColor(0, 0, 0);
-                doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-                doc.setFontSize(8).setFont('times', 'italic');
-                doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
-                doc.setFontSize(9).setFont('times', 'normal');
-                doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+                doc.setLineWidth(0.2).line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+                doc.setFontSize(8).setFont('times', 'italic').text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
+                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
             }
 
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
