@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -293,12 +293,10 @@ export default function SchoolReportPage() {
             <div className="max-w-7xl mx-auto space-y-4">
                 <div className="px-4 md:px-0">
                     <h1 className="text-2xl font-normal tracking-tight">Laporan sekolah</h1>
+                    <p className="text-sm text-muted-foreground">Laporan kehadiran guru/tendik</p>
                 </div>
 
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
-                    <CardHeader className="p-4 border-b border-muted-foreground/10 text-primary">
-                        <CardTitle className="font-bold text-xs uppercase">Laporan Kehadiran Guru/Tendik</CardTitle>
-                    </CardHeader>
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center gap-4">
