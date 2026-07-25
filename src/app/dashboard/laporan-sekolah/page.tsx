@@ -9,7 +9,7 @@ import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, st
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Label } from '@/components/ui/label';
 import {
@@ -21,9 +21,10 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface ReportRowData {
     no: number;
@@ -194,6 +195,38 @@ export default function SchoolReportPage() {
     }, [loadData, user?.uid, isUserLoading, schoolConfigData]);
 
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
+
+    // LOGIKA GRAFIK & HIGHLIGHT
+    const statsData = useMemo(() => {
+        const totals = filteredReports.reduce((acc, curr) => {
+            acc.hadir += curr.totalHadir;
+            acc.izin += curr.totalIzin;
+            acc.sakit += curr.totalSakit;
+            acc.alpa += curr.totalAlpa;
+            return acc;
+        }, { hadir: 0, izin: 0, sakit: 0, alpa: 0 });
+
+        const pie = [
+            { name: 'Hadir', value: Math.round(totals.hadir), color: '#22c55e' },
+            { name: 'Izin', value: totals.izin, color: '#3b82f6' },
+            { name: 'Sakit', value: totals.sakit, color: '#f97316' },
+            { name: 'Alpa', value: totals.alpa, color: '#ef4444' },
+        ].filter(item => item.value > 0);
+
+        // Cari yang paling rajin (persentase tertinggi)
+        const sortedByPercent = [...filteredReports].sort((a, b) => parseFloat(b.persentase) - parseFloat(a.persentase));
+        const rajin = sortedByPercent[0];
+
+        // Cari yang paling sering sakit
+        const sortedBySakit = [...filteredReports].sort((a, b) => b.totalSakit - a.totalSakit);
+        const sakit = sortedBySakit[0]?.totalSakit > 0 ? sortedBySakit[0] : null;
+
+        // Cari yang paling sering alpa
+        const sortedByAlpa = [...filteredReports].sort((a, b) => b.totalAlpa - a.totalAlpa);
+        const alpa = sortedByAlpa[0]?.totalAlpa > 0 ? sortedByAlpa[0] : null;
+
+        return { pie, rajin, sakit, alpa };
+    }, [filteredReports]);
 
     const handleDownloadPdf = async () => {
         if (!filteredReports.length || isExporting) return;
@@ -413,6 +446,96 @@ export default function SchoolReportPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* SEKSI GRAFIK & HIGHLIGHT */}
+                {!isReportLoading && filteredReports.length > 0 && (
+                    <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
+                        <CardHeader className="p-6 border-b border-muted-foreground/5">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-xl">
+                                    <PieIcon className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-lg font-bold">Statistik Kehadiran Kolektif</CardTitle>
+                                    <CardDescription className="text-xs font-medium">Ringkasan performa dan kesehatan seluruh personil.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                                {/* Pie Chart */}
+                                <div className="h-[300px] w-full flex flex-col items-center">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={statsData.pie}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={100}
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                            >
+                                                {statsData.pie.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip 
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                                                itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                                            />
+                                            <Legend 
+                                                verticalAlign="bottom" 
+                                                height={36} 
+                                                formatter={(value) => <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{value}</span>}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                {/* Highlights Section */}
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex items-center gap-4">
+                                        <div className="p-3 bg-green-500/10 rounded-xl">
+                                            <Award className="h-6 w-6 text-green-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-green-600/60">Paling Rajin</p>
+                                            <h4 className="font-bold text-sm text-foreground">{statsData.rajin?.name || '-'}</h4>
+                                            <p className="text-[10px] font-bold text-muted-foreground">Persentase: {statsData.rajin?.persentase}</p>
+                                        </div>
+                                    </div>
+
+                                    {statsData.sakit && (
+                                        <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-center gap-4">
+                                            <div className="p-3 bg-orange-500/10 rounded-xl">
+                                                <Thermometer className="h-6 w-6 text-orange-600" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Sering Sakit</p>
+                                                <h4 className="font-bold text-sm text-foreground">{statsData.sakit.name}</h4>
+                                                <p className="text-[10px] font-bold text-muted-foreground">Total: {statsData.sakit.totalSakit} hari</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {statsData.alpa && (
+                                        <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-center gap-4">
+                                            <div className="p-3 bg-red-500/10 rounded-xl">
+                                                <AlertCircle className="h-6 w-6 text-red-600" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-red-600/60">Sering Alpa</p>
+                                                <h4 className="font-bold text-sm text-foreground">{statsData.alpa.name}</h4>
+                                                <p className="text-[10px] font-bold text-muted-foreground">Total: {statsData.alpa.totalAlpa} hari</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </div>
     );
