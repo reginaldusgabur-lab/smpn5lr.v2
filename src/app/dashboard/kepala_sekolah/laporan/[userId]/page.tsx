@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -105,22 +106,22 @@ export default function HeadmasterUserAttendanceDetailPage() {
             const checkInTime = attendanceRecord.checkInTime.toDate();
             const checkOutTime = attendanceRecord.checkOutTime?.toDate();
             let status = 'Hadir';
-            let description = 'Kehadiran Penuh';
+            let description = 'Kehadiran penuh';
 
             if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
                 const [endH, endM] = schoolConfig.checkInEndTime.split(':').map(Number);
                 const checkInDeadline = setHours(setMinutes(startOfDay(checkInTime), endH), endM);
                 if (isBefore(checkInTime, checkInDeadline) === false) {
-                    status = 'Terlambat';
+                    status = 'Hadir';
                     description = 'Terlambat';
                 }
             }
             
             if (!checkOutTime && isBefore(day, today)) {
                 status = 'Alpa';
-                description = 'Tidak Absen Pulang';
+                description = 'Tidak absen pulang';
             } else if (!checkOutTime) {
-                description = 'Belum Absen Pulang';
+                description = 'Belum absen pulang';
             }
 
             return {
@@ -142,7 +143,7 @@ export default function HeadmasterUserAttendanceDetailPage() {
                 checkIn: '-',
                 checkOut: '-',
                 status: 'Alpa',
-                description: 'Tidak Ada Keterangan',
+                description: 'Tidak ada keterangan',
             };
         }
 
@@ -197,7 +198,7 @@ export default function HeadmasterUserAttendanceDetailPage() {
         </div>
         <Card>
         <CardHeader>
-            <CardTitle>Riwayat Absensi & Izin</CardTitle>
+            <CardTitle>Riwayat absensi & izin</CardTitle>
             <CardDescription>
                 Berikut adalah catatan kehadiran dan pengajuan izin untuk pengguna ini.
             </CardDescription>

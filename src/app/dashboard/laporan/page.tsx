@@ -181,7 +181,7 @@ export default function LaporanPage() {
               <CardHeader className="p-3 sm:p-4 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="font-bold text-[10px] tracking-widest uppercase opacity-70">Riwayat Absensi & Izin</CardTitle>
+                        <CardTitle className="font-bold text-xs tracking-tight opacity-70">Riwayat absensi & izin</CardTitle>
                         <CardDescription className="text-muted-foreground font-bold text-[9px] mt-0.5">Catatan lengkap kehadiran Anda.</CardDescription>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/5 shadow-none" onClick={handleRefresh} disabled={isLoading}>
