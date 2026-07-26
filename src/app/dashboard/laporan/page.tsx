@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, TrendingUp, RefreshCw, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, RefreshCw, CalendarDays, PieChart as PieIcon } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -30,6 +30,7 @@ import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface ReportItem {
   id: string;
@@ -48,7 +49,7 @@ export default function LaporanPage() {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthlyReportData, setMonthlyReportData] = useState<ReportItem[]>([]);
-  const [stats, setStats] = useState<{ persentase: string } | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [isReportLoading, setIsReportLoading] = useState(true);
   const [academicYear, setAcademicYear] = useState("");
 
@@ -121,6 +122,16 @@ export default function LaporanPage() {
         fetchStats();
     }
   }, [user?.uid, firestore, currentMonth, isConfigLoading]);
+
+  const chartData = useMemo(() => {
+    if (!stats) return [];
+    return [
+        { name: 'Hadir', value: Math.ceil(stats.totalHadir), color: '#22c55e' },
+        { name: 'Izin', value: stats.totalIzin, color: '#3b82f6' },
+        { name: 'Sakit', value: stats.totalSakit, color: '#f97316' },
+        { name: 'Alpa', value: stats.totalAlpa, color: '#ef4444' },
+    ].filter(item => item.value > 0);
+  }, [stats]);
 
   const handleRefresh = () => {
       if (cacheKey) invalidateCache(cacheKey);
@@ -274,6 +285,53 @@ export default function LaporanPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* GRAFIK PRESTASI PENGGUNA */}
+            {!isLoading && stats && (
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
+                    <CardHeader className="p-6 border-b border-muted-foreground/5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-xl">
+                                <PieIcon className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-lg font-bold">Prestasi Kehadiran</CardTitle>
+                                <CardDescription className="text-xs font-medium">Visualisasi persentase kehadiran Anda bulan ini.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={chartData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={100}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {chartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip 
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                                        itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                                    />
+                                    <Legend 
+                                        verticalAlign="bottom" 
+                                        height={36} 
+                                        formatter={(value) => <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{value}</span>}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     </div>
   );

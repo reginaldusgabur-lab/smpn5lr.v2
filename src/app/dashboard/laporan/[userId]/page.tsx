@@ -9,14 +9,14 @@ import { format, isValid, parseISO, startOfDay, endOfDay, isSameMonth, startOfMo
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
 
 const safeFormat = (dateInput: any, formatString: string): string => {
     if (!dateInput) return '-';
@@ -49,7 +50,7 @@ export default function UserReportDetailPage() {
 
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData[]>([]);
-    const [stats, setStats] = useState<{ persentase: string } | null>(null);
+    const [stats, setStats] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isMutating, setIsMutating] = useState(false);
@@ -98,6 +99,16 @@ export default function UserReportDetailPage() {
         return () => { isMounted.current = false; };
     }, [fetchData, schoolConfigData]);
 
+    const chartData = useMemo(() => {
+        if (!stats) return [];
+        return [
+            { name: 'Hadir', value: Math.ceil(stats.totalHadir), color: '#22c55e' },
+            { name: 'Izin', value: stats.totalIzin, color: '#3b82f6' },
+            { name: 'Sakit', value: stats.totalSakit, color: '#f97316' },
+            { name: 'Alpa', value: stats.totalAlpa, color: '#ef4444' },
+        ].filter(item => item.value > 0);
+    }, [stats]);
+
     const getDailyOutStart = useCallback((date: Date) => {
         if (!schoolConfigData) return '14:00';
         const dayOfWeek = date.getDay().toString();
@@ -132,7 +143,7 @@ export default function UserReportDetailPage() {
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (['Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Terlambat'].includes(newStatus)) {
+            if (['Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Terlambat', 'Kegiatan Luar Sekolah'].includes(newStatus)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
@@ -144,7 +155,7 @@ export default function UserReportDetailPage() {
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                if (newStatus === 'Dinas Pagi' || newStatus === 'Terlambat') {
+                if (newStatus === 'Dinas Pagi' || newStatus === 'Terlambat' || newStatus === 'Kegiatan Luar Sekolah') {
                     dataToSave.checkInTime = null;
                     dataToSave.checkOutTime = generateRandomOutTime(targetDate);
                 } else {
@@ -338,7 +349,7 @@ export default function UserReportDetailPage() {
         if (s === 'alpa') return 'bg-red-50 text-red-700 border-red-200';
         if (s === 'sakit') return 'bg-orange-50 text-orange-700 border-orange-200';
         if (s === 'izin' || s.includes('izin pribadi')) return 'bg-blue-50 text-blue-700 border-blue-200';
-        if (s.includes('dinas')) return 'bg-purple-50 text-purple-700 border-purple-200';
+        if (s.includes('dinas') || s.includes('kegiatan')) return 'bg-purple-50 text-purple-700 border-purple-200';
         return 'bg-orange-50 text-orange-700 border-orange-200';
     };
 
@@ -354,6 +365,53 @@ export default function UserReportDetailPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* GRAFIK PRESTASI INDIVIDU */}
+                {!isLoading && stats && (
+                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
+                        <CardHeader className="p-6 border-b border-muted-foreground/5">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-xl">
+                                    <PieIcon className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-lg font-bold">Prestasi Kehadiran</CardTitle>
+                                    <CardDescription className="text-xs font-medium">Visualisasi persentase kehadiran personil bulan ini.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <div className="h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={chartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={100}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {chartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip 
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                                            itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                                        />
+                                        <Legend 
+                                            verticalAlign="bottom" 
+                                            height={36} 
+                                            formatter={(value) => <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{value}</span>}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardContent className="p-0">
@@ -477,6 +535,7 @@ export default function UserReportDetailPage() {
                                                                         </>
                                                                     )}
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Dinas Siang', 'Dinas siang')}>Dinas siang</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Kegiatan Luar Sekolah', 'Kegiatan luar sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang cepat')}>Pulang cepat</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
