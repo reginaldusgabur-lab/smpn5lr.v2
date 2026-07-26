@@ -366,7 +366,7 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                {/* GRAFIK PRESTASI INDIVIDU TERPERBAIKI */}
+                {/* GRAFIK PRESTASI INDIVIDU - REFINED BADGE */}
                 {!isLoading && stats && (
                     <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
@@ -380,9 +380,9 @@ export default function UserReportDetailPage() {
                                         <CardDescription className="text-xs font-medium">Visualisasi performa kehadiran personil bulan ini.</CardDescription>
                                     </div>
                                 </div>
-                                <div className="bg-primary/5 px-4 py-2 rounded-2xl border border-primary/10 text-center">
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Skor Kehadiran</p>
-                                    <p className="text-xl font-black text-primary leading-none mt-1">{stats.persentase}</p>
+                                <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
+                                    <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
+                                    <p className="text-3xl font-black text-primary leading-none">{stats.persentase}</p>
                                 </div>
                             </div>
                         </CardHeader>

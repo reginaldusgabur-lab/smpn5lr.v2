@@ -321,7 +321,7 @@ export default function SchoolReportPage() {
                 const pageHeight = doc.internal.pageSize.getHeight();
                 doc.setLineWidth(0.2).line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
                 doc.setFontSize(8).setFont('times', 'italic').text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
-                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: right });
+                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
             }
 
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
@@ -454,7 +454,7 @@ export default function SchoolReportPage() {
                     </CardContent>
                 </Card>
 
-                {/* SEKSI GRAFIK & HIGHLIGHT TERPERBAIKI (LEBIH DARI 1) */}
+                {/* SEKSI GRAFIK & HIGHLIGHT */}
                 {!isReportLoading && filteredReports.length > 0 && (
                     <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
@@ -509,7 +509,7 @@ export default function SchoolReportPage() {
                                             <Award className="h-6 w-6 text-green-600" />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-green-600/60">Paling Rajin (Top 3)</p>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-green-600/60">Paling rajin (Top 3)</p>
                                             <div className="mt-2 space-y-1.5">
                                                 {statsData.topRajin.map((u, idx) => (
                                                     <div key={u.uid} className="flex justify-between items-center group">
@@ -528,7 +528,7 @@ export default function SchoolReportPage() {
                                                 <Thermometer className="h-6 w-6 text-orange-600" />
                                             </div>
                                             <div className="flex-1">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Sering Sakit (Top 3)</p>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600/60">Sering sakit (Top 3)</p>
                                                 <div className="mt-2 space-y-1.5">
                                                     {statsData.topSakit.map((u, idx) => (
                                                         <div key={u.uid} className="flex justify-between items-center group">
@@ -548,7 +548,7 @@ export default function SchoolReportPage() {
                                                 <AlertCircle className="h-6 w-6 text-red-600" />
                                             </div>
                                             <div className="flex-1">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-red-600/60">Sering Alpa (Top 3)</p>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-red-600/60">Sering alpa (Top 3)</p>
                                                 <div className="mt-2 space-y-1.5">
                                                     {statsData.topAlpa.map((u, idx) => (
                                                         <div key={u.uid} className="flex justify-between items-center group">
