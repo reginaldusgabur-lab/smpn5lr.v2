@@ -366,45 +366,56 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                {/* GRAFIK PRESTASI INDIVIDU */}
+                {/* GRAFIK PRESTASI INDIVIDU TERPERBAIKI */}
                 {!isLoading && stats && (
                     <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-xl">
-                                    <PieIcon className="h-5 w-5 text-primary" />
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-xl">
+                                        <PieIcon className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Prestasi Kehadiran</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Visualisasi performa kehadiran personil bulan ini.</CardDescription>
+                                    </div>
                                 </div>
-                                <div>
-                                    <CardTitle className="text-lg font-bold">Prestasi Kehadiran</CardTitle>
-                                    <CardDescription className="text-xs font-medium">Visualisasi persentase kehadiran personil bulan ini.</CardDescription>
+                                <div className="bg-primary/5 px-4 py-2 rounded-2xl border border-primary/10 text-center">
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Skor Kehadiran</p>
+                                    <p className="text-xl font-black text-primary leading-none mt-1">{stats.persentase}</p>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">
-                            <div className="h-[300px] w-full">
+                            <div className="h-[340px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={chartData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={100}
-                                            paddingAngle={5}
+                                            innerRadius={70}
+                                            outerRadius={110}
+                                            paddingAngle={6}
                                             dataKey="value"
                                         >
                                             {chartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                             ))}
                                         </Pie>
                                         <RechartsTooltip 
-                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
                                             itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                                            formatter={(value) => [`${value} Hari`, 'Jumlah']}
                                         />
                                         <Legend 
                                             verticalAlign="bottom" 
-                                            height={36} 
-                                            formatter={(value) => <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{value}</span>}
+                                            height={40} 
+                                            formatter={(value, entry: any) => (
+                                                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground mx-1">
+                                                    {value}: <span className="text-foreground">{entry.payload.value} HARI</span>
+                                                </span>
+                                            )}
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
