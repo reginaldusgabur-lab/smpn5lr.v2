@@ -28,7 +28,7 @@ import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/atte
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import Link from 'link';
+import Link from 'next/link';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface ReportItem {

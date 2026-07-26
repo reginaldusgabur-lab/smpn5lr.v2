@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -295,7 +295,7 @@ export default function IzinPage() {
                         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div>
-                                    <CardTitle className="font-bold text-sm tracking-tight">Formulir Pengajuan Izin</CardTitle>
+                                    <CardTitle className="font-bold text-sm tracking-tight">Formulir pengajuan izin</CardTitle>
                                     <CardDescription className="text-muted-foreground font-medium pt-1">Isi formulir untuk mengajukan ketidakhadiran atau tugas dinas.</CardDescription>
                                 </div>
                                 {currentDayLeave && (
@@ -309,9 +309,9 @@ export default function IzinPage() {
                                                 
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full" disabled={isCancelling}>
+                                                        <button type="button" className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full flex items-center justify-center transition-colors" disabled={isCancelling}>
                                                             {isCancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                                        </Button>
+                                                        </button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
                                                         <AlertDialogHeader>
@@ -434,7 +434,7 @@ export default function IzinPage() {
                                 type="submit" 
                                 disabled={isSubmitting || isChecking || !!currentDayLeave} 
                                 className={cn(
-                                    "w-full sm:w-auto h-12 rounded-xl font-black tracking-widest shadow-none active:scale-95 transition-all bg-primary uppercase",
+                                    "w-full sm:w-auto h-12 rounded-xl font-black tracking-widest shadow-none active:scale-95 transition-all bg-primary",
                                     currentDayLeave?.status === 'pending' && "bg-amber-500 hover:bg-amber-600"
                                 )}
                             >
