@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
@@ -25,6 +26,7 @@ const cleanDesc = (desc: string) => {
     if (d === 'dinas pagi') return 'Dinas pagi';
     if (d === 'dinas siang') return 'Dinas siang';
     if (d === 'pulang cepat') return 'Pulang cepat';
+    if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
 
     if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi') || d.includes('diubah oleh admin')) {
         return 'Kehadiran penuh';
@@ -196,7 +198,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 let point = 0;
                 const desc = (att.reasonForUpdate || '').toLowerCase();
                 
-                if (desc.includes('dinas') || desc.includes('kehadiran penuh')) {
+                if (desc.includes('dinas') || desc.includes('kehadiran penuh') || desc.includes('kegiatan luar sekolah')) {
                     point = 1.0;
                 } else if (desc.includes('terlambat') || desc.includes('pulang cepat')) {
                     point = 0.95;
@@ -328,7 +330,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 let description = attendanceRecord.reasonForUpdate || 'Kehadiran penuh';
                 
-                const specialStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'sakit', 'izin', 'izin pribadi'];
+                const specialStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'sakit', 'izin', 'izin pribadi', 'kegiatan luar sekolah'];
                 
                 if (checkInTime && checkOutTime && !specialStatuses.includes(description.toLowerCase())) {
                     if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
@@ -346,10 +348,16 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 description = cleanDesc(description);
 
-                const importantStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat'];
+                const importantStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'];
                 if (importantStatuses.includes(description.toLowerCase())) {
+                    const lowDesc = description.toLowerCase();
                     const statusLabel = description.charAt(0).toUpperCase() + description.slice(1);
-                    return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: statusLabel, description: statusLabel, manualEntry: isManual };
+                    
+                    // NEW: If late, status text remains "Hadir" (Request: "statusnya tetap hadir")
+                    let finalStatus = statusLabel;
+                    if (lowDesc === 'terlambat') finalStatus = 'Hadir';
+
+                    return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: finalStatus, description: statusLabel, manualEntry: isManual };
                 }
 
                 if (!checkInTime && checkOutTime) {
