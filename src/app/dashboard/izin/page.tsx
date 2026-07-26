@@ -47,7 +47,7 @@ const leaveRequestSchema = z.object({
   leaveDate: z.enum(['today', 'tomorrow'], {
     required_error: 'Tanggal pengajuan wajib dipilih.',
   }),
-  type: z.enum(['Sakit', 'Izin', 'Dinas', 'Pulang Cepat'], {
+  type: z.enum(['Sakit', 'Izin', 'Dinas', 'Pulang Cepat', 'Kegiatan Luar Sekolah'], {
     required_error: 'Jenis pengajuan wajib dipilih.',
   }),
   reason: z.string().min(5, { message: 'Alasan terlalu singkat.' }),
@@ -177,13 +177,30 @@ export default function IzinPage() {
                 label: 'Perjalanan Dinas',
                 disabled: !!currentDayLeave
             },
+            {
+                value: 'Kegiatan Luar Sekolah',
+                label: 'Kegiatan Luar Sekolah',
+                disabled: !!currentDayLeave
+            },
         ];
     }, [selectedDateValue, hasCheckedIn, hasCheckedOut, isPastCheckoutTime, currentDayLeave]);
 
+    const selectedType = form.watch('type');
+    const dynamicPlaceholder = useMemo(() => {
+        switch (selectedType) {
+            case 'Sakit': return 'Contoh: Demam tinggi, Sakit gigi, Perlu istirahat...';
+            case 'Izin': return 'Contoh: Urusan keluarga mendesak, Menghadiri pernikahan...';
+            case 'Dinas': return 'Contoh: Rapat MKKS, Workshop Kurikulum di Dinas...';
+            case 'Kegiatan Luar Sekolah': return 'Contoh: Pendampingan lomba siswa, Studi lapangan...';
+            case 'Pulang Cepat': return 'Contoh: Ada urusan darurat di rumah...';
+            default: return 'Pilih jenis izin terlebih dahulu...';
+        }
+    }, [selectedType]);
+
     useEffect(() => {
-        const selectedType = form.getValues('type');
-        if (selectedType) {
-            const typeIsDisabled = availableLeaveTypes.find(t => t.value === selectedType)?.disabled;
+        const selectedTypeVal = form.getValues('type');
+        if (selectedTypeVal) {
+            const typeIsDisabled = availableLeaveTypes.find(t => t.value === selectedTypeVal)?.disabled;
             if (typeIsDisabled) {
                 form.resetField('type', { keepError: false });
             }
@@ -378,7 +395,7 @@ export default function IzinPage() {
                                         <FormLabel className="text-xs font-bold ml-1 uppercase tracking-wider text-muted-foreground">Alasan</FormLabel>
                                         <FormControl>
                                             <Textarea 
-                                                placeholder="Contoh: Demam, Kegiatan Keluarga..." 
+                                                placeholder={dynamicPlaceholder} 
                                                 disabled={!!currentDayLeave || (selectedDateValue === 'today' && isTodayHoliday) || (selectedDateValue === 'tomorrow' && isTomorrowHoliday)}
                                                 {...field} 
                                                 className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all font-bold" 
