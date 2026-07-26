@@ -279,10 +279,10 @@ export default function SchoolReportPage() {
                 startY: currentY,
                 head: tableHead,
                 body: tableRows,
-                theme: 'grid',
+                theme: 'striped',
                 margin: { bottom: 35 },
                 styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 },
-                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', valign: 'middle', fontStyle: 'bold', minCellHeight: 12 },
+                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', valign: 'middle', fontStyle: 'bold', minCellHeight: 12, lineWidth: 0 },
                 columnStyles: { 
                     0: { halign: 'center', cellWidth: 8 }, 
                     1: { halign: 'left', cellWidth: 'auto' }, 

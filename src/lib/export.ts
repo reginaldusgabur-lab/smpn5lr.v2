@@ -146,7 +146,7 @@ export function exportToPdf(
             startY: currentY,
             head: tableHead,
             body: tableRows,
-            theme: 'grid',
+            theme: 'striped',
             margin: { bottom: 35 },
             headStyles: { 
                 fillColor: [52, 152, 219], 
@@ -154,7 +154,8 @@ export function exportToPdf(
                 fontStyle: 'bold', 
                 halign: 'center',
                 valign: 'middle',
-                minCellHeight: 12
+                minCellHeight: 12,
+                lineWidth: 0
             },
             styles: { 
               cellPadding: 1.5,

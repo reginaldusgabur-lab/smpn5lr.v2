@@ -279,7 +279,7 @@ export default function UserReportDetailPage() {
             startY: currentY,
             head: tableHead,
             body: tableRows,
-            theme: 'grid',
+            theme: 'striped',
             margin: { bottom: 35 },
             styles: { 
               font: 'times', 
@@ -296,7 +296,8 @@ export default function UserReportDetailPage() {
                 halign: 'center', 
                 valign: 'middle',
                 fontStyle: 'bold',
-                minCellHeight: 12
+                minCellHeight: 12,
+                lineWidth: 0
             },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
         });
