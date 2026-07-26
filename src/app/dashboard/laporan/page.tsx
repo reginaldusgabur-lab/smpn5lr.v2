@@ -146,10 +146,10 @@ export default function LaporanPage() {
   const getStatusBadgeStyle = (status: string) => {
       const s = status.toLowerCase();
       if (s === 'alpa') return 'bg-red-600 text-white border-none shadow-sm';
-      if (s === 'sakit') return 'bg-orange-50 text-white border-none shadow-sm';
+      if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
       if (s === 'izin' || s.includes('pribadi')) return 'bg-blue-800 text-white border-none shadow-sm';
       if (s === 'hadir') return 'bg-green-600 text-white border-none shadow-sm';
-      if (s === 'terlambat') return 'bg-yellow-50 text-white border-none shadow-sm';
+      if (s === 'terlambat') return 'bg-red-600 text-white border-none shadow-sm';
       return 'bg-primary text-white border-none shadow-sm';
   };
 

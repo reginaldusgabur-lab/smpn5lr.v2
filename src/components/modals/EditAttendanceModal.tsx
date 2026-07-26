@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -148,7 +149,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                    data.reasonForUpdate = 'Dinas siang';
                 }
             } else if (type === 'terlambat') {
-                // JANGAN GANGGU - SET KE NULL SESUAI PERMINTAAN USER
                 data.checkInTime = null;
                 data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
                 data.reasonForUpdate = 'Terlambat';
@@ -200,9 +200,10 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
     };
 
     const getAdminBadgeClass = (status: string) => {
-        if (status === 'Alpa') return 'bg-red-50 text-red-700 border-red-200';
-        if (status === 'Sakit') return 'bg-orange-50 text-orange-700 border-orange-200';
-        if (status === 'Izin' || status.includes('Izin')) return 'bg-blue-50 text-blue-700 border-blue-200';
+        const s = status.toLowerCase();
+        if (s === 'alpa' || s === 'terlambat') return 'bg-red-50 text-red-700 border-red-200';
+        if (s === 'sakit') return 'bg-orange-50 text-orange-700 border-orange-200';
+        if (s === 'izin' || s.includes('izin')) return 'bg-blue-50 text-blue-700 border-blue-200';
         return 'bg-orange-50 text-orange-700 border-orange-200';
     };
 
@@ -253,7 +254,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                                     </>
                                                 )}
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(day, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(day, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang cepat')}>Pulang cepat</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>

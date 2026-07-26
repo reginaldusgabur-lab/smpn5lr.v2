@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -333,11 +334,10 @@ export default function UserReportDetailPage() {
 
     const getAdminBadgeClass = (status: string) => {
         const s = status.toLowerCase();
-        if (s === 'alpa') return 'bg-red-50 text-red-700 border-red-200';
+        if (s === 'alpa' || s === 'terlambat') return 'bg-red-50 text-red-700 border-red-200';
         if (s === 'sakit') return 'bg-orange-50 text-orange-700 border-orange-200';
         if (s === 'izin' || s.includes('izin pribadi')) return 'bg-blue-50 text-blue-700 border-blue-200';
         if (s.includes('dinas')) return 'bg-purple-50 text-purple-700 border-purple-200';
-        if (s.includes('terlambat')) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
         return 'bg-orange-50 text-orange-700 border-orange-200';
     };
 
@@ -482,7 +482,7 @@ export default function UserReportDetailPage() {
                                                             <span className={cn("inline-flex items-center px-3 py-0.5 rounded-full text-[9px] font-bold", 
                                                                 item.status === 'Hadir' ? 'bg-green-100 text-green-700' : 
                                                                 item.status === 'Sakit' ? 'bg-orange-100 text-orange-700' : 
-                                                                item.status === 'Terlambat' ? 'bg-yellow-100 text-yellow-700' :
+                                                                item.status === 'Terlambat' ? 'bg-red-100 text-red-700' :
                                                                 'bg-blue-100 text-blue-700'
                                                             )}>
                                                                 {item.status}
