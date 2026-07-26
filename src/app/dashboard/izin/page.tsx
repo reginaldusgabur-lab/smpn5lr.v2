@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Card,
@@ -47,7 +48,7 @@ const leaveRequestSchema = z.object({
   leaveDate: z.enum(['today', 'tomorrow'], {
     required_error: 'Tanggal pengajuan wajib dipilih.',
   }),
-  type: z.enum(['Sakit', 'Izin', 'Dinas', 'Pulang Cepat', 'Kegiatan Luar Sekolah'], {
+  type: z.enum(['Sakit', 'Izin Pribadi', 'Dinas', 'Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Kegiatan Luar Sekolah', 'Terlambat'], {
     required_error: 'Jenis pengajuan wajib dipilih.',
   }),
   reason: z.string().min(5, { message: 'Alasan terlalu singkat.' }),
@@ -77,7 +78,6 @@ export default function IzinPage() {
         return () => clearInterval(timerId);
     }, []);
 
-    // Stabilize reference dates to prevent infinite re-renders
     const { today, tomorrow, currentMonthId, nextMonthId } = useMemo(() => {
         const t = startOfDay(currentTime);
         const tom = addDays(t, 1);
@@ -113,8 +113,8 @@ export default function IzinPage() {
         return false;
     };
 
-    const isTodayHoliday = useMemo(() => isDateHoliday(today), [schoolConfig, monthlyConfig, today, currentMonthId]);
-    const isTomorrowHoliday = useMemo(() => isDateHoliday(tomorrow), [schoolConfig, nextMonthlyConfig, tomorrow, currentMonthId, nextMonthId]);
+    const isTodayHoliday = useMemo(() => isDateHoliday(today), [schoolConfig, monthlyConfig, today]);
+    const isTomorrowHoliday = useMemo(() => isDateHoliday(tomorrow), [schoolConfig, nextMonthlyConfig, tomorrow]);
 
     const selectedDateValue = form.watch('leaveDate');
     const targetDate = useMemo(() => {
@@ -128,10 +128,9 @@ export default function IzinPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, 'users', user.uid, 'attendanceRecords'),
-            where('checkInTime', '>=', Timestamp.fromDate(targetDateStart)),
-            where('checkInTime', '<', Timestamp.fromDate(targetDateEnd))
+            where('date', '==', format(targetDate, 'yyyy-MM-dd'))
         );
-    }, [user, firestore, targetDateStart, targetDateEnd]);
+    }, [user, firestore, targetDate]);
     const { data: targetDateAttendance, isLoading: isAttendanceLoading } = useCollection(user, attendanceQuery);
     
     const existingLeaveQuery = useMemoFirebase(() => {
@@ -163,13 +162,28 @@ export default function IzinPage() {
                 disabled: !isTodaySelected || !hasCheckedIn || hasCheckedOut || !!currentDayLeave
             },
             {
+                value: 'Dinas Siang',
+                label: 'Dinas Siang',
+                disabled: !isTodaySelected || !hasCheckedIn || hasCheckedOut || !!currentDayLeave
+            },
+            {
                 value: 'Sakit',
                 label: 'Sakit',
                 disabled: hasCheckedIn || (isTodaySelected && isPastCheckoutTime) || !!currentDayLeave
             },
             {
-                value: 'Izin',
+                value: 'Izin Pribadi',
                 label: 'Izin Pribadi',
+                disabled: hasCheckedIn || (isTodaySelected && isPastCheckoutTime) || !!currentDayLeave
+            },
+            {
+                value: 'Terlambat',
+                label: 'Izin Terlambat',
+                disabled: hasCheckedIn || (isTodaySelected && isPastCheckoutTime) || !!currentDayLeave
+            },
+            {
+                value: 'Dinas Pagi',
+                label: 'Dinas Pagi',
                 disabled: hasCheckedIn || (isTodaySelected && isPastCheckoutTime) || !!currentDayLeave
             },
             {
@@ -189,10 +203,13 @@ export default function IzinPage() {
     const dynamicPlaceholder = useMemo(() => {
         switch (selectedType) {
             case 'Sakit': return 'Contoh: Demam tinggi, Sakit gigi, Perlu istirahat...';
-            case 'Izin': return 'Contoh: Urusan keluarga mendesak, Menghadiri pernikahan...';
+            case 'Izin Pribadi': return 'Contoh: Urusan keluarga mendesak, Menghadiri pernikahan...';
             case 'Dinas': return 'Contoh: Rapat MKKS, Workshop Kurikulum di Dinas...';
+            case 'Dinas Pagi': return 'Contoh: Mengurus berkas di dinas sebelum ke sekolah...';
+            case 'Dinas Siang': return 'Contoh: Menghadiri rapat dinas di jam sekolah...';
             case 'Kegiatan Luar Sekolah': return 'Contoh: Pendampingan lomba siswa, Studi lapangan...';
             case 'Pulang Cepat': return 'Contoh: Ada urusan darurat di rumah...';
+            case 'Terlambat': return 'Contoh: Ban kendaraan bocor, Ada kendala di jalan...';
             default: return 'Pilih jenis izin terlebih dahulu...';
         }
     }, [selectedType]);
@@ -229,7 +246,7 @@ export default function IzinPage() {
             return;
         }
 
-        if (values.type === 'Pulang Cepat') {
+        if (values.type === 'Pulang Cepat' || values.type === 'Dinas Siang') {
             if (!hasCheckedIn) {
                 toast({ variant: 'destructive', title: 'Gagal', description: 'Anda harus absen masuk terlebih dahulu.' });
                 return;
@@ -280,7 +297,7 @@ export default function IzinPage() {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div>
                                     <CardTitle className="font-bold text-sm tracking-tight">Formulir Pengajuan Izin</CardTitle>
-                                    <CardDescription className="text-muted-foreground font-medium pt-1">Isi formulir untuk mengajukan ketidakhadiran atau izin pulang cepat.</CardDescription>
+                                    <CardDescription className="text-muted-foreground font-medium pt-1">Isi formulir untuk mengajukan ketidakhadiran atau tugas dinas.</CardDescription>
                                 </div>
                                 {currentDayLeave && (
                                     <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-xl border border-border/50">

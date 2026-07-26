@@ -37,7 +37,7 @@ const cleanDesc = (desc: string) => {
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `daily_stats_v150_${todayStr}`;
+    const cacheKey = `daily_stats_v151_${todayStr}`;
     
     const cachedData = getFromCache(cacheKey);
     if (cachedData) return cachedData;
@@ -113,8 +113,8 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                 const leave = activeLeave.data();
                 if (leave.status === 'approved') {
                     if (leave.type === 'Sakit') sakitCount++;
-                    else if (leave.type !== 'Pulang Cepat') izinCount++;
-                } else if (leave.status === 'pending' && leave.type !== 'Pulang Cepat') {
+                    else if (!['Pulang Cepat', 'Dinas Siang'].includes(leave.type)) izinCount++;
+                } else if (leave.status === 'pending' && !['Pulang Cepat', 'Dinas Siang'].includes(leave.type)) {
                     pendingCount++;
                 }
             } else {
@@ -142,7 +142,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v150_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v151_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -222,8 +222,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                     if (leave.type === 'Sakit') {
                         point = 0.9;
                         sakitCount++;
-                    } else if (leave.type === 'Izin' || leave.type === 'Izin Pribadi') {
-                        point = 0.7;
+                    } else if (['Izin', 'Izin Pribadi', 'Terlambat'].includes(leave.type)) {
+                        point = leave.type === 'Terlambat' ? 0.95 : 0.7;
                         izinCount++;
                     } else {
                         point = 1.0;
@@ -330,7 +330,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 let description = attendanceRecord.reasonForUpdate || 'Kehadiran penuh';
                 
-                const specialStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'sakit', 'izin', 'izin pribadi', 'kegiatan luar sekolah'];
+                const specialStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'sakit', 'izin', 'izin pribadi', 'kegiatan luar sekolah', 'terlambat'];
                 
                 if (checkInTime && checkOutTime && !specialStatuses.includes(description.toLowerCase())) {
                     if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
@@ -371,8 +371,13 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 };
             }
 
-            if (leaveRecord && leaveRecord.type !== 'Pulang Cepat') {
-                return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type, description: cleanDesc(leaveRecord.reason) || leaveRecord.type };
+            if (leaveRecord && !['Pulang Cepat', 'Dinas Siang'].includes(leaveRecord.type)) {
+                return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type === 'Terlambat' ? 'Hadir' : leaveRecord.type, description: cleanDesc(leaveRecord.reason) || leaveRecord.type };
+            }
+
+            // Special handling for half-day leaves that don't have attendance record yet
+            if (leaveRecord && ['Pulang Cepat', 'Dinas Siang'].includes(leaveRecord.type)) {
+                 return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: `Tugas ${leaveRecord.type} (Tanpa absen masuk)` };
             }
 
             return { id: dayStr, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: 'Tidak ada keterangan' };

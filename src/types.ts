@@ -25,7 +25,7 @@ export interface LeaveRequest extends DocumentData {
   userName: string;
   startDate: Timestamp;
   endDate: Timestamp;
-  type: 'Izin' | 'Sakit';
+  type: 'Izin' | 'Sakit' | 'Dinas' | 'Pulang Cepat' | 'Dinas Pagi' | 'Dinas Siang' | 'Terlambat' | 'Kegiatan Luar Sekolah' | 'Izin Pribadi';
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
 }
