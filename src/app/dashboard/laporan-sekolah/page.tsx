@@ -321,7 +321,7 @@ export default function SchoolReportPage() {
                 const pageHeight = doc.internal.pageSize.getHeight();
                 doc.setLineWidth(0.2).line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
                 doc.setFontSize(8).setFont('times', 'italic').text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
-                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: right });
             }
 
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
@@ -415,7 +415,7 @@ export default function SchoolReportPage() {
                             </div>
                         </div>
 
-                        <div className="border-t border-muted-foreground/5 overflow-x-auto">
+                        <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
@@ -490,11 +490,12 @@ export default function SchoolReportPage() {
                                             <Tooltip 
                                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                                                 itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                                                formatter={(value) => [`${value} hari`, 'Jumlah']}
                                             />
                                             <Legend 
                                                 verticalAlign="bottom" 
                                                 height={36} 
-                                                formatter={(value) => <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{value}</span>}
+                                                formatter={(value) => <span className="text-[11px] font-medium text-muted-foreground">{value}</span>}
                                             />
                                         </PieChart>
                                     </ResponsiveContainer>

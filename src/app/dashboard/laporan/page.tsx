@@ -326,14 +326,14 @@ export default function LaporanPage() {
                                     <Tooltip 
                                         contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
                                         itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
-                                        formatter={(value) => [`${value} Hari`, 'Jumlah']}
+                                        formatter={(value) => [`${value} hari`, 'Jumlah']}
                                     />
                                     <Legend 
                                         verticalAlign="bottom" 
                                         height={40} 
                                         formatter={(value, entry: any) => (
-                                            <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground mx-1">
-                                                {value}: <span className="text-foreground">{entry.payload.value} HARI</span>
+                                            <span className="text-[11px] font-medium text-muted-foreground mx-1">
+                                                {value}: <span className="text-foreground">{entry.payload.value} hari</span>
                                             </span>
                                         )}
                                     />
