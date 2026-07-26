@@ -465,7 +465,7 @@ export default function UserReportDetailPage() {
                             </div>
 
                             <div className="flex justify-end max-w-2xl mx-auto">
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs uppercase tracking-widest shadow-none active:scale-[0.98] transition-all">
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
                                     {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}unduh pdf
                                 </Button>
                             </div>
@@ -528,7 +528,7 @@ export default function UserReportDetailPage() {
                                                                 <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleSetHadir(item)}>{hasIn ? 'Lengkapi absen pulang' : 'Jadikan Hadir'}</DropdownMenuItem>
-                                                                    {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Terlambat', 'Terlambat')}>Jadikan Terlambat</DropdownMenuItem>}
+                                                                    {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(day, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>}
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Ubah Status</DropdownMenuLabel>
                                                                     {!hasIn && (
@@ -568,4 +568,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-

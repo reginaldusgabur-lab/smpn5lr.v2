@@ -409,7 +409,7 @@ export default function SchoolReportPage() {
                             </div>
 
                             <div className="flex justify-end">
-                                <Button className="w-full sm:w-auto h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-xs uppercase tracking-widest shadow-none" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
+                                <Button className="w-full sm:w-auto h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-xs shadow-none" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
                                     {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}unduh pdf
                                 </Button>
                             </div>
