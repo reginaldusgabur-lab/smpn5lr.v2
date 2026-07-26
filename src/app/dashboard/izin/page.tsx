@@ -23,7 +23,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useFirestore, FirestorePermissionError, errorEmitter, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { Loader2, Clock, CheckCircle2, AlertCircle, Trash2, MessageSquare } from 'lucide-react';
 import { startOfDay, endOfDay, addDays, setHours, setMinutes, format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -401,6 +401,13 @@ export default function IzinPage() {
                                                 className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all font-bold" 
                                             />
                                         </FormControl>
+                                        <div className="flex items-start gap-2 p-3 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 mt-2">
+                                            <MessageSquare className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                                            <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
+                                                <strong className="text-primary uppercase tracking-tight mr-1">Petunjuk:</strong> 
+                                                Isi dengan alasan singkat saja (misal: Sakit demam). Kalimat sapaan atau permohonan izin lengkap harap dikirim langsung kepada <span className="text-foreground">Kepala Sekolah melalui WhatsApp</span>.
+                                            </p>
+                                        </div>
                                         <FormMessage className="text-[10px] font-bold" />
                                     </FormItem>
                                 )}
