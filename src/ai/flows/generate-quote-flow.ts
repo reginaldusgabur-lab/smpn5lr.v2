@@ -32,7 +32,7 @@ const generateQuoteFlow = ai.defineFlow(
     outputSchema: QuoteOutputSchema,
   },
   async (input) => {
-    const jenisAbsen = input.attendanceType === 'in' ? 'Mulai Tugas (Pagi)' : 'Selesai Tugas (Sore/Pulang)';
+    const jenisAbsen = input.attendanceType === 'in' ? 'masuk tugas' : 'pulang tugas';
     const peran = (input.category || 'Guru').replace('_', ' ');
     
     // Daftar topik mikro untuk variasi prompt yang cerdas dan relatable
@@ -57,7 +57,7 @@ const generateQuoteFlow = ai.defineFlow(
       "Filosofi spidol habis di saat-saat genting",
       "Pentingnya senyum meskipun data inventaris belum sinkron",
       "Semangat pejuang pendidikan di SMPN 5 Langke Rembong",
-      "Piket pagi yang penuh dengan sambutan hangat (dan debu jalanan)",
+      "Piket pagi yang penuh dengan sambutan hangat",
       "Rebutan colokan listrik di ruang guru",
       "Upacara bendera yang melatih ketahanan kaki dan kesabaran",
       "Rapat dinas yang durasinya seringkali 'fleksibel'",
@@ -70,26 +70,16 @@ const generateQuoteFlow = ai.defineFlow(
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
-        prompt: `Anda adalah AI humoris dan inspiratif pembuat "Kutipan Hari Ini" untuk aplikasi E-SPENLI (SMPN 5 Langke Rembong).
+        prompt: `Saya adalah seorang ${peran} di SMPN 5 Langke Rembong. 
+Buatkan saya kutipan singkat yang lucu, humoris, dan menghibur untuk menyemangati hari saya saat sedang melakukan absensi ${jenisAbsen}.
 
-KONTEKS:
-- Pengguna: ${peran}
-- Waktu: ${jenisAbsen}
-- Topik Mikro Khusus Hari Ini: ${selectedTopic}
-- Seed Sesi Unik: ${input.seed}
-
-MISI:
-Buat kutipan 1-2 kalimat pendek yang SANGAT SPESIFIK untuk peran ${peran}.
-- WAJIB masukkan unsur HUMOR ringan atau sindiran lucu seputar profesi (Dapodik, RPP, spidol macet, bel sekolah, absen, meja kantor berantakan, dll).
-- JANGAN gunakan kata-kata motivasi klise seperti "Masa depan ada di tanganmu". Gunakan gaya bahasa "curhatan cerdas" yang hangat dan akrab.
-- BAHASA: Indonesia yang santai, natural, seperti sedang mengobrol akrab di ruang guru.
-
-PENTING:
-- Jangan sebutkan nama tokoh.
-- Hasil harus UNIK dan berbeda dari hasil sebelumnya. Manfaatkan elemen ${selectedTopic} sebagai bumbu utama.
+KONTEKS KHUSUS:
+- Topik spesifik hari ini: ${selectedTopic}
+- Gaya bahasa: Santai, natural (seperti ngobrol di ruang guru), humoris, dan tidak kaku.
+- JANGAN gunakan kata motivasi klise seperti "Masa depan di tanganmu". Gunakan sindiran lucu yang cerdas tentang kerepotan profesi.
 
 OUTPUT:
-Berikan JSON dengan field 'quote' and 'author' (isi author dengan "AI E-SPENLI").`,
+Hasilkan 1-2 kalimat pendek saja dalam format JSON dengan field 'quote' (isi kutipan) dan 'author' (isi dengan "AI E-SPENLI").`,
         output: { schema: QuoteOutputSchema },
       });
 
