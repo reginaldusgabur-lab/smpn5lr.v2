@@ -28,7 +28,7 @@ import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/atte
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
+import Link from 'link';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface ReportItem {
@@ -156,7 +156,7 @@ export default function LaporanPage() {
   const getStatusBadgeStyle = (status: string) => {
       const s = status.toLowerCase();
       if (s === 'alpa') return 'bg-red-600 text-white border-none shadow-sm';
-      if (s === 'sakit') return 'bg-orange-50 text-white border-none shadow-sm';
+      if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
       if (s === 'izin' || s.includes('pribadi')) return 'bg-blue-800 text-white border-none shadow-sm';
       if (s === 'hadir' || s === 'terlambat') return 'bg-green-600 text-white border-none shadow-sm';
       return 'bg-primary text-white border-none shadow-sm';

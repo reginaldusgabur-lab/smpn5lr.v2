@@ -347,7 +347,7 @@ export default function UserReportDetailPage() {
         const d = desc.toLowerCase();
         if (s === 'terlambat' || d === 'terlambat') return 'bg-green-600 text-white border-none';
         if (s === 'alpa') return 'bg-red-50 text-red-700 border-red-200';
-        if (s === 'sakit') return 'bg-orange-50 text-orange-700 border-orange-200';
+        if (s === 'sakit') return 'bg-orange-500 text-white border-none';
         if (s === 'izin' || s.includes('izin pribadi')) return 'bg-blue-50 text-blue-700 border-blue-200';
         if (s.includes('dinas') || s.includes('kegiatan')) return 'bg-purple-50 text-purple-700 border-purple-200';
         return 'bg-orange-50 text-orange-700 border-orange-200';
@@ -358,7 +358,7 @@ export default function UserReportDetailPage() {
             <div className="max-w-7xl mx-auto space-y-4">
                 <div className="px-4 md:px-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 shadow-none" onClick={() => router.back()}><ArrowLeft className="h-5 w-5" /></Button>
+                        <button onClick={() => router.back()} className="h-8 w-8 -ml-2 rounded-full hover:bg-muted flex items-center justify-center transition-colors"><ArrowLeft className="h-5 w-5" /></button>
                         <div className="flex flex-col">
                             <h1 className="text-2xl font-normal tracking-tight text-foreground">Detail laporan kehadiran</h1>
                             {userData && <p className="text-sm font-bold text-primary flex items-center gap-2"><User className="h-3.5 w-3.5" />{userData.name}</p>}
@@ -546,7 +546,7 @@ export default function UserReportDetailPage() {
                                                         ) : (
                                                             <span className={cn("inline-flex items-center px-3 py-0.5 rounded-full text-[9px] font-bold", 
                                                                 (displayStatus === 'Hadir') ? 'bg-green-100 text-green-700' : 
-                                                                (displayStatus === 'Sakit') ? 'bg-orange-100 text-orange-700' : 
+                                                                (displayStatus === 'Sakit') ? 'bg-orange-500 text-white' : 
                                                                 (displayStatus === 'Alpa') ? 'bg-red-100 text-red-700' :
                                                                 'bg-blue-100 text-blue-700'
                                                             )}>
