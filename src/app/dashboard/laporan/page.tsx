@@ -157,7 +157,7 @@ export default function LaporanPage() {
   const getStatusBadgeStyle = (status: string) => {
       const s = status.toLowerCase();
       if (s === 'alpa') return 'bg-red-600 text-white border-none shadow-sm';
-      if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
+      if (s === 'sakit') return 'bg-orange-50 text-white border-none shadow-sm';
       if (s === 'izin' || s.includes('pribadi')) return 'bg-blue-800 text-white border-none shadow-sm';
       if (s === 'hadir' || s === 'terlambat') return 'bg-green-600 text-white border-none shadow-sm';
       return 'bg-primary text-white border-none shadow-sm';
@@ -296,13 +296,13 @@ export default function LaporanPage() {
                                     <PieIcon className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-lg font-bold">Prestasi Kehadiran</CardTitle>
+                                    <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
                                     <CardDescription className="text-xs font-medium">Visualisasi perolehan absensi Anda bulan ini.</CardDescription>
                                 </div>
                             </div>
                             <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
                                 <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
-                                <p className="text-3xl font-black text-primary leading-none">{stats.persentase}</p>
+                                <p className="text-xl font-bold text-primary leading-none">{stats.persentase}</p>
                             </div>
                         </div>
                     </CardHeader>

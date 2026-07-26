@@ -410,7 +410,7 @@ export default function SchoolReportPage() {
 
                             <div className="flex justify-end">
                                 <Button className="w-full sm:w-auto h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-xs uppercase tracking-widest shadow-none" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
-                                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
+                                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}unduh pdf
                                 </Button>
                             </div>
                         </div>
@@ -425,12 +425,11 @@ export default function SchoolReportPage() {
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Izin</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Sakit</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Alpa</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">%</TableHead>
                                         <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {isReportLoading ? [...Array(6)].map((_, i) => <TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell></TableRow>) : filteredReports.length > 0 ? filteredReports.map((item) => (
+                                    {isReportLoading ? [...Array(6)].map((_, i) => <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-10 w-full" /></TableCell></TableRow>) : filteredReports.length > 0 ? filteredReports.map((item) => (
                                         <TableRow key={item.uid} className="hover:bg-primary/5">
                                             <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.no}</TableCell>
                                             <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{item.name}</span><span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span></div></TableCell>
@@ -438,12 +437,11 @@ export default function SchoolReportPage() {
                                             <TableCell className="text-center font-bold text-blue-500/80">{item.totalIzin}</TableCell>
                                             <TableCell className="text-center font-bold text-orange-500/80">{item.totalSakit}</TableCell>
                                             <TableCell className="text-center font-bold text-destructive/80">{item.totalAlpa}</TableCell>
-                                            <TableCell className="text-center"><span className="px-3 py-1 rounded-xl bg-primary/10 text-primary font-bold text-xs">{item.persentase}</span></TableCell>
                                             <TableCell className="text-center"><Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}><Button variant="ghost" size="icon" className="rounded-full"><Eye className="h-5 w-5 text-primary" /></Button></Link></TableCell>
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="h-48 text-center font-bold opacity-50 uppercase text-xs">
+                                            <TableCell colSpan={7} className="h-48 text-center font-bold opacity-50 uppercase text-xs">
                                                 Data tidak ditemukan
                                             </TableCell>
                                         </TableRow>
@@ -463,7 +461,7 @@ export default function SchoolReportPage() {
                                     <PieIcon className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-lg font-bold">Statistik Kehadiran Kolektif</CardTitle>
+                                    <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
                                     <CardDescription className="text-xs font-medium">Ringkasan performa dan kesehatan seluruh personil.</CardDescription>
                                 </div>
                             </div>

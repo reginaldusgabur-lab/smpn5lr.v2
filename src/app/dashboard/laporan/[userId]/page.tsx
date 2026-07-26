@@ -366,7 +366,7 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                {/* GRAFIK PRESTASI INDIVIDU - REFINED BADGE */}
+                {/* GRAFIK PRESENTASI INDIVIDU - REFINED BADGE */}
                 {!isLoading && stats && (
                     <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
@@ -376,13 +376,13 @@ export default function UserReportDetailPage() {
                                         <PieIcon className="h-5 w-5 text-primary" />
                                     </div>
                                     <div>
-                                        <CardTitle className="text-lg font-bold">Prestasi Kehadiran</CardTitle>
+                                        <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
                                         <CardDescription className="text-xs font-medium">Visualisasi performa kehadiran personil bulan ini.</CardDescription>
                                     </div>
                                 </div>
                                 <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
                                     <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
-                                    <p className="text-3xl font-black text-primary leading-none">{stats.persentase}</p>
+                                    <p className="text-xl font-bold text-primary leading-none">{stats.persentase}</p>
                                 </div>
                             </div>
                         </CardHeader>
@@ -473,7 +473,7 @@ export default function UserReportDetailPage() {
 
                             <div className="flex justify-end max-w-2xl mx-auto">
                                 <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs uppercase tracking-widest shadow-none active:scale-95 transition-all">
-                                    {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
+                                    {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}unduh pdf
                                 </Button>
                             </div>
                         </div>

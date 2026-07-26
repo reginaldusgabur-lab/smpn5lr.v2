@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -149,7 +150,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
 
 const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLoading: boolean, currentMonth: Date }) => {
     const router = useRouter();
-    if (isLoading) return <div className="rounded-md border"><Table><TableHeader><TableRow>{[...Array(11)].map((_, i) => <TableHead key={i}><Skeleton className="h-5 w-full" /></TableHead>)}</TableRow></TableHeader><TableBody>{[...Array(10)].map((_, i) => (<TableRow key={i}>{[...Array(11)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}</TableRow>))}</TableBody></Table></div>;
+    if (isLoading) return <div className="rounded-md border"><Table><TableHeader><TableRow>{[...Array(9)].map((_, i) => <TableHead key={i}><Skeleton className="h-5 w-full" /></TableHead>)}</TableRow></TableHeader><TableBody>{[...Array(10)].map((_, i) => (<TableRow key={i}>{[...Array(9)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}</TableRow>))}</TableBody></Table></div>;
 
     return (
         <div className="rounded-md border">
@@ -163,7 +164,6 @@ const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLo
                         <TableHead className="text-center">Hadir</TableHead>
                         <TableHead className="text-center">Izin</TableHead>
                         <TableHead className="text-center">Sakit</TableHead>
-                        <TableHead className="text-center">Persentase</TableHead>
                         <TableHead className="text-right">Aksi</TableHead> 
                     </TableRow>
                 </TableHeader>
@@ -178,7 +178,6 @@ const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLo
                                 <TableCell className="text-center font-bold">{user.hadir}</TableCell>
                                 <TableCell className="text-center font-bold">{user.izin}</TableCell>
                                 <TableCell className="text-center font-bold">{user.sakit}</TableCell>
-                                <TableCell className="text-center font-bold">{user.presentasi}</TableCell>
                                 <TableCell className="text-right">
                                      <DropdownMenu>
                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -187,7 +186,7 @@ const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLo
                                 </TableCell>
                             </TableRow>
                         ))
-                    ) : <TableRow><TableCell colSpan={11} className="h-24 text-center">Tidak ada data.</TableCell></TableRow>}
+                    ) : <TableRow><TableCell colSpan={9} className="h-24 text-center">Tidak ada data.</TableCell></TableRow>}
                 </TableBody>
             </Table>
         </div>
