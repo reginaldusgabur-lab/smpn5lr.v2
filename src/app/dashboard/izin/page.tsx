@@ -405,7 +405,7 @@ export default function IzinPage() {
                                             <MessageSquare className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
                                             <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
                                                 <strong className="text-primary uppercase tracking-tight mr-1">Petunjuk:</strong> 
-                                                Isi dengan alasan singkat saja (misal: Sakit demam). Kalimat sapaan atau permohonan izin lengkap harap dikirim langsung kepada <span className="text-foreground">Kepala Sekolah melalui WhatsApp</span>.
+                                                Isi dengan alasan singkat saja (misal: Sakit demam). Kalimat sapaan atau permohonan izin lengkap harap dikirim langsung kepada <span className="text-foreground">Kepala Sekolah melalui WhatsApp atau menyesuaikan aturan sekolah</span>.
                                             </p>
                                         </div>
                                         <FormMessage className="text-[10px] font-bold" />
