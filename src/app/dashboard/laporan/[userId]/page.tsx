@@ -366,7 +366,6 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                {/* GRAFIK PRESENTASI INDIVIDU - REFINED BADGE */}
                 {!isLoading && stats && (
                     <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
@@ -382,7 +381,7 @@ export default function UserReportDetailPage() {
                                 </div>
                                 <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
                                     <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
-                                    <p className="text-xl font-bold text-primary leading-none">{stats.persentase}</p>
+                                    <p className="text-lg font-black text-primary leading-none">{stats.persentase}</p>
                                 </div>
                             </div>
                         </CardHeader>
@@ -449,12 +448,6 @@ export default function UserReportDetailPage() {
                                     </div>
                                     
                                     <div className="flex items-center gap-2">
-                                        {stats && (
-                                            <div className="hidden sm:flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
-                                                <TrendingUp className="h-4 w-4 text-primary" />
-                                                <span className="text-sm font-bold text-primary">{stats.persentase}</span>
-                                            </div>
-                                        )}
                                         <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                                             {format(currentMonth, 'MMMM yyyy', { locale: id })}
                                         </span>
@@ -472,7 +465,7 @@ export default function UserReportDetailPage() {
                             </div>
 
                             <div className="flex justify-end max-w-2xl mx-auto">
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs uppercase tracking-widest shadow-none active:scale-95 transition-all">
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs uppercase tracking-widest shadow-none active:scale-[0.98] transition-all">
                                     {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}unduh pdf
                                 </Button>
                             </div>
@@ -575,3 +568,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+

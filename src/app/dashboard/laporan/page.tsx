@@ -213,12 +213,6 @@ export default function LaporanPage() {
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            {stats && (
-                                <div className="hidden sm:flex items-center gap-1.5 pr-3 border-r border-muted-foreground/20 shrink-0">
-                                    <TrendingUp className="h-4 w-4 text-primary" />
-                                    <span className="text-sm font-bold text-primary">{stats.persentase}</span>
-                                </div>
-                            )}
                             <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
@@ -286,7 +280,6 @@ export default function LaporanPage() {
               </CardContent>
             </Card>
 
-            {/* GRAFIK PRESTASI PENGGUNA - REFINED BADGE */}
             {!isLoading && stats && (
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
                     <CardHeader className="p-6 border-b border-muted-foreground/5">
@@ -295,14 +288,14 @@ export default function LaporanPage() {
                                 <div className="p-2 bg-primary/10 rounded-xl">
                                     <PieIcon className="h-5 w-5 text-primary" />
                                 </div>
-                                <div>
+                                <div className="space-y-1">
                                     <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
                                     <CardDescription className="text-xs font-medium">Visualisasi perolehan absensi Anda bulan ini.</CardDescription>
                                 </div>
                             </div>
                             <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
                                 <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
-                                <p className="text-xl font-bold text-primary leading-none">{stats.persentase}</p>
+                                <p className="text-lg font-black text-primary leading-none">{stats.persentase}</p>
                             </div>
                         </div>
                     </CardHeader>
