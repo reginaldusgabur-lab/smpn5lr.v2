@@ -359,7 +359,7 @@ export default function UserReportDetailPage() {
                     <div className="flex items-center gap-2 mb-0.5">
                         <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 shadow-none" onClick={() => router.back()}><ArrowLeft className="h-5 w-5" /></Button>
                         <div className="flex flex-col">
-                            <h1 className="text-2xl font-normal tracking-tight text-foreground">Detail Laporan Kehadiran</h1>
+                            <h1 className="text-2xl font-normal tracking-tight text-foreground">Detail laporan kehadiran</h1>
                             {userData && <p className="text-sm font-bold text-primary flex items-center gap-2"><User className="h-3.5 w-3.5" />{userData.name}</p>}
                         </div>
                     </div>
@@ -474,12 +474,12 @@ export default function UserReportDetailPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
-                                        <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-widest">Tanggal</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Masuk</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Pulang</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Status</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Keterangan</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">No</TableHead>
+                                        <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Tanggal</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Masuk</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Status</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Keterangan</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

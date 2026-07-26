@@ -156,7 +156,7 @@ export default function LaporanPage() {
   const getStatusBadgeStyle = (status: string) => {
       const s = status.toLowerCase();
       if (s === 'alpa') return 'bg-red-600 text-white border-none shadow-sm';
-      if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
+      if (s === 'sakit') return 'bg-orange-50 text-white border-none shadow-sm';
       if (s === 'izin' || s.includes('pribadi')) return 'bg-blue-800 text-white border-none shadow-sm';
       if (s === 'hadir' || s === 'terlambat') return 'bg-green-600 text-white border-none shadow-sm';
       return 'bg-primary text-white border-none shadow-sm';
@@ -232,12 +232,12 @@ export default function LaporanPage() {
                     <Table className="min-w-[720px]">
                         <TableHeader className="bg-muted/30">
                             <TableRow className="border-none">
-                                <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
-                                <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Tanggal</TableHead>
-                                <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Masuk</TableHead>
-                                <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Pulang</TableHead>
-                                <TableHead className="w-[140px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Status</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Keterangan</TableHead>
+                                <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">No</TableHead>
+                                <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Tanggal</TableHead>
+                                <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Masuk</TableHead>
+                                <TableHead className="w-[100px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Pulang</TableHead>
+                                <TableHead className="w-[140px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Status</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

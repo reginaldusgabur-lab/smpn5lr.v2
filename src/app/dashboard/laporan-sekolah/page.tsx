@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -419,13 +418,13 @@ export default function SchoolReportPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Nama & NIP</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Hadir</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Izin</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Sakit</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Alpa</TableHead>
-                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest">Aksi</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest border-none">No</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest border-none">Nama & NIP</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Hadir</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Izin</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Sakit</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Alpa</TableHead>
+                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest border-none">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
