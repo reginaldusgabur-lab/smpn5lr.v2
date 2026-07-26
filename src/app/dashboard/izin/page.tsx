@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Card,
@@ -17,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/form';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -367,10 +366,10 @@ export default function IzinPage() {
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-none shadow-2xl">
-                                                    <SelectItem value="today" disabled={isTodayHoliday} className="rounded-lg font-bold">
+                                                    <SelectItem value="today" className="rounded-lg font-bold">
                                                         Hari Ini {isTodayHoliday && '(Libur)'}
                                                     </SelectItem>
-                                                    <SelectItem value="tomorrow" disabled={isTomorrowHoliday} className="rounded-lg font-bold">
+                                                    <SelectItem value="tomorrow" className="rounded-lg font-bold">
                                                         Besok {isTomorrowHoliday && '(Libur)'}
                                                     </SelectItem>
                                                 </SelectContent>
@@ -385,7 +384,7 @@ export default function IzinPage() {
                                     render={({ field }) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-xs font-bold ml-1 uppercase tracking-wider text-muted-foreground">Jenis Pengajuan</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={!!currentDayLeave || (selectedDateValue === 'today' && isTodayHoliday) || (selectedDateValue === 'tomorrow' && isTomorrowHoliday)}>
+                                            <Select onValueChange={field.onChange} value={field.value} disabled={!!currentDayLeave}>
                                                 <FormControl>
                                                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold">
                                                         <SelectValue placeholder="Pilih jenis" />
@@ -413,7 +412,7 @@ export default function IzinPage() {
                                         <FormControl>
                                             <Textarea 
                                                 placeholder={dynamicPlaceholder} 
-                                                disabled={!!currentDayLeave || (selectedDateValue === 'today' && isTodayHoliday) || (selectedDateValue === 'tomorrow' && isTomorrowHoliday)}
+                                                disabled={!!currentDayLeave}
                                                 {...field} 
                                                 className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all font-bold" 
                                             />
@@ -433,7 +432,7 @@ export default function IzinPage() {
                         <CardFooter className="border-t p-6 bg-muted/5">
                             <Button 
                                 type="submit" 
-                                disabled={isSubmitting || isChecking || !!currentDayLeave || (selectedDateValue === 'today' && isTodayHoliday) || (selectedDateValue === 'tomorrow' && isTomorrowHoliday)} 
+                                disabled={isSubmitting || isChecking || !!currentDayLeave} 
                                 className={cn(
                                     "w-full sm:w-auto h-12 rounded-xl font-black tracking-widest shadow-none active:scale-95 transition-all bg-primary uppercase",
                                     currentDayLeave?.status === 'pending' && "bg-amber-500 hover:bg-amber-600"
