@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -260,9 +259,9 @@ export default function UserReportDetailPage() {
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
             safeFormat(item.date, 'eeee, dd MMMM yyyy'),
-            (item.status === 'Terlambat' && !item.checkInTime) ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
+            (item.status === 'Terlambat' || item.description === 'Terlambat' && !item.checkInTime) ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
             safeFormat(item.checkOutTime, 'HH:mm:ss'),
-            item.status,
+            (item.status === 'Terlambat' || item.description === 'Terlambat') ? 'Hadir' : item.status,
             item.description || '-'
         ]);
 
@@ -332,9 +331,11 @@ export default function UserReportDetailPage() {
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
-    const getAdminBadgeClass = (status: string) => {
+    const getAdminBadgeClass = (status: string, desc: string) => {
         const s = status.toLowerCase();
-        if (s === 'alpa' || s === 'terlambat') return 'bg-red-50 text-red-700 border-red-200';
+        const d = desc.toLowerCase();
+        if (s === 'terlambat' || d === 'terlambat') return 'bg-green-600 text-white border-none';
+        if (s === 'alpa') return 'bg-red-50 text-red-700 border-red-200';
         if (s === 'sakit') return 'bg-orange-50 text-orange-700 border-orange-200';
         if (s === 'izin' || s.includes('izin pribadi')) return 'bg-blue-50 text-blue-700 border-blue-200';
         if (s.includes('dinas')) return 'bg-purple-50 text-purple-700 border-purple-200';
@@ -439,14 +440,15 @@ export default function UserReportDetailPage() {
                                             const hasOut = !!item.checkOutTime;
                                             const isLeave = ['Sakit', 'Izin', 'Dinas'].some(s => item.status.includes(s));
                                             const isComplete = hasIn && hasOut;
-                                            const isManualLate = item.status === 'Terlambat' && !hasIn;
+                                            const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
+                                            const displayStatus = isManualLate ? 'Hadir' : item.status;
 
                                             return (
                                                 <TableRow key={item.id} className={cn("border-muted-foreground/5 hover:bg-muted/20 transition-colors", isAlpa && "bg-destructive/5")}>
                                                     <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
                                                     <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
                                                     <TableCell className='text-center font-mono text-xs font-bold'>
-                                                        {isManualLate ? (
+                                                        {(isManualLate && !hasIn) ? (
                                                             <span className="text-red-600 font-black">-</span>
                                                         ) : (
                                                             <span className="text-foreground">{safeFormat(item.checkInTime, 'HH:mm:ss')}</span>
@@ -457,8 +459,8 @@ export default function UserReportDetailPage() {
                                                         {isAdmin && !isLeave && !isComplete ? (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="outline" size="sm" className={cn("font-bold text-[9px] h-7 rounded-lg shadow-none flex items-center justify-center gap-1", getAdminBadgeClass(item.status))}>
-                                                                        {item.status} <MoreVertical className="h-3 w-3" />
+                                                                    <Button variant="outline" size="sm" className={cn("font-bold text-[9px] h-7 rounded-lg shadow-none flex items-center justify-center gap-1", getAdminBadgeClass(item.status, item.description))}>
+                                                                        {displayStatus} <MoreVertical className="h-3 w-3" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
@@ -480,12 +482,12 @@ export default function UserReportDetailPage() {
                                                             </DropdownMenu>
                                                         ) : (
                                                             <span className={cn("inline-flex items-center px-3 py-0.5 rounded-full text-[9px] font-bold", 
-                                                                item.status === 'Hadir' ? 'bg-green-100 text-green-700' : 
-                                                                item.status === 'Sakit' ? 'bg-orange-100 text-orange-700' : 
-                                                                item.status === 'Terlambat' ? 'bg-red-100 text-red-700' :
+                                                                (displayStatus === 'Hadir') ? 'bg-green-100 text-green-700' : 
+                                                                (displayStatus === 'Sakit') ? 'bg-orange-100 text-orange-700' : 
+                                                                (displayStatus === 'Alpa') ? 'bg-red-100 text-red-700' :
                                                                 'bg-blue-100 text-blue-700'
                                                             )}>
-                                                                {item.status}
+                                                                {displayStatus}
                                                             </span>
                                                         )}
                                                     </TableCell>

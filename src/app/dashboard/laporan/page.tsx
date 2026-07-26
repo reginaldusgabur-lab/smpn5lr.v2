@@ -148,8 +148,7 @@ export default function LaporanPage() {
       if (s === 'alpa') return 'bg-red-600 text-white border-none shadow-sm';
       if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
       if (s === 'izin' || s.includes('pribadi')) return 'bg-blue-800 text-white border-none shadow-sm';
-      if (s === 'hadir') return 'bg-green-600 text-white border-none shadow-sm';
-      if (s === 'terlambat') return 'bg-red-600 text-white border-none shadow-sm';
+      if (s === 'hadir' || s === 'terlambat') return 'bg-green-600 text-white border-none shadow-sm';
       return 'bg-primary text-white border-none shadow-sm';
   };
 
@@ -240,18 +239,20 @@ export default function LaporanPage() {
                         <TableBody>
                             {monthlyReportData.length > 0 ? (
                                 monthlyReportData.map((record, index) => {
-                                    const isManualLate = record.status === 'Terlambat' && record.checkIn === '-';
+                                    const isManualLate = record.status === 'Terlambat' || record.description === 'Terlambat';
+                                    const displayStatus = (record.status === 'Terlambat' || record.description === 'Terlambat') ? 'Hadir' : record.status;
+                                    
                                     return (
                                         <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
                                             <TableCell className="text-center font-bold text-muted-foreground text-sm">{index + 1}</TableCell>
                                             <TableCell className="font-bold text-sm text-foreground whitespace-nowrap">{record.dateString}</TableCell>
                                             <TableCell className="text-center font-mono text-xs font-bold text-foreground">
-                                                {isManualLate ? <span className="text-red-600 font-black">-</span> : record.checkIn}
+                                                {(isManualLate && record.checkIn === '-') ? <span className="text-red-600 font-black">-</span> : record.checkIn}
                                             </TableCell>
                                             <TableCell className="text-center font-mono text-xs font-bold text-foreground">{record.checkOut}</TableCell>
                                             <TableCell className="text-center whitespace-nowrap">
                                                 <Badge variant="outline" className={cn("text-[9px] font-bold uppercase px-3 py-1 rounded-full", getStatusBadgeStyle(record.status))}>
-                                                    {record.status}
+                                                    {displayStatus}
                                                 </Badge>
                                                 {record.approvalStatus && (
                                                     <Badge variant="outline" className="capitalize ml-1 text-[8px] font-bold">

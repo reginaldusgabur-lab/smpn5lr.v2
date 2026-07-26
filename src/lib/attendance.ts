@@ -348,15 +348,14 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 description = cleanDesc(description);
 
+                // LOGIC: Map "Terlambat" to status "Hadir"
+                const lowDesc = description.toLowerCase();
+                const statusLabel = description.charAt(0).toUpperCase() + description.slice(1);
+                
                 const importantStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'];
-                if (importantStatuses.includes(description.toLowerCase())) {
-                    const lowDesc = description.toLowerCase();
-                    const statusLabel = description.charAt(0).toUpperCase() + description.slice(1);
-                    
-                    // NEW: If late, status text remains "Hadir" (Request: "statusnya tetap hadir")
+                if (importantStatuses.includes(lowDesc)) {
                     let finalStatus = statusLabel;
                     if (lowDesc === 'terlambat') finalStatus = 'Hadir';
-
                     return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: finalStatus, description: statusLabel, manualEntry: isManual };
                 }
 

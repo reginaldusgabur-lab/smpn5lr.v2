@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -199,9 +198,11 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         finally { setIsSaving(false); }
     };
 
-    const getAdminBadgeClass = (status: string) => {
+    const getAdminBadgeClass = (status: string, desc: string) => {
         const s = status.toLowerCase();
-        if (s === 'alpa' || s === 'terlambat') return 'bg-red-50 text-red-700 border-red-200';
+        const d = desc.toLowerCase();
+        if (s === 'terlambat' || d === 'terlambat') return 'bg-green-600 text-white border-none';
+        if (s === 'alpa') return 'bg-red-50 text-red-700 border-red-200';
         if (s === 'sakit') return 'bg-orange-50 text-orange-700 border-orange-200';
         if (s === 'izin' || s.includes('izin')) return 'bg-blue-50 text-blue-700 border-blue-200';
         return 'bg-orange-50 text-orange-700 border-orange-200';
@@ -225,15 +226,17 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                 const hasIn = !!day.checkInTime;
                                 const hasOut = !!day.checkOutTime;
                                 const isNoIn = !hasIn && hasOut;
+                                const isManualLate = day.status === 'Terlambat' || day.description === 'Terlambat';
+                                const displayStatus = isManualLate ? 'Hadir' : day.status;
 
                                 return (
                                     <div key={day.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 border border-muted-foreground/5">
-                                        {day.status === 'Alpa' ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[day.id]} onCheckedChange={() => handleSelectDay(day.id)} />}
+                                        {(day.status === 'Alpa' && !isManualLate) ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[day.id]} onCheckedChange={() => handleSelectDay(day.id)} />}
                                         <label className="text-sm font-bold grow">{format(parseISO(day.date), 'eeee, d MMM yyyy', { locale: id })}</label>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Badge variant="outline" className={cn("cursor-pointer font-bold text-[10px] px-3 py-1 rounded-lg uppercase shadow-none", getAdminBadgeClass(day.status))}>
-                                                    {day.status} <MoreVertical className="h-3 w-3 ml-1" />
+                                                <Badge variant="outline" className={cn("cursor-pointer font-bold text-[10px] px-3 py-1 rounded-lg uppercase shadow-none", getAdminBadgeClass(day.status, day.description))}>
+                                                    {displayStatus} <MoreVertical className="h-3 w-3 ml-1" />
                                                 </Badge>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
@@ -254,7 +257,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                                     </>
                                                 )}
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(day, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Pulang Cepat', 'Pulang cepat')}>Pulang cepat</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(day, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
