@@ -188,11 +188,11 @@ const RecentAttendanceTable = () => {
               <Table>
                 <TableHeader className="bg-green-500/5">
                   <TableRow className="border-none">
-                    <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-green-700">No</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase tracking-widest text-green-700">Nama & NIP</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-green-700">Masuk</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-green-700">Pulang</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-green-700">Status</TableHead>
+                    <TableHead className="w-[60px] text-center font-semibold text-[10px] text-green-700">No</TableHead>
+                    <TableHead className="font-semibold text-[10px] text-green-700">Nama & NIP</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Masuk</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Pulang</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

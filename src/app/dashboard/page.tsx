@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -40,7 +41,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-// Stabilized LiveClock component with GPU isolation
+// Stabilized LiveClockUI component with GPU isolation
 const LiveClockUI = memo(() => {
     const [time, setTime] = useState<Date | null>(null);
     useEffect(() => {
@@ -294,7 +295,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3">
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[9px] font-semibold text-green-600 uppercase tracking-wider">Hadir</CardTitle>
+                            <CardTitle className="text-[10px] font-semibold text-green-600">Hadir</CardTitle>
                             <UserCheck className="h-3 w-3 text-green-600" />
                         </CardHeader>
                         <div className="text-2xl font-bold text-green-600 tracking-tighter">
@@ -303,7 +304,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3">
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[9px] font-semibold text-blue-600 uppercase tracking-wider">Izin/Sakit</CardTitle>
+                            <CardTitle className="text-[10px] font-semibold text-blue-600">Izin/Sakit</CardTitle>
                             <BookUser className="h-3 w-3 text-blue-600" />
                         </CardHeader>
                         <div className="text-2xl font-bold text-blue-600 tracking-tighter">
@@ -312,7 +313,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3">
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[9px] font-semibold text-amber-600 uppercase tracking-wider">Menunggu</CardTitle>
+                            <CardTitle className="text-[10px] font-semibold text-amber-600">Menunggu</CardTitle>
                             <MailWarning className="h-3 w-3 text-amber-600" />
                         </CardHeader>
                         <div className="text-2xl font-bold text-amber-600 tracking-tighter">
@@ -321,7 +322,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3">
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[9px] font-semibold text-red-600 uppercase tracking-wider">Alpa</CardTitle>
+                            <CardTitle className="text-[10px] font-semibold text-red-600">Alpa</CardTitle>
                             <UserX className="h-3 w-3 text-red-600" />
                         </CardHeader>
                         <div className="text-2xl font-bold text-red-600 tracking-tighter">

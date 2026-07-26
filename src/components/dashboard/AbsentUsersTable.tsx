@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -201,9 +202,9 @@ const AbsentUsersTable = () => {
               <Table>
                   <TableHeader className="bg-destructive/5">
                   <TableRow className="border-none">
-                      <TableHead className="w-[60px] text-center font-bold text-[10px] tracking-widest text-destructive uppercase">No</TableHead>
-                      <TableHead className="font-bold text-[10px] tracking-widest text-destructive uppercase">Nama & Posisi</TableHead>
-                      <TableHead className="text-center font-bold text-[10px] tracking-widest text-destructive uppercase">Status</TableHead>
+                      <TableHead className="w-[60px] text-center font-semibold text-[10px] text-destructive">No</TableHead>
+                      <TableHead className="font-semibold text-[10px] text-destructive">Nama & Posisi</TableHead>
+                      <TableHead className="text-center font-semibold text-[10px] text-destructive">Status</TableHead>
                   </TableRow>
                   </TableHeader>
                   <TableBody>

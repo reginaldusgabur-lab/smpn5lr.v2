@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -126,9 +127,6 @@ export default function AdminDashboardPage() {
                 getDocs(leaveQuery)
             ]);
 
-            const todayStart = startOfDay(new Date());
-            const todayEnd = endOfDay(new Date());
-
             const allAttendance = attendanceSnap.docs
                 .map(d => ({ ...d.data(), id: d.id }))
                 .filter(att => {
@@ -239,7 +237,7 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="shadow-none">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground">Hadir</CardTitle>
+                    <CardTitle className="text-[10px] font-semibold text-muted-foreground">Hadir</CardTitle>
                     <UserCheck className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
@@ -248,7 +246,7 @@ export default function AdminDashboardPage() {
             </Card>
             <Card className="shadow-none">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground">Izin/Sakit</CardTitle>
+                    <CardTitle className="text-[10px] font-semibold text-muted-foreground">Izin/Sakit</CardTitle>
                     <BookUser className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>
@@ -257,7 +255,7 @@ export default function AdminDashboardPage() {
             </Card>
             <Card className="shadow-none">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground">Menunggu</CardTitle>
+                    <CardTitle className="text-[10px] font-semibold text-muted-foreground">Menunggu</CardTitle>
                     <FileWarning className="h-4 w-4 text-amber-500" />
                 </CardHeader>
                 <CardContent>
@@ -266,13 +264,13 @@ export default function AdminDashboardPage() {
             </Card>
             <Card className="shadow-none">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground">Alpa</CardTitle>
+                    <CardTitle className="text-[10px] font-semibold text-muted-foreground">Alpa</CardTitle>
                     <UserX className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold text-red-600">{dashboardData.stats.alpa}</div>
                 </CardContent>
-            </Card>
+            </div>
         </div>
 
         <Card className="shadow-none overflow-hidden">
