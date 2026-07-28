@@ -3,15 +3,17 @@ import { generateQuote } from '@/ai/flows/generate-quote-flow';
 
 /**
  * API Route untuk menghasilkan kutipan motivasi menggunakan AI.
- * Mengembalikan hasil dari alur kerja generateQuoteFlow.
  */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Validasi input minimal
-    if (!body.category || !body.attendanceType) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+    // Validasi parameter wajib sesuai skema baru
+    const required = ['userName', 'userId', 'role', 'attendanceType', 'day', 'date', 'creativeSeed'];
+    for (const field of required) {
+      if (!body[field]) {
+        return NextResponse.json({ error: `Missing parameter: ${field}` }, { status: 400 });
+      }
     }
 
     const result = await generateQuote(body);

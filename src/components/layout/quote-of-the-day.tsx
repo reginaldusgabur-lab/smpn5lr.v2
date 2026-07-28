@@ -2,6 +2,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 interface QuoteOfTheDayProps {
   category: string | null | undefined;
@@ -15,43 +19,60 @@ interface Quote {
 
 const FALLBACK_QUOTES: Record<string, Quote[]> = {
   guru: [
-    { quote: "RPP mungkin menumpuk, tapi semangat mencerdaskan bangsa harus tetap 'full tank'!", author: "AI E-SPENLI" },
-    { quote: "Ingat, spidol yang macet adalah ujian kesabaran tingkat tinggi. Tetap semangat!", author: "AI E-SPENLI" }
+    { quote: "RPP mungkin menumpuk, tapi dedikasi Anda adalah alasan siswa-siswi tersenyum hari ini.", author: "AI E-SPENLI" },
+    { quote: "Ingat, spidol yang macet adalah ujian kesabaran tingkat tinggi sebelum menghadapi kelas.", author: "AI E-SPENLI" }
   ],
   pegawai: [
-    { quote: "Sinkronisasi Dapodik itu soal keberuntungan, tapi dedikasi Anda adalah kepastian.", author: "AI E-SPENLI" }
+    { quote: "Sinkronisasi data itu soal keberuntungan, tapi kerja keras Anda adalah kepastian untuk sekolah.", author: "AI E-SPENLI" }
   ],
   default: [
-    { quote: "Selamat beraktivitas di SMPN 5 Langke Rembong. Mari tebar energi positif!", author: "AI E-SPENLI" }
+    { quote: "Selamat beraktivitas di SMPN 5 Langke Rembong. Mari tebar energi positif untuk sesama!", author: "AI E-SPENLI" }
   ]
 };
 
 const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isFetched = useRef(false);
 
+  const userDocRef = useMemoFirebase(() => 
+    user ? doc(firestore, 'users', user.uid) : null, 
+    [firestore, user]
+  );
+  const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
+
   useEffect(() => {
-    // Jalankan hanya jika parameter tersedia dan belum di-fetch untuk sesi ini
-    if (!category || !attendanceType || isFetched.current) {
-      if (!category || !attendanceType) setIsLoading(false);
-      return;
+    // Jalankan hanya jika semua data profil tersedia dan belum di-fetch untuk sesi ini
+    if (!userData || !attendanceType || isFetched.current) {
+        if (!attendanceType) setIsLoading(false);
+        return;
     }
 
     const fetchQuote = async () => {
       setIsLoading(true);
       isFetched.current = true;
+      
+      const now = new Date();
+      const dateStr = format(now, 'yyyy-MM-dd');
+      const dayStr = format(now, 'EEEE', { locale: id });
+      
+      // Membuat Creative Seed unik sesuai instruksi: UID-Tanggal-Tipe-Peran
+      const creativeSeed = `${user?.uid}-${dateStr}-${attendanceType}-${userData.role}`;
+
       try {
-        // Menghasilkan seed yang sangat unik berdasarkan waktu milidetik dan angka acak besar
-        const seedValue = Math.floor(Date.now() + Math.random() * 1000000);
-        
         const response = await fetch('/api/quote', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            category, 
-            attendanceType, 
-            seed: seedValue 
+            userName: userData.name,
+            userId: user?.uid,
+            role: userData.role,
+            attendanceType,
+            day: dayStr,
+            date: dateStr,
+            creativeSeed: creativeSeed
           }),
         });
         
@@ -62,16 +83,19 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('AI_FAILURE');
         }
       } catch (e: any) {
-        // Fallback jika AI gagal merespon
-        const roleKey = (category || 'default').toLowerCase();
+        // Fallback cerdas berdasarkan peran jika AI gagal
+        const roleKey = (userData.role || 'default').toLowerCase();
         const fallbackList = FALLBACK_QUOTES[roleKey] || FALLBACK_QUOTES.default;
         setQuote(fallbackList[Math.floor(Math.random() * fallbackList.length)]);
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchQuote();
-  }, [category, attendanceType]);
+  }, [userData, attendanceType, user?.uid]);
+
+  if (isUserDataLoading && !isFetched.current) return null;
 
   return (
     <div className="mt-2 pt-4 border-t border-border/10">

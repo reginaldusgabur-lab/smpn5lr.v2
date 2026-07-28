@@ -1,20 +1,24 @@
 'use server';
 /**
- * @fileOverview AI Flow untuk menghasilkan kutipan motivasi dengan karakter sekolah SMP.
- * Dioptimalkan untuk variasi tinggi, humor profesi, dan relevansi peran.
+ * @fileOverview AI Flow yang dioptimalkan untuk menghasilkan kutipan unik tinggi.
+ * Menggunakan parameter personal pengguna untuk mencegah pengulangan.
  */
 
 import { ai } from '../genkit';
 import { z } from 'genkit';
 
 const QuoteInputSchema = z.object({
-  category: z.string().describe('Peran pengguna (admin, kepala_sekolah, guru, pegawai, siswa)'),
+  userName: z.string().describe('Nama pengguna'),
+  userId: z.string().describe('UID unik pengguna'),
+  role: z.string().describe('Peran (admin, kepala_sekolah, guru, pegawai, siswa)'),
   attendanceType: z.enum(['in', 'out']).describe('Tipe absensi'),
-  seed: z.number().optional().describe('Nilai acak untuk memicu kreativitas unik'),
+  day: z.string().describe('Hari saat ini'),
+  date: z.string().describe('Tanggal dalam format YYYY-MM-DD'),
+  creativeSeed: z.string().describe('Kombinasi unik untuk memicu variasi AI'),
 });
 
 const QuoteOutputSchema = z.object({
-  quote: z.string().describe('Isi kutipan humoris/motivasi'),
+  quote: z.string().describe('Isi kutipan'),
   author: z.string().describe('Penulis (Selalu AI E-SPENLI)'),
 });
 
@@ -32,54 +36,56 @@ const generateQuoteFlow = ai.defineFlow(
     outputSchema: QuoteOutputSchema,
   },
   async (input) => {
-    const jenisAbsen = input.attendanceType === 'in' ? 'masuk tugas' : 'pulang tugas';
-    const peran = (input.category || 'Guru').replace('_', ' ');
+    const roleLabel = input.role.replace('_', ' ');
+    const attendanceLabel = input.attendanceType === 'in' ? 'MASUK TUGAS' : 'PULANG TUGAS';
     
-    // Daftar topik mikro untuk variasi prompt yang cerdas dan relatable
+    // Daftar topik mikro untuk variasi prompt
     const topics = [
-      "Drama sinkronisasi Dapodik yang tidak kunjung biru",
-      "Misteri pulpen di meja kantor yang sering pindah alam",
-      "Ritual kopi atau teh kental sebelum menghadapi kelas",
-      "Tumpukan RPP dan administrasi yang lebih tinggi dari harapan",
-      "Momen lucu saat siswa salah panggil nama guru",
-      "Perasaan lega saat bel pulang berbunyi tepat waktu",
-      "Grup WhatsApp sekolah yang notifikasinya tak pernah tidur",
-      "Sinyal internet sekolah yang kadang ada kadang malu-malu",
-      "Semangat mencerdaskan bangsa di tengah cuaca yang bikin ngantuk",
-      "Interaksi random dengan rekan sejawat di ruang guru",
-      "Harapan untuk hari esok yang lebih cerah dan tanpa revisi",
-      "Kesenangan sederhana saat semua siswa memperhatikan pelajaran",
-      "Drama jam kosong yang penuh dengan negosiasi",
-      "Pentingnya kesabaran setebal kamus bahasa Inggris",
-      "Momen 'Aha!' saat siswa akhirnya mengerti rumus sulit",
-      "Harapan agar gajian atau sertifikasi cair sebelum tanggal tua",
-      "Kebahagiaan melihat laci meja rapi setelah seharian kerja",
-      "Filosofi spidol habis di saat-saat genting",
-      "Pentingnya senyum meskipun data inventaris belum sinkron",
-      "Semangat pejuang pendidikan di SMPN 5 Langke Rembong",
-      "Piket pagi yang penuh dengan sambutan hangat",
-      "Rebutan colokan listrik di ruang guru",
-      "Upacara bendera yang melatih ketahanan kaki dan kesabaran",
-      "Rapat dinas yang durasinya seringkali 'fleksibel'",
-      "Koleksi tumbler di atas meja yang mulai menyerupai toko pecah belah"
+      "Drama administrasi sekolah", "Misteri sinkronisasi Dapodik", "Analogi kopi ruang guru",
+      "Misteri pulpen hilang", "RPP yang menumpuk", "Grup WhatsApp sekolah yang ramai",
+      "Sinyal internet lab komputer", "Buku nilai dan tinta merah", "Ritual piket pagi",
+      "Kebahagiaan bel pulang berbunyi", "Kesenangan melihat siswa tertib", "Upacara bendera",
+      "Rapat dinas yang fleksibel", "Filosofi spidol habis", "Printer macet di tanggal tua",
+      "Tumbler di meja kantor", "Harapan sertifikasi cair", "Cuaca mendung bikin mengantuk"
     ];
     
-    // Memilih topik berdasarkan seed untuk menjamin variasi lintas pengguna dan sesi
-    const selectedTopic = topics[(input.seed || 0) % topics.length];
+    // Pilih gaya bahasa secara acak berdasarkan input seed untuk variasi tambahan
+    const styles = ["Humor ruang guru", "Satire ringan", "Humor bapak-bapak", "Filosofi sederhana", "Drama administrasi"];
+    const seedNum = input.creativeSeed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const selectedTopic = topics[seedNum % topics.length];
+    const selectedStyle = styles[seedNum % styles.length];
 
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
-        prompt: `Saya adalah seorang ${peran} di SMPN 5 Langke Rembong. 
-Buatkan saya kutipan singkat yang lucu, humoris, dan menghibur untuk menyemangati hari saya saat sedang melakukan absensi ${jenisAbsen}.
+        prompt: `TUGAS:
+Buatkan SATU kutipan singkat (maksimal 2 kalimat) yang lucu, menghibur, alami, dan memotivasi sesuai kondisi pengguna berikut.
 
-KONTEKS KHUSUS:
-- Topik spesifik hari ini: ${selectedTopic}
-- Gaya bahasa: Santai, natural (seperti ngobrol di ruang guru), humoris, dan tidak kaku.
-- JANGAN gunakan kata motivasi klise seperti "Masa depan di tanganmu". Gunakan sindiran lucu yang cerdas tentang kerepotan profesi.
+INFORMASI PENGGUNA:
+- Nama: ${input.userName}
+- ID Pengguna: ${input.userId}
+- Peran: ${roleLabel}
+- Jenis Absensi: ${attendanceLabel}
+- Hari: ${input.day}
+- Tanggal: ${input.date}
+- Topik Utama: ${selectedTopic}
+- Gaya Penulisan: ${selectedStyle}
+- Kode Kreatif: ${input.creativeSeed}
+
+ATURAN PENTING:
+1. Kutipan WAJIB berbeda untuk setiap pengguna.
+2. Kutipan WAJIB berbeda antara absensi MASUK dan absensi PULANG.
+3. Kutipan WAJIB berbeda setiap hari meskipun pengguna yang sama melakukan absensi.
+4. Jangan pernah mengulang susunan kalimat yang umum digunakan.
+5. Hindari kalimat motivasi klise seperti: "Tetap semangat", "Jangan menyerah", "Hari ini pasti lebih baik", "Masa depan di tanganmu".
+6. Gunakan humor ringan yang relevan dengan kehidupan di SMPN 5 Langke Rembong.
+7. Sesuaikan isi dengan profesi (Guru: RPP/Siswa/Kelas, Pegawai: Arsip/Printer, Admin: Server/Data/Dapodik).
+8. Gunakan bahasa Indonesia yang santai, sopan, dan natural.
+9. Jangan menggunakan emoji.
+10. Jangan mengulang kata pembuka yang sama.
 
 OUTPUT:
-Hasilkan 1-2 kalimat pendek saja dalam format JSON dengan field 'quote' (isi kutipan) dan 'author' (isi dengan "AI E-SPENLI").`,
+Kembalikan JSON saja dengan field 'quote' dan 'author' (isi dengan "AI E-SPENLI").`,
         output: { schema: QuoteOutputSchema },
       });
 
