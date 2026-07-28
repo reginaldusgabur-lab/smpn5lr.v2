@@ -10,7 +10,7 @@ import { z } from 'genkit';
 const QuoteInputSchema = z.object({
   userName: z.string().describe('Nama pengguna'),
   userId: z.string().describe('UID unik pengguna'),
-  role: z.string().describe('Peran (admin, kepala_sekolah, guru, pegawai, siswa)'),
+  role: z.string().describe('Peran (admin, kepala_sekolah, guru, pegawai,)'),
   attendanceType: z.enum(['in', 'out']).describe('Tipe absensi'),
   day: z.string().describe('Hari saat ini'),
   date: z.string().describe('Tanggal dalam format YYYY-MM-DD'),

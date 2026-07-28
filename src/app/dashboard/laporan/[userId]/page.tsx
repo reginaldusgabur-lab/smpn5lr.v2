@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -198,6 +199,7 @@ export default function UserReportDetailPage() {
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
             
+            // LOGIKA: Jika hari ini dan belum jam pulang, jangan isi jam pulang otomatis
             const fillOut = !isToday || (isToday && now >= limitOutStart);
 
             const batch = writeBatch(firestore);
@@ -223,7 +225,7 @@ export default function UserReportDetailPage() {
 
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Kehadiran dipulihkan.' });
+            toast({ title: 'Berhasil', description: fillOut ? 'Kehadiran dipulihkan.' : 'Absen masuk diaktifkan. Pengguna tetap bisa scan pulang nanti.' });
             fetchData();
         } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' }); }
         finally { setIsMutating(false); }
@@ -568,3 +570,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+

@@ -67,6 +67,13 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
 
     const handleSelectDay = (dayId: string) => setSelectedDays(prev => ({ ...prev, [dayId]: !prev[dayId] }));
 
+    const getDailyOutStart = (date: Date, config: any) => {
+        if (!config) return '14:00';
+        const dayOfWeek = date.getDay().toString();
+        const dailyOut = config.dailyCheckOutTimes?.[dayOfWeek];
+        return dailyOut?.start || config.checkOutStartTime || '14:00';
+    };
+
     const handleAlpaConversionToLeave = async (day: any, newStatus: 'Sakit' | 'Izin' | 'Dinas') => {
         if (!currentUser?.uid || !firestore || !user) return;
         setIsSaving(true);
@@ -123,12 +130,13 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
 
             const inEnd = schoolConfig.checkInEndTime || '07:30';
-            const outStart = schoolConfig.checkOutStartTime || '14:00';
+            const outStart = getDailyOutStart(recordDate, schoolConfig);
             const [hE, mE] = inEnd.split(':').map(Number);
             const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(recordDate), hO), mO);
 
+            // LOGIKA: Hanya isi pulang jika sudah melewati jam pulang atau hari yang sudah berlalu
             const fillOut = !isToday || (isToday && now > limitOutStart);
 
             let data: any = {
@@ -148,7 +156,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                    data.reasonForUpdate = 'Dinas siang';
                 }
             } else if (type === 'terlambat') {
-                data.checkInTime = null;
+                data.checkInTime = null; // Agar muncul strip merah
                 data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
                 data.reasonForUpdate = 'Terlambat';
             } else if (type === 'dinas-pagi') {
@@ -176,20 +184,46 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         setIsSaving(true);
         try {
             const batch = writeBatch(firestore);
-            const outStart = schoolConfig.checkOutStartTime || '14:00';
-            const [hO, mO] = outStart.split(':').map(Number);
+            const now = new Date();
             
             for (const day of problematicDays.filter(d => selectedDays[d.id])) {
-                const limitOutStart = setMinutes(setHours(startOfDay(parseISO(day.date)), hO), mO);
-                const randomMins = Math.floor(Math.random() * 20) + 5;
-                const randomSecs = Math.floor(Math.random() * 60);
-                const realOut = new Date(limitOutStart.getTime() + (randomMins * 60000) + (randomSecs * 1000));
+                const recordDate = parseISO(day.date);
+                const isToday = isSameDay(recordDate, now);
+                const outStart = getDailyOutStart(recordDate, schoolConfig);
+                const [hO, mO] = outStart.split(':').map(Number);
+                const limitOutStart = setMinutes(setHours(startOfDay(recordDate), hO), mO);
                 
-                batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
-                    checkOutTime: Timestamp.fromDate(realOut), 
-                    updatedBy: currentUser.uid, updatedAt: serverTimestamp(), 
-                    reasonForUpdate: 'Kehadiran penuh', manualEntry: true 
-                }, { merge: true });
+                // LOGIKA: Jangan isi pulang jika hari ini dan belum waktunya
+                const fillOut = !isToday || (isToday && now > limitOutStart);
+
+                if (fillOut) {
+                    const randomMins = Math.floor(Math.random() * 20) + 5;
+                    const randomSecs = Math.floor(Math.random() * 60);
+                    const realOut = new Date(limitOutStart.getTime() + (randomMins * 60000) + (randomSecs * 1000));
+                    
+                    batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
+                        checkOutTime: Timestamp.fromDate(realOut), 
+                        updatedBy: currentUser.uid, updatedAt: serverTimestamp(), 
+                        reasonForUpdate: 'Kehadiran penuh', manualEntry: true 
+                    }, { merge: true });
+                } else {
+                    // Jika hari ini dan belum waktu pulang, pastikan jam masuk terisi (jika alpa)
+                    // tapi jangan isi jam pulang agar guru bisa scan sendiri
+                    if (day.status === 'Alpa') {
+                        const inEnd = schoolConfig.checkInEndTime || '07:30';
+                        const [hE, mE] = inEnd.split(':').map(Number);
+                        const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
+                        const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                        const realIn = new Date(limitIn.getTime() - randomOffsetSecs * 1000);
+
+                        batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
+                            userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
+                            checkInTime: Timestamp.fromDate(realIn),
+                            updatedBy: currentUser.uid, updatedAt: serverTimestamp(), 
+                            reasonForUpdate: 'Kehadiran penuh', manualEntry: true 
+                        }, { merge: true });
+                    }
+                }
             }
             await batch.commit();
             invalidateCache(); 
@@ -203,7 +237,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         const d = desc.toLowerCase();
         if (s === 'terlambat' || d === 'terlambat') return 'bg-green-600 text-white border-none';
         if (s === 'alpa') return 'bg-red-50 text-red-700 border-red-200';
-        if (s === 'sakit') return 'bg-orange-50 text-orange-700 border-orange-200';
+        if (s === 'sakit') return 'bg-orange-500 text-white border-none';
         if (s === 'izin' || s.includes('izin')) return 'bg-blue-50 text-blue-700 border-blue-200';
         return 'bg-orange-50 text-orange-700 border-orange-200';
     };
@@ -277,3 +311,4 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         </Dialog>
     );
 }
+
