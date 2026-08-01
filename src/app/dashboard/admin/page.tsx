@@ -270,7 +270,7 @@ export default function AdminDashboardPage() {
                 <CardContent>
                     <div className="text-2xl font-bold text-red-600">{dashboardData.stats.alpa}</div>
                 </CardContent>
-            </div>
+            </Card>
         </div>
 
         <Card className="shadow-none overflow-hidden">

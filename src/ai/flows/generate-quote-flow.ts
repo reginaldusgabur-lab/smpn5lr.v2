@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI Flow yang dioptimalkan untuk menghasilkan kutipan unik tinggi.
@@ -48,12 +49,13 @@ const generateQuoteFlow = ai.defineFlow(
       "Rapat dinas yang panjang", "Filosofi spidol habis", "Printer macet di tanggal tua",
       "Tumbler di meja kantor", "Harapan sertifikasi cair", "Cuaca yang bikin mengantuk",
       "Pengecekan absensi manual", "Kantin sekolah", "Kunci ruang kelas yang tertukar",
-      "Laptop lemot saat presentasi", "Stiker di buku tugas", "Kertas ujian yang menumpuk"
+      "Laptop lemot saat presentasi", "Stiker di buku tugas", "Kertas ujian yang menumpuk",
+      "Misteri penghapus papan tulis", "Aroma kantin saat jam pelajaran", "Curhatan di ruang TU"
     ];
     
     const styles = [
       "Humor ruang guru", "Satire ringan", "Filosofi sederhana", "Humor bapak-bapak", 
-      "Analogi kopi", "Analogi spidol", "Drama administrasi"
+      "Analogi kopi", "Analogi spidol", "Drama administrasi", "Candaan rekan sejawat"
     ];
 
     // Logika pemilihan index yang lebih acak namun tetap terikat pada seed harian
@@ -69,8 +71,12 @@ const generateQuoteFlow = ai.defineFlow(
           topP: 0.95,
           maxOutputTokens: 150,
         },
+        system: `Anda adalah AI humoris yang bertugas menghibur guru dan staf di SMPN 5 Langke Rembong.
+Kutipan Anda harus cerdas, singkat, dan sangat relevan dengan peran mereka. 
+JANGAN PERNAH memberikan kata-kata motivasi klise seperti "Tetap semangat" atau "Hari ini lebih baik". 
+Gunakan satire ringan, humor ruang guru, atau candaan birokrasi sekolah yang cerdas.`,
         prompt: `TUGAS:
-Buatkan SATU kutipan singkat (maksimal 2 kalimat) yang lucu, menghibur, alami, dan memotivasi sesuai kondisi pengguna berikut.
+Saya adalah seorang ${roleLabel} bernama ${input.userName}. Tolong buatkan SATU kutipan singkat (maksimal 2 kalimat) yang lucu, humoris, alami, dan sedikit memotivasi sesuai kondisi saya saat ini.
 
 INFORMASI PENGGUNA:
 - Nama: ${input.userName}
@@ -81,22 +87,15 @@ INFORMASI PENGGUNA:
 - Tanggal: ${input.date}
 - Topik Utama: ${selectedTopic}
 - Gaya Penulisan: ${selectedStyle}
-- Kode Kreatif: ${input.creativeSeed}
+- Kode Kreatif Unik: ${input.creativeSeed}
 
-ATURAN PENTING:
-1. Kutipan WAJIB berbeda untuk setiap pengguna. Gunakan Nama dan ID sebagai inspirasi karakter.
-2. Kutipan WAJIB berbeda antara absensi MASUK dan absensi PULANG.
-3. Kutipan WAJIB berbeda setiap hari. Jangan gunakan template yang sama.
-4. HINDARI kalimat motivasi klise (Tetap semangat, jangan menyerah, hari ini lebih baik, dll).
-5. Gunakan humor ringan yang sangat relevan dengan dunia sekolah (RPP, Dapodik, printer, rapat, bel, dll).
-6. Sesuaikan isi dengan profesi (Guru: Siswa/Kelas, Pegawai: Arsip/Data, Admin: Server/Jaringan).
-7. Gunakan bahasa Indonesia yang santai, sopan, dan natural.
-8. Jangan menggunakan emoji.
-9. Jangan mengulang kata pembuka yang sama (misal: jangan selalu mulai dengan "Hari ini...").
-10. Berikan sentuhan personal yang "manusiawi", bukan seperti mesin robot.
-
-VARIASI UNIK:
-Gunakan Kode Kreatif (${input.creativeSeed}) sebagai elemen acak internal untuk memastikan hasil ini berbeda dari generasi sebelumnya.
+ATURAN KETAT:
+1. Kutipan WAJIB unik dan berbeda secara drastis setiap kali dipanggil. Gunakan ID Pengguna (${input.userId}) dan Kode Kreatif (${input.creativeSeed}) sebagai elemen acak internal Anda.
+2. JANGAN PERNAH gunakan template atau kalimat yang sama dengan sesi sebelumnya.
+3. HINDARI kalimat motivasi kaku yang membosankan.
+4. Gunakan humor yang hanya dipahami orang sekolah (masalah printer, RPP, Dapodik, rapat, atau bel sekolah).
+5. Jika MASUK: Fokus pada "perjuangan" memulai hari. Jika PULANG: Fokus pada "kemenangan" menyelesaikan hari.
+6. Bahasa Indonesia santai, sopan, dan natural. Jangan gunakan emoji.
 
 OUTPUT:
 Kembalikan JSON saja dengan field 'quote' dan 'author' (isi dengan "AI E-SPENLI").`,
