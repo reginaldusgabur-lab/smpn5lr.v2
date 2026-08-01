@@ -32,7 +32,7 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
     navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
 
-type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'success_out' | 'error_radius' | 'error_time' | 'error_already_in' | 'error_already_out' | 'error_generic' | 'error_location' | 'info_holiday' | 'info_checked_out' | 'info_no_camera' | 'info_disabled' | 'info_leave';
+type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'success_out' | 'error_radius' | 'error_time' | 'error_checkin_closed' | 'error_already_in' | 'error_already_out' | 'error_generic' | 'error_location' | 'info_holiday' | 'info_checked_out' | 'info_no_camera' | 'info_disabled' | 'info_leave';
 
 export default function AbsenPage() {
   const [status, setStatus] = useState<FeedbackStatus>('idle');
@@ -84,7 +84,9 @@ export default function AbsenPage() {
       if (hasCompletedAttendance) return 'info_checked_out';
       if (isManualDisabled) return 'info_disabled';
       if (isHoliday) return 'info_holiday';
-      if (windowStatus === 'BEFORE_IN' || windowStatus === 'AFTER_IN' || windowStatus === 'CLOSED') return 'error_time';
+      // MODIFIED LOGIC:
+      if (windowStatus === 'AFTER_IN') return 'error_checkin_closed';
+      if (windowStatus === 'BEFORE_IN' || windowStatus === 'CLOSED') return 'error_time';
       if (hasCameraPermission === false) return 'info_no_camera';
       return 'idle';
   }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
@@ -99,7 +101,7 @@ export default function AbsenPage() {
         return;
     }
     if (windowStatus !== 'CHECK_IN_OPEN' && windowStatus !== 'CHECK_OUT_OPEN') {
-        setStatus('error_time');
+        setStatus(windowStatus === 'AFTER_IN' ? 'error_checkin_closed' : 'error_time');
         return;
     }
     setStatus('processing');
@@ -176,7 +178,6 @@ export default function AbsenPage() {
         html5QrCodeRef.current = qrCode;
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
-            // Optimasi Kecepatan: Hapus qrbox dan aspectRatio agar tampilan penuh dan inisialisasi lebih cepat
             qrCode.start(
                 { facingMode: 'environment' }, 
                 { fps: 30, disableFlip: true }, 
@@ -230,7 +231,7 @@ export default function AbsenPage() {
                 status={effectiveStatus} 
                 locationError={locationError} 
                 leaveType={currentActiveLeave?.type}
-                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') || effectiveStatus === 'error_time' || effectiveStatus === 'info_holiday' || effectiveStatus === 'info_disabled' || effectiveStatus === 'info_leave' ? router.push('/dashboard') : setStatus('idle')} 
+                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') || effectiveStatus === 'error_time' || effectiveStatus === 'error_checkin_closed' || effectiveStatus === 'info_holiday' || effectiveStatus === 'info_disabled' || effectiveStatus === 'info_leave' ? router.push('/dashboard') : setStatus('idle')} 
                 userData={userData} 
             />
         )}
@@ -263,6 +264,7 @@ const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leave
             case 'success_out': return { icon: <div className={iconWrapper}><CheckCircle className={cn(iconSize, theme.iconColor)} /></div>, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
             case 'error_radius': return { icon: <div className={iconWrapper}><MapPin className={cn(iconSize, theme.iconColor)} /></div>, title: 'Gagal: Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
             case 'error_time': return { icon: <div className={iconWrapper}><ClockIcon className={cn(iconSize, theme.iconColor)} /></div>, title: 'Gagal: Waktu Habis', desc: 'Sesi absensi untuk hari ini telah ditutup.' };
+            case 'error_checkin_closed': return { icon: <div className={iconWrapper}><ClockIcon className={cn(iconSize, theme.iconColor)} /></div>, title: 'Batas Masuk Berakhir', desc: 'Waktu absen masuk berakhir, silahkan tunggu absen pulang.' };
             case 'error_already_in': return { icon: <div className={iconWrapper}><X className={cn(iconSize, theme.iconColor)} /></div>, title: 'Sudah Absen Masuk', desc: 'Anda sudah melakukan absensi masuk hari ini.' };
             case 'error_already_out': return { icon: <div className={iconWrapper}><X className={cn(iconSize, theme.iconColor)} /></div>, title: 'Sudah Absen Pulang', desc: 'Anda sudah melakukan absensi pulang hari ini.' };
             case 'error_location': return { icon: <div className={iconWrapper}><MapPin className={cn(iconSize, theme.iconColor)} /></div>, title: 'Lokasi Error', desc: locationError || 'Pastikan GPS aktif.' };
