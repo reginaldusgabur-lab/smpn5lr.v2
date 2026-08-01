@@ -130,6 +130,15 @@ export default function UserReportDetailPage() {
         setIsMutating(true);
         try {
             const targetDate = parseISO(dateStr);
+            const now = new Date();
+            const isToday = isSameDay(targetDate, now);
+            const outStart = getDailyOutStart(targetDate);
+            const [hO, mO] = outStart.split(':').map(Number);
+            const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
+            
+            // LOGIKA: Hanya isi pulang jika sudah melewati jam pulang atau hari yang sudah berlalu
+            const fillOut = !isToday || (isToday && now > limitOutStart);
+
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
             
@@ -157,11 +166,15 @@ export default function UserReportDetailPage() {
 
                 if (newStatus === 'Dinas Pagi' || newStatus === 'Terlambat' || newStatus === 'Kegiatan Luar Sekolah') {
                     dataToSave.checkInTime = null;
-                    dataToSave.checkOutTime = generateRandomOutTime(targetDate);
-                } else {
+                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
+                } else if (newStatus === 'Dinas Siang') {
                     const randomSeconds = Math.floor(Math.random() * 299) + 1; 
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
                     dataToSave.checkOutTime = null;
+                } else { // Pulang Cepat
+                     const randomSeconds = Math.floor(Math.random() * 299) + 1; 
+                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
+                     dataToSave.checkOutTime = null;
                 }
 
                 batch.set(doc(attendanceRef), dataToSave);

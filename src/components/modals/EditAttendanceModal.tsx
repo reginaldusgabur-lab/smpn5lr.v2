@@ -161,7 +161,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 data.reasonForUpdate = 'Terlambat';
             } else if (type === 'dinas-pagi') {
                 data.checkInTime = null;
-                data.checkOutTime = Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5));
+                data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
                 data.reasonForUpdate = 'Dinas pagi';
             } else { // pulang-cepat
                 const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
@@ -201,11 +201,28 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                     const randomSecs = Math.floor(Math.random() * 60);
                     const realOut = new Date(limitOutStart.getTime() + (randomMins * 60000) + (randomSecs * 1000));
                     
-                    batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
-                        checkOutTime: Timestamp.fromDate(realOut), 
-                        updatedBy: currentUser.uid, updatedAt: serverTimestamp(), 
-                        reasonForUpdate: 'Kehadiran penuh', manualEntry: true 
-                    }, { merge: true });
+                    // Jika alpa, pastikan jam masuk terisi juga
+                    if (day.status === 'Alpa') {
+                        const inEnd = schoolConfig.checkInEndTime || '07:30';
+                        const [hE, mE] = inEnd.split(':').map(Number);
+                        const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
+                        const randomInSecs = Math.floor(Math.random() * 299) + 1;
+                        const realIn = new Date(limitIn.getTime() - randomInSecs * 1000);
+
+                        batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
+                            userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
+                            checkInTime: Timestamp.fromDate(realIn),
+                            checkOutTime: Timestamp.fromDate(realOut),
+                            updatedBy: currentUser.uid, updatedAt: serverTimestamp(), 
+                            reasonForUpdate: 'Kehadiran penuh', manualEntry: true 
+                        }, { merge: true });
+                    } else {
+                        batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
+                            checkOutTime: Timestamp.fromDate(realOut), 
+                            updatedBy: currentUser.uid, updatedAt: serverTimestamp(), 
+                            reasonForUpdate: 'Kehadiran penuh', manualEntry: true 
+                        }, { merge: true });
+                    }
                 } else {
                     // Jika hari ini dan belum waktu pulang, pastikan jam masuk terisi (jika alpa)
                     // tapi jangan isi jam pulang agar guru bisa scan sendiri
@@ -219,6 +236,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                         batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
                             userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
                             checkInTime: Timestamp.fromDate(realIn),
+                            checkOutTime: null, // PENTING: Biarkan null agar bisa scan pulang
                             updatedBy: currentUser.uid, updatedAt: serverTimestamp(), 
                             reasonForUpdate: 'Kehadiran penuh', manualEntry: true 
                         }, { merge: true });
