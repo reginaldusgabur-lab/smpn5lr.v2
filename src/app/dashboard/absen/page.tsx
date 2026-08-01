@@ -176,10 +176,10 @@ export default function AbsenPage() {
         html5QrCodeRef.current = qrCode;
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
-            // Optimasi Kecepatan Kamera: Gunakan environment facing mode langsung dengan fps tinggi dan aspect ratio spesifik
+            // Optimasi Kecepatan Kamera: Hapus qrbox dan aspectRatio agar tampilan penuh dan inisialisasi lebih cepat tanpa kotak overlay
             qrCode.start(
                 { facingMode: 'environment' }, 
-                { fps: 30, aspectRatio: 1.0, qrbox: { width: 250, height: 250 }, disableFlip: true }, 
+                { fps: 30, disableFlip: true }, 
                 onScanSuccess, 
                 undefined
             )
