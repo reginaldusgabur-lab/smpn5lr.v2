@@ -2,13 +2,13 @@
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: false,
+  aggressiveFrontEndNavCaching: true,
   reloadOnOnline: false,
   swcMinify: true,
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
-    skipWaiting: false,
+    skipWaiting: true,
     clientsClaim: true,
     runtimeCaching: [
       {
@@ -23,13 +23,13 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         },
       },
       {
-        urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
+        urlPattern: /\.(?:js|css|woff2|png|jpg|jpeg|svg|svg|ico|webp)$/i,
         handler: "StaleWhileRevalidate",
         options: {
-          cacheName: "static-image-assets",
+          cacheName: "static-assets",
           expiration: {
-            maxEntries: 64,
-            maxAgeSeconds: 24 * 60 * 60,
+            maxEntries: 128,
+            maxAgeSeconds: 30 * 24 * 60 * 60,
           },
         },
       },

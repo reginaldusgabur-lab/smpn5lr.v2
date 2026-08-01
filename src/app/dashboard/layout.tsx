@@ -30,12 +30,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    // Cegah loop redirect dengan pengecekan isUserLoading yang lebih stabil
-    if (!isUserLoading) {
-      if (!user && !redirectChecked.current) {
+    // Akselerasi Redirection: Jika user loading selesai dan tidak ada user, redirect instan
+    if (!isUserLoading && !user && !redirectChecked.current) {
         redirectChecked.current = true;
         router.replace('/');
-      }
     }
   }, [user, isUserLoading, router]);
 
@@ -72,22 +70,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  // Jangan render apapun di server untuk mencegah hydration mismatch
-  if (!isClient) {
-    return null;
-  }
+  if (!isClient) return null;
 
-  // Jika sedang memuat status user atau redirect sedang diproses, tampilkan loader yang stabil
-  // Loader diletakkan secara absolut untuk menutupi layar tanpa memicu event scroll balik
+  // Loader ringan untuk mempercepat transisi visual
   if (isUserLoading || (!user && !redirectChecked.current)) {
     return (
       <div className="absolute inset-0 flex h-screen w-full items-center justify-center bg-background z-[9999]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary/60" />
       </div>
     );
   }
 
-  // Pastikan shell hanya muncul jika user sudah benar-benar ada
   if (!user) return null;
 
   return (

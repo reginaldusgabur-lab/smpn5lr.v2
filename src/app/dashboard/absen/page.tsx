@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -175,7 +176,13 @@ export default function AbsenPage() {
         html5QrCodeRef.current = qrCode;
         if (qrCode.getState() !== 2) {
             setIsScannerReady(false);
-            qrCode.start({ facingMode: 'environment' }, { fps: 30 }, onScanSuccess, undefined)
+            // Optimasi Kecepatan Kamera: Gunakan environment facing mode langsung dengan fps tinggi dan aspect ratio spesifik
+            qrCode.start(
+                { facingMode: 'environment' }, 
+                { fps: 30, aspectRatio: 1.0, qrbox: { width: 250, height: 250 }, disableFlip: true }, 
+                onScanSuccess, 
+                undefined
+            )
             .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
             .catch(() => setIsScannerReady(false));
         }
@@ -195,7 +202,7 @@ export default function AbsenPage() {
             <div className="absolute inset-0">
                 <div id={readerId} className="w-full h-full" />
                 <style>{`
-                    #${readerId} > video { width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: ${isScannerReady ? 1 : 0.5}; transition: opacity 0.5s ease-in-out; }
+                    #${readerId} > video { width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: ${isScannerReady ? 1 : 0.5}; transition: opacity 0.3s ease-in-out; }
                     #${readerId}__scan_region, #${readerId}__dashboard_section_csr { display: none !important; }
                     #${readerId} { border: none !important; }
                 `}</style>
