@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { generateQuote } from '@/ai/flows/generate-quote-flow';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * API Route untuk menghasilkan kutipan motivasi menggunakan AI.
  * Audit Fix: Menambahkan logging untuk memastikan parameter yang dikirim dari klien sudah benar.

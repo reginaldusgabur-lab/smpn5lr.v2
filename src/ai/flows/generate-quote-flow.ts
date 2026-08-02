@@ -37,13 +37,12 @@ const generateQuoteFlow = ai.defineFlow(
     outputSchema: QuoteOutputSchema,
   },
   async (input) => {
-    // AUDIT LOG: Memastikan data yang masuk ke mesin AI benar-benar berbeda setiap request
-    console.log(`[AI_AUDIT] Requesting quote for: ${input.userName} (${input.userId}) | Seed: ${input.creativeSeed} | Role: ${input.role}`);
+    console.log(`[AI_AUDIT] Generating unique quote for UID: ${input.userId} | Seed: ${input.creativeSeed}`);
 
     const roleLabel = input.role.replace('_', ' ');
     const attendanceLabel = input.attendanceType === 'in' ? 'MASUK TUGAS' : 'PULANG TUGAS';
     
-    // Perluasan topik untuk variasi lebih tinggi
+    // Audit Perbaikan: Perluasan masif topik & gaya untuk menghindari tabrakan modulo
     const topics = [
       "Drama administrasi sekolah", "Misteri sinkronisasi Dapodik", "Analogi kopi ruang guru",
       "Misteri pulpen hilang", "RPP yang belum selesai", "Grup WhatsApp sekolah yang ramai",
@@ -52,61 +51,57 @@ const generateQuoteFlow = ai.defineFlow(
       "Rapat dinas yang panjang", "Filosofi spidol habis", "Printer macet di tanggal tua",
       "Harapan sertifikasi cair", "Cuaca yang bikin mengantuk", "Kantin sekolah",
       "Laptop lemot saat presentasi", "Stiker di buku tugas", "Kertas ujian yang menumpuk",
-      "Aroma kantin saat jam pelajaran", "Curhatan di ruang TU"
+      "Aroma kantin saat jam pelajaran", "Curhatan di ruang TU", "Siswa lupa bawa buku",
+      "Tugas menumpuk di meja", "Sinyal Wi-Fi yang timbul tenggelam", "Misteri penghapus papan tulis",
+      "Ujian kejujuran saat koreksi", "Filosofi seragam rapi", "Semangat di gerbang sekolah",
+      "Antrean di mesin fotokopi", "Keajaiban proyektor menyala sekali klik", "Harum kapur tulis",
+      "Misteri kursi yang bergeser", "Ritual tanda tangan absen manual", "Dinamika rapat komite"
     ];
     
     const styles = [
       "Humor ruang guru", "Satire ringan", "Filosofi sederhana", "Humor bapak-bapak", 
-      "Analogi kopi", "Analogi spidol", "Drama administrasi", "Candaan rekan sejawat"
+      "Analogi kopi", "Analogi spidol", "Drama administrasi", "Candaan rekan sejawat",
+      "Nasihat bijak tapi santai", "Observasi unik sekolah", "Humor teknis", "Puisi pendek lucu"
     ];
 
-    // Logika pemilihan seed internal yang lebih kompleks
+    // Logika pemilihan seed internal yang lebih kompleks (Multi-pass hashing)
     const seedNum = input.creativeSeed.split('').reduce((acc, char, idx) => acc + (char.charCodeAt(0) * (idx + 1)), 0);
     const selectedTopic = topics[seedNum % topics.length];
-    const selectedStyle = styles[seedNum % styles.length];
+    const selectedStyle = styles[(seedNum * 7) % styles.length]; // Pengali untuk variasi gaya berbeda
 
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.5, // Maksimal kreativitas untuk menghindari repetisi
+          temperature: 1.5, // Maksimal kreativitas
           topP: 0.98,
-          maxOutputTokens: 200,
+          maxOutputTokens: 250,
         },
-        system: `ATURAN UTAMA: KUTIPAN WAJIB UNIK DAN BERBEDA UNTUK SETIAP PENGGUNA.
-Anda adalah AI humoris di SMPN 5 Langke Rembong. 
-TUGAS ANDA: Gunakan 'Kode Kreatif Unik' yang diberikan sebagai 'Entropy Salt' untuk menghasilkan skenario humor yang sangat spesifik.
-JANGAN PERNAH memberikan kata-kata motivasi klise.
-JANGAN gunakan template kalimat yang sama untuk pengguna yang memiliki peran yang sama.
-Setiap guru harus mendapatkan candaan yang berbeda meski topiknya sama.`,
-        prompt: `Buatkan SATU kutipan (maksimal 2 kalimat) untuk ${input.userName} (${roleLabel}) yang sedang absen ${attendanceLabel}.
+        system: `ATURAN MUTLAK: SETIAP KUTIPAN WAJIB UNIK, BERBEDA, DAN TIDAK BOLEH REPETITIF.
+Gunakan data identitas berikut sebagai 'DNA' untuk menghasilkan skenario humor yang sangat spesifik dan personal. 
 
-DATA UNTUK RANDOMISASI (GUNAKAN INI AGAR HASIL BERBEDA):
+INSTRUKSI TEKNIS:
+1. Gunakan 'Kode Kreatif' sebagai inspirasi kunci untuk membedakan satu pengguna dengan pengguna lain.
+2. JANGAN PERNAH memberikan kata-kata motivasi klise (seperti 'tetap semangat', 'jangan menyerah').
+3. Setiap Guru atau Pegawai harus mendapatkan cerita/candaan yang berbeda meskipun mereka dalam satu ruangan yang sama.
+4. Bahasa Indonesia santai (natural), sopan, tanpa emoji, dan maksimal 2 kalimat.`,
+        prompt: `Buatkan SATU kutipan unik untuk ${input.userName} (${roleLabel}) yang sedang absen ${attendanceLabel}.
+
+DATA SCENARIO (WAJIB DIGUNAKAN UNTUK VARIASI):
 - User ID: ${input.userId}
 - Kode Kreatif: ${input.creativeSeed}
-- Topik: ${selectedTopic}
-- Gaya: ${selectedStyle}
-- Tanggal: ${input.date}
+- Topik Utama: ${selectedTopic}
+- Gaya Penulisan: ${selectedStyle}
+- Tanggal & Hari: ${input.day}, ${input.date}
 
-INSTRUKSI KHUSUS:
-1. Olah topik '${selectedTopic}' dengan gaya '${selectedStyle}'.
-2. Pastikan humor yang dihasilkan sangat personal seolah Anda mengenal ${input.userName}.
-3. Jika MASUK: Fokus pada perjuangan memulai hari di sekolah. 
-4. Jika PULANG: Fokus pada kemenangan kecil setelah lelah bekerja.
-5. Bahasa Indonesia santai, natural, dilarang emoji, dilarang klise.
-
-OUTPUT: JSON dengan field 'quote' dan 'author' (isi dengan "AI E-SPENLI").`,
+Pastikan humor sangat personal seolah Anda adalah rekan sejawat di SMPN 5 Langke Rembong yang mengenal situasi harian mereka.`,
         output: { schema: QuoteOutputSchema },
       });
 
       if (!response.output) throw new Error('AI_EMPTY_RESPONSE');
-      
-      // LOG HASIL: Untuk memantau keunikan di console server
-      console.log(`[AI_AUDIT] Quote Generated: "${response.output.quote.substring(0, 30)}..."`);
-      
       return response.output;
     } catch (err: any) {
-      console.error('[AI_AUDIT_ERROR]:', err.message);
+      console.error('[AI_FLOW_ERROR]:', err.message);
       throw err;
     }
   }
