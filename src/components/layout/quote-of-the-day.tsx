@@ -91,7 +91,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
     <div className="mt-2 pt-4 border-t border-border/10">
       <div className="flex items-center justify-center text-[9px] font-bold mb-3 text-muted-foreground/60 uppercase tracking-[0.2em]">
         <Sparkles className="h-3 w-3 mr-2 animate-pulse text-amber-500" />
-        Kutipan Eksklusif Anda
+        Kutipan Untuk Anda
       </div>
       <div className="text-center min-h-[70px] flex flex-col items-center justify-center px-2">
         {isLoading ? (
