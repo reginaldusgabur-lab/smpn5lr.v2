@@ -1,8 +1,7 @@
-
 'use server';
 /**
- * @fileOverview AI Flow yang dioptimalkan dengan arsitektur deterministik.
- * Variasi ditentukan oleh aplikasi melalui hashing UID, AI bertugas menyusun kalimat.
+ * @fileOverview AI Flow Deterministik dengan Jutaan Kombinasi.
+ * Variasi dipaksa melalui hashing multi-dimensi untuk menjamin keunikan per user/hari/sesi.
  */
 
 import { ai } from '../genkit';
@@ -27,14 +26,14 @@ export type QuoteInput = z.infer<typeof QuoteInputSchema>;
 export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
 /**
- * Robust 32-bit hashing function untuk memastikan penyebaran seed yang luas.
+ * Robust 32-bit hashing function.
  */
 function getHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash |= 0; // Convert to 32bit integer
+    hash |= 0; 
   }
   return Math.abs(hash);
 }
@@ -50,73 +49,117 @@ const generateQuoteFlow = ai.defineFlow(
     outputSchema: QuoteOutputSchema,
   },
   async (input) => {
+    // 60 TOPICS (Spesifik & Unik)
     const topics = [
-      "Drama administrasi sekolah", "Misteri sinkronisasi Dapodik", "Analogi kopi ruang guru",
-      "Misteri pulpen hilang", "RPP yang belum selesai", "Grup WhatsApp sekolah yang ramai",
-      "Sinyal internet lab komputer", "Buku nilai dan tinta merah", "Ritual piket pagi",
-      "Kebahagiaan bel pulang berbunyi", "Kesenangan melihat siswa tertib", "Upacara bendera",
-      "Rapat dinas yang panjang", "Filosofi spidol habis", "Printer macet di tanggal tua",
-      "Harapan sertifikasi cair", "Cuaca yang bikin mengantuk", "Kantin sekolah",
-      "Laptop lemot saat presentasi", "Stiker di buku tugas", "Kertas ujian yang menumpuk",
-      "Aroma kantin saat jam pelajaran", "Curhatan di ruang TU", "Siswa lupa bawa buku",
-      "Tugas menumpuk di meja", "Sinyal Wi-Fi yang timbul tenggelam", "Misteri penghapus papan tulis",
-      "Ujian kejujuran saat koreksi", "Filosofi seragam rapi", "Semangat di gerbang sekolah",
-      "Antrean di mesin fotokopi", "Keajaiban proyektor menyala sekali klik", "Harum kapur tulis",
-      "Misteri kursi yang bergeser", "Ritual tanda tangan absen manual", "Dinamika rapat komite"
+      "Sinyal Wi-Fi lab yang timbul tenggelam", "Misteri pulpen pilot yang sering hilang", "Aroma nasi kuning di pagi hari",
+      "Rapat dinas yang bisa jadi e-mail", "Drama printer macet saat jam pertama", "Ritual koreksi soal pilihan ganda",
+      "Analogi kopi hitam tanpa gula", "Filosofi kapur tulis vs spidol whiteboard", "Misteri kursi plastik retak",
+      "Proyektor menyala sekali klik", "Laptop lawas yang lemot saat presentasi", "Grup WhatsApp sekolah penuh stiker",
+      "Bel sekolah yang bunyinya kepanjangan", "Curhatan di ruang tata usaha", "Bau buku paket baru",
+      "Dilema menu kantin hari ini", "Misteri penghapus papan tulis", "Sinkronisasi Dapodik tengah malam",
+      "Harapan sertifikasi cair", "Analogi spidol tinta pudar", "Misteri air galon habis",
+      "Upacara bendera di bawah mendung", "Piket pagi berujung sarapan", "Lomba kebersihan antar kelas",
+      "RPP yang masih tersimpan di draft", "Tanda tangan manual di buku absen", "Kertas ujian menumpuk",
+      "Laptop tiba-tiba update Windows", "Antrean fotokopi soal", "Kunci lemari arsip terselip",
+      "Sinyal HP hilang di kelas pojok", "Cerita horor ringan gudang olahraga", "Tinta merah di buku nilai",
+      "Siswa lupa bawa PR", "Filosofi seragam batik Kamis", "Hujan bikin suasana melow",
+      "Cuaca panas bikin ngantuk", "Ritual minum teh ruang guru", "Keramaian kantin istirahat kedua",
+      "Laporan bulanan selesai tepat waktu", "Kabel proyektor hilang", "Penghapus yang sudah gundul",
+      "Filosofi sapu lidi pojok kelas", "Salah kostum seragam Senin", "Jam kosong mendadak",
+      "Sepatu siswa di depan kelas", "Harapan libur panjang", "Penggaris kayu legendaris",
+      "Rapat komite sekolah", "Spidol habis pas nerangkan", "Siswa bisa ngerjakan soal susah",
+      "Kotak saran penuh debu", "Lemari besi susah dibuka", "Aroma ruangan baru dipel",
+      "Speaker kelas kresek-kresek", "Baterai laptop drop", "Pengumuman libur dadakan",
+      "Meja guru penuh tumpukan buku", "Kuota internet habis pas zoom", "Misteri stapler yang dipinjam"
     ];
     
+    // 25 STYLES
     const styles = [
-      "Humor ruang guru", "Satire ringan", "Filosofi sederhana", "Humor bapak-bapak", 
-      "Analogi kopi", "Analogi spidol", "Drama administrasi", "Candaan rekan sejawat",
-      "Nasihat bijak tapi santai", "Observasi unik sekolah", "Humor teknis", "Puisi pendek lucu"
+      "Humor ruang guru", "Satire ringan", "Filosofi bapak-bapak", "Gaya Millennial", 
+      "Analogi kopi", "Analogi teknis", "Drama administrasi", "Candaan sejawat",
+      "Nasihat bijak santai", "Observasi unik", "Humor teknis", "Puisi receh",
+      "Sarkasme halus", "Gaya detektif", "Review produk", "Berita singkat",
+      "Curhatan batin", "Metafora sekolah", "Gaya koki", "Ramalan cuaca",
+      "Gaya motivasi terbalik", "Dialog imajiner", "Iklan radio", "Dongeng singkat", "Komedi situasi"
     ];
 
+    // 20 FORMATS (Strict Constraints)
     const formats = [
-      "Dialog singkat", "Analogi unik", "Pantun kilat", "Satu kalimat filosofis",
-      "Observasi sarkastik", "Berita utama internal", "Curhatan batin", "Memo singkat lucu"
+      { name: "Dialog Singkat", rule: "Tulis dalam 2 baris dialog antara dua orang." },
+      { name: "Observasi + Punchline", rule: "Baris 1: Fakta/Observasi. Baris 2: Kesimpulan lucu." },
+      { name: "Analogi Unik", rule: "Bandingkan topik sekolah dengan benda sehari-hari." },
+      { name: "Pantun Kilat", rule: "Tulis dalam bentuk pantun 2 baris (rima a-a)." },
+      { name: "Satu Kalimat Filosofis", rule: "Satu kalimat pendek tapi sangat dalam/lucu." },
+      { name: "Memo Singkat", rule: "Tulis seperti instruksi memo kantor yang lucu." },
+      { name: "Berita Utama", rule: "Tulis seperti headline berita heboh internal sekolah." },
+      { name: "Perbandingan (Dulu vs Sekarang)", rule: "Tulis perbedaan situasi sekolah dulu dan sekarang." },
+      { name: "Pesan Error Teknis", rule: "Tulis seperti pesan error komputer tapi untuk masalah sekolah." },
+      { name: "Dialog Batin", rule: "Tulis apa yang dipikirkan tapi tidak diucapkan." },
+      { name: "Tips Absurd", rule: "Berikan satu tips tidak berguna tapi lucu terkait sekolah." },
+      { name: "Definisi Kamus", rule: "Tulis definisi topik tersebut seperti di kamus lucu." },
+      { name: "Tanya Jawab", rule: "Tulis satu pertanyaan pendek dan jawaban yang tidak nyambung." },
+      { name: "Alasan Klasik", rule: "Tulis satu alasan lucu kenapa hal itu terjadi." },
+      { name: "Zodiak Sekolah", rule: "Tulis prediksi nasib berdasarkan peran dan topik." },
+      { name: "Review Bintang 1", rule: "Tulis review lucu seolah-olah topik itu adalah produk buruk." },
+      { name: "Status Media Sosial", rule: "Tulis seperti status galau atau sombong di medsos." },
+      { name: "Aturan Tak Tertulis", rule: "Tulis satu hukum alam yang hanya ada di sekolah ini." },
+      { name: "Memo Kepala Sekolah", rule: "Tulis instruksi tegas tapi isinya receh." },
+      { name: "Bisikan Tetangga", rule: "Tulis seperti gosip ringan di sela-sela jam istirahat." }
     ];
 
-    // DETERMINISTIC SELECTION BERDASARKAN HASH UID + SEED
-    const baseHash = getHash(input.creativeSeed);
+    // 10 PERSPECTIVES
+    const perspectives = [
+      "Orang pertama (Aku/Saya)", "Orang ketiga (Dia/Mereka)", "Sudut pandang cangkir kopi",
+      "Sudut pandang spidol habis", "Pengamat rahasia", "Sejarawan sekolah",
+      "Pakar Dapodik", "Siswa paling belakang", "Penjaga kantin", "Admin server"
+    ];
+
+    // MULTI-DIMENSIONAL DETERMINISTIC HASHING
+    const fullSeed = `${input.userId}|${input.date}|${input.day}|${input.attendanceType}|${input.creativeSeed}`;
+    const baseHash = getHash(fullSeed);
+    
     const selectedTopic = topics[baseHash % topics.length];
     const selectedStyle = styles[(baseHash >> 2) % styles.length];
     const selectedFormat = formats[(baseHash >> 4) % formats.length];
+    const selectedPersp = perspectives[(baseHash >> 6) % perspectives.length];
 
-    // LOGGING AUDIT UNTUK VERIFIKASI IDENTITAS REQUEST
-    console.log(`[AI_AUDIT] User: ${input.userName} | UID: ${input.userId}`);
-    console.log(`[AI_AUDIT] Seed: ${input.creativeSeed}`);
-    console.log(`[AI_AUDIT] Deterministic Selection -> Topic: ${selectedTopic} | Style: ${selectedStyle} | Format: ${selectedFormat}`);
+    // LOGGING AUDIT UNTUK VERIFIKASI KEUNIKAN
+    console.log(`[AI_AUDIT] User: ${input.userName} | Hash: ${baseHash} | Role: ${input.role}`);
+    console.log(`[AI_AUDIT] Selection -> Topic: ${selectedTopic} | Style: ${selectedStyle} | Format: ${selectedFormat.name} | Persp: ${selectedPersp}`);
 
     const roleLabel = input.role.replace('_', ' ');
-    const attendanceLabel = input.attendanceType === 'in' ? 'MASUK TUGAS' : 'PULANG TUGAS';
+    const attendanceLabel = input.attendanceType === 'in' ? 'MULAI TUGAS' : 'SELESAI TUGAS';
 
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.3, // Kreativitas tinggi untuk narasi
-          topP: 0.9,
-          maxOutputTokens: 200,
+          temperature: 1.3,
+          topP: 0.95,
+          maxOutputTokens: 250,
         },
-        system: `Anda adalah asisten humoris di SMPN 5 Langke Rembong. 
-TUGAS MUTLAK: Tulis kutipan berdasarkan instruksi spesifik yang diberikan.
-JANGAN gunakan kata-kata motivasi klise (semangat, pantang menyerah, dll).
-Gunakan Bahasa Indonesia santai dan natural layaknya rekan kerja di sekolah.`,
-        prompt: `Buatkan kutipan untuk ${input.userName} (${roleLabel}) saat ${attendanceLabel}.
-        
-INSTRUKSI STRUKTUR (WAJIB DIIKUTI):
-1. Topik Utama: ${selectedTopic}
-2. Gaya Penulisan: ${selectedStyle}
-3. Format Pesan: ${selectedFormat}
-4. Panjang: Maksimal 2 kalimat pendek.
+        system: `Anda adalah Asisten Humor Deterministik di SMPN 5 Langke Rembong.
+TUGAS: Mengubah parameter input menjadi kutipan lucu yang alami.
 
-Pastikan isi pesan benar-benar mencerminkan kombinasi Topik, Gaya, dan Format di atas secara spesifik agar tidak ada dua orang yang menerima pesan serupa.`,
+ATURAN STRUKTUR (WAJIB):
+1. Format Pesan: ${selectedFormat.name}
+2. Aturan Format: ${selectedFormat.rule}
+3. Perspektif: ${selectedPersp}
+4. Gaya: ${selectedStyle}
+5. Topik: ${selectedTopic}
+
+LARANGAN KERAS:
+- JANGAN gunakan kata: "Semangat", "Menyerah", "Kunci", "Sukses", "Masa Depan".
+- JANGAN awali dengan sapaan formal atau "Kutipan hari ini adalah".
+- JANGAN gunakan emoji.
+- JANGAN mengulang pola kalimat format lain.`,
+        prompt: `Buatkan pesan untuk ${input.userName} (${roleLabel}) saat ${attendanceLabel}. 
+        Gunakan kombinasi unik: Topik "${selectedTopic}" dengan Gaya "${selectedStyle}" dalam format "${selectedFormat.name}".
+        Pesan harus maksimal 2 kalimat pendek dan terasa sangat personal untuk personil tersebut.`,
         output: { schema: QuoteOutputSchema },
       });
 
       if (!response.output) throw new Error('AI_EMPTY_RESPONSE');
-      
-      console.log(`[AI_AUDIT] Generated Quote for ${input.userId}: "${response.output.quote}"`);
       return response.output;
     } catch (err: any) {
       console.error('[AI_FLOW_ERROR]:', err.message);

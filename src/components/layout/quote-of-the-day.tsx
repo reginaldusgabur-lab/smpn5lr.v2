@@ -44,7 +44,6 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
 
   useEffect(() => {
-    // Jalankan hanya jika semua data profil tersedia dan belum di-fetch untuk sesi ini
     if (!userData || !attendanceType || isFetched.current) {
         if (!attendanceType) setIsLoading(false);
         return;
@@ -58,8 +57,8 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
       
-      // Membuat Creative Seed unik sesuai instruksi: UID-Tanggal-Tipe-Peran
-      const creativeSeed = `${user?.uid}-${dateStr}-${attendanceType}-${userData.role}`;
+      // Seed multi-dimensi: menjamin perbedaan antara Masuk/Pulang dan setiap Hari
+      const creativeSeed = `${user?.uid}-${dateStr}-${attendanceType}-${userData.role}-${Math.random().toString(36).substring(7)}`;
 
       try {
         const response = await fetch('/api/quote', {
@@ -83,7 +82,6 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('AI_FAILURE');
         }
       } catch (e: any) {
-        // Fallback cerdas berdasarkan peran jika AI gagal
         const roleKey = (userData.role || 'default').toLowerCase();
         const fallbackList = FALLBACK_QUOTES[roleKey] || FALLBACK_QUOTES.default;
         setQuote(fallbackList[Math.floor(Math.random() * fallbackList.length)]);
@@ -107,7 +105,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
         {isLoading ? (
           <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-[9px] font-black uppercase tracking-widest">Meracik inspirasi...</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Meracik inspirasi unik...</span>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-1000 ease-out w-full space-y-3">
