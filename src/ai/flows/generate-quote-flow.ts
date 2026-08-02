@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview AI Flow Fragment-Based Deterministik.
- * Aplikasi menentukan kerangka kalimat (Hook, Context, Punchline), AI hanya merangkai.
- * Menghasilkan variasi jutaan kombinasi untuk menghindari normalisasi model.
+ * @fileOverview AI Flow Modular Fragment-Based.
+ * Menggunakan independent hashing untuk memastikan Hook, Context, dan Punchline selalu acak secara independen.
+ * AI hanya bertugas merangkai fragmen tanpa mengubah urutan atau kata-kata aslinya.
  */
 
 import { ai } from '../genkit';
@@ -46,7 +46,8 @@ const hooks = [
   "Pesan dari proyektor:", "Ramalan cuaca sekolah:", "Berita singkat:", 
   "Logika komputer sekolah:", "Saran dari server:", "Memo tidak resmi:",
   "Dialog batin hari ini:", "Suasana di tata usaha:", "Peringatan dini:",
-  "Informasi dari grup WA:", "Review jujur:", "Kutipan tersembunyi:"
+  "Informasi dari grup WA:", "Review jujur:", "Kutipan tersembunyi:",
+  "Temuan di balik tirai:", "Status terkini:", "Analisis mendalam:", "Catatan pinggir:"
 ];
 
 const contexts = [
@@ -64,7 +65,8 @@ const contexts = [
   "piket pagi yang berujung sarapan", "seragam batik yang motifnya penuh filosofi",
   "spidol yang tintanya memudar perlahan", "air galon yang habis di saat haus",
   "stapler yang dipinjam tapi lupa jalan pulang", "proyektor yang menyala sekali klik",
-  "ruangan yang baru dipel wanginya menenangkan", "suasana tenang sebelum siswa datang"
+  "ruangan yang baru dipel wanginya menenangkan", "suasana tenang sebelum siswa datang",
+  "suara gesekan kursi di kelas sebelah", "antrean air minum di dispenser"
 ];
 
 const punchlines = [
@@ -82,7 +84,8 @@ const punchlines = [
   "memang misteri yang belum terpecahkan.", "hanya terjadi di SMPN 5.",
   "mari kita rayakan dengan makan siang.", "setidaknya printer tidak meledak.",
   "masih lebih baik daripada ban bocor.", "untung sarapan tadi pagi cukup.",
-  "mari kita buat jadi cerita lucu besok.", "inilah dinamika dunia pendidikan kita."
+  "mari kita buat jadi cerita lucu besok.", "inilah dinamika dunia pendidikan kita.",
+  "sangat berkesan untuk diceritakan.", "mari kita mulai dengan bismillah."
 ];
 
 export async function generateQuote(input: QuoteInput): Promise<QuoteOutput> {
@@ -96,45 +99,53 @@ const generateQuoteFlow = ai.defineFlow(
     outputSchema: QuoteOutputSchema,
   },
   async (input) => {
-    // MULTI-DIMENSIONAL DETERMINISTIC SELECTION
+    // 1. GABUNGKAN SEMUA DIMENSI SEED
     const fullSeed = `${input.userId}|${input.date}|${input.day}|${input.attendanceType}|${input.creativeSeed}`;
-    const baseHash = getHash(fullSeed);
     
-    // Pilih fragmen secara deterministik menggunakan bit-shifting agar tidak saling terkait
-    const selectedHook = hooks[baseHash % hooks.length];
-    const selectedContext = contexts[(baseHash >> 2) % contexts.length];
-    const selectedPunchline = punchlines[(baseHash >> 4) % punchlines.length];
+    // 2. INDEPENDENT HASHING UNTUK SETIAP FRAGMEN (Skor 10/10 Hash)
+    const hookHash = getHash(fullSeed + "|hook-salt");
+    const contextHash = getHash(fullSeed + "|context-salt");
+    const punchHash = getHash(fullSeed + "|punch-salt");
+    
+    const selectedHook = hooks[hookHash % hooks.length];
+    const selectedContext = contexts[contextHash % contexts.length];
+    const selectedPunchline = punchlines[punchHash % punchlines.length];
 
-    // AUDIT LOGGING UNTUK VERIFIKASI KEUNIKAN
-    console.log(`[AI_AUDIT] User: ${input.userName} | Hash: ${baseHash} | Role: ${input.role}`);
-    console.log(`[AI_AUDIT_FRAGMENTS] Hook: ${selectedHook} | Context: ${selectedContext} | Punchline: ${selectedPunchline}`);
-
-    const roleLabel = input.role.replace('_', ' ');
-    const stateLabel = input.attendanceType === 'in' ? 'awal tugas' : 'akhir tugas';
+    // 3. AUDIT LOGGING UNTUK VERIFIKASI (Sesuai Permintaan)
+    console.log(`\n[AI_AUDIT_START] -------------------------`);
+    console.log(`[USER] : ${input.userName} (${input.role})`);
+    console.log(`[TYPE] : Absen ${input.attendanceType} | ${input.date}`);
+    console.log(`[HOOK] : ${selectedHook}`);
+    console.log(`[CONT] : ${selectedContext}`);
+    console.log(`[PUNC] : ${selectedPunchline}`);
+    console.log(`[SEED] : ${input.creativeSeed}`);
+    console.log(`[AI_AUDIT_END] ---------------------------\n`);
 
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.4, // Menaikkan suhu untuk variasi bahasa
-          topP: 0.9,
-          maxOutputTokens: 200,
+          temperature: 1.5,
+          topP: 0.95,
+          maxOutputTokens: 250,
         },
-        system: `Anda adalah asisten humoris di SMPN 5 Langke Rembong.
-TUGAS: Gabungkan tiga fragmen narasi berikut menjadi SATU kutipan yang sangat alami, pendek (maks 2 kalimat), dan lucu.
-FRAGMEN WAJIB:
-- Hook: "${selectedHook}"
-- Context: "${selectedContext}"
-- Punchline: "${selectedPunchline}"
+        system: `Anda adalah perangkai kata yang humoris di SMPN 5 Langke Rembong.
+TUGAS: Sambungkan tiga fragmen narasi berikut menjadi SATU kutipan yang sangat alami (maksimal 2 kalimat).
 
-ATURAN KETAT:
-1. JANGAN gunakan kata: "Semangat", "Menyerah", "Sukses", "Masa Depan".
-2. Jangan mengulang kata-kata formal. 
-3. Sesuaikan sedikit dengan profil: ${input.userName} (${roleLabel}) saat ${stateLabel}.
+FRAGMEN WAJIB (URUTAN TIDAK BOLEH BERUBAH):
+1. Hook: "${selectedHook}"
+2. Context: "${selectedContext}"
+3. Punchline: "${selectedPunchline}"
+
+ATURAN MUTLAK:
+1. JANGAN MENGUBAH satu kata pun dari isi Hook, Context, dan Punchline.
+2. JANGAN MENGUBAH urutan. Harus: [Hook] lalu [Context] lalu [Punchline].
+3. Sambungkan ketiganya menggunakan maksimal 10 kata tambahan agar mengalir.
 4. JANGAN gunakan emoji.
-5. Hasil harus terasa seperti obrolan di sekolah, bukan pidato.`,
-        prompt: `Rangkai fragmen ini: [${selectedHook}] [${selectedContext}] [${selectedPunchline}]. 
-        Pastikan kutipan terasa personal untuk ${input.userName}.`,
+5. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
+6. Hasil harus terdengar seperti obrolan di ruang guru, bukan teks formal.`,
+        prompt: `Rangkai secara alami: [${selectedHook}] [${selectedContext}] [${selectedPunchline}]. 
+        Pesan ini ditujukan untuk ${input.userName}.`,
         output: { schema: QuoteOutputSchema },
       });
 
@@ -142,7 +153,11 @@ ATURAN KETAT:
       return response.output;
     } catch (err: any) {
       console.error('[AI_FLOW_ERROR]:', err.message);
-      throw err;
+      // Fallback deterministik jika AI gagal
+      return {
+        quote: `${selectedHook} ${selectedContext} ${selectedPunchline}`,
+        author: "AI E-SPENLI"
+      };
     }
   }
 );

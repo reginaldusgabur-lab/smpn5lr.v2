@@ -17,12 +17,6 @@ interface Quote {
   author: string;
 }
 
-const FALLBACK_QUOTES: Record<string, Quote[]> = {
-  guru: [{ quote: "Printer sekolah memang teman setia guru, walau seringnya minta dimengerti pas jam pertama.", author: "AI E-SPENLI" }],
-  pegawai: [{ quote: "Sinkronisasi Dapodik itu soal keberuntungan, tapi kerja keras Anda adalah kepastian.", author: "AI E-SPENLI" }],
-  default: [{ quote: "Selamat beraktivitas di SMPN 5 Langke Rembong. Mari tebar energi positif!", author: "AI E-SPENLI" }]
-};
-
 const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -50,11 +44,12 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
       
-      // CREATIVE SEED: Menggunakan timestamp mikrodetik untuk menjamin keunikan sesi
-      const creativeSeed = `SESS-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      // CREATIVE SEED: Menjamin keunikan sesi setiap detik (Entropy Salt)
+      const creativeSeed = `SESS-${Date.now()}-${Math.random().toString(36).substring(5)}`;
 
-      // DEBUG LOG: Agar admin bisa melihat seed yang dikirim di konsol browser
-      console.log(`[AI_CLIENT_DEBUG] Seed: ${creativeSeed} | Type: ${attendanceType} | Date: ${dateStr}`);
+      // DEBUG CLIENT: Memastikan seed terkirim unik di konsol browser
+      console.log(`[AI_CLIENT_LOG] Requesting quote for: ${userData.name}`);
+      console.log(`[AI_CLIENT_LOG] Unique Seed: ${creativeSeed}`);
 
       try {
         const response = await fetch('/api/quote', {
@@ -78,9 +73,10 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('AI_FAILURE');
         }
       } catch (e: any) {
-        const roleKey = (userData.role || 'default').toLowerCase();
-        const fallbackList = FALLBACK_QUOTES[roleKey] || FALLBACK_QUOTES.default;
-        setQuote(fallbackList[Math.floor(Math.random() * fallbackList.length)]);
+        setQuote({
+          quote: "Tetap tenang dan teruskan berkarya di SMPN 5 Langke Rembong.",
+          author: "Sistem E-SPENLI"
+        });
       } finally {
         setIsLoading(false);
       }
