@@ -18,16 +18,9 @@ interface Quote {
 }
 
 const FALLBACK_QUOTES: Record<string, Quote[]> = {
-  guru: [
-    { quote: "RPP mungkin menumpuk, tapi dedikasi Anda adalah alasan siswa-siswi tersenyum hari ini.", author: "AI E-SPENLI" },
-    { quote: "Ingat, spidol yang macet adalah ujian kesabaran tingkat tinggi sebelum menghadapi kelas.", author: "AI E-SPENLI" }
-  ],
-  pegawai: [
-    { quote: "Sinkronisasi data itu soal keberuntungan, tapi kerja keras Anda adalah kepastian untuk sekolah.", author: "AI E-SPENLI" }
-  ],
-  default: [
-    { quote: "Selamat beraktivitas di SMPN 5 Langke Rembong. Mari tebar energi positif untuk sesama!", author: "AI E-SPENLI" }
-  ]
+  guru: [{ quote: "Printer sekolah memang teman setia guru, walau seringnya minta dimengerti pas jam pertama.", author: "AI E-SPENLI" }],
+  pegawai: [{ quote: "Sinkronisasi Dapodik itu soal keberuntungan, tapi kerja keras Anda adalah kepastian.", author: "AI E-SPENLI" }],
+  default: [{ quote: "Selamat beraktivitas di SMPN 5 Langke Rembong. Mari tebar energi positif!", author: "AI E-SPENLI" }]
 };
 
 const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
@@ -41,7 +34,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
     user ? doc(firestore, 'users', user.uid) : null, 
     [firestore, user]
   );
-  const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
+  const { data: userData } = useDoc(user, userDocRef);
 
   useEffect(() => {
     if (!userData || !attendanceType || isFetched.current) {
@@ -57,8 +50,11 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
       
-      // Seed multi-dimensi: menjamin perbedaan antara Masuk/Pulang dan setiap Hari
-      const creativeSeed = `${user?.uid}-${dateStr}-${attendanceType}-${userData.role}-${Math.random().toString(36).substring(7)}`;
+      // CREATIVE SEED: Menggunakan timestamp mikrodetik untuk menjamin keunikan sesi
+      const creativeSeed = `SESS-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      // DEBUG LOG: Agar admin bisa melihat seed yang dikirim di konsol browser
+      console.log(`[AI_CLIENT_DEBUG] Seed: ${creativeSeed} | Type: ${attendanceType} | Date: ${dateStr}`);
 
       try {
         const response = await fetch('/api/quote', {
@@ -93,19 +89,19 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
     fetchQuote();
   }, [userData, attendanceType, user?.uid]);
 
-  if (isUserDataLoading && !isFetched.current) return null;
+  if (!attendanceType) return null;
 
   return (
     <div className="mt-2 pt-4 border-t border-border/10">
       <div className="flex items-center justify-center text-[9px] font-bold mb-3 text-muted-foreground/60 uppercase tracking-[0.2em]">
         <Sparkles className="h-3 w-3 mr-2 animate-pulse text-amber-500" />
-        Kutipan Hari Ini
+        Kutipan Eksklusif Anda
       </div>
       <div className="text-center min-h-[70px] flex flex-col items-center justify-center px-2">
         {isLoading ? (
           <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-[9px] font-black uppercase tracking-widest">Meracik inspirasi unik...</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Meramu kata unik...</span>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-1000 ease-out w-full space-y-3">
