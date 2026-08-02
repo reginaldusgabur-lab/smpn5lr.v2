@@ -62,7 +62,7 @@ const PwaUpdater = () => {
                 <Sparkles className="h-3 w-3 text-amber-300" />
             </h4>
             <p className="text-[10px] opacity-90 font-bold leading-tight mt-0.5">
-                Pembaruan sistem dan logo telah siap.
+                Pembaruan sistem terbaru telah tersedia.
             </p>
         </div>
 
