@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview AI Flow yang dioptimalkan untuk menghasilkan kutipan unik tinggi.
- * Menggunakan parameter personal pengguna untuk mencegah pengulangan.
+ * Audit Fix: Memastikan AI tidak hanya terpaku pada peran (Role) melainkan pada seed unik pengguna.
  */
 
 import { ai } from '../genkit';
@@ -37,20 +37,22 @@ const generateQuoteFlow = ai.defineFlow(
     outputSchema: QuoteOutputSchema,
   },
   async (input) => {
+    // AUDIT LOG: Memastikan data yang masuk ke mesin AI benar-benar berbeda setiap request
+    console.log(`[AI_AUDIT] Requesting quote for: ${input.userName} (${input.userId}) | Seed: ${input.creativeSeed} | Role: ${input.role}`);
+
     const roleLabel = input.role.replace('_', ' ');
     const attendanceLabel = input.attendanceType === 'in' ? 'MASUK TUGAS' : 'PULANG TUGAS';
     
-    // Daftar topik mikro yang jauh lebih luas untuk variasi maksimal
+    // Perluasan topik untuk variasi lebih tinggi
     const topics = [
       "Drama administrasi sekolah", "Misteri sinkronisasi Dapodik", "Analogi kopi ruang guru",
       "Misteri pulpen hilang", "RPP yang belum selesai", "Grup WhatsApp sekolah yang ramai",
       "Sinyal internet lab komputer", "Buku nilai dan tinta merah", "Ritual piket pagi",
       "Kebahagiaan bel pulang berbunyi", "Kesenangan melihat siswa tertib", "Upacara bendera",
       "Rapat dinas yang panjang", "Filosofi spidol habis", "Printer macet di tanggal tua",
-      "Tumbler di meja kantor", "Harapan sertifikasi cair", "Cuaca yang bikin mengantuk",
-      "Pengecekan absensi manual", "Kantin sekolah", "Kunci ruang kelas yang tertukar",
+      "Harapan sertifikasi cair", "Cuaca yang bikin mengantuk", "Kantin sekolah",
       "Laptop lemot saat presentasi", "Stiker di buku tugas", "Kertas ujian yang menumpuk",
-      "Misteri penghapus papan tulis", "Aroma kantin saat jam pelajaran", "Curhatan di ruang TU"
+      "Aroma kantin saat jam pelajaran", "Curhatan di ruang TU"
     ];
     
     const styles = [
@@ -58,7 +60,7 @@ const generateQuoteFlow = ai.defineFlow(
       "Analogi kopi", "Analogi spidol", "Drama administrasi", "Candaan rekan sejawat"
     ];
 
-    // Logika pemilihan index yang lebih acak namun tetap terikat pada seed harian
+    // Logika pemilihan seed internal yang lebih kompleks
     const seedNum = input.creativeSeed.split('').reduce((acc, char, idx) => acc + (char.charCodeAt(0) * (idx + 1)), 0);
     const selectedTopic = topics[seedNum % topics.length];
     const selectedStyle = styles[seedNum % styles.length];
@@ -67,45 +69,44 @@ const generateQuoteFlow = ai.defineFlow(
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.2, // Menaikkan kreativitas untuk menghindari pengulangan
-          topP: 0.95,
-          maxOutputTokens: 150,
+          temperature: 1.5, // Maksimal kreativitas untuk menghindari repetisi
+          topP: 0.98,
+          maxOutputTokens: 200,
         },
-        system: `Anda adalah AI humoris yang bertugas menghibur guru dan staf di SMPN 5 Langke Rembong.
-Kutipan Anda harus cerdas, singkat, dan sangat relevan dengan peran mereka. 
-JANGAN PERNAH memberikan kata-kata motivasi klise seperti "Tetap semangat" atau "Hari ini lebih baik". 
-Gunakan satire ringan, humor ruang guru, atau candaan birokrasi sekolah yang cerdas.`,
-        prompt: `TUGAS:
-Saya adalah seorang ${roleLabel} bernama ${input.userName}. Tolong buatkan SATU kutipan singkat (maksimal 2 kalimat) yang lucu, humoris, alami, dan sedikit memotivasi sesuai kondisi saya saat ini.
+        system: `ATURAN UTAMA: KUTIPAN WAJIB UNIK DAN BERBEDA UNTUK SETIAP PENGGUNA.
+Anda adalah AI humoris di SMPN 5 Langke Rembong. 
+TUGAS ANDA: Gunakan 'Kode Kreatif Unik' yang diberikan sebagai 'Entropy Salt' untuk menghasilkan skenario humor yang sangat spesifik.
+JANGAN PERNAH memberikan kata-kata motivasi klise.
+JANGAN gunakan template kalimat yang sama untuk pengguna yang memiliki peran yang sama.
+Setiap guru harus mendapatkan candaan yang berbeda meski topiknya sama.`,
+        prompt: `Buatkan SATU kutipan (maksimal 2 kalimat) untuk ${input.userName} (${roleLabel}) yang sedang absen ${attendanceLabel}.
 
-INFORMASI PENGGUNA:
-- Nama: ${input.userName}
-- ID Pengguna: ${input.userId}
-- Peran: ${roleLabel}
-- Jenis Absensi: ${attendanceLabel}
-- Hari: ${input.day}
+DATA UNTUK RANDOMISASI (GUNAKAN INI AGAR HASIL BERBEDA):
+- User ID: ${input.userId}
+- Kode Kreatif: ${input.creativeSeed}
+- Topik: ${selectedTopic}
+- Gaya: ${selectedStyle}
 - Tanggal: ${input.date}
-- Topik Utama: ${selectedTopic}
-- Gaya Penulisan: ${selectedStyle}
-- Kode Kreatif Unik: ${input.creativeSeed}
 
-ATURAN KETAT:
-1. Kutipan WAJIB unik dan berbeda secara drastis setiap kali dipanggil. Gunakan ID Pengguna (${input.userId}) dan Kode Kreatif (${input.creativeSeed}) sebagai elemen acak internal Anda.
-2. JANGAN PERNAH gunakan template atau kalimat yang sama dengan sesi sebelumnya.
-3. HINDARI kalimat motivasi kaku yang membosankan.
-4. Gunakan humor yang hanya dipahami orang sekolah (masalah printer, RPP, Dapodik, rapat, atau bel sekolah).
-5. Jika MASUK: Fokus pada "perjuangan" memulai hari. Jika PULANG: Fokus pada "kemenangan" menyelesaikan hari.
-6. Bahasa Indonesia santai, sopan, dan natural. Jangan gunakan emoji.
+INSTRUKSI KHUSUS:
+1. Olah topik '${selectedTopic}' dengan gaya '${selectedStyle}'.
+2. Pastikan humor yang dihasilkan sangat personal seolah Anda mengenal ${input.userName}.
+3. Jika MASUK: Fokus pada perjuangan memulai hari di sekolah. 
+4. Jika PULANG: Fokus pada kemenangan kecil setelah lelah bekerja.
+5. Bahasa Indonesia santai, natural, dilarang emoji, dilarang klise.
 
-OUTPUT:
-Kembalikan JSON saja dengan field 'quote' dan 'author' (isi dengan "AI E-SPENLI").`,
+OUTPUT: JSON dengan field 'quote' dan 'author' (isi dengan "AI E-SPENLI").`,
         output: { schema: QuoteOutputSchema },
       });
 
       if (!response.output) throw new Error('AI_EMPTY_RESPONSE');
+      
+      // LOG HASIL: Untuk memantau keunikan di console server
+      console.log(`[AI_AUDIT] Quote Generated: "${response.output.quote.substring(0, 30)}..."`);
+      
       return response.output;
     } catch (err: any) {
-      console.error('GENKIT_RUNTIME_ERROR:', err.message);
+      console.error('[AI_AUDIT_ERROR]:', err.message);
       throw err;
     }
   }

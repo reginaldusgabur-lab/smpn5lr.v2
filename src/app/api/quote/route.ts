@@ -1,8 +1,10 @@
+
 import { NextResponse } from 'next/server';
 import { generateQuote } from '@/ai/flows/generate-quote-flow';
 
 /**
  * API Route untuk menghasilkan kutipan motivasi menggunakan AI.
+ * Audit Fix: Menambahkan logging untuk memastikan parameter yang dikirim dari klien sudah benar.
  */
 export async function POST(request: Request) {
   try {
@@ -12,14 +14,22 @@ export async function POST(request: Request) {
     const required = ['userName', 'userId', 'role', 'attendanceType', 'day', 'date', 'creativeSeed'];
     for (const field of required) {
       if (!body[field]) {
+        console.error(`[API_QUOTE_ERROR] Missing field: ${field}`);
         return NextResponse.json({ error: `Missing parameter: ${field}` }, { status: 400 });
       }
     }
 
+    // Panggil fungsi AI Flow
     const result = await generateQuote(body);
-    return NextResponse.json(result);
+    
+    // Pastikan header tidak menyebabkan cache di tingkat browser
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    });
   } catch (error: any) {
-    console.error('SERVER_API_QUOTE_FAILURE:', error);
+    console.error('[API_QUOTE_FAILURE]:', error);
     
     return NextResponse.json(
       { 
