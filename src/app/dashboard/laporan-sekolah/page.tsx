@@ -37,6 +37,7 @@ interface ReportRowData {
     totalSakit: number;
     totalAlpa: number;
     persentase: string;
+    persentaseNum: number;
     sequenceNumber: number | null;
 }
 
@@ -424,11 +425,12 @@ export default function SchoolReportPage() {
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Izin</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Sakit</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Alpa</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">%</TableHead>
                                         <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest border-none">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {isReportLoading ? [...Array(6)].map((_, i) => <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-10 w-full" /></TableCell></TableRow>) : filteredReports.length > 0 ? filteredReports.map((item) => (
+                                    {isReportLoading ? [...Array(6)].map((_, i) => <TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell></TableRow>) : filteredReports.length > 0 ? filteredReports.map((item) => (
                                         <TableRow key={item.uid} className="hover:bg-primary/5">
                                             <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.no}</TableCell>
                                             <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{item.name}</span><span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span></div></TableCell>
@@ -436,11 +438,12 @@ export default function SchoolReportPage() {
                                             <TableCell className="text-center font-bold text-blue-500/80">{item.totalIzin}</TableCell>
                                             <TableCell className="text-center font-bold text-orange-500/80">{item.totalSakit}</TableCell>
                                             <TableCell className="text-center font-bold text-destructive/80">{item.totalAlpa}</TableCell>
+                                            <TableCell className="text-center font-bold text-primary/80">{item.persentase}</TableCell>
                                             <TableCell className="text-center"><Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}><Button variant="ghost" size="icon" className="rounded-full"><Eye className="h-5 w-5 text-primary" /></Button></Link></TableCell>
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-48 text-center font-bold opacity-50 uppercase text-xs">
+                                            <TableCell colSpan={8} className="h-48 text-center font-bold opacity-50 uppercase text-xs">
                                                 Data tidak ditemukan
                                             </TableCell>
                                         </TableRow>
