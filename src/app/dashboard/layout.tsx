@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -16,19 +17,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
   const isMobile = useMediaQuery('(max-width: 640px)');
   const redirectChecked = useRef(false);
 
-  // Onboarding state
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    // Redireksi cepat jika tidak ada user
     if (!isUserLoading && !user && !redirectChecked.current) {
         redirectChecked.current = true;
         router.replace('/');
@@ -36,7 +30,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    // Cek onboarding langsung dari data user yang sudah di-cache di Provider
     if (user && !user.onboardingSelesai && !runTour) {
       if (sessionStorage.getItem('onboardingInProgress') !== 'true') {
         sessionStorage.setItem('onboardingInProgress', 'true');
@@ -53,7 +46,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const updates = { onboardingSelesai: true };
       await setDoc(userDocRef, updates, { merge: true });
       
-      // Update cache lokal agar tidak flicker di refresh berikutnya
       const cached = sessionStorage.getItem('espenli_user_profile');
       if (cached) {
           const profile = JSON.parse(cached);
@@ -64,9 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  if (!isClient) return null;
-
-  // Loader di sini dihapus karena sudah ditangani oleh FirebaseProvider secara global
+  // Skip rendering children if not authenticated to avoid flashing dashboard elements
   if (!user && isUserLoading) return null;
   if (!user) return null;
 

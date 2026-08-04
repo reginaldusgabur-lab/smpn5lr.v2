@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -53,7 +54,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  // FIX: Start with a consistent state for both server and client to prevent hydration errors.
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
     isUserLoading: true,
@@ -66,7 +66,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
-    // CHECK CACHE: Move cache check to useEffect to avoid hydration mismatch
     const cached = sessionStorage.getItem('espenli_user_profile');
     if (cached) {
       try {
@@ -123,15 +122,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // FIX: Render children always but handle the visibility inside to avoid hydration mismatch.
-  // We use a mounting state or simply render a consistent shell.
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background z-[9999] h-full w-full">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce" />
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-delay:200ms]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-delay:400ms]" />
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background z-[9999] h-full w-full overflow-hidden">
+        <div className="relative flex items-center justify-center">
+            <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
+            </div>
         </div>
       </div>
     );
@@ -140,7 +139,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      {children}
+      <div className="animate-fade-in-quick w-full h-full min-h-screen">
+        {children}
+      </div>
     </FirebaseContext.Provider>
   );
 };

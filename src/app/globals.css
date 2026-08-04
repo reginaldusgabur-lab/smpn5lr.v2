@@ -81,3 +81,12 @@
 .animate-scan-line {
   animation: scan-line 2.2s ease-in-out infinite alternate;
 }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in-quick {
+  animation: fade-in 0.4s ease-out forwards;
+}
