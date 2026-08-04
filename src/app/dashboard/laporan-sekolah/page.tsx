@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -215,23 +214,9 @@ export default function SchoolReportPage() {
             { name: 'Alpa', value: totals.alpa, color: '#ef4444' },
         ];
 
-        // Top 3 Paling Rajin
-        const topRajin = [...filteredReports]
-            .sort((a, b) => b.persentaseNum - a.persentaseNum)
-            .slice(0, 3)
-            .filter(u => u.persentaseNum > 0);
-
-        // Top 3 Sering Sakit
-        const topSakit = [...filteredReports]
-            .sort((a, b) => b.totalSakit - a.totalSakit)
-            .slice(0, 3)
-            .filter(u => u.totalSakit > 0);
-
-        // Top 3 Sering Alpa
-        const topAlpa = [...filteredReports]
-            .sort((a, b) => b.totalAlpa - a.totalAlpa)
-            .slice(0, 3)
-            .filter(u => u.totalAlpa > 0);
+        const topRajin = [...filteredReports].sort((a, b) => b.persentaseNum - a.persentaseNum).slice(0, 3);
+        const topSakit = [...filteredReports].sort((a, b) => b.totalSakit - a.totalSakit).slice(0, 3);
+        const topAlpa = [...filteredReports].sort((a, b) => b.totalAlpa - a.totalAlpa).slice(0, 3);
 
         return { pie, topRajin, topSakit, topAlpa };
     }, [filteredReports]);
@@ -253,8 +238,8 @@ export default function SchoolReportPage() {
             doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
             doc.setFont('times', 'normal').setFontSize(9);
             doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
-            doc.setLineWidth(0.8).line(margin, 38, doc.internal.pageSize.getWidth() - margin, 38);
-            doc.setLineWidth(0.2).line(margin, 38.8, doc.internal.pageSize.getWidth() - margin, 38.8);
+            doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
+            doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
             doc.setFont('times', 'bold').setFontSize(12);
             doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
@@ -262,68 +247,24 @@ export default function SchoolReportPage() {
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
-            const currentY = 68;
-            const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
-
-            const tableRows = filteredReports.map((item, index) => [
-                item.sequenceNumber || index + 1, 
-                item.name, 
-                item.nip, 
-                (item.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW'), 
-                Math.ceil(item.totalHadir), 
-                item.totalIzin, 
-                item.totalSakit, 
-                item.totalAlpa, 
-                item.persentase
-            ]);
-
+            const tableRows = filteredReports.map((item, index) => [item.sequenceNumber || index + 1, item.name, item.nip, (item.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW'), Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, item.persentase]);
             autoTable(doc, {
-                startY: currentY,
-                head: tableHead,
+                startY: 68,
+                head: [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']],
                 body: tableRows,
                 theme: 'striped',
                 margin: { bottom: 35 },
                 styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 },
-                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', valign: 'middle', fontStyle: 'bold', minCellHeight: 12, lineWidth: 0 },
-                columnStyles: { 
-                    0: { halign: 'center', cellWidth: 8 }, 
-                    1: { halign: 'left', cellWidth: 'auto' }, 
-                    2: { halign: 'left', cellWidth: 40 }, 
-                    3: { halign: 'center', cellWidth: 18 }, 
-                    4: { halign: 'center', cellWidth: 15 }, 
-                    5: { halign: 'center', cellWidth: 12 }, 
-                    6: { halign: 'center', cellWidth: 15 }, 
-                    7: { halign: 'center', cellWidth: 12 }, 
-                    8: { halign: 'right', cellWidth: 13 } 
-                }
+                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
+                columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 40 }, 3: { halign: 'center', cellWidth: 18 }, 4: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 12 }, 6: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 12 }, 8: { halign: 'right', cellWidth: 13 } }
             });
 
-            let finalY = (doc as any).lastAutoTable.finalY || currentY;
-            if (finalY > doc.internal.pageSize.getHeight() - 65) {
-                doc.addPage();
-                finalY = 20;
-            }
-
-            const signatureX = pageWidth - 85;
-            const signatureY = finalY + 15;
-            const today = format(new Date(), 'd MMMM yyyy', { locale: id });
-            doc.setFontSize(10).setFont('times', 'normal');
-            doc.text(`${config.reportCity || 'Mando'}, ${today}`, signatureX, signatureY);
-            doc.text('Mengetahui,', signatureX, signatureY + 6);
-            doc.text('Kepala Sekolah', signatureX, signatureY + 12);
-            doc.setFont('times', 'bold');
-            doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
-            doc.setFont('times', 'normal');
-            doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
-
-            const totalPages = (doc as any).internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                doc.setPage(i);
-                const pageHeight = doc.internal.pageSize.getHeight();
-                doc.setLineWidth(0.2).line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-                doc.setFontSize(8).setFont('times', 'italic').text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
-                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-            }
+            const finalY = (doc as any).lastAutoTable.finalY + 15;
+            const sigX = pageWidth - 85;
+            doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, sigX, finalY);
+            doc.text('Kepala Sekolah', sigX, finalY + 12);
+            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, finalY + 38);
+            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, finalY + 44);
 
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
         } finally { setIsExporting(false); }
@@ -335,83 +276,44 @@ export default function SchoolReportPage() {
                 <div className="px-4 md:px-0 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                     <div className="space-y-1">
                         <h1 className="text-2xl font-normal tracking-tight">Laporan sekolah</h1>
-                        <p className="text-sm text-muted-foreground">Laporan kehadiran guru/tendik</p>
+                        <p className="text-sm text-muted-foreground">Rekapitulasi kehadiran seluruh personil.</p>
                     </div>
                 </div>
 
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
-                            <div className="flex flex-col items-center justify-center">
-                                <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
-                                    <div className="flex items-center gap-2">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-10 w-10 rounded-xl shrink-0" 
-                                            onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
-                                            disabled={isReportLoading || currentMonth < minDate}
-                                        >
-                                            <ChevronLeft className="h-5 w-5 text-primary" />
-                                        </Button>
-                                        <div className="flex items-center gap-1.5 pl-1 pr-3 min-w-max">
-                                            <CalendarDays className="h-4 w-4 text-primary/70" />
-                                            <div className="flex flex-col min-w-max">
-                                                <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
-                                                <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
-                                            </div>
+                            <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                    <div className="flex items-center gap-1.5 px-1 min-w-max">
+                                        <CalendarDays className="h-4 w-4 text-primary/70" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[7px] font-black uppercase text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                            <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "-"}</span>
                                         </div>
                                     </div>
-                                    
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
-                                            {format(currentMonth, 'MMMM yyyy', { locale: id })}
-                                        </span>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-10 w-10 rounded-xl shrink-0" 
-                                            onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
-                                            disabled={isReportLoading || isSameMonth(currentMonth, new Date())}
-                                        >
-                                            <ChevronRight className="h-5 w-5 text-primary" />
-                                        </Button>
-                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-lg text-primary capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Saring Peran</Label>
-                                    <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                        <SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10">
-                                          <SelectValue placeholder="Semua" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-none shadow-2xl">
-                                          <SelectItem value="all" className="rounded-lg">Semua peran</SelectItem>
-                                          <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
-                                          <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
-                                          <SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Peran</Label>
+                                    <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none shadow-2xl"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
                                 </div>
                                 <div className="space-y-1.5 md:col-span-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari Nama</Label>
-                                    <div className="relative">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                        <Input 
-                                            placeholder="Masukkan nama personil..." 
-                                            className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs shadow-none" 
-                                            value={searchTerm} 
-                                            onChange={e => setSearchTerm(e.target.value)} 
-                                        />
-                                    </div>
+                                    <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Nama personil..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                                 </div>
                             </div>
 
                             <div className="flex justify-end">
-                                <Button className="w-full sm:w-auto h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-xs shadow-none" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
-                                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}unduh pdf
+                                <Button className="w-full sm:w-auto h-11 px-8 rounded-xl font-bold bg-primary" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
+                                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
                                 </Button>
                             </div>
                         </div>
@@ -420,14 +322,14 @@ export default function SchoolReportPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest border-none">No</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest border-none">Nama & NIP</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Hadir</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Izin</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Sakit</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Alpa</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">%</TableHead>
-                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest border-none">Aksi</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Nama & NIP</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Hadir</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Izin</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Sakit</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Alpa</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">%</TableHead>
+                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -444,9 +346,7 @@ export default function SchoolReportPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="h-48 text-center font-bold opacity-50 uppercase text-xs">
-                                                Data tidak ditemukan
-                                            </SelectItem>
+                                            <TableCell colSpan={8} className="h-48 text-center font-bold opacity-50 uppercase text-xs">Data tidak ditemukan</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -455,112 +355,38 @@ export default function SchoolReportPage() {
                     </CardContent>
                 </Card>
 
-                {/* SEKSI GRAFIK & HIGHLIGHT */}
                 {!isReportLoading && filteredReports.length > 0 && (
                     <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-xl">
-                                    <PieIcon className="h-5 w-5 text-primary" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
-                                    <CardDescription className="text-xs font-medium">Ringkasan performa dan kesehatan seluruh personil.</CardDescription>
-                                </div>
+                                <PieIcon className="h-5 w-5 text-primary" />
+                                <div><CardTitle className="text-lg font-bold">Statistik Kehadiran</CardTitle><CardDescription className="text-xs font-medium">Rekapitulasi performa bulan ini.</CardDescription></div>
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                                {/* Pie Chart */}
-                                <div className="h-[300px] w-full flex flex-col items-center">
+                                <div className="h-[300px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
-                                            <Pie
-                                                data={statsData.pie}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={100}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
-                                                {statsData.pie.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip 
-                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                                                itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
-                                                formatter={(value) => [`${value} hari`, 'Jumlah']}
-                                            />
-                                            <Legend 
-                                                verticalAlign="bottom" 
-                                                height={36} 
-                                                formatter={(value) => <span className="text-[11px] font-medium text-muted-foreground">{value}</span>}
-                                            />
+                                            <Pie data={statsData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">{statsData.pie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Pie>
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
+                                            <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-[11px] font-medium text-muted-foreground">{v}</span>} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
-
-                                {/* Highlights Section (Top 3) */}
                                 <div className="space-y-4">
-                                    {/* Top Rajin */}
                                     <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex items-start gap-4">
-                                        <div className="p-3 bg-green-500/10 rounded-xl shrink-0">
-                                            <Award className="h-6 w-6 text-green-600" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-green-600/60">Paling rajin (Top 3)</p>
-                                            <div className="mt-2 space-y-1.5">
-                                                {statsData.topRajin.map((u, idx) => (
-                                                    <div key={u.uid} className="flex justify-between items-center group">
-                                                        <span className="font-bold text-sm text-foreground truncate max-w-[180px] group-hover:text-green-600 transition-colors">{idx + 1}. {u.name}</span>
-                                                        <span className="text-[10px] font-black text-green-600 shrink-0 ml-2">{u.persentase}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
+                                        <Award className="h-6 w-6 text-green-600 mt-1" />
+                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-green-600/60">Paling rajin (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topRajin.map((u, idx) => u.persentaseNum > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-green-600">{u.persentase}</span></div>)}</div></div>
                                     </div>
-
-                                    {/* Top Sakit */}
-                                    {statsData.topSakit.length > 0 && (
-                                        <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-start gap-4">
-                                            <div className="p-3 bg-orange-500/10 rounded-xl shrink-0">
-                                                <Thermometer className="h-6 w-6 text-orange-600" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600/60">Sering sakit (Top 3)</p>
-                                                <div className="mt-2 space-y-1.5">
-                                                    {statsData.topSakit.map((u, idx) => (
-                                                        <div key={u.uid} className="flex justify-between items-center group">
-                                                            <span className="font-bold text-sm text-foreground truncate max-w-[180px] group-hover:text-orange-600 transition-colors">{idx + 1}. {u.name}</span>
-                                                            <span className="text-[10px] font-black text-orange-600 shrink-0 ml-2">{u.totalSakit} hari</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Top Alpa */}
-                                    {statsData.topAlpa.length > 0 && (
-                                        <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-start gap-4">
-                                            <div className="p-3 bg-red-500/10 rounded-xl shrink-0">
-                                                <AlertCircle className="h-6 w-6 text-red-600" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-red-600/60">Sering alpa (Top 3)</p>
-                                                <div className="mt-2 space-y-1.5">
-                                                    {statsData.topAlpa.map((u, idx) => (
-                                                        <div key={u.uid} className="flex justify-between items-center group">
-                                                            <span className="font-bold text-sm text-foreground truncate max-w-[180px] group-hover:text-red-600 transition-colors">{idx + 1}. {u.name}</span>
-                                                            <span className="text-[10px] font-black text-red-600 shrink-0 ml-2">{u.totalAlpa} hari</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-start gap-4">
+                                        <Thermometer className="h-6 w-6 text-orange-600 mt-1" />
+                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-orange-600/60">Sering sakit (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topSakit.map((u, idx) => u.totalSakit > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-orange-600">{u.totalSakit} hari</span></div>)}</div></div>
+                                    </div>
+                                    <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-start gap-4">
+                                        <AlertCircle className="h-6 w-6 text-red-600 mt-1" />
+                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-red-600/60">Sering alpa (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topAlpa.map((u, idx) => u.totalAlpa > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-red-600">{u.totalAlpa} hari</span></div>)}</div></div>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
