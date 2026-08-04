@@ -2,7 +2,7 @@
 /**
  * @fileOverview AI Flow Modular Fragment-Based.
  * Menggunakan independent hashing untuk memastikan Hook, Context, dan Punchline selalu acak secara independen.
- * AI hanya bertugas merangkai fragmen tanpa mengubah urutan atau kata-kata aslinya.
+ * AI bertugas merangkai fragmen dan menambahkan satu bait pantun jenaka sekolah.
  */
 
 import { ai } from '../genkit';
@@ -102,7 +102,7 @@ const generateQuoteFlow = ai.defineFlow(
     // 1. GABUNGKAN SEMUA DIMENSI SEED
     const fullSeed = `${input.userId}|${input.date}|${input.day}|${input.attendanceType}|${input.creativeSeed}`;
     
-    // 2. INDEPENDENT HASHING UNTUK SETIAP FRAGMEN (Skor 10/10 Hash)
+    // 2. INDEPENDENT HASHING UNTUK SETIAP FRAGMEN
     const hookHash = getHash(fullSeed + "|hook-salt");
     const contextHash = getHash(fullSeed + "|context-salt");
     const punchHash = getHash(fullSeed + "|punch-salt");
@@ -111,26 +111,18 @@ const generateQuoteFlow = ai.defineFlow(
     const selectedContext = contexts[contextHash % contexts.length];
     const selectedPunchline = punchlines[punchHash % punchlines.length];
 
-    // 3. AUDIT LOGGING UNTUK VERIFIKASI (Sesuai Permintaan)
-    console.log(`\n[AI_AUDIT_START] -------------------------`);
-    console.log(`[USER] : ${input.userName} (${input.role})`);
-    console.log(`[TYPE] : Absen ${input.attendanceType} | ${input.date}`);
-    console.log(`[HOOK] : ${selectedHook}`);
-    console.log(`[CONT] : ${selectedContext}`);
-    console.log(`[PUNC] : ${selectedPunchline}`);
-    console.log(`[SEED] : ${input.creativeSeed}`);
-    console.log(`[AI_AUDIT_END] ---------------------------\n`);
-
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
           temperature: 1.5,
           topP: 0.95,
-          maxOutputTokens: 250,
+          maxOutputTokens: 500,
         },
         system: `Anda adalah perangkai kata yang humoris di SMPN 5 Langke Rembong.
-TUGAS: Sambungkan tiga fragmen narasi berikut menjadi SATU kutipan yang sangat alami (maksimal 2 kalimat).
+TUGAS: 
+1. Sambungkan tiga fragmen narasi berikut menjadi SATU paragraf pembuka yang alami.
+2. Di bawah paragraf tersebut, tambahkan SATU bait Pantun Jenaka (4 baris, rima a-b-a-b) yang lucu bertema pendidikan atau sekolah.
 
 FRAGMEN WAJIB (URUTAN TIDAK BOLEH BERUBAH):
 1. Hook: "${selectedHook}"
@@ -139,13 +131,14 @@ FRAGMEN WAJIB (URUTAN TIDAK BOLEH BERUBAH):
 
 ATURAN MUTLAK:
 1. JANGAN MENGUBAH satu kata pun dari isi Hook, Context, dan Punchline.
-2. JANGAN MENGUBAH urutan. Harus: [Hook] lalu [Context] lalu [Punchline].
-3. Sambungkan ketiganya menggunakan maksimal 10 kata tambahan agar mengalir.
-4. JANGAN gunakan emoji.
-5. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
-6. Hasil harus terdengar seperti obrolan di ruang guru, bukan teks formal.`,
+2. JANGAN MENGUBAH urutan fragmen. Harus: [Hook] -> [Context] -> [Punchline].
+3. Sambungkan ketiganya menggunakan kata tambahan agar mengalir.
+4. Buat PANTUN di bawah paragraf pembuka. Pantun harus terdiri dari 4 baris dengan rima akhir a-b-a-b.
+5. JANGAN gunakan emoji.
+6. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
+7. Hasil harus terdengar seperti obrolan akrab di ruang guru atau kantin sekolah.`,
         prompt: `Rangkai secara alami: [${selectedHook}] [${selectedContext}] [${selectedPunchline}]. 
-        Pesan ini ditujukan untuk ${input.userName}.`,
+        Lalu tambahkan pantun lucu untuk ${input.userName} (${input.role}).`,
         output: { schema: QuoteOutputSchema },
       });
 
@@ -153,7 +146,6 @@ ATURAN MUTLAK:
       return response.output;
     } catch (err: any) {
       console.error('[AI_FLOW_ERROR]:', err.message);
-      // Fallback deterministik jika AI gagal
       return {
         quote: `${selectedHook} ${selectedContext} ${selectedPunchline}`,
         author: "AI E-SPENLI"

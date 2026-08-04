@@ -44,12 +44,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
       
-      // CREATIVE SEED: Menjamin keunikan sesi setiap detik (Entropy Salt)
       const creativeSeed = `SESS-${Date.now()}-${Math.random().toString(36).substring(5)}`;
-
-      // DEBUG CLIENT: Memastikan seed terkirim unik di konsol browser
-      console.log(`[AI_CLIENT_LOG] Requesting quote for: ${userData.name}`);
-      console.log(`[AI_CLIENT_LOG] Unique Seed: ${creativeSeed}`);
 
       try {
         const response = await fetch('/api/quote', {
@@ -101,7 +96,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-1000 ease-out w-full space-y-3">
-            <blockquote className="font-bold text-[13px] text-foreground/90 leading-relaxed italic text-center px-1">
+            <blockquote className="font-bold text-[13px] text-foreground/90 leading-relaxed italic text-center px-1 whitespace-pre-line">
               "{quote?.quote}"
             </blockquote>
             <p className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/40">
