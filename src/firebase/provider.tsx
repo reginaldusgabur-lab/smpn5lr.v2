@@ -53,10 +53,19 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: null,
-    isUserLoading: true,
-    userError: null,
+  const [userAuthState, setUserAuthState] = useState<UserAuthState>(() => {
+    // Fast-path: Coba ambil dari session storage jika ada untuk loading instan
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('espenli_user_profile');
+      if (cached) {
+        try {
+          return { user: JSON.parse(cached), isUserLoading: false, userError: null };
+        } catch (e) {
+          return { user: null, isUserLoading: true, userError: null };
+        }
+      }
+    }
+    return { user: null, isUserLoading: true, userError: null };
   });
 
   useEffect(() => {
@@ -79,6 +88,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 ...userProfile,
                 id: userDocSnap.id,
               };
+              // Simpan ke cache untuk reload cepat berikutnya
+              sessionStorage.setItem('espenli_user_profile', JSON.stringify(combinedUser));
               setUserAuthState({ user: combinedUser, isUserLoading: false, userError: null });
             } else {
               setUserAuthState({ user: null, isUserLoading: false, userError: null });
@@ -87,6 +98,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             setUserAuthState({ user: null, isUserLoading: false, userError: error as Error });
           }
         } else {
+          sessionStorage.removeItem('espenli_user_profile');
           setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },
@@ -108,8 +120,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // Use absolute positioning instead of fixed to avoid scroll restoration warnings in console
-  if (userAuthState.isUserLoading) {
+  if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-background z-[9999] h-full w-full">
         <div className="flex items-center gap-2">

@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { CacheProvider } from '@/context/CacheContext';
@@ -30,7 +29,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    // Akselerasi Redirection: Jika user loading selesai dan tidak ada user, redirect instan
     if (!isUserLoading && !user && !redirectChecked.current) {
         redirectChecked.current = true;
         router.replace('/');
@@ -38,26 +36,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    const checkOnboarding = async () => {
-      if (!user || !firestore) return;
-      
-      if (sessionStorage.getItem('onboardingInProgress') === 'true') {
-        return;
-      }
-
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists() && !userDoc.data().onboardingSelesai) {
+    // Optimal: Gunakan data profile yang sudah ada di FirebaseProvider daripada fetch ulang
+    if (user && !user.onboardingSelesai && !runTour) {
+      if (sessionStorage.getItem('onboardingInProgress') !== 'true') {
         sessionStorage.setItem('onboardingInProgress', 'true');
         setRunTour(true);
       }
-    };
-
-    if (user && firestore) {
-      checkOnboarding();
     }
-  }, [user, firestore]);
+  }, [user, runTour]);
 
   const handleTourComplete = async () => {
     setRunTour(false);
@@ -72,8 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!isClient) return null;
 
-  // Loader ringan untuk mempercepat transisi visual
-  if (isUserLoading || (!user && !redirectChecked.current)) {
+  if (isUserLoading && !user) {
     return (
       <div className="absolute inset-0 flex h-screen w-full items-center justify-center bg-background z-[9999]">
         <Loader2 className="h-10 w-10 animate-spin text-primary/60" />
