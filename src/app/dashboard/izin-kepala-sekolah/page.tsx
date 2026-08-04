@@ -207,7 +207,7 @@ export default function IzinKepalaSekolahPage() {
                     <CardContent className="p-0 sm:p-6">
                         {isLoadingData ? (
                             <div className="p-4 sm:p-0">
-                                <ApprovalTableSkeleton cols={4} />
+                                <ApprovalTableSkeleton cols={5} />
                             </div>
                         ) : recentHistory.length === 0 ? (
                             <div className="flex flex-col items-center justify-center text-center py-20 text-muted-foreground">
@@ -221,6 +221,7 @@ export default function IzinKepalaSekolahPage() {
                                             <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Nama Pengguna</TableHead>
                                             <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Jenis</TableHead>
                                             <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Tanggal</TableHead>
+                                            <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Alasan</TableHead>
                                             <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-primary/80">Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -233,8 +234,11 @@ export default function IzinKepalaSekolahPage() {
                                                         {req.type}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="text-[10px] font-bold text-muted-foreground">
+                                                <TableCell className="text-[10px] font-bold text-muted-foreground whitespace-nowrap">
                                                     {req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}
+                                                </TableCell>
+                                                <TableCell className="max-w-[200px] truncate text-[11px] font-medium" title={req.reason}>
+                                                    {req.reason}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Badge variant={approvalStatusVariant[req.status] || 'secondary'} className="text-[9px] font-bold uppercase px-3 py-0.5">
