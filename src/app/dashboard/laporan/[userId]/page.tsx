@@ -136,7 +136,6 @@ export default function UserReportDetailPage() {
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
             
-            // LOGIKA: Hanya isi pulang jika sudah melewati jam pulang atau hari yang sudah berlalu
             const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const batch = writeBatch(firestore);
@@ -212,7 +211,6 @@ export default function UserReportDetailPage() {
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
             
-            // LOGIKA: Jika hari ini dan belum jam pulang, jangan isi jam pulang otomatis
             const fillOut = !isToday || (isToday && now >= limitOutStart);
 
             const batch = writeBatch(firestore);
@@ -381,63 +379,6 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                {!isLoading && stats && (
-                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
-                        <CardHeader className="p-6 border-b border-muted-foreground/5">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-xl">
-                                        <PieIcon className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
-                                        <CardDescription className="text-xs font-medium">Visualisasi performa kehadiran personil bulan ini.</CardDescription>
-                                    </div>
-                                </div>
-                                <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
-                                    <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
-                                    <p className="text-lg font-black text-primary leading-none">{stats.persentase}</p>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="h-[340px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={chartData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={70}
-                                            outerRadius={110}
-                                            paddingAngle={6}
-                                            dataKey="value"
-                                        >
-                                            {chartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                            ))}
-                                        </Pie>
-                                        <RechartsTooltip 
-                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
-                                            itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
-                                            formatter={(value) => [`${value} hari`, 'Jumlah']}
-                                        />
-                                        <Legend 
-                                            verticalAlign="bottom" 
-                                            height={40} 
-                                            formatter={(value, entry: any) => (
-                                                <span className="text-[11px] font-medium text-muted-foreground mx-1">
-                                                    {value}: <span className="text-foreground">{entry.payload.value} hari</span>
-                                                </span>
-                                            )}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardContent className="p-0">
                         <div className="p-4 space-y-6">
@@ -453,7 +394,7 @@ export default function UserReportDetailPage() {
                                         >
                                             <ChevronLeft className="h-5 w-5 text-primary" />
                                         </Button>
-                                        <div className="flex items-center gap-2 px-3 border-l border-muted-foreground/10 min-w-max">
+                                        <div className="flex items-center gap-2 px-3 min-w-max">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
                                                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
@@ -579,6 +520,63 @@ export default function UserReportDetailPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {!isLoading && stats && (
+                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
+                        <CardHeader className="p-6 border-b border-muted-foreground/5">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-xl">
+                                        <PieIcon className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Visualisasi performa kehadiran personil bulan ini.</CardDescription>
+                                    </div>
+                                </div>
+                                <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
+                                    <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
+                                    <p className="text-lg font-black text-primary leading-none">{stats.persentase}</p>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <div className="h-[340px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={chartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={70}
+                                            outerRadius={110}
+                                            paddingAngle={6}
+                                            dataKey="value"
+                                        >
+                                            {chartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip 
+                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+                                            itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                                            formatter={(value) => [`${value} hari`, 'Jumlah']}
+                                        />
+                                        <Legend 
+                                            verticalAlign="bottom" 
+                                            height={40} 
+                                            formatter={(value, entry: any) => (
+                                                <span className="text-[11px] font-medium text-muted-foreground mx-1">
+                                                    {value}: <span className="text-foreground">{entry.payload.value} hari</span>
+                                                </span>
+                                            )}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </div>
     );
