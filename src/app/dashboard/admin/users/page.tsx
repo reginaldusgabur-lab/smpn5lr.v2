@@ -31,6 +31,7 @@ import {
   Power,
   AlertCircle,
   KeyRound,
+  Users as UsersIcon,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -119,6 +120,15 @@ export default function AdminUsersPage() {
             return matchRole && matchSearch;
         }).sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
     }, [usersData, userFilter, userSearch]);
+
+    // Kalkulasi statistik gender berdasarkan user yang difilter
+    const genderStats = useMemo(() => {
+        return filteredUsers.reduce((acc, u) => {
+            if (u.gender === 'Laki-laki') acc.male++;
+            else if (u.gender === 'Perempuan') acc.female++;
+            return acc;
+        }, { male: 0, female: 0 });
+    }, [filteredUsers]);
 
     const userForm = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
@@ -381,6 +391,27 @@ export default function AdminUsersPage() {
                                 </TableBody>
                             </Table>
                         </div>
+
+                        {/* Statistik Gender */}
+                        {!isUsersLoading && filteredUsers.length > 0 && (
+                            <div className="mt-8 pt-6 border-t border-muted-foreground/10 flex flex-wrap gap-6 items-center px-2">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Laki-laki:</span>
+                                    <Badge variant="secondary" className="rounded-lg px-3 py-1 font-black text-xs bg-primary/10 text-primary border-none shadow-none">{genderStats.male}</Badge>
+                                </div>
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-pink-500" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Perempuan:</span>
+                                    <Badge variant="secondary" className="rounded-lg px-3 py-1 font-black text-xs bg-pink-500/10 text-pink-600 border-none shadow-none">{genderStats.female}</Badge>
+                                </div>
+                                <div className="flex items-center gap-2.5 ml-auto">
+                                    <UsersIcon className="h-3.5 w-3.5 text-muted-foreground/50" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Total:</span>
+                                    <Badge variant="outline" className="rounded-lg px-3 py-1 font-black text-xs border-muted-foreground/20 text-foreground/80 shadow-none">{filteredUsers.length}</Badge>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
