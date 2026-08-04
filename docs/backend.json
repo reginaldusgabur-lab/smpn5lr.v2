@@ -24,6 +24,14 @@
           "type": "string",
           "description": "The role of the user (admin, kepala_sekolah, guru, pegawai, siswa)."
         },
+        "gender": {
+          "type": "string",
+          "description": "The gender of the user.",
+          "enum": [
+            "Laki-laki",
+            "Perempuan"
+          ]
+        },
         "position": {
           "type": "string",
           "description": "The employment status of the user. For 'guru', this can be PNS or PPPK. For 'pegawai', this can be Honorer, PPPK, or PW (PPPK Paruh Waktu).",
@@ -359,7 +367,7 @@
         "definition": {
           "entityName": "AttendanceRecord",
           "schema": {
-            "$ref": "#/backend/entities/AttendanceRecord"
+            "$ref": "#/backend/entities/User/properties/gender"
           },
           "description": "Stores attendance records for each user. This is a subcollection of the user document, ensuring path-based ownership for simplified security rules.",
           "params": [

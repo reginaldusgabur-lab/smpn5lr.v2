@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 
@@ -83,6 +84,7 @@ const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
     email: z.string().email({ message: 'Email tidak valid.' }),
     role: z.enum(['guru', 'pegawai', 'kepala_sekolah', 'admin']),
+    gender: z.enum(['Laki-laki', 'Perempuan'], { required_error: 'Jenis kelamin wajib dipilih' }),
     nip: z.string().optional(),
     position: z.string().optional(),
     sequenceNumber: z.string().optional(),
@@ -120,7 +122,7 @@ export default function AdminUsersPage() {
 
     const userForm = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
-        defaultValues: { role: 'guru', name: '', email: '', nip: '', position: '', sequenceNumber: '', password: '' },
+        defaultValues: { role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', position: '', sequenceNumber: '', password: '' },
     });
 
     useEffect(() => {
@@ -129,13 +131,14 @@ export default function AdminUsersPage() {
                 name: editingUser.name || '',
                 email: editingUser.email || '',
                 role: editingUser.role || 'guru',
+                gender: editingUser.gender || 'Laki-laki',
                 nip: editingUser.nip || '',
                 position: editingUser.position || '',
                 sequenceNumber: editingUser.sequenceNumber?.toString() || '',
                 password: '',
             });
         } else {
-            userForm.reset({ role: 'guru', name: '', email: '', nip: '', position: '', sequenceNumber: '', password: '' });
+            userForm.reset({ role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', position: '', sequenceNumber: '', password: '' });
         }
     }, [editingUser, userForm]);
 
@@ -149,6 +152,7 @@ export default function AdminUsersPage() {
                 const updatedData = {
                     name: values.name,
                     role: values.role,
+                    gender: values.gender,
                     nip: values.nip || null,
                     position: values.position || null,
                     sequenceNumber: values.sequenceNumber ? parseInt(values.sequenceNumber, 10) : null,
@@ -167,7 +171,12 @@ export default function AdminUsersPage() {
                 try {
                     const cred = await createUserWithEmailAndPassword(getAuth(tempApp), values.email, values.password);
                     const userDoc = {
-                        id: cred.user.uid, name: values.name, role: values.role, email: values.email, status: 'Aktif',
+                        id: cred.user.uid, 
+                        name: values.name, 
+                        role: values.role, 
+                        gender: values.gender,
+                        email: values.email, 
+                        status: 'Aktif',
                         nip: values.nip || null, position: values.position || null,
                         sequenceNumber: values.sequenceNumber ? parseInt(values.sequenceNumber, 10) : null,
                     };
@@ -285,6 +294,7 @@ export default function AdminUsersPage() {
                                         <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground">No</TableHead>
                                         <TableHead className="font-bold text-xs text-primary/80">Nama & email</TableHead>
                                         <TableHead className="font-bold text-xs text-primary/80">Peran</TableHead>
+                                        <TableHead className="font-bold text-xs text-primary/80">Jenis kelamin</TableHead>
                                         <TableHead className="font-bold text-xs text-primary/80">Identitas</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-primary/80">Status</TableHead>
                                         <TableHead className="text-right font-bold text-xs text-primary/80 pr-6">Aksi</TableHead>
@@ -297,6 +307,7 @@ export default function AdminUsersPage() {
                                                 <TableCell><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
                                                 <TableCell><Skeleton className="h-10 w-48 rounded-lg" /></TableCell>
                                                 <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                                                <TableCell><Skeleton className="h-4 w-24 rounded-md" /></TableCell>
                                                 <TableCell><Skeleton className="h-4 w-32 rounded-md" /></TableCell>
                                                 <TableCell><Skeleton className="h-6 w-16 mx-auto rounded-full" /></TableCell>
                                                 <TableCell><Skeleton className="h-8 w-8 ml-auto rounded-full mr-2" /></TableCell>
@@ -315,6 +326,9 @@ export default function AdminUsersPage() {
                                                 <Badge variant="secondary" className="text-[9px] font-bold capitalize py-0.5 px-3">
                                                     {u.role.replace('_', ' ')}
                                                 </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="text-xs font-medium text-foreground">{u.gender || '-'}</span>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
@@ -359,7 +373,7 @@ export default function AdminUsersPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold">
+                                            <TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold">
                                                 Tidak ada data personil ditemukan.
                                             </TableCell>
                                         </TableRow>
@@ -441,7 +455,7 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="role" render={({field}) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-xs font-bold ml-1">Peran</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
                                                         <SelectValue placeholder="Pilih peran" />
@@ -457,6 +471,26 @@ export default function AdminUsersPage() {
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
+                                    <FormField control={userForm.control} name="gender" render={({field}) => (
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-bold ml-1">Jenis kelamin</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
+                                                        <SelectValue placeholder="Pilih jenis kelamin" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-none shadow-none">
+                                                    <SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem>
+                                                    <SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage className="text-[10px] font-bold" />
+                                        </FormItem>
+                                    )} />
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="nip" render={({field}) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-xs font-bold ml-1">NIP (Opsional)</FormLabel>
@@ -464,9 +498,6 @@ export default function AdminUsersPage() {
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="position" render={({field}) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-xs font-bold ml-1">Status kepegawaian</FormLabel>
@@ -474,6 +505,9 @@ export default function AdminUsersPage() {
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-xs font-bold ml-1">No. urut laporan</FormLabel>
