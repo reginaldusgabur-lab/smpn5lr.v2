@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -212,7 +213,7 @@ export default function SchoolReportPage() {
             { name: 'Izin', value: totals.izin, color: '#3b82f6' },
             { name: 'Sakit', value: totals.sakit, color: '#f97316' },
             { name: 'Alpa', value: totals.alpa, color: '#ef4444' },
-        ].filter(item => item.value > 0);
+        ];
 
         // Top 3 Paling Rajin
         const topRajin = [...filteredReports]
@@ -445,7 +446,7 @@ export default function SchoolReportPage() {
                                         <TableRow>
                                             <TableCell colSpan={8} className="h-48 text-center font-bold opacity-50 uppercase text-xs">
                                                 Data tidak ditemukan
-                                            </TableCell>
+                                            </SelectItem>
                                         </TableRow>
                                     )}
                                 </TableBody>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -129,7 +130,7 @@ export default function LaporanPage() {
         { name: 'Izin', value: stats.totalIzin, color: '#3b82f6' },
         { name: 'Sakit', value: stats.totalSakit, color: '#f97316' },
         { name: 'Alpa', value: stats.totalAlpa, color: '#ef4444' },
-    ].filter(item => item.value > 0);
+    ];
   }, [stats]);
 
   const handleRefresh = () => {
