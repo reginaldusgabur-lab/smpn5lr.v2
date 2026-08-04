@@ -138,7 +138,7 @@ export default function SchoolReportPage() {
                     if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
                         let p = 0;
                         const desc = (att.reasonForUpdate || '').toLowerCase();
-                        if (desc.includes('dinas') || desc.includes('kehadiran penuh')) p = 1.0;
+                        if (desc.includes('dinas') || desc.includes('kehadiran penuh') || desc.includes('kegiatan luar sekolah')) p = 1.0;
                         else if (att.checkInTime && att.checkOutTime) {
                             let isLate = false;
                             const checkInDate = att.checkInTime.toDate();
@@ -353,7 +353,7 @@ export default function SchoolReportPage() {
                                         >
                                             <ChevronLeft className="h-5 w-5 text-primary" />
                                         </Button>
-                                        <div className="flex items-center gap-2 px-3 border-l border-muted-foreground/10 min-w-max">
+                                        <div className="flex items-center gap-1.5 pl-1 pr-3 min-w-max">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
                                                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
