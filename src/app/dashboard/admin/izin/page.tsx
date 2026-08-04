@@ -221,7 +221,7 @@ export default function PersetujuanIzinPage() {
         </CardHeader>
         <CardContent className="p-0 sm:p-6">
           {isDataLoading ? (
-            <ApprovalTableSkeleton cols={4} />
+            <ApprovalTableSkeleton cols={5} />
           ) : recentHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-20">
               <p className="text-xs font-bold">Tidak ada riwayat untuk ditampilkan.</p>
@@ -234,6 +234,7 @@ export default function PersetujuanIzinPage() {
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Nama pengguna</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Jenis</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Tanggal</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase tracking-widest text-primary/80">Alasan</TableHead>
                     <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-primary/80">Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -249,6 +250,7 @@ export default function PersetujuanIzinPage() {
                       <TableCell className="text-[10px] font-bold text-muted-foreground">
                         {req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''} - {req.endDate?.toDate ? format(req.endDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}
                       </TableCell>
+                      <TableCell className="max-w-xs truncate text-[11px] font-bold" title={req.reason}>{req.reason}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant={approvalStatusVariant[req.status] || 'secondary'} className="text-[9px] font-bold uppercase px-3 py-0.5">
                             {req.status}
