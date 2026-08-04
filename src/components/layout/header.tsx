@@ -1,6 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -25,18 +24,9 @@ import {
 import { 
   Settings, 
   ShieldAlert, 
-  BookOpen, 
   UserCircle, 
-  QrCode, 
-  FileText, 
-  Zap, 
   Power, 
   HelpCircle,
-  Info,
-  MapPin,
-  Lock,
-  Camera,
-  Clock,
   Sparkles
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
@@ -156,7 +146,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                         <span className="text-sm font-bold uppercase tracking-wider">Keluar</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
-            </覗DropdownMenu>
+            </DropdownMenu>
         )}
         <ModeToggle />
       </div>
@@ -174,7 +164,6 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
         </button>
       </div>
 
-      {/* Dialog Panduan & FAQ Utama */}
       <Dialog open={isFaqOpen} onOpenChange={setIsFaqOpen}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-none shadow-2xl p-0">
           <div className="bg-primary/5 p-8 border-b border-muted-foreground/10 flex flex-col items-center text-center">
