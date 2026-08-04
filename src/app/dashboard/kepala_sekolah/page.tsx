@@ -32,7 +32,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-// LiveClock component
+// LiveClock component fixed for hydration
 function LiveClock() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
@@ -71,7 +71,7 @@ const KepalaSekolahDashboardSkeleton = () => (
                 </CardHeader>
                 <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
                     <Skeleton className="h-[72px] w-1/2" />
-                    <div className="grid grid-cols-2 gap-4 text-center w-full max-w-sm pt-4">
+                    <div className="grid grid-cols-2 gap-4 text-center w-full max-sm pt-4">
                         <Skeleton className="h-[88px] w-full" />
                         <Skeleton className="h-[88px] w-full" />
                     </div>

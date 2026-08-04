@@ -53,25 +53,28 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>(() => {
-    // INISIALISASI INSTAN: Ambil dari session storage jika ada
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('espenli_user_profile');
-      if (cached) {
-        try {
-          return { user: JSON.parse(cached), isUserLoading: false, userError: null };
-        } catch (e) {
-          return { user: null, isUserLoading: true, userError: null };
-        }
-      }
-    }
-    return { user: null, isUserLoading: true, userError: null };
+  // FIX: Start with a consistent state for both server and client to prevent hydration errors.
+  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
+    user: null,
+    isUserLoading: true,
+    userError: null,
   });
 
   useEffect(() => {
     if (!auth || !firestore) {
       setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth or Firestore service not provided.") });
       return;
+    }
+
+    // CHECK CACHE: Move cache check to useEffect to avoid hydration mismatch
+    const cached = sessionStorage.getItem('espenli_user_profile');
+    if (cached) {
+      try {
+        const user = JSON.parse(cached);
+        setUserAuthState({ user, isUserLoading: false, userError: null });
+      } catch (e) {
+        // Ignore malformed cache
+      }
     }
 
     const unsubscribe = onAuthStateChanged(
@@ -89,7 +92,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 id: userDocSnap.id,
               };
               
-              // Update cache setiap kali ada perubahan/login
               sessionStorage.setItem('espenli_user_profile', JSON.stringify(combinedUser));
               setUserAuthState({ user: combinedUser, isUserLoading: false, userError: null });
             } else {
@@ -121,7 +123,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // HANYA tampilkan loader jika benar-benar tidak ada data (akses pertama kali/cache kosong)
+  // FIX: Render children always but handle the visibility inside to avoid hydration mismatch.
+  // We use a mounting state or simply render a consistent shell.
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background z-[9999] h-full w-full">

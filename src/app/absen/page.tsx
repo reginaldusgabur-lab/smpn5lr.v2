@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -37,6 +36,7 @@ type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'succe
 export default function AbsenPage() {
   const [status, setStatus] = useState<FeedbackStatus>('idle');
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -47,6 +47,11 @@ export default function AbsenPage() {
   const [isScannerReady, setIsScannerReady] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const readerId = "qr-reader-fullscreen";
+
+  // Hydration safety
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData } = useDoc(user, userDocRef);
@@ -66,12 +71,12 @@ export default function AbsenPage() {
   const { data: activeLeaves, isLoading: isLeaveLoading } = useCollection(user, todayLeaveQuery);
 
   const currentActiveLeave = useMemo(() => {
-      if (!activeLeaves) return null;
+      if (!activeLeaves || !isClient) return null;
       const now = new Date();
       return activeLeaves.find(l => isWithinInterval(now, { start: startOfDay(l.startDate.toDate()), end: endOfDay(l.endDate.toDate()) }));
-  }, [activeLeaves]);
+  }, [activeLeaves, isClient]);
 
-  const isDataLoading = isUserLoading || isAttendanceLoading || isLeaveLoading || windowStatus === 'LOADING';
+  const isDataLoading = !isClient || isUserLoading || isAttendanceLoading || isLeaveLoading || windowStatus === 'LOADING';
   const isCameraInitializing = hasCameraPermission === null;
   const isHoliday = windowStatus === 'SESSION_INACTIVE';
   const isManualDisabled = windowStatus === 'DISABLED';
@@ -84,15 +89,14 @@ export default function AbsenPage() {
       if (hasCompletedAttendance) return 'info_checked_out';
       if (isManualDisabled) return 'info_disabled';
       if (isHoliday) return 'info_holiday';
-      // MODIFIED LOGIC:
       if (windowStatus === 'AFTER_IN') return 'error_checkin_closed';
       if (windowStatus === 'BEFORE_IN' || windowStatus === 'CLOSED') return 'error_time';
       if (hasCameraPermission === false) return 'info_no_camera';
       return 'idle';
   }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
 
-  const showScanner = !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
-  const showLoader = isDataLoading || isCameraInitializing || (showScanner && !isScannerReady);
+  const showScanner = isClient && !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
+  const showLoader = isDataLoading || (isClient && isCameraInitializing) || (showScanner && !isScannerReady);
 
   const handleAttendance = useCallback(async () => {
     setLocationError(null);
@@ -149,6 +153,7 @@ export default function AbsenPage() {
   const handleAttendanceRef = useRef(handleAttendance); handleAttendanceRef.current = handleAttendance;
 
   useEffect(() => {
+    if (!isClient) return;
     let isMounted = true;
     const checkCameras = async () => {
         try {
@@ -160,7 +165,7 @@ export default function AbsenPage() {
     }
     checkCameras();
     return () => { isMounted = false; };
-  }, []);
+  }, [isClient]);
 
   const onScanSuccess = useCallback((decodedText: string) => {
     if (statusRef.current === 'idle' && schoolConfig?.qrCodeValue) {
@@ -196,6 +201,8 @@ export default function AbsenPage() {
         }
     };
   }, [showScanner, status, onScanSuccess]);
+
+  if (!isClient) return null;
 
   return (
     <div className="fixed inset-0 z-40 bg-background overflow-hidden" style={{ touchAction: 'none' }}>

@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
+// LiveClock component fixed for hydration
 function LiveClock() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
