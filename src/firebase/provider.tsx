@@ -54,7 +54,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>(() => {
-    // Fast-path: Coba ambil dari session storage jika ada untuk loading instan
+    // INISIALISASI INSTAN: Ambil dari session storage jika ada
     if (typeof window !== 'undefined') {
       const cached = sessionStorage.getItem('espenli_user_profile');
       if (cached) {
@@ -88,14 +88,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 ...userProfile,
                 id: userDocSnap.id,
               };
-              // Simpan ke cache untuk reload cepat berikutnya
+              
+              // Update cache setiap kali ada perubahan/login
               sessionStorage.setItem('espenli_user_profile', JSON.stringify(combinedUser));
               setUserAuthState({ user: combinedUser, isUserLoading: false, userError: null });
             } else {
               setUserAuthState({ user: null, isUserLoading: false, userError: null });
             }
           } catch (error) {
-            setUserAuthState({ user: null, isUserLoading: false, userError: error as Error });
+            setUserAuthState(prev => ({ ...prev, userError: error as Error, isUserLoading: false }));
           }
         } else {
           sessionStorage.removeItem('espenli_user_profile');
@@ -120,13 +121,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
+  // HANYA tampilkan loader jika benar-benar tidak ada data (akses pertama kali/cache kosong)
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-background z-[9999] h-full w-full">
+      <div className="fixed inset-0 flex items-center justify-center bg-background z-[9999] h-full w-full">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse [animation-delay:200ms]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse [animation-delay:400ms]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce" />
+          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-delay:200ms]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-delay:400ms]" />
         </div>
       </div>
     );

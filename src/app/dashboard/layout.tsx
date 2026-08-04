@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import { CacheProvider } from '@/context/CacheContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -29,6 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
+    // Redireksi cepat jika tidak ada user
     if (!isUserLoading && !user && !redirectChecked.current) {
         redirectChecked.current = true;
         router.replace('/');
@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    // Optimal: Gunakan data profile yang sudah ada di FirebaseProvider daripada fetch ulang
+    // Cek onboarding langsung dari data user yang sudah di-cache di Provider
     if (user && !user.onboardingSelesai && !runTour) {
       if (sessionStorage.getItem('onboardingInProgress') !== 'true') {
         sessionStorage.setItem('onboardingInProgress', 'true');
@@ -50,7 +50,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!user || !firestore) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     try {
-      await setDoc(userDocRef, { onboardingSelesai: true }, { merge: true });
+      const updates = { onboardingSelesai: true };
+      await setDoc(userDocRef, updates, { merge: true });
+      
+      // Update cache lokal agar tidak flicker di refresh berikutnya
+      const cached = sessionStorage.getItem('espenli_user_profile');
+      if (cached) {
+          const profile = JSON.parse(cached);
+          sessionStorage.setItem('espenli_user_profile', JSON.stringify({ ...profile, ...updates }));
+      }
     } catch (error) {
       console.error("Gagal menyimpan status onboarding:", error);
     }
@@ -58,14 +66,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!isClient) return null;
 
-  if (isUserLoading && !user) {
-    return (
-      <div className="absolute inset-0 flex h-screen w-full items-center justify-center bg-background z-[9999]">
-        <Loader2 className="h-10 w-10 animate-spin text-primary/60" />
-      </div>
-    );
-  }
-
+  // Loader di sini dihapus karena sudah ditangani oleh FirebaseProvider secara global
+  if (!user && isUserLoading) return null;
   if (!user) return null;
 
   return (
