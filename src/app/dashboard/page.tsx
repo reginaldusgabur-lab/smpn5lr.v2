@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 
@@ -68,6 +69,7 @@ LiveClockUI.displayName = 'LiveClockUI';
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
   const { status: windowStatus } = useAttendanceWindow();
   const isMounted = useRef(true);
   const [isClient, setIsClient] = useState(false);
@@ -169,6 +171,28 @@ export default function DashboardPage() {
 
   const canGoNext = !isSameMonth(summaryMonth, new Date());
   const canGoPrev = summaryMonth > new Date(2026, 0, 1);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+        const headerOffset = 80;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+        });
+    }
+  };
+
+  const navigateToApproval = () => {
+    if (user?.role === 'admin') {
+        router.push('/dashboard/admin/izin');
+    } else if (user?.role === 'kepala_sekolah') {
+        router.push('/dashboard/izin-kepala-sekolah');
+    }
+  };
 
   const renderAttendanceButton = () => {
     const record = todaysAttendance?.[0];
@@ -293,45 +317,63 @@ export default function DashboardPage() {
         {(isAdmin || isKepsek) && (
             <div className="w-full space-y-4 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3">
+                    <Card 
+                        className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
+                        onClick={() => scrollToSection('recent-attendance')}
+                    >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-semibold text-green-600">Hadir</CardTitle>
-                            <UserCheck className="h-3 w-3 text-green-600" />
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600">Hadir</CardTitle>
+                            <UserCheck className="h-3 w-3 text-green-600 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-2xl font-bold text-green-600 tracking-tighter">
+                        <div className="text-2xl font-black text-green-600 tracking-tighter">
                             {isStatsLoading ? '...' : stats.hadir}
                         </div>
                     </Card>
-                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3">
+                    <Card 
+                        className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/5 transition-colors group"
+                        onClick={() => scrollToSection('absent-users')}
+                    >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-semibold text-blue-600">Izin/Sakit</CardTitle>
-                            <BookUser className="h-3 w-3 text-blue-600" />
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Izin/Sakit</CardTitle>
+                            <BookUser className="h-3 w-3 text-blue-600 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-2xl font-bold text-blue-600 tracking-tighter">
+                        <div className="text-2xl font-black text-blue-600 tracking-tighter">
                             {isStatsLoading ? '...' : stats.izin + stats.sakit}
                         </div>
                     </Card>
-                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3">
+                    <Card 
+                        className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-amber-500/5 transition-colors group"
+                        onClick={navigateToApproval}
+                    >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-semibold text-amber-600">Menunggu</CardTitle>
-                            <MailWarning className="h-3 w-3 text-amber-600" />
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Menunggu</CardTitle>
+                            <MailWarning className="h-3 w-3 text-amber-600 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-2xl font-bold text-amber-600 tracking-tighter">
+                        <div className="text-2xl font-black text-amber-600 tracking-tighter">
                             {isStatsLoading ? '...' : stats.pending}
                         </div>
                     </Card>
-                    <Card className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3">
+                    <Card 
+                        className="bg-card border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/5 transition-colors group"
+                        onClick={() => scrollToSection('absent-users')}
+                    >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-semibold text-red-600">Alpa</CardTitle>
-                            <UserX className="h-3 w-3 text-red-600" />
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600">Alpa</CardTitle>
+                            <UserX className="h-3 w-3 text-red-600 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-2xl font-bold text-red-600 tracking-tighter">
+                        <div className="text-2xl font-black text-red-600 tracking-tighter">
                             {isStatsLoading ? '...' : stats.alpa}
                         </div>
                     </Card>
                 </div>
-                <RecentAttendanceTable />
-                <AbsentUsersTable />
+                
+                <div id="recent-attendance">
+                    <RecentAttendanceTable />
+                </div>
+                
+                <div id="absent-users">
+                    <AbsentUsersTable />
+                </div>
             </div>
         )}
 
