@@ -178,7 +178,7 @@ export default function LaporanPage() {
                                 <ChevronLeft className="h-5 w-5 text-primary" />
                             </Button>
                             
-                            <div className="flex items-center gap-1.5 px-2 border-l border-muted-foreground/10 mr-1 min-w-max">
+                            <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
                                 <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col">
                                     <span className="text-[7px] font-black uppercase text-muted-foreground/60 leading-none">THN AJARAN</span>

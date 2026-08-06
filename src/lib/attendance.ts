@@ -33,13 +33,13 @@ const cleanDesc = (desc: string) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
+/**
+ * Mengambil statistik kehadiran staf hari ini.
+ * CACHE DINONAKTIFKAN agar sinkron dengan tabel Aktivitas Kehadiran.
+ */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `daily_stats_v152_${todayStr}`;
-    
-    const cachedData = getFromCache(cacheKey);
-    if (cachedData) return cachedData;
 
     try {
         const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
@@ -86,7 +86,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();
         
-        // Filter agar hanya menghitung user Aktif (Guru/Pegawai/Kepsek)
         const staffIdsSet = new Set(allStaff.map(s => s.id));
         
         attendanceSnap.forEach(doc => {
@@ -125,7 +124,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             }
         });
 
-        const result = {
+        return {
             totalStaff: allStaff.length,
             hadir: presentUserIds.size,
             izin: izinCount,
@@ -133,11 +132,9 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             pending: pendingCount,
             alpa: alpaCount,
             isHoliday: false,
-            isManualDisabled: false
+            isManualDisabled: false,
+            isCalendarHoliday: isCalendarHoliday
         };
-
-        setInCache(cacheKey, result);
-        return result;
     } catch (e) {
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false };
     }
@@ -351,7 +348,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 description = cleanDesc(description);
 
-                // LOGIC: Map "Terlambat" to status "Hadir"
                 const lowDesc = description.toLowerCase();
                 const statusLabel = description.charAt(0).toUpperCase() + description.slice(1);
                 
@@ -378,7 +374,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type === 'Terlambat' ? 'Hadir' : leaveRecord.type, description: cleanDesc(leaveRecord.reason) || leaveRecord.type };
             }
 
-            // Special handling for half-day leaves that don't have attendance record yet
             if (leaveRecord && ['Pulang Cepat', 'Dinas Siang'].includes(leaveRecord.type)) {
                  return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: `Tugas ${leaveRecord.type} (Tanpa absen masuk)` };
             }
