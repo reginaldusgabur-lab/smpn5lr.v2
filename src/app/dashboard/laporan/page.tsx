@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -180,8 +181,8 @@ export default function LaporanPage() {
               <CardHeader className="p-3 sm:p-4 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="font-bold text-xs tracking-tight opacity-70 drop-shadow-sm">Riwayat absensi & izin</CardTitle>
-                        <CardDescription className="text-muted-foreground font-bold text-[9px] mt-0.5">Catatan lengkap kehadiran Anda.</CardDescription>
+                        <CardTitle className="font-bold text-lg tracking-tight drop-shadow-sm">Riwayat absensi & izin</CardTitle>
+                        <CardDescription className="text-muted-foreground font-bold text-[10px] mt-0.5">Catatan lengkap kehadiran Anda.</CardDescription>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/5 shadow-none" onClick={handleRefresh} disabled={isLoading}>
                         <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", isLoading && "animate-spin")} />
@@ -191,7 +192,7 @@ export default function LaporanPage() {
               <CardContent className="p-0 min-h-[400px]">
                 <div className="p-4 flex flex-col items-center justify-center">
                     <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center">
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
@@ -202,7 +203,7 @@ export default function LaporanPage() {
                                 <ChevronLeft className="h-5 w-5 text-primary" />
                             </Button>
                             
-                            <div className="flex items-center gap-1.5 pl-1 pr-3 min-w-max">
+                            <div className="flex items-center gap-1 pl-1 pr-2 min-w-max border-r border-muted-foreground/10 mr-2">
                                 <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col min-w-max">
                                     <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
