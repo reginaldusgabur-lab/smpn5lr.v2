@@ -289,17 +289,17 @@ export default function IzinPage() {
 
     return (
         <PageWrapper>
-            <Card className="w-full overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
+            <Card className="w-full overflow-hidden border border-muted-foreground/10 shadow-lg rounded-xl bg-card">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div>
-                                    <CardTitle className="font-bold text-sm tracking-tight">Formulir pengajuan izin</CardTitle>
+                                    <CardTitle className="font-bold text-sm tracking-tight drop-shadow-sm">Formulir pengajuan izin</CardTitle>
                                     <CardDescription className="text-muted-foreground font-medium pt-1">Isi formulir untuk mengajukan ketidakhadiran atau tugas dinas.</CardDescription>
                                 </div>
                                 {currentDayLeave && (
-                                    <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-xl border border-border/50">
+                                    <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-xl border border-border/50 shadow-inner">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status:</span>
                                         {currentDayLeave.status === 'pending' ? (
                                             <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export default function IzinPage() {
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             {currentDayLeave && (
-                                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3">
+                                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3 shadow-inner">
                                     <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-xs font-bold text-primary">Informasi Pengajuan</p>
@@ -414,7 +414,7 @@ export default function IzinPage() {
                                                 placeholder={dynamicPlaceholder} 
                                                 disabled={!!currentDayLeave}
                                                 {...field} 
-                                                className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all font-bold" 
+                                                className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none" 
                                             />
                                         </FormControl>
                                         <div className="flex items-start gap-2 p-3 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 mt-2">
@@ -434,7 +434,7 @@ export default function IzinPage() {
                                 type="submit" 
                                 disabled={isSubmitting || isChecking || !!currentDayLeave} 
                                 className={cn(
-                                    "w-full sm:w-auto h-12 rounded-xl font-black tracking-widest shadow-none active:scale-95 transition-all bg-primary",
+                                    "w-full sm:w-auto h-12 rounded-xl font-black tracking-widest shadow-lg active:scale-95 transition-all bg-primary",
                                     currentDayLeave?.status === 'pending' && "bg-amber-500 hover:bg-amber-600"
                                 )}
                             >

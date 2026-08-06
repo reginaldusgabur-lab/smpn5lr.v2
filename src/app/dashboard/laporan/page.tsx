@@ -176,11 +176,11 @@ export default function LaporanPage() {
   return (
     <div className="flex-1 pt-2 pb-24 md:p-8">
         <div className="max-w-7xl mx-auto space-y-4">
-            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-md rounded-xl">
+            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-lg rounded-xl">
               <CardHeader className="p-3 sm:p-4 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="font-bold text-xs tracking-tight opacity-70">Riwayat absensi & izin</CardTitle>
+                        <CardTitle className="font-bold text-xs tracking-tight opacity-70 drop-shadow-sm">Riwayat absensi & izin</CardTitle>
                         <CardDescription className="text-muted-foreground font-bold text-[9px] mt-0.5">Catatan lengkap kehadiran Anda.</CardDescription>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/5 shadow-none" onClick={handleRefresh} disabled={isLoading}>
@@ -280,7 +280,7 @@ export default function LaporanPage() {
             </Card>
 
             {!isLoading && stats && (
-                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-md rounded-xl">
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-lg rounded-xl">
                     <CardHeader className="p-6 border-b border-muted-foreground/5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -288,11 +288,11 @@ export default function LaporanPage() {
                                     <PieIcon className="h-5 w-5 text-primary" />
                                 </div>
                                 <div className="space-y-1">
-                                    <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
+                                    <CardTitle className="text-lg font-bold drop-shadow-sm">Presentasi kehadiran</CardTitle>
                                     <CardDescription className="text-xs font-medium">Visualisasi perolehan absensi Anda bulan ini.</CardDescription>
                                 </div>
                             </div>
-                            <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
+                            <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px] shadow-inner">
                                 <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
                                 <p className="text-lg font-black text-primary leading-none">{stats.persentase}</p>
                             </div>

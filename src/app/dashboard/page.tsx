@@ -276,9 +276,9 @@ export default function DashboardPage() {
         </div>
 
         {!isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-md rounded-xl bg-card isolate" style={{ transform: 'translateZ(0)' }}>
+            <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl bg-card isolate" style={{ transform: 'translateZ(0)' }}>
                 <CardHeader className="p-6 text-center border-b border-muted-foreground/5">
-                    <CardTitle className="text-xl font-normal tracking-tight text-primary">Kehadiran hari ini</CardTitle>
+                    <CardTitle className="text-xl font-bold tracking-tight text-primary drop-shadow-sm">Kehadiran hari ini</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4 pt-4 text-center">
                     <LiveClockUI />
@@ -314,11 +314,11 @@ export default function DashboardPage() {
             <div className="w-full space-y-4 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
+                        className="bg-card border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
                         onClick={() => scrollToSection('recent-attendance')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600">Hadir</CardTitle>
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600 drop-shadow-sm">Hadir</CardTitle>
                             <UserCheck className="h-3 w-3 text-green-600 group-hover:scale-110 transition-transform" />
                         </CardHeader>
                         <div className="text-2xl font-black text-green-600 tracking-tighter">
@@ -326,11 +326,11 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/5 transition-colors group"
+                        className="bg-card border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/5 transition-colors group"
                         onClick={() => scrollToSection('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Izin/Sakit</CardTitle>
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-600 drop-shadow-sm">Izin/Sakit</CardTitle>
                             <BookUser className="h-3 w-3 text-blue-600 group-hover:scale-110 transition-transform" />
                         </CardHeader>
                         <div className="text-2xl font-black text-blue-600 tracking-tighter">
@@ -338,11 +338,11 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-amber-500/5 transition-colors group"
+                        className="bg-card border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-amber-500/5 transition-colors group"
                         onClick={navigateToApproval}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Menunggu</CardTitle>
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-amber-600 drop-shadow-sm">Menunggu</CardTitle>
                             <MailWarning className="h-3 w-3 text-amber-600 group-hover:scale-110 transition-transform" />
                         </CardHeader>
                         <div className="text-2xl font-black text-amber-600 tracking-tighter">
@@ -350,11 +350,11 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/5 transition-colors group"
+                        className="bg-card border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/5 transition-colors group"
                         onClick={() => scrollToSection('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600">Alpa</CardTitle>
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600 drop-shadow-sm">Alpa</CardTitle>
                             <UserX className="h-3 w-3 text-red-600 group-hover:scale-110 transition-transform" />
                         </CardHeader>
                         <div className="text-2xl font-black text-red-600 tracking-tighter">
@@ -374,13 +374,13 @@ export default function DashboardPage() {
         )}
 
         {isStaffOnly && !isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden bg-card mt-2">
+            <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden bg-card mt-2">
                 <CardHeader className="p-6 pb-2">
                     <div className="flex items-start justify-between">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
                                 <TrendingUp className="w-5 h-5 text-foreground" />
-                                <h2 className="text-xl font-normal tracking-tight text-foreground">
+                                <h2 className="text-xl font-bold tracking-tight text-foreground drop-shadow-sm">
                                     Riwayat Bulan {format(summaryMonth, 'MMMM', { locale: id })}
                                 </h2>
                             </div>
