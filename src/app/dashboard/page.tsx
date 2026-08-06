@@ -276,11 +276,11 @@ export default function DashboardPage() {
         </div>
 
         {!isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl bg-card isolate" style={{ transform: 'translateZ(0)' }}>
-                <CardHeader className="p-6 text-center border-b border-muted-foreground/5">
+            <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl bg-card isolate overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                <CardHeader className="p-6 text-center shadow-[0_4px_12px_-2px_rgba(0,0,0,0.05)] relative z-10 bg-card">
                     <CardTitle className="text-xl font-bold tracking-tight text-primary drop-shadow-sm">Kehadiran hari ini</CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4 pt-4 text-center">
+                <CardContent className="p-6 space-y-4 pt-6 text-center">
                     <LiveClockUI />
                     <div className="grid grid-cols-2 gap-4 w-full">
                         <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
@@ -375,7 +375,7 @@ export default function DashboardPage() {
 
         {isStaffOnly && !isAdmin && (
             <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden bg-card mt-2">
-                <CardHeader className="p-6 pb-2">
+                <CardHeader className="p-6 pb-2 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.05)] relative z-10 bg-card">
                     <div className="flex items-start justify-between">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -398,7 +398,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="p-6 pt-4">
+                <CardContent className="p-6 pt-6">
                     <div className="w-full h-56 mt-4">
                         {isPersonalSummaryLoading ? (
                             <Skeleton className="h-full w-full rounded-xl" />
