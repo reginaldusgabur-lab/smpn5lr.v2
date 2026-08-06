@@ -266,7 +266,7 @@ export default function DashboardPage() {
   const isStaffOnly = ['guru', 'pegawai', 'siswa'].includes(user?.role || '');
 
   return (
-    <div className="w-full space-y-6 pb-10 flex flex-col items-stretch">
+    <div className="w-full space-y-4 pb-10 flex flex-col items-stretch">
         <div className="w-full px-0 space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Selamat datang</p>
             <h1 className="text-xl font-bold tracking-tight text-foreground mt-0.5 leading-tight">{user?.name || 'Pengguna'}</h1>
@@ -276,7 +276,7 @@ export default function DashboardPage() {
         </div>
 
         {!isAdmin && (
-            <div className="w-full space-y-1.5">
+            <div className="w-full space-y-1">
                 <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card overflow-hidden">
                     <CardContent className="p-4 text-center">
                         <CardTitle className="text-xl font-bold tracking-tight text-primary drop-shadow-sm">Kehadiran hari ini</CardTitle>
@@ -316,7 +316,7 @@ export default function DashboardPage() {
         )}
 
         {(isAdmin || isKepsek) && (
-            <div className="w-full space-y-4 pt-2 flex flex-col items-stretch">
+            <div className="w-full space-y-3 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card 
                         className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
