@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -177,7 +176,7 @@ export default function LaporanPage() {
   return (
     <div className="flex-1 pt-2 pb-24 md:p-8">
         <div className="max-w-7xl mx-auto space-y-4">
-            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
+            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-md rounded-xl">
               <CardHeader className="p-3 sm:p-4 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
                     <div>
@@ -281,7 +280,7 @@ export default function LaporanPage() {
             </Card>
 
             {!isLoading && stats && (
-                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-md rounded-xl">
                     <CardHeader className="p-6 border-b border-muted-foreground/5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -379,7 +378,7 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
+                <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
                     <CardContent className="p-0">
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center">
@@ -522,7 +521,7 @@ export default function UserReportDetailPage() {
                 </Card>
 
                 {!isLoading && stats && (
-                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
+                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
