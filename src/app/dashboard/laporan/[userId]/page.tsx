@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -58,6 +59,13 @@ export default function UserReportDetailPage() {
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
+
+    // Fallback Tahun Ajaran saat config utama dimuat
+    useEffect(() => {
+        if (schoolConfigData?.academicYear && !academicYear) {
+            setAcademicYear(schoolConfigData.academicYear);
+        }
+    }, [schoolConfigData, academicYear]);
 
     const fetchData = useCallback(async () => {
         if (!firestore || !userId || !schoolConfigData || !currentUser || !isMounted.current) return;
@@ -383,7 +391,7 @@ export default function UserReportDetailPage() {
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center">
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
@@ -393,7 +401,7 @@ export default function UserReportDetailPage() {
                                         >
                                             <ChevronLeft className="h-5 w-5 text-primary" />
                                         </Button>
-                                        <div className="flex items-center gap-2 px-3 min-w-max">
+                                        <div className="flex items-center gap-1.5 pl-0.5 pr-2 min-w-max border-r border-muted-foreground/10 mr-1.5">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
                                                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
@@ -403,7 +411,7 @@ export default function UserReportDetailPage() {
                                     </div>
                                     
                                     <div className="flex items-center gap-2">
-                                        <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
+                                        <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                                             {format(currentMonth, 'MMMM yyyy', { locale: id })}
                                         </span>
                                         <Button 
