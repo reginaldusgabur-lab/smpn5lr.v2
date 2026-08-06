@@ -60,7 +60,6 @@ export default function SchoolReportPage() {
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(user, schoolConfigRef);
 
-    // Fallback Tahun Ajaran saat config utama dimuat
     useEffect(() => {
         if (schoolConfigData?.academicYear && !academicYear) {
             setAcademicYear(schoolConfigData.academicYear);
@@ -103,7 +102,7 @@ export default function SchoolReportPage() {
 
             const [attSnap, attFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackSnap), 
+                getDocs(attendanceFallbackQuery), 
                 getDocs(leaveQuery)
             ]);
 
@@ -288,7 +287,7 @@ export default function SchoolReportPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
+                <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
@@ -364,7 +363,7 @@ export default function SchoolReportPage() {
                 </Card>
 
                 {!isReportLoading && filteredReports.length > 0 && (
-                    <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
+                    <Card className="border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
                             <div className="flex items-center gap-3">
                                 <PieIcon className="h-5 w-5 text-primary" />
