@@ -213,7 +213,7 @@ export default function LaporanPage() {
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-xl text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
+                            <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[100px]">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
                             <Button 

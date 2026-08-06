@@ -239,7 +239,7 @@ function StaffReportView() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <span className="font-bold text-base text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[100px]">
+                                <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[100px]">
                                     {format(currentMonth, 'MMMM yyyy', { locale: id })}
                                 </span>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4 text-primary" /></Button>

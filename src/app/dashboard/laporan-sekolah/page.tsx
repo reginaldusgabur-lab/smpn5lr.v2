@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -95,7 +96,7 @@ export default function SchoolReportPage() {
 
             const [attSnap, attFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackQuery), 
+                getDocs(attendanceFallbackSnap), 
                 getDocs(leaveQuery)
             ]);
 
@@ -295,7 +296,7 @@ export default function SchoolReportPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-lg text-primary capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                    <span className="font-bold text-sm text-primary capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>

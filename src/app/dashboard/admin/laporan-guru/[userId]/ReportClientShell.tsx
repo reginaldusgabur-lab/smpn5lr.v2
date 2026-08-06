@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -223,7 +224,7 @@ export default function ReportClientShell({
                                 >
                                     <ChevronLeft className="h-5 w-5 text-primary" />
                                 </Button>
-                                <span className="w-40 text-center font-bold text-xl text-primary tracking-tight capitalize whitespace-nowrap">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                <span className="w-40 text-center font-bold text-sm text-primary tracking-tight capitalize whitespace-nowrap">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
