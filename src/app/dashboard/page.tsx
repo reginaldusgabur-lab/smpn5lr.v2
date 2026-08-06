@@ -277,13 +277,13 @@ export default function DashboardPage() {
 
         {!isAdmin && (
             <div className="w-full space-y-4">
-                <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl bg-card overflow-hidden">
+                <Card className="w-full border border-muted-foreground/10 shadow-md rounded-xl bg-card overflow-hidden">
                     <CardContent className="p-4 text-center">
                         <CardTitle className="text-xl font-bold tracking-tight text-primary drop-shadow-sm">Kehadiran hari ini</CardTitle>
                     </CardContent>
                 </Card>
 
-                <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl bg-card isolate overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                <Card className="w-full border border-muted-foreground/10 shadow-md rounded-xl bg-card isolate overflow-hidden" style={{ transform: 'translateZ(0)' }}>
                     <CardContent className="p-6 space-y-4 pt-6 text-center">
                         <LiveClockUI />
                         <div className="grid grid-cols-2 gap-4 w-full">
@@ -319,7 +319,7 @@ export default function DashboardPage() {
             <div className="w-full space-y-4 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
+                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
                         onClick={() => scrollToSection('recent-attendance')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
@@ -331,7 +331,7 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/5 transition-colors group"
+                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/5 transition-colors group"
                         onClick={() => scrollToSection('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-amber-500/5 transition-colors group"
+                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-amber-500/5 transition-colors group"
                         onClick={navigateToApproval}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
@@ -355,7 +355,7 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/5 transition-colors group"
+                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/5 transition-colors group"
                         onClick={() => scrollToSection('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
@@ -379,7 +379,7 @@ export default function DashboardPage() {
         )}
 
         {isStaffOnly && !isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl overflow-hidden bg-card mt-2">
+            <Card className="w-full border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden bg-card mt-2">
                 <CardHeader className="p-6 pb-2 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.05)] relative z-10 bg-card">
                     <div className="flex items-start justify-between">
                         <div className="space-y-1">
