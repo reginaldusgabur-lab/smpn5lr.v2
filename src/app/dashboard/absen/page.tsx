@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { format, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import QuoteOfTheDay from '@/components/layout/quote-of-the-day';
 import { useAttendanceWindow } from '@/hooks/use-attendance-window';
+import { invalidateCache } from '@/lib/cache';
 
 // --- Helper Functions ---
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -134,6 +135,7 @@ export default function AbsenPage() {
             } else {
                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
             }
+            invalidateCache();
             setStatus('success_in');
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
@@ -142,6 +144,7 @@ export default function AbsenPage() {
             } else {
                 await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
             }
+            invalidateCache();
             setStatus('success_out');
         }
     } catch (error) {

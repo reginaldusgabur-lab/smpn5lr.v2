@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
@@ -37,7 +36,7 @@ const cleanDesc = (desc: string) => {
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `daily_stats_v151_${todayStr}`;
+    const cacheKey = `daily_stats_v152_${todayStr}`;
     
     const cachedData = getFromCache(cacheKey);
     if (cachedData) return cachedData;
@@ -86,10 +85,14 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         );
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();
+        
+        // Filter agar hanya menghitung user Aktif (Guru/Pegawai/Kepsek)
+        const staffIdsSet = new Set(allStaff.map(s => s.id));
+        
         attendanceSnap.forEach(doc => {
             const data = doc.data();
             const userId = data.userId || doc.ref.parent.parent?.id;
-            if (userId) presentUserIds.add(userId);
+            if (userId && staffIdsSet.has(userId)) presentUserIds.add(userId);
         });
 
         const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
@@ -142,7 +145,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v151_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v152_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
