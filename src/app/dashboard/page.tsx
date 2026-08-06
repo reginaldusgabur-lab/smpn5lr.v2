@@ -276,38 +276,43 @@ export default function DashboardPage() {
         </div>
 
         {!isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl bg-card isolate overflow-hidden" style={{ transform: 'translateZ(0)' }}>
-                <CardHeader className="p-6 text-center shadow-[0_4px_12px_-2px_rgba(0,0,0,0.05)] relative z-10 bg-card">
-                    <CardTitle className="text-xl font-bold tracking-tight text-primary drop-shadow-sm">Kehadiran hari ini</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4 pt-6 text-center">
-                    <LiveClockUI />
-                    <div className="grid grid-cols-2 gap-4 w-full">
-                        <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
-                            <div className="flex items-center justify-center gap-2 mb-1.5">
-                                <LogIn className="w-3.5 h-3.5 text-primary" />
-                                <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Masuk</p>
+            <div className="w-full space-y-4">
+                <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl bg-card overflow-hidden">
+                    <CardContent className="p-4 text-center">
+                        <CardTitle className="text-xl font-bold tracking-tight text-primary drop-shadow-sm">Kehadiran hari ini</CardTitle>
+                    </CardContent>
+                </Card>
+
+                <Card className="w-full border border-muted-foreground/10 shadow-lg rounded-xl bg-card isolate overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                    <CardContent className="p-6 space-y-4 pt-6 text-center">
+                        <LiveClockUI />
+                        <div className="grid grid-cols-2 gap-4 w-full">
+                            <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
+                                <div className="flex items-center justify-center gap-2 mb-1.5">
+                                    <LogIn className="w-3.5 h-3.5 text-primary" />
+                                    <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Masuk</p>
+                                </div>
+                                <p className="text-xl font-bold tabular-nums text-foreground">
+                                    {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
+                                </p>
                             </div>
-                            <p className="text-xl font-bold tabular-nums text-foreground">
-                                {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
-                            </p>
-                        </div>
-                        <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
-                            <div className="flex items-center justify-center gap-2 mb-1.5">
-                                <LogOut className="w-3.5 h-3.5 text-primary" />
-                                <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Pulang</p>
+                            <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
+                                <div className="flex items-center justify-center gap-2 mb-1.5">
+                                    <LogOut className="w-3.5 h-3.5 text-primary" />
+                                    <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Pulang</p>
+                                </div>
+                                <p className="text-xl font-bold tabular-nums text-foreground">
+                                    {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
+                                </p>
                             </div>
-                            <p className="text-xl font-bold tabular-nums text-foreground">
-                                {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
-                            </p>
                         </div>
-                    </div>
-                    <div className="flex flex-col items-stretch gap-3">
-                        {renderAttendanceButton()}
-                        <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"><Link href="/dashboard/laporan">Lihat riwayat lengkap</Link></Button>
-                    </div>
-                </CardContent>
-            </Card>
+                        <div className="flex flex-col items-stretch gap-3">
+                            {renderAttendanceButton()}
+                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"><Link href="/dashboard/laporan">Lihat riwayat lengkap</Link></Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         )}
 
         {(isAdmin || isKepsek) && (
