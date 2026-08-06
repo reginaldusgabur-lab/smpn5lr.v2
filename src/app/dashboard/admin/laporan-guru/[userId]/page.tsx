@@ -4,10 +4,9 @@ import { notFound } from 'next/navigation';
 import { adminDb as firestore } from '@/lib/firebase-admin';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ReportClientShell from './ReportClientShell';
-import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay, endOfDay } from 'date-fns';
+import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay } from 'date-fns';
 import { Timestamp } from 'firebase-admin/firestore';
 
-// Define a type for our records to satisfy TypeScript
 interface AttendanceRecord {
   id: string;
   checkInTime: Timestamp;
@@ -15,7 +14,6 @@ interface AttendanceRecord {
   manualEntry?: boolean;
 }
 
-// Helper to parse the month from searchParams
 const getMonthDate = (monthParam: string | undefined): Date => {
     if (monthParam) {
         const [year, month] = monthParam.split('-').map(Number);
@@ -24,16 +22,17 @@ const getMonthDate = (monthParam: string | undefined): Date => {
     return new Date();
 };
 
-// This is a React Server Component (RSC)
-export default async function UserReportDetailPage({ params, searchParams }: { 
-    params: { userId: string },
-    searchParams: { month?: string }
+export default async function UserReportDetailPage(props: { 
+    params: Promise<{ userId: string }>,
+    searchParams: Promise<{ month?: string }>
 }) {
+    const params = await props.params;
+    const searchParams = await props.searchParams;
+    
     const { userId } = params;
     const currentMonth = getMonthDate(searchParams.month);
 
     try {
-        // Step 1: Fetch user, school config, and monthly config data using Admin SDK
         const userRef = firestore.collection('users').doc(userId);
         const schoolConfigRef = firestore.collection('schoolConfig').doc('default');
         const monthlyConfigId = format(currentMonth, 'yyyy-MM');
@@ -53,7 +52,6 @@ export default async function UserReportDetailPage({ params, searchParams }: {
         const schoolConfig = schoolConfigSnap.exists ? schoolConfigSnap.data()! : {};
         const monthlyConfig = monthlyConfigSnap.exists ? monthlyConfigSnap.data()! : {};
 
-        // Step 2: Re-implement fetchUserMonthlyReportData logic directly here using Admin SDK
         const monthStart = startOfMonth(currentMonth);
         const monthEnd = endOfMonth(currentMonth);
 
@@ -71,7 +69,7 @@ export default async function UserReportDetailPage({ params, searchParams }: {
             attendanceHistoryQuery.get(),
             leaveHistoryQuery.get(),
         ]);
-        // Correctly type the data
+        
         const attendanceHistory: AttendanceRecord[] = attendanceHistorySnap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceRecord));
         const leaveHistory = leaveHistorySnap.docs.map(d => d.data());
 
@@ -98,8 +96,6 @@ export default async function UserReportDetailPage({ params, searchParams }: {
             const attendanceRecord = attendanceMap.get(dayStr);
             const leaveRecord = leaveMap.get(dayStr);
 
-            // --- STRICT FILTER ---
-            // If it's a holiday, hide it completely regardless of data
             if (!isWorkingDay) {
                 return null;
             }
@@ -113,19 +109,9 @@ export default async function UserReportDetailPage({ params, searchParams }: {
                     description = attendanceRecord.reasonForUpdate || 'Kehadiran Penuh';
                 } else {
                     if (checkOutTime) {
-                        if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
-                            const [endH, endM] = schoolConfig.checkInEndTime.split(':').map(Number);
-                            const checkInDeadline = new Date(checkInTime); checkInDeadline.setHours(endH, endM, 0, 0);
-                            description = isBefore(checkInTime, checkInDeadline) ? 'Kehadiran Penuh' : 'Terlambat';
-                        } else {
-                            description = 'Kehadiran Penuh';
-                        }
+                        description = 'Kehadiran Penuh';
                     } else {
-                        if (leaveRecord && leaveRecord.type === 'Pulang Cepat') {
-                            description = 'Pulang Cepat';
-                        } else {
-                            description = 'Belum absen pulang';
-                        }
+                        description = 'Belum absen pulang';
                     }
                 }
                 return { 
@@ -138,7 +124,7 @@ export default async function UserReportDetailPage({ params, searchParams }: {
                 };
             }
 
-            if (leaveRecord && leaveRecord.type !== 'Pulang Cepat') {
+            if (leaveRecord) {
                 return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type, description: leaveRecord.reason };
             }
 
@@ -183,7 +169,7 @@ export default async function UserReportDetailPage({ params, searchParams }: {
                 <Alert variant="destructive">
                     <AlertTitle>Gagal Memuat Laporan</AlertTitle>
                     <AlertDescription>
-                        Terjadi kesalahan saat mengambil data di server. Silakan coba lagi nanti atau hubungi administrator.
+                        Terjadi kesalahan saat mengambil data di server. Silakan coba lagi nanti.
                     </AlertDescription>
                 </Alert>
             </div>
