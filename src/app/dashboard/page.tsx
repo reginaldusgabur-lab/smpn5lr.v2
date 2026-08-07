@@ -179,8 +179,11 @@ export default function DashboardPage() {
     }
   };
 
-  const navigateToReport = () => {
-    router.push('/dashboard/laporan-sekolah');
+  const scrollToId = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   const renderAttendanceButton = () => {
@@ -311,7 +314,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card 
                         className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
-                        onClick={navigateToReport}
+                        onClick={() => scrollToId('recent-attendance')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600 drop-shadow-sm">Hadir</CardTitle>
@@ -323,7 +326,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card 
                         className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/5 transition-colors group"
-                        onClick={navigateToReport}
+                        onClick={() => scrollToId('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-600 drop-shadow-sm">Izin/Sakit</CardTitle>
@@ -347,7 +350,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card 
                         className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/5 transition-colors group"
-                        onClick={navigateToReport}
+                        onClick={() => scrollToId('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600 drop-shadow-sm">Alpa</CardTitle>
