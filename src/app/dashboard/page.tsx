@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -10,7 +9,7 @@ import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
@@ -182,7 +181,6 @@ export default function DashboardPage() {
   const scrollToId = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-        // Menggunakan offset agar tidak tertutup header tetap
         const headerOffset = 80;
         const elementPosition = element.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
@@ -310,7 +308,9 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex flex-col items-stretch gap-3">
                             {renderAttendanceButton()}
-                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"><Link href="/dashboard/laporan">Lihat riwayat lengkap</Link></Button>
+                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors">
+                                <Link href="/dashboard/laporan">Lihat riwayat lengkap</Link>
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
