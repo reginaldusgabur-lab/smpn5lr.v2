@@ -164,7 +164,10 @@ export default function LaporanPage() {
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-md rounded-xl">
               <CardHeader className="p-4 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="font-bold text-2xl tracking-tight">Riwayat absensi & izin</CardTitle>
+                    <div className="space-y-1">
+                        <CardTitle className="font-bold text-2xl tracking-tight">Riwayat Absensi & Izin</CardTitle>
+                        <CardDescription className="text-sm font-medium text-muted-foreground">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</CardDescription>
+                    </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleRefresh} disabled={isLoading}>
                         <RefreshCw className={cn("h-4 w-4 text-muted-foreground", isLoading && "animate-spin")} />
                     </Button>
