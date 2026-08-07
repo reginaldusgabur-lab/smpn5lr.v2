@@ -182,7 +182,15 @@ export default function DashboardPage() {
   const scrollToId = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Menggunakan offset agar tidak tertutup header tetap
+        const headerOffset = 80;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+        });
     }
   };
 
@@ -362,11 +370,11 @@ export default function DashboardPage() {
                     </Card>
                 </div>
                 
-                <div id="recent-attendance">
+                <div id="recent-attendance" className="scroll-mt-20">
                     <RecentAttendanceTable />
                 </div>
                 
-                <div id="absent-users">
+                <div id="absent-users" className="scroll-mt-20">
                     <AbsentUsersTable />
                 </div>
             </div>
