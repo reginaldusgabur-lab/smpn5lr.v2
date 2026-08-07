@@ -12,6 +12,7 @@ import {
   ClipboardCheck,
   BookCheck,
   Settings2,
+  HelpCircle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -28,6 +29,7 @@ const defaultNavItems = [
   { id: 'nav-izin', href: '/dashboard/izin', icon: MailCheck, label: 'Izin' },
   { id: 'nav-laporan', href: '/dashboard/laporan', icon: FileText, label: 'Laporan' },
   { id: 'nav-pengaturan', href: '/dashboard/pengaturan', icon: Settings, label: 'Pengaturan' },
+  { id: 'nav-bantuan', href: '/dashboard/bantuan', icon: HelpCircle, label: 'Bantuan' },
 ];
 
 const adminNavItems = [
@@ -36,6 +38,7 @@ const adminNavItems = [
   { id: 'nav-admin-konfigurasi', href: '/dashboard/admin/konfigurasi', icon: Settings2, label: 'Pengaturan Absen' },
   { id: 'nav-laporan-sekolah', href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan Sekolah' },
   { id: 'nav-pengaturan', href: '/dashboard/pengaturan', icon: Settings, label: 'Pengaturan' },
+  { id: 'nav-bantuan', href: '/dashboard/bantuan', icon: HelpCircle, label: 'Bantuan' },
 ];
 
 const headmasterNavItems = [
@@ -43,6 +46,7 @@ const headmasterNavItems = [
     { id: 'nav-izin-kepsek', href: '/dashboard/izin-kepala-sekolah', icon: ClipboardCheck, label: 'Persetujuan Izin' },
     { id: 'nav-laporan-sekolah', href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan Sekolah' },
     { id: 'nav-pengaturan', href: '/dashboard/pengaturan', icon: Settings, label: 'Pengaturan' },
+    { id: 'nav-bantuan', href: '/dashboard/bantuan', icon: HelpCircle, label: 'Bantuan' },
 ];
 
 
