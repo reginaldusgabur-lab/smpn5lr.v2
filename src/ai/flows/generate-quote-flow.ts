@@ -115,7 +115,7 @@ const generateQuoteFlow = ai.defineFlow(
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.5,
+          temperature: 1.2, // Sedikit diturunkan dari 1.5 agar lebih stabil namun tetap kreatif
           topP: 0.95,
           maxOutputTokens: 500,
         },
@@ -136,9 +136,9 @@ ATURAN MUTLAK:
 4. Buat PANTUN di bawah paragraf pembuka. Pantun harus terdiri dari 4 baris dengan rima akhir a-b-a-b.
 5. JANGAN gunakan emoji.
 6. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
-7. Hasil harus terdengar seperti obrolan akrab di ruang guru atau kantin sekolah.`,
+7. Masukkan nama "AI E-SPENLI" pada kolom author.`,
         prompt: `Rangkai secara alami: [${selectedHook}] [${selectedContext}] [${selectedPunchline}]. 
-        Lalu tambahkan pantun lucu untuk ${input.userName} (${input.role}).`,
+        Lalu tambahkan pantun lucu untuk ${input.userName} yang berperan sebagai ${input.role} saat melakukan absen ${input.attendanceType === 'in' ? 'masuk' : 'pulang'}.`,
         output: { schema: QuoteOutputSchema },
       });
 
@@ -147,7 +147,7 @@ ATURAN MUTLAK:
     } catch (err: any) {
       console.error('[AI_FLOW_ERROR]:', err.message);
       return {
-        quote: `${selectedHook} ${selectedContext} ${selectedPunchline}`,
+        quote: `${selectedHook} ${selectedContext} ${selectedPunchline}\n\nPergi ke pasar beli kuaci,\nBeli juga satu tangkai bunga.\nMari kerja dengan hati,\nAgar lelah jadi bahagia.`,
         author: "AI E-SPENLI"
       };
     }
