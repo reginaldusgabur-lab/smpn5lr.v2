@@ -171,26 +171,16 @@ export default function DashboardPage() {
   const canGoNext = !isSameMonth(summaryMonth, new Date());
   const canGoPrev = summaryMonth > new Date(2026, 0, 1);
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-        const headerOffset = 80;
-        const elementPosition = element.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-        window.scrollTo({
-            top: offsetPosition,
-            behavior: "smooth"
-        });
-    }
-  };
-
   const navigateToApproval = () => {
     if (user?.role === 'admin') {
         router.push('/dashboard/admin/izin');
     } else if (user?.role === 'kepala_sekolah') {
         router.push('/dashboard/izin-kepala-sekolah');
     }
+  };
+
+  const navigateToReport = () => {
+    router.push('/dashboard/laporan-sekolah');
   };
 
   const renderAttendanceButton = () => {
@@ -321,7 +311,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card 
                         className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
-                        onClick={() => scrollToSection('recent-attendance')}
+                        onClick={navigateToReport}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600 drop-shadow-sm">Hadir</CardTitle>
@@ -333,7 +323,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card 
                         className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/5 transition-colors group"
-                        onClick={() => scrollToSection('absent-users')}
+                        onClick={navigateToReport}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-600 drop-shadow-sm">Izin/Sakit</CardTitle>
@@ -357,7 +347,7 @@ export default function DashboardPage() {
                     </Card>
                     <Card 
                         className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/5 transition-colors group"
-                        onClick={() => scrollToSection('absent-users')}
+                        onClick={navigateToReport}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600 drop-shadow-sm">Alpa</CardTitle>
