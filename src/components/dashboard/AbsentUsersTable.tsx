@@ -95,9 +95,12 @@ const AbsentUsersTable = () => {
         );
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();
+        
+        const staffIdsSet = new Set(allStaff.map(s => s.id));
+        
         attendanceSnap.forEach(doc => {
           const userId = doc.data().userId || doc.ref.parent.parent?.id;
-          if (userId) presentUserIds.add(userId);
+          if (userId && staffIdsSet.has(userId)) presentUserIds.add(userId);
         });
 
         const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'));
@@ -180,7 +183,7 @@ const AbsentUsersTable = () => {
 
   return (
     <div className="w-full space-y-4">
-      <Card className="bg-card border border-muted-foreground/10 rounded-xl overflow-hidden shadow-none">
+      <Card className="bg-primary/5 border border-muted-foreground/10 rounded-xl overflow-hidden shadow-none">
         <CardHeader className="p-6 border-b border-muted-foreground/5">
           <div className="flex items-start gap-3">
             <div className="mt-1">

@@ -10,7 +10,7 @@ import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
@@ -200,7 +200,7 @@ export default function DashboardPage() {
     const isCheckedOut = !!record?.checkOutTime;
     const isManualFinished = record?.manualEntry && (record?.reasonForUpdate === 'Pulang cepat' || record?.reasonForUpdate === 'Dinas siang');
 
-    const disabledStyle = "w-full bg-primary/5 text-primary/40 border border-primary/10 font-semibold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none shadow-md";
+    const disabledStyle = "w-full bg-primary/10 text-primary/40 border border-primary/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none shadow-none";
 
     if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) {
         return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat data...</div>;
@@ -208,7 +208,7 @@ export default function DashboardPage() {
 
     if (currentActiveLeave) {
         return (
-            <div className="w-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-md">
+            <div className="w-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
                 <Sparkles className="mr-2 w-4 h-4" /> 
                 {currentActiveLeave.type} Disetujui
             </div>
@@ -216,17 +216,17 @@ export default function DashboardPage() {
     }
 
     if (isCheckedOut || isManualFinished) {
-        return <div className="w-full bg-green-500/5 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-md"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
+        return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
     }
 
     if (windowStatus === 'DISABLED' || stats.isManualDisabled) {
-        return <div className="w-full bg-muted text-muted-foreground border border-border font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-md"><Lock className="mr-2 h-4 w-4" /> Sistem sedang dinonaktifkan</div>;
+        return <div className="w-full bg-muted text-muted-foreground border border-border font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><Lock className="mr-2 h-4 w-4" /> Sistem sedang dinonaktifkan</div>;
     }
 
     if (!isCheckedIn && (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday)) {
         const label = stats.isCalendarHoliday ? 'Hari libur (Kalender)' : 'Hari libur rutin';
         return (
-            <div className="w-full bg-muted text-muted-foreground border border-border font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-md">
+            <div className="w-full bg-muted text-muted-foreground border border-border font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
                 <Lock className="mr-2 h-4 w-4" /> {label}
             </div>
         );
@@ -234,7 +234,7 @@ export default function DashboardPage() {
 
     if (windowStatus === 'CHECK_OUT_OPEN') {
         return (
-            <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-md active:scale-95 transition-all bg-blue-600 hover:bg-blue-700 text-white">
+            <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-none active:scale-95 transition-all bg-blue-600 hover:bg-blue-700 text-white">
                 <Link href="/dashboard/absen">Absen pulang sekarang</Link>
             </Button>
         );
@@ -242,8 +242,8 @@ export default function DashboardPage() {
 
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
-        if (windowStatus === 'CHECK_IN_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-md active:scale-95 transition-all"><Link href="/dashboard/absen">Absen masuk sekarang</Link></Button>;
-        if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-md"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
+        if (windowStatus === 'CHECK_IN_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-none active:scale-95 transition-all"><Link href="/dashboard/absen">Absen masuk sekarang</Link></Button>;
+        if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
     }
 
     if (isCheckedIn && !isCheckedOut) {
@@ -252,7 +252,7 @@ export default function DashboardPage() {
 
     if (windowStatus === 'CLOSED') {
         return (
-            <div className="w-full bg-destructive/5 text-destructive/60 border border-destructive/10 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-md">
+            <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none">
                 <AlertCircle className="mr-2 h-4 w-4" /> Waktu absensi hari ini berakhir
             </div>
         );
@@ -285,7 +285,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="w-full border border-muted-foreground/10 shadow-md rounded-xl bg-card isolate overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 isolate overflow-hidden" style={{ transform: 'translateZ(0)' }}>
                     <CardContent className="p-6 space-y-4 pt-6 text-center">
                         <LiveClockUI />
                         <div className="grid grid-cols-2 gap-4 w-full">
@@ -321,7 +321,7 @@ export default function DashboardPage() {
             <div className="w-full space-y-3 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/5 transition-colors group"
+                        className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/10 transition-colors group"
                         onClick={() => scrollToId('recent-attendance')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
@@ -333,7 +333,7 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/5 transition-colors group"
+                        className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/10 transition-colors group"
                         onClick={() => scrollToId('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-amber-500/5 transition-colors group"
+                        className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-amber-500/10 transition-colors group"
                         onClick={navigateToApproval}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
@@ -357,7 +357,7 @@ export default function DashboardPage() {
                         </div>
                     </Card>
                     <Card 
-                        className="bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/5 transition-colors group"
+                        className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/10 transition-colors group"
                         onClick={() => scrollToId('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
@@ -381,8 +381,8 @@ export default function DashboardPage() {
         )}
 
         {isStaffOnly && !isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden bg-card mt-2">
-                <CardHeader className="p-6 pb-2 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.05)] relative z-10 bg-card">
+            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-primary/5 mt-2">
+                <CardHeader className="p-6 pb-2 relative z-10 bg-transparent">
                     <div className="flex items-start justify-between">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">

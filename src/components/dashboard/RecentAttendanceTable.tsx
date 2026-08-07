@@ -157,7 +157,7 @@ const RecentAttendanceTable = () => {
 
   if (isHoliday) {
       return (
-          <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden">
+          <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-primary/5">
               <CardContent className="h-40 flex flex-col items-center justify-center text-muted-foreground text-center">
                   <CalendarOff className="w-10 h-10 mb-2 opacity-40" />
                   <p className="text-sm font-bold uppercase tracking-widest opacity-60">Hari Libur Sekolah</p>
@@ -168,7 +168,7 @@ const RecentAttendanceTable = () => {
 
   return (
     <div className="w-full space-y-4">
-      <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
+      <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-primary/5">
         <CardHeader className="p-6 border-b border-muted-foreground/5">
           <div className="flex items-start gap-3">
             <History className="h-5 w-5 text-green-700 mt-0.5" />
