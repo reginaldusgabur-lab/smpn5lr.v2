@@ -154,7 +154,7 @@ export default function DashboardPage() {
   const chartData = useMemo(() => [
     { name: 'Hadir', Jumlah: personalSummary.hadir, color: '#22c55e' },
     { name: 'Sakit', Jumlah: personalSummary.sakit, color: '#f97316' },
-    { name: 'Izin', Jumlah: personalSummary.izin, color: '#3b82f6' },
+    { name: 'Izin', Jumlah: personalSummary.izin, color: '#f59e0b' },
     { name: 'Alpa', Jumlah: personalSummary.alpa, color: '#ef4444' },
   ], [personalSummary]);
 

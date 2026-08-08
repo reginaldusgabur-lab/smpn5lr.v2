@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -7,7 +6,7 @@ import { format, startOfMonth, parseISO, isValid, endOfMonth, endOfDay, startOfD
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { doc, writeBatch, collection, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -70,7 +69,7 @@ export default function ReportClientShell({
     const chartData = [
         { name: 'Hadir', Jumlah: summaryStats.hadir, fill: '#22c55e' },
         { name: 'Sakit', Jumlah: summaryStats.sakit, fill: '#f97316' },
-        { name: 'Izin', Jumlah: summaryStats.izin, fill: '#3b82f6' },
+        { name: 'Izin', Jumlah: summaryStats.izin, fill: '#f59e0b' },
         { name: 'Alpa', Jumlah: summaryStats.alpa, fill: '#ef4444' },
     ];
 
@@ -132,11 +131,11 @@ export default function ReportClientShell({
 
     const getStatusColorClass = (status: string) => {
         const s = status.toLowerCase();
-        if (s === 'hadir' || s === 'terlambat') return "bg-emerald-500/10 text-emerald-600";
-        if (s === 'sakit') return "bg-orange-500/10 text-orange-600";
-        if (s.includes('izin')) return "bg-amber-500/10 text-amber-600";
-        if (s === 'alpa') return "bg-red-500/10 text-red-600";
-        return "bg-primary/10 text-primary";
+        if (s === 'hadir' || s === 'terlambat') return "bg-emerald-500 text-white";
+        if (s === 'sakit') return "bg-orange-500 text-white";
+        if (s.includes('izin')) return "bg-amber-500 text-white";
+        if (s === 'alpa') return "bg-red-500 text-white";
+        return "bg-primary text-white";
     };
 
     const getStatusBadge = (status: string, item: ReportDetail) => {
@@ -171,7 +170,7 @@ export default function ReportClientShell({
     return (
         <div className="p-2 sm:p-6 space-y-4">
             {/* --- Header Cards --- */}
-             <Card className="rounded-xl border shadow-none overflow-hidden bg-primary/5">
+             <Card className="rounded-xl border border-muted-foreground/10 shadow-none overflow-hidden bg-primary/5">
                 <CardHeader className="p-4 border-b border-muted-foreground/10">
                     <CardTitle className="text-xs uppercase font-bold tracking-tight text-primary">Ringkasan Bulan {format(currentMonth, 'MMMM yyyy', { locale: id })}</CardTitle>
                     <CardDescription className="text-[10px] font-bold">Grafik ringkasan kehadiran untuk {userData?.name || 'Pengguna'}.</CardDescription>
@@ -184,8 +183,15 @@ export default function ReportClientShell({
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
                                     <YAxis hide />
-                                    <Tooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
-                                    <Bar dataKey="Jumlah" radius={[4, 4, 0, 0]} barSize={40} />
+                                    <Tooltip 
+                                        cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                                    />
+                                    <Bar dataKey="Jumlah" radius={[4, 4, 0, 0]} barSize={40}>
+                                        {chartData.map((entry, index) => (
+                                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -199,8 +205,8 @@ export default function ReportClientShell({
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><XCircle className="h-3 w-3 text-red-500"/> Alpa</p>
                             </Card>
                              <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none shadow-none">
-                                <span className="text-2xl font-bold text-blue-600">{summaryStats.izin}</span>
-                                <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><FileWarning className="h-3 w-3 text-blue-500"/> Izin</p>
+                                <span className="text-2xl font-bold text-amber-600">{summaryStats.izin}</span>
+                                <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><FileWarning className="h-3 w-3 text-amber-500"/> Izin</p>
                             </Card>
                              <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none shadow-none">
                                 <span className="text-2xl font-bold text-orange-600">{summaryStats.sakit}</span>

@@ -215,7 +215,7 @@ export default function SchoolReportPage() {
 
         const pie = [
             { name: 'Hadir', value: Math.round(totals.hadir), color: '#22c55e' },
-            { name: 'Izin', value: totals.izin, color: '#3b82f6' },
+            { name: 'Izin', value: totals.izin, color: '#f59e0b' },
             { name: 'Sakit', value: totals.sakit, color: '#f97316' },
             { name: 'Alpa', value: totals.alpa, color: '#ef4444' },
         ];

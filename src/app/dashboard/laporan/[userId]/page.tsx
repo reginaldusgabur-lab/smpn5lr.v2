@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -110,7 +109,7 @@ export default function UserReportDetailPage() {
         if (!stats) return [];
         return [
             { name: 'Hadir', value: Math.ceil(stats.totalHadir), color: '#22c55e' },
-            { name: 'Izin', value: stats.totalIzin, color: '#3b82f6' },
+            { name: 'Izin', value: stats.totalIzin, color: '#f59e0b' },
             { name: 'Sakit', value: stats.totalSakit, color: '#f97316' },
             { name: 'Alpa', value: stats.totalAlpa, color: '#ef4444' },
         ];
@@ -179,7 +178,7 @@ export default function UserReportDetailPage() {
                     dataToSave.checkOutTime = null;
                 } else { // Pulang Cepat
                      const randomSeconds = Math.floor(Math.random() * 299) + 1; 
-                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
+                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                      dataToSave.checkOutTime = null;
                 }
 
