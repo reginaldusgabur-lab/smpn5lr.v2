@@ -31,7 +31,10 @@ const CustomTooltip = ({ active, payload }: any) => {
     const data = payload[0].payload;
     return (
       <div className="bg-card border border-border shadow-2xl rounded-xl p-4 text-center min-w-[120px] animate-in fade-in zoom-in-95 duration-200">
-        <p className="font-semibold text-foreground text-base tracking-tight leading-none mb-1.5">{data.name}</p>
+        <div className="flex items-center justify-center gap-2 mb-1.5">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: data.color }} />
+          <p className="font-semibold text-foreground text-base tracking-tight leading-none">{data.name}</p>
+        </div>
         <p className="text-muted-foreground text-xs font-medium tracking-wide">
           {data.Jumlah} hari
         </p>
@@ -149,10 +152,10 @@ export default function DashboardPage() {
   }, [activeLeaves]);
 
   const chartData = useMemo(() => [
-    { name: 'Hadir', Jumlah: personalSummary.hadir, color: 'hsl(var(--primary))' },
+    { name: 'Hadir', Jumlah: personalSummary.hadir, color: '#22c55e' },
     { name: 'Sakit', Jumlah: personalSummary.sakit, color: '#f97316' },
     { name: 'Izin', Jumlah: personalSummary.izin, color: '#3b82f6' },
-    { name: 'Alpa', Jumlah: personalSummary.alpa, color: '#dc2626' },
+    { name: 'Alpa', Jumlah: personalSummary.alpa, color: '#ef4444' },
   ], [personalSummary]);
 
   const handlePrevMonth = () => {
