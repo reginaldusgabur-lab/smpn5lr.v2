@@ -150,11 +150,11 @@ const RecentAttendanceTable = () => {
 
   const getStatusBadgeStyle = (status: string) => {
       const s = status.toLowerCase();
-      // Pulang/Selesai: Slate/Abu-abu
-      if (s === 'pulang') return 'bg-slate-500 text-white border-none shadow-sm';
+      // Pulang & Hadir: Hijau (Emerald)
+      if (s === 'pulang' || s === 'hadir') return 'bg-emerald-500 text-white border-none shadow-sm';
       // Izin/Dinas/Pulang Cepat: Kuning/Amber
       if (s.includes('izin') || s.includes('dinas') || s.includes('cepat')) return 'bg-amber-500 text-white border-none shadow-sm';
-      // Hadir: Hijau
+      // Default: Hijau
       return 'bg-emerald-500 text-white border-none shadow-sm';
   }
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -131,7 +132,7 @@ export default function ReportClientShell({
 
     const getStatusColorClass = (status: string) => {
         const s = status.toLowerCase();
-        if (s === 'hadir' || s === 'terlambat') return "bg-emerald-500 text-white";
+        if (s === 'hadir' || s === 'terlambat' || s === 'pulang') return "bg-emerald-500 text-white";
         if (s === 'sakit') return "bg-orange-500 text-white";
         if (s.includes('izin')) return "bg-amber-500 text-white";
         if (s === 'alpa') return "bg-red-500 text-white";
@@ -270,9 +271,9 @@ export default function ReportClientShell({
                                                 <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                 <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
                                                 <TableCell className="text-center font-mono text-xs font-bold">
-                                                    {isManualLate ? <span className="text-red-600 font-black">-</span> : <span className="text-foreground">{safeFormat(item.checkInTime, 'HH:mm')}</span>}
+                                                    {isManualLate ? <span className="text-red-600 font-black">-</span> : <span className="text-foreground">{safeFormat(item.checkInTime, 'HH:mm:ss')}</span>}
                                                 </TableCell>
-                                                <TableCell className="text-center font-mono text-xs font-bold text-foreground">{safeFormat(item.checkOutTime, 'HH:mm')}</TableCell>
+                                                <TableCell className="text-center font-mono text-xs font-bold text-foreground">{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
                                                     {getStatusBadge(item.status, item)}
                                                 </TableCell>
