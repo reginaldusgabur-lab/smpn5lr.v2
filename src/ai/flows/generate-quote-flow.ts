@@ -2,7 +2,7 @@
 /**
  * @fileOverview AI Flow Modular Fragment-Based.
  * Menggunakan independent hashing untuk memastikan Hook, Context, dan Punchline selalu acak secara independen.
- * AI bertugas merangkai fragmen dan menambahkan satu bait pantun jenaka sekolah.
+ * AI bertugas merangkai fragmen dan menambahkan satu bait pantun jenaka sekolah yang unik.
  */
 
 import { ai } from '../genkit';
@@ -88,6 +88,13 @@ const punchlines = [
   "sangat berkesan untuk diceritakan.", "mari kita mulai dengan bismillah."
 ];
 
+const fallbackPoems = [
+  "Pergi ke pasar beli kuaci,\nBeli juga satu tangkai bunga.\nMari kerja dengan hati,\nAgar lelah jadi bahagia.",
+  "Beli bensin di pom bensin,\nJalan-jalan ke kota Malang.\nKalau absen sudah berhasil,\nHati senang bukan kepalang.",
+  "Makan siang lauknya ikan,\nMinumnya segelas air kelapa.\nKalau tugas sudah diselesaikan,\nJangan lupa untuk menyapa.",
+  "Beli baju di pasar pagi,\nWarnanya biru sangat serasi.\nMari kita berkarya lagi,\nDengan semangat dan dedikasi."
+];
+
 export async function generateQuote(input: QuoteInput): Promise<QuoteOutput> {
   return generateQuoteFlow(input);
 }
@@ -99,46 +106,44 @@ const generateQuoteFlow = ai.defineFlow(
     outputSchema: QuoteOutputSchema,
   },
   async (input) => {
-    // 1. GABUNGKAN SEMUA DIMENSI SEED
     const fullSeed = `${input.userId}|${input.date}|${input.day}|${input.attendanceType}|${input.creativeSeed}`;
     
-    // 2. INDEPENDENT HASHING UNTUK SETIAP FRAGMEN
     const hookHash = getHash(fullSeed + "|hook-salt");
     const contextHash = getHash(fullSeed + "|context-salt");
     const punchHash = getHash(fullSeed + "|punch-salt");
+    const poemHash = getHash(fullSeed + "|poem-salt");
     
     const selectedHook = hooks[hookHash % hooks.length];
     const selectedContext = contexts[contextHash % contexts.length];
     const selectedPunchline = punchlines[punchHash % punchlines.length];
+    const selectedFallbackPoem = fallbackPoems[poemHash % fallbackPoems.length];
 
     try {
       const response = await ai.generate({
-        model: 'googleai/gemini-2.0-flash',
+        model: 'googleai/gemini-1.5-flash',
         config: {
-          temperature: 1.2, // Sedikit diturunkan dari 1.5 agar lebih stabil namun tetap kreatif
+          temperature: 1.2,
           topP: 0.95,
           maxOutputTokens: 500,
         },
         system: `Anda adalah perangkai kata yang humoris di SMPN 5 Langke Rembong.
 TUGAS: 
-1. Sambungkan tiga fragmen narasi berikut menjadi SATU paragraf pembuka yang alami.
-2. Di bawah paragraf tersebut, tambahkan SATU bait Pantun Jenaka (4 baris, rima a-b-a-b) yang lucu bertema pendidikan atau sekolah.
+1. Sambungkan tiga fragmen narasi berikut menjadi SATU paragraf pembuka yang mengalir alami.
+2. Di bawah paragraf tersebut, buatlah SATU bait Pantun Jenaka yang unik (4 baris, rima a-b-a-b) yang lucu bertema pendidikan atau aktivitas guru/staf di sekolah.
 
-FRAGMEN WAJIB (URUTAN TIDAK BOLEH BERUBAH):
+FRAGMEN WAJIB (URUTAN TETAP):
 1. Hook: "${selectedHook}"
 2. Context: "${selectedContext}"
 3. Punchline: "${selectedPunchline}"
 
-ATURAN MUTLAK:
-1. JANGAN MENGUBAH satu kata pun dari isi Hook, Context, dan Punchline.
-2. JANGAN MENGUBAH urutan fragmen. Harus: [Hook] -> [Context] -> [Punchline].
-3. Sambungkan ketiganya menggunakan kata tambahan agar mengalir.
-4. Buat PANTUN di bawah paragraf pembuka. Pantun harus terdiri dari 4 baris dengan rima akhir a-b-a-b.
-5. JANGAN gunakan emoji.
-6. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
-7. Masukkan nama "AI E-SPENLI" pada kolom author.`,
-        prompt: `Rangkai secara alami: [${selectedHook}] [${selectedContext}] [${selectedPunchline}]. 
-        Lalu tambahkan pantun lucu untuk ${input.userName} yang berperan sebagai ${input.role} saat melakukan absen ${input.attendanceType === 'in' ? 'masuk' : 'pulang'}.`,
+ATURAN:
+1. JANGAN MENGUBAH isi fragmen asli. Gabungkan mereka secara kreatif.
+2. Buat PANTUN baru yang belum pernah ada setiap saat. Hindari pantun klise.
+3. JANGAN gunakan emoji.
+4. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
+5. Masukkan nama "AI E-SPENLI" pada kolom author.`,
+        prompt: `Rangkai fragmen ini: [${selectedHook}] [${selectedContext}] [${selectedPunchline}]. 
+        Lalu buatkan pantun lucu yang segar untuk ${input.userName} (${input.role}) saat absen ${input.attendanceType === 'in' ? 'masuk' : 'pulang'}.`,
         output: { schema: QuoteOutputSchema },
       });
 
@@ -147,7 +152,7 @@ ATURAN MUTLAK:
     } catch (err: any) {
       console.error('[AI_FLOW_ERROR]:', err.message);
       return {
-        quote: `${selectedHook} ${selectedContext} ${selectedPunchline}\n\nPergi ke pasar beli kuaci,\nBeli juga satu tangkai bunga.\nMari kerja dengan hati,\nAgar lelah jadi bahagia.`,
+        quote: `${selectedHook} ${selectedContext} ${selectedPunchline}\n\n${selectedFallbackPoem}`,
         author: "AI E-SPENLI"
       };
     }
