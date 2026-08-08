@@ -172,16 +172,12 @@ const AbsentUsersTable = () => {
 
   const getStatusStyle = (status: string) => {
       const s = status.toLowerCase();
-      // Alpa: Merah
-      if (s === 'alpa') return 'bg-red-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
-      // Sakit: Oranye
-      if (s === 'sakit') return 'bg-orange-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
-      // Izin/Izin Pribadi/Dinas/Pulang Cepat: Kuning/Amber
-      if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return 'bg-amber-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
-      // Menunggu/Proses: Slate
-      if (s === 'menunggu') return 'bg-slate-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
+      if (s === 'alpa') return 'bg-red-500 text-white border-none shadow-sm';
+      if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
+      if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return 'bg-amber-500 text-white border-none shadow-sm';
+      if (s === 'menunggu') return 'bg-slate-500 text-white border-none shadow-sm';
       
-      return 'bg-emerald-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
+      return 'bg-emerald-500 text-white border-none shadow-sm';
   }
 
   return (
@@ -222,7 +218,7 @@ const AbsentUsersTable = () => {
                           <div className="text-[10px] text-muted-foreground font-bold tracking-tight">{user.position}</div>
                       </TableCell>
                       <TableCell className="text-center">
-                          <Badge variant="outline" className={cn("text-[10px] font-bold", getStatusStyle(user.status))}>
+                          <Badge variant="outline" className={cn("text-[10px] font-bold px-4 py-1 rounded-full", getStatusStyle(user.status))}>
                               {user.status}
                           </Badge>
                       </TableCell>

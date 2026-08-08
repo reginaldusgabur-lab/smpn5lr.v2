@@ -252,19 +252,18 @@ export default function UserReportDetailPage() {
         const s = status.toLowerCase();
         const d = (desc || '').toLowerCase();
 
-        if (s === 'alpa') return "bg-red-500/10 text-red-600";
-        if (s === 'sakit') return "bg-orange-500/10 text-orange-600";
-        if (s.includes('izin') || s.includes('dinas') || s.includes('kegiatan')) return "bg-amber-500/10 text-amber-600";
+        if (s === 'alpa') return "bg-red-500 text-white";
+        if (s === 'sakit') return "bg-orange-500 text-white";
+        if (s.includes('izin') || s.includes('dinas') || s.includes('kegiatan')) return "bg-amber-500 text-white";
         
-        // DISTINCTION: Hadir tapi belum pulang vs Hadir sudah pulang
         if (s === 'hadir' || s === 'terlambat') {
             if (!hasOut && !d.includes('tugas') && !d.includes('pulang cepat')) {
-                return "bg-blue-600/10 text-blue-600"; // Sedang di sekolah
+                return "bg-blue-600 text-white"; // Sedang di sekolah
             }
-            return "bg-emerald-500/10 text-emerald-600"; // Sudah pulang/tuntas
+            return "bg-emerald-500 text-white"; // Sudah pulang/tuntas
         }
         
-        return "bg-primary/10 text-primary";
+        return "bg-primary text-white";
     };
 
     const handleDownloadPdf = () => {
@@ -380,7 +379,7 @@ export default function UserReportDetailPage() {
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
-    const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap";
+    const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none";
 
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
@@ -395,7 +394,7 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
+                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5">
                     <CardContent className="p-0">
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center">
@@ -530,7 +529,7 @@ export default function UserReportDetailPage() {
                 </Card>
 
                 {!isLoading && stats && (
-                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
+                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">

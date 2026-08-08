@@ -50,7 +50,6 @@ const RecentAttendanceTable = () => {
         const today = new Date();
         const todayStr = format(today, 'yyyy-MM-dd');
 
-        // 1. Ambil konfigurasi libur (Parallel)
         const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
         const monthlyConfigId = format(today, 'yyyy-MM');
         const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthlyConfigId);
@@ -78,7 +77,6 @@ const RecentAttendanceTable = () => {
             return;
         }
 
-        // 2. OPTIMASI: Ambil data user secara massal & data absensi hari ini (Parallel)
         const usersQuery = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -95,13 +93,11 @@ const RecentAttendanceTable = () => {
             getDocs(attendanceQuery)
         ]);
 
-        // Buat peta user untuk akses instan di memori
         const userMap = new Map();
         usersSnap.forEach(d => userMap.set(d.id, d.data()));
 
         const activitiesData: Omit<Activity, 'no'>[] = [];
 
-        // 3. Proses data di memori (Sangat Cepat)
         attendanceSnap.docs.forEach(attendanceDoc => {
           const attendanceData = attendanceDoc.data();
           const userId = attendanceData.userId || attendanceDoc.ref.parent.parent?.id;
@@ -120,7 +116,7 @@ const RecentAttendanceTable = () => {
             activitiesData.push({
               name: userData.name || '-',
               nip: userData.nip || '-',
-              rawCheckInTime: checkInTimeDate || checkOutDate, 
+              rawCheckInTime: checkInDate || checkOutDate, 
               checkInTime: checkInDate ? format(checkInDate, 'HH:mm:ss') : '-',
               checkOutTime: (checkOutDate && !isSpecial) ? format(checkOutDate, 'HH:mm:ss') : '-',
               status: statusLabel,
@@ -129,7 +125,6 @@ const RecentAttendanceTable = () => {
           }
         });
 
-        // Urutkan berdasarkan waktu terbaru
         const sortedActivities = activitiesData.sort((a, b) => {
             const tA = a.rawCheckInTime?.getTime() || 0;
             const tB = b.rawCheckInTime?.getTime() || 0;
@@ -150,13 +145,9 @@ const RecentAttendanceTable = () => {
 
   const getStatusBadgeStyle = (status: string) => {
       const s = status.toLowerCase();
-      // Pulang: Hijau (Sudah selesai)
       if (s === 'pulang') return 'bg-emerald-500 text-white border-none shadow-sm';
-      // Hadir: Biru (Baru masuk/Belum pulang - Biar Admin tau)
       if (s === 'hadir') return 'bg-blue-600 text-white border-none shadow-sm';
-      // Izin/Dinas/Pulang Cepat: Kuning/Amber
       if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return 'bg-amber-500 text-white border-none shadow-sm';
-      // Default: Biru
       return 'bg-blue-600 text-white border-none shadow-sm';
   }
 
