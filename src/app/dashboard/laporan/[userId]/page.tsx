@@ -362,16 +362,7 @@ export default function UserReportDetailPage() {
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
-    const getAdminBadgeClass = (status: string, desc: string) => {
-        const s = status.toLowerCase();
-        const d = desc.toLowerCase();
-        if (s === 'terlambat' || d === 'terlambat') return 'bg-green-600 text-white border-none';
-        if (s === 'alpa') return 'bg-red-50 text-red-700 border-red-200';
-        if (s === 'sakit') return 'bg-orange-500 text-white border-none';
-        if (s === 'izin' || s.includes('izin pribadi')) return 'bg-blue-50 text-blue-700 border-blue-200';
-        if (s.includes('dinas') || s.includes('kegiatan')) return 'bg-purple-50 text-purple-700 border-purple-200';
-        return 'bg-orange-50 text-orange-700 border-orange-200';
-    };
+    const statusBadgeClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-tight whitespace-nowrap";
 
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
@@ -460,16 +451,12 @@ export default function UserReportDetailPage() {
                                         ))
                                     ) : monthlyReportData.length > 0 ? (
                                         monthlyReportData.map((item, index) => {
-                                            const isAlpa = item.status === 'Alpa';
                                             const hasIn = !!item.checkInTime;
-                                            const hasOut = !!item.checkOutTime;
-                                            const isLeave = ['Sakit', 'Izin', 'Dinas'].some(s => item.status.includes(s));
-                                            const isComplete = hasIn && hasOut;
                                             const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
                                             const displayStatus = isManualLate ? 'Hadir' : item.status;
 
                                             return (
-                                                <TableRow key={item.id} className={cn("border-muted-foreground/5 hover:bg-muted/20 transition-colors", isAlpa && "bg-destructive/5")}>
+                                                <TableRow key={item.id} className={cn("border-muted-foreground/5 hover:bg-muted/20 transition-colors", item.status === 'Alpa' && "bg-destructive/5")}>
                                                     <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
                                                     <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
                                                     <TableCell className='text-center font-mono text-xs font-bold'>
@@ -481,12 +468,12 @@ export default function UserReportDetailPage() {
                                                     </TableCell>
                                                     <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center">
-                                                        {isAdmin && !isLeave && !isComplete ? (
+                                                        {isAdmin && !['Sakit', 'Izin', 'Dinas'].some(s => item.status.includes(s)) && !(!!item.checkInTime && !!item.checkOutTime) ? (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="outline" size="sm" className={cn("font-bold text-[9px] h-7 rounded-lg shadow-none flex items-center justify-center gap-1", getAdminBadgeClass(item.status, item.description))}>
+                                                                    <button className={cn(statusBadgeClass, "cursor-pointer hover:bg-primary/20 flex items-center justify-center gap-1 mx-auto")}>
                                                                         {displayStatus} <MoreVertical className="h-3 w-3" />
-                                                                    </Button>
+                                                                    </button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
@@ -507,12 +494,7 @@ export default function UserReportDetailPage() {
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         ) : (
-                                                            <span className={cn("inline-flex items-center px-3 py-0.5 rounded-full text-[9px] font-bold", 
-                                                                (displayStatus === 'Hadir') ? 'bg-green-100 text-green-700' : 
-                                                                (displayStatus === 'Sakit') ? 'bg-orange-500 text-white' : 
-                                                                (displayStatus === 'Alpa') ? 'bg-red-100 text-red-700' :
-                                                                'bg-blue-100 text-blue-700'
-                                                            )}>
+                                                            <span className={cn(statusBadgeClass, "mx-auto")}>
                                                                 {displayStatus}
                                                             </span>
                                                         )}

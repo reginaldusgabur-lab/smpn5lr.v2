@@ -131,34 +131,28 @@ export default function ReportClientShell({
     };
 
     const getStatusBadge = (status: string, item: ReportDetail) => {
-        const isManualLate = status === 'Terlambat' && !item.checkInTime;
+        const displayStatus = (status === 'Terlambat' || item.description === 'Terlambat') ? 'Hadir' : status;
+        const commonClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-tight whitespace-nowrap";
 
-        switch (status) {
-            case 'Hadir': return <Badge variant="default" className="bg-green-100 text-green-800">Hadir</Badge>;
-            case 'Terlambat': return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Terlambat</Badge>;
-            case 'Tidak Absen Pulang': return <Badge variant="secondary">Tidak Absen Pulang</Badge>;
-            case 'Belum Absen Pulang': return <Badge variant="outline">Belum Absen</Badge>;
-            case 'Sakit': return <Badge variant="default" className="bg-orange-100 text-orange-800">Sakit</Badge>;
-            case 'Izin': return <Badge variant="default" className="bg-blue-100 text-blue-800">Izin</Badge>;
-            case 'Dinas': return <Badge variant="default" className="bg-purple-100 text-purple-800">Dinas</Badge>;
-            case 'Alpa': 
-                return (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Badge variant="destructive" className="cursor-pointer hover:bg-destructive/80">
-                                Alpa <MoreVertical className="h-3 w-3 ml-1" />
-                            </Badge>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Ubah ke Sakit</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Izin', 'Izin Pribadi')}>Ubah ke Izin</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Pagi')}>Ubah ke Dinas Pagi</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Siang')}>Ubah ke Dinas Siang</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                );
-            default: return <Badge variant="outline">{status}</Badge>;
+        if (status === 'Alpa') {
+            return (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button className={cn(commonClass, "cursor-pointer hover:bg-primary/20 flex items-center justify-center gap-1 mx-auto shadow-none border-none")}>
+                            Alpa <MoreVertical className="h-3 w-3" />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()} className="rounded-xl border-none shadow-xl p-2">
+                        <DropdownMenuItem className="rounded-lg py-2 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Sakit', 'Sakit')}>Ubah ke Sakit</DropdownMenuItem>
+                        <DropdownMenuItem className="rounded-lg py-2 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Izin', 'Izin Pribadi')}>Ubah ke Izin</DropdownMenuItem>
+                        <DropdownMenuItem className="rounded-lg py-2 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Pagi')}>Ubah ke Dinas Pagi</DropdownMenuItem>
+                        <DropdownMenuItem className="rounded-lg py-2 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Dinas', 'Dinas Siang')}>Ubah ke Dinas Siang</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            );
         }
+
+        return <span className={cn(commonClass, "mx-auto")}>{displayStatus}</span>;
     };
 
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
@@ -253,7 +247,7 @@ export default function ReportClientShell({
                             <TableBody>
                                 {reportDetails.length > 0 ? (
                                     reportDetails.map((item, index) => {
-                                        const isManualLate = item.status === 'Terlambat' && !item.checkInTime;
+                                        const isManualLate = (item.status === 'Terlambat' || item.description === 'Terlambat') && !item.checkInTime;
                                         return (
                                             <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5">
                                                 <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>

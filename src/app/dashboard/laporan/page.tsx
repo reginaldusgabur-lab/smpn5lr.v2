@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -222,7 +223,9 @@ export default function LaporanPage() {
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkIn}</TableCell>
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkOut}</TableCell>
                                         <TableCell className="text-center">
-                                            <Badge variant="outline" className="text-[9px] font-bold uppercase bg-primary/10 text-primary border-none">{record.status}</Badge>
+                                            <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-tight whitespace-nowrap">
+                                                {record.status}
+                                            </span>
                                         </TableCell>
                                         <TableCell className="text-[11px] font-medium text-muted-foreground italic truncate max-w-[200px]">{record.description}</TableCell>
                                     </TableRow>
