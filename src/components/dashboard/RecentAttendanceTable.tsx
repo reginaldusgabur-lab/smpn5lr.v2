@@ -112,7 +112,7 @@ const RecentAttendanceTable = () => {
             const checkOutDate = attendanceData.checkOutTime ? attendanceData.checkOutTime.toDate() : null;
             const reason = (attendanceData.reasonForUpdate || '').toLowerCase();
             
-            const isSpecial = reason.includes('dinas') || reason.includes('pulang cepat');
+            const isSpecial = reason.includes('dinas') || reason.includes('pulang cepat') || reason.includes('kegiatan luar sekolah');
             
             let statusLabel = checkOutDate ? 'Pulang' : 'Hadir';
             if (isSpecial) statusLabel = attendanceData.reasonForUpdate;
@@ -120,9 +120,9 @@ const RecentAttendanceTable = () => {
             activitiesData.push({
               name: userData.name || '-',
               nip: userData.nip || '-',
-              rawCheckInTime: checkInDate || checkOutDate, 
+              rawCheckInTime: checkInTimeDate || checkOutDate, 
               checkInTime: checkInDate ? format(checkInDate, 'HH:mm:ss') : '-',
-              checkOutTime: isSpecial ? '-' : (checkOutDate ? format(checkOutDate, 'HH:mm:ss') : '-'),
+              checkOutTime: (checkOutDate && !isSpecial) ? format(checkOutDate, 'HH:mm:ss') : '-',
               status: statusLabel,
               keterangan: attendanceData.reasonForUpdate || (checkOutDate ? 'Absensi selesai' : 'Sedang bertugas'),
             });
@@ -150,12 +150,14 @@ const RecentAttendanceTable = () => {
 
   const getStatusBadgeStyle = (status: string) => {
       const s = status.toLowerCase();
-      // Pulang & Hadir: Hijau (Emerald)
-      if (s === 'pulang' || s === 'hadir') return 'bg-emerald-500 text-white border-none shadow-sm';
+      // Pulang: Hijau (Sudah selesai)
+      if (s === 'pulang') return 'bg-emerald-500 text-white border-none shadow-sm';
+      // Hadir: Biru (Baru masuk/Belum pulang - Biar Admin tau)
+      if (s === 'hadir') return 'bg-blue-600 text-white border-none shadow-sm';
       // Izin/Dinas/Pulang Cepat: Kuning/Amber
-      if (s.includes('izin') || s.includes('dinas') || s.includes('cepat')) return 'bg-amber-500 text-white border-none shadow-sm';
-      // Default: Hijau
-      return 'bg-emerald-500 text-white border-none shadow-sm';
+      if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return 'bg-amber-500 text-white border-none shadow-sm';
+      // Default: Biru
+      return 'bg-blue-600 text-white border-none shadow-sm';
   }
 
   if (isHoliday) {

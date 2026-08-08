@@ -60,7 +60,7 @@ export default function ReportClientShell({
     const [currentMonth, setCurrentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
 
     const summaryStats = useMemo(() => {
-        const hadir = reportDetails.filter(d => d.status === 'Hadir' || d.status === 'Terlambat').length;
+        const hadir = reportDetails.filter(d => d.status === 'Hadir' || d.status === 'Terlambat' || d.status === 'Pulang').length;
         const sakit = reportDetails.filter(d => d.status === 'Sakit').length;
         const izin = reportDetails.filter(d => d.status === 'Izin' || d.status === 'Dinas').length;
         const alpa = reportDetails.filter(d => d.status === 'Alpa').length;
@@ -130,19 +130,30 @@ export default function ReportClientShell({
         router.push(`/dashboard/admin/kehadiran/${userId}/manual?date=${formattedDate}`);
     };
 
-    const getStatusColorClass = (status: string) => {
+    const getStatusColorClass = (status: string, desc: string, hasOut: boolean) => {
         const s = status.toLowerCase();
-        if (s === 'hadir' || s === 'terlambat' || s === 'pulang') return "bg-emerald-500 text-white";
-        if (s === 'sakit') return "bg-orange-500 text-white";
-        if (s.includes('izin')) return "bg-amber-500 text-white";
+        const d = (desc || '').toLowerCase();
+        
         if (s === 'alpa') return "bg-red-500 text-white";
+        if (s === 'sakit') return "bg-orange-500 text-white";
+        if (s.includes('izin') || s.includes('dinas') || s.includes('kegiatan')) return "bg-amber-500 text-white";
+        
+        // DISTINCTION: Hadir tapi belum pulang vs Hadir sudah pulang
+        if (s === 'hadir' || s === 'terlambat') {
+            if (!hasOut && !d.includes('tugas') && !d.includes('pulang cepat')) {
+                return "bg-blue-600 text-white"; // Sedang di sekolah
+            }
+            return "bg-emerald-500 text-white"; // Sudah pulang/tuntas
+        }
+        
         return "bg-primary text-white";
     };
 
     const getStatusBadge = (status: string, item: ReportDetail) => {
+        const hasOut = !!item.checkOutTime;
         const isManualLate = (status === 'Terlambat' || item.description === 'Terlambat');
         const displayStatus = isManualLate ? 'Hadir' : status;
-        const colorClass = getStatusColorClass(displayStatus);
+        const colorClass = getStatusColorClass(displayStatus, item.description, hasOut);
         const baseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap";
 
         if (status === 'Alpa' && !isManualLate) {

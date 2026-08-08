@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -59,7 +60,6 @@ export default function UserReportDetailPage() {
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
 
-    // Fallback Tahun Ajaran saat config utama dimuat
     useEffect(() => {
         if (schoolConfigData?.academicYear && !academicYear) {
             setAcademicYear(schoolConfigData.academicYear);
@@ -178,7 +178,7 @@ export default function UserReportDetailPage() {
                     dataToSave.checkOutTime = null;
                 } else { // Pulang Cepat
                      const randomSeconds = Math.floor(Math.random() * 299) + 1; 
-                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
                      dataToSave.checkOutTime = null;
                 }
 
@@ -248,12 +248,22 @@ export default function UserReportDetailPage() {
         finally { setIsMutating(false); }
     };
 
-    const getStatusColorClass = (status: string) => {
+    const getStatusColorClass = (status: string, desc: string, hasOut: boolean) => {
         const s = status.toLowerCase();
-        if (s === 'hadir' || s === 'terlambat') return "bg-emerald-500/10 text-emerald-600";
-        if (s === 'sakit') return "bg-orange-500/10 text-orange-600";
-        if (s.includes('izin')) return "bg-amber-500/10 text-amber-600";
+        const d = (desc || '').toLowerCase();
+
         if (s === 'alpa') return "bg-red-500/10 text-red-600";
+        if (s === 'sakit') return "bg-orange-500/10 text-orange-600";
+        if (s.includes('izin') || s.includes('dinas') || s.includes('kegiatan')) return "bg-amber-500/10 text-amber-600";
+        
+        // DISTINCTION: Hadir tapi belum pulang vs Hadir sudah pulang
+        if (s === 'hadir' || s === 'terlambat') {
+            if (!hasOut && !d.includes('tugas') && !d.includes('pulang cepat')) {
+                return "bg-blue-600/10 text-blue-600"; // Sedang di sekolah
+            }
+            return "bg-emerald-500/10 text-emerald-600"; // Sudah pulang/tuntas
+        }
+        
         return "bg-primary/10 text-primary";
     };
 
@@ -460,6 +470,7 @@ export default function UserReportDetailPage() {
                                     ) : monthlyReportData.length > 0 ? (
                                         monthlyReportData.map((item, index) => {
                                             const hasIn = !!item.checkInTime;
+                                            const hasOut = !!item.checkOutTime;
                                             const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
                                             const displayStatus = isManualLate ? 'Hadir' : item.status;
 
@@ -479,7 +490,7 @@ export default function UserReportDetailPage() {
                                                         {isAdmin && !['Sakit', 'Izin', 'Dinas'].some(s => item.status.includes(s)) && !(!!item.checkInTime && !!item.checkOutTime) ? (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <button className={cn(statusBadgeBaseClass, getStatusColorClass(displayStatus), "cursor-pointer hover:opacity-80 flex items-center justify-center gap-1 mx-auto")}>
+                                                                    <button className={cn(statusBadgeBaseClass, getStatusColorClass(displayStatus, item.description, hasOut), "cursor-pointer hover:opacity-80 flex items-center justify-center gap-1 mx-auto")}>
                                                                         {displayStatus} <MoreVertical className="h-3 w-3" />
                                                                     </button>
                                                                 </DropdownMenuTrigger>
@@ -502,7 +513,7 @@ export default function UserReportDetailPage() {
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         ) : (
-                                                            <span className={cn(statusBadgeBaseClass, getStatusColorClass(displayStatus), "mx-auto")}>
+                                                            <span className={cn(statusBadgeBaseClass, getStatusColorClass(displayStatus, item.description, hasOut), "mx-auto")}>
                                                                 {displayStatus}
                                                             </span>
                                                         )}

@@ -28,10 +28,7 @@ import { startOfDay, endOfDay, format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { getDailyStaffAttendanceStats } from '@/lib/attendance';
-
-const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    'Hadir': 'default', 'Pulang': 'secondary', 'Sakit': 'destructive', 'Izin': 'secondary', 'Terlambat': 'outline',
-}
+import { cn } from '@/lib/utils';
 
 const AdminDashboardSkeletons = () => (
     <div className="space-y-6">
@@ -183,6 +180,7 @@ export default function AdminDashboardPage() {
         })
         .map((att, index) => {
             const userDoc = userMap.get(att.userId);
+            const isFinished = !!att.checkOutTime;
             return {
                 ...att,
                 sequence: index + 1,
@@ -190,7 +188,8 @@ export default function AdminDashboardPage() {
                 role: (userDoc?.role || 'user').replace('_', ' '),
                 checkInTimeFormatted: att.checkInTime ? format(att.checkInTime.toDate(), 'HH:mm:ss') : '-',
                 checkOutTimeFormatted: att.checkOutTime ? format(att.checkOutTime.toDate(), 'HH:mm:ss') : '-',
-                status: att.checkOutTime ? 'Pulang' : 'Hadir',
+                status: isFinished ? 'Pulang' : 'Hadir',
+                statusClass: isFinished ? 'bg-emerald-500' : 'bg-blue-600',
             };
         });
   }, [usersData, dashboardData.allAttendanceData, isAdmin]);
@@ -235,45 +234,45 @@ export default function AdminDashboardPage() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="shadow-none">
+            <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-semibold text-muted-foreground">Hadir</CardTitle>
-                    <UserCheck className="h-4 w-4 text-green-500" />
+                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600">Hadir</CardTitle>
+                    <UserCheck className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-green-600">{dashboardData.stats.hadir}</div>
+                    <div className="text-2xl font-black text-green-600 tracking-tighter">{dashboardData.stats.hadir}</div>
                 </CardContent>
             </Card>
-            <Card className="shadow-none">
+            <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-semibold text-muted-foreground">Izin/Sakit</CardTitle>
-                    <BookUser className="h-4 w-4 text-blue-500" />
+                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Izin/Sakit</CardTitle>
+                    <BookUser className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">{dashboardData.stats.izin + dashboardData.stats.sakit}</div>
+                    <div className="text-2xl font-black text-blue-600 tracking-tighter">{dashboardData.stats.izin + dashboardData.stats.sakit}</div>
                 </CardContent>
             </Card>
-            <Card className="shadow-none">
+            <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-semibold text-muted-foreground">Menunggu</CardTitle>
-                    <FileWarning className="h-4 w-4 text-amber-500" />
+                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Menunggu</CardTitle>
+                    <FileWarning className="h-4 w-4 text-amber-600" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-amber-600">{dashboardData.stats.pending}</div>
+                    <div className="text-2xl font-black text-amber-600 tracking-tighter">{dashboardData.stats.pending}</div>
                 </CardContent>
             </Card>
-            <Card className="shadow-none">
+            <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-semibold text-muted-foreground">Alpa</CardTitle>
-                    <UserX className="h-4 w-4 text-red-500" />
+                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600">Alpa</CardTitle>
+                    <UserX className="h-4 w-4 text-red-600" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-red-600">{dashboardData.stats.alpa}</div>
+                    <div className="text-2xl font-black text-red-600 tracking-tighter">{dashboardData.stats.alpa}</div>
                 </CardContent>
             </Card>
         </div>
 
-        <Card className="shadow-none overflow-hidden">
+        <Card className="shadow-none overflow-hidden border-muted-foreground/10 bg-primary/5 rounded-xl">
             <CardHeader className="bg-muted/20 border-b border-muted-foreground/5">
                 <CardTitle className="text-lg font-bold">Aktivitas Kehadiran Terbaru</CardTitle>
                 <CardDescription>Daftar personil yang telah melakukan absensi hari ini.</CardDescription>
@@ -285,9 +284,8 @@ export default function AdminDashboardPage() {
                             <TableRow className="border-none">
                                 <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
                                 <TableHead className="font-bold text-[10px] uppercase tracking-widest">Nama Personil</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-widest">Peran</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Pulang</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-center">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-center">Pulang</TableHead>
                                 <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Status</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -295,19 +293,21 @@ export default function AdminDashboardPage() {
                             {recentUserActivity.length > 0 ? recentUserActivity.map((item) => (
                                 <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5">
                                     <TableCell className="text-center font-bold text-muted-foreground">{item.sequence}</TableCell>
-                                    <TableCell className="font-bold text-sm">{item.name}</TableCell>
-                                    <TableCell className="capitalize text-xs font-medium">{item.role}</TableCell>
+                                    <TableCell>
+                                        <div className="font-bold text-sm">{item.name}</div>
+                                        <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">{item.role}</div>
+                                    </TableCell>
                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{item.checkInTimeFormatted}</TableCell>
                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{item.checkOutTimeFormatted}</TableCell>
                                     <TableCell className="text-center">
-                                        <Badge variant={statusVariant[item.status] || 'default'} className="text-[9px] font-bold uppercase">
+                                        <Badge variant="outline" className={cn("text-[9px] font-bold uppercase text-white border-none px-3 py-1 rounded-full", item.statusClass)}>
                                             {item.status}
                                         </Badge>
                                     </TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold">Belum ada aktivitas kehadiran hari ini.</TableCell>
+                                    <TableCell colSpan={5} className="h-48 text-center text-muted-foreground font-bold">Belum ada aktivitas kehadiran hari ini.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
