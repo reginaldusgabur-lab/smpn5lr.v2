@@ -249,6 +249,15 @@ export default function UserReportDetailPage() {
         finally { setIsMutating(false); }
     };
 
+    const getStatusColorClass = (status: string) => {
+        const s = status.toLowerCase();
+        if (s === 'hadir' || s === 'terlambat') return "bg-emerald-500/10 text-emerald-600";
+        if (s === 'sakit') return "bg-orange-500/10 text-orange-600";
+        if (s.includes('izin')) return "bg-amber-500/10 text-amber-600";
+        if (s === 'alpa') return "bg-red-500/10 text-red-600";
+        return "bg-primary/10 text-primary";
+    };
+
     const handleDownloadPdf = () => {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
@@ -362,7 +371,7 @@ export default function UserReportDetailPage() {
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
-    const statusBadgeClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-tight whitespace-nowrap";
+    const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap";
 
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
@@ -377,7 +386,7 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
+                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardContent className="p-0">
                         <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center">
@@ -471,7 +480,7 @@ export default function UserReportDetailPage() {
                                                         {isAdmin && !['Sakit', 'Izin', 'Dinas'].some(s => item.status.includes(s)) && !(!!item.checkInTime && !!item.checkOutTime) ? (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <button className={cn(statusBadgeClass, "cursor-pointer hover:bg-primary/20 flex items-center justify-center gap-1 mx-auto")}>
+                                                                    <button className={cn(statusBadgeBaseClass, getStatusColorClass(displayStatus), "cursor-pointer hover:opacity-80 flex items-center justify-center gap-1 mx-auto")}>
                                                                         {displayStatus} <MoreVertical className="h-3 w-3" />
                                                                     </button>
                                                                 </DropdownMenuTrigger>
@@ -494,7 +503,7 @@ export default function UserReportDetailPage() {
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         ) : (
-                                                            <span className={cn(statusBadgeClass, "mx-auto")}>
+                                                            <span className={cn(statusBadgeBaseClass, getStatusColorClass(displayStatus), "mx-auto")}>
                                                                 {displayStatus}
                                                             </span>
                                                         )}
@@ -511,7 +520,7 @@ export default function UserReportDetailPage() {
                 </Card>
 
                 {!isLoading && stats && (
-                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
+                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                         <CardHeader className="p-6 border-b border-muted-foreground/5">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">

@@ -130,15 +130,26 @@ export default function ReportClientShell({
         router.push(`/dashboard/admin/kehadiran/${userId}/manual?date=${formattedDate}`);
     };
 
-    const getStatusBadge = (status: string, item: ReportDetail) => {
-        const displayStatus = (status === 'Terlambat' || item.description === 'Terlambat') ? 'Hadir' : status;
-        const commonClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-tight whitespace-nowrap";
+    const getStatusColorClass = (status: string) => {
+        const s = status.toLowerCase();
+        if (s === 'hadir' || s === 'terlambat') return "bg-emerald-500/10 text-emerald-600";
+        if (s === 'sakit') return "bg-orange-500/10 text-orange-600";
+        if (s.includes('izin')) return "bg-amber-500/10 text-amber-600";
+        if (s === 'alpa') return "bg-red-500/10 text-red-600";
+        return "bg-primary/10 text-primary";
+    };
 
-        if (status === 'Alpa') {
+    const getStatusBadge = (status: string, item: ReportDetail) => {
+        const isManualLate = (status === 'Terlambat' || item.description === 'Terlambat');
+        const displayStatus = isManualLate ? 'Hadir' : status;
+        const colorClass = getStatusColorClass(displayStatus);
+        const baseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap";
+
+        if (status === 'Alpa' && !isManualLate) {
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button className={cn(commonClass, "cursor-pointer hover:bg-primary/20 flex items-center justify-center gap-1 mx-auto shadow-none border-none")}>
+                        <button className={cn(baseClass, colorClass, "cursor-pointer hover:opacity-80 flex items-center justify-center gap-1 mx-auto shadow-none border-none")}>
                             Alpa <MoreVertical className="h-3 w-3" />
                         </button>
                     </DropdownMenuTrigger>
@@ -152,7 +163,7 @@ export default function ReportClientShell({
             );
         }
 
-        return <span className={cn(commonClass, "mx-auto")}>{displayStatus}</span>;
+        return <span className={cn(baseClass, colorClass, "mx-auto")}>{displayStatus}</span>;
     };
 
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
@@ -160,7 +171,7 @@ export default function ReportClientShell({
     return (
         <div className="p-2 sm:p-6 space-y-4">
             {/* --- Header Cards --- */}
-             <Card className="rounded-xl border shadow-none overflow-hidden">
+             <Card className="rounded-xl border shadow-none overflow-hidden bg-primary/5">
                 <CardHeader className="p-4 border-b border-muted-foreground/10">
                     <CardTitle className="text-xs uppercase font-bold tracking-tight text-primary">Ringkasan Bulan {format(currentMonth, 'MMMM yyyy', { locale: id })}</CardTitle>
                     <CardDescription className="text-[10px] font-bold">Grafik ringkasan kehadiran untuk {userData?.name || 'Pengguna'}.</CardDescription>
@@ -179,19 +190,19 @@ export default function ReportClientShell({
                             </ResponsiveContainer>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none">
+                            <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none shadow-none">
                                 <span className="text-2xl font-bold text-green-600">{summaryStats.hadir}</span>
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><CheckCircle2 className="h-3 w-3 text-green-500"/> Hadir</p>
                             </Card>
-                             <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none">
+                             <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none shadow-none">
                                 <span className="text-2xl font-bold text-red-600">{summaryStats.alpa}</span>
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><XCircle className="h-3 w-3 text-red-500"/> Alpa</p>
                             </Card>
-                             <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none">
+                             <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none shadow-none">
                                 <span className="text-2xl font-bold text-blue-600">{summaryStats.izin}</span>
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><FileWarning className="h-3 w-3 text-blue-500"/> Izin</p>
                             </Card>
-                             <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none">
+                             <Card className="flex flex-col justify-center items-center text-center p-3 rounded-xl bg-muted/20 border-none shadow-none">
                                 <span className="text-2xl font-bold text-orange-600">{summaryStats.sakit}</span>
                                 <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-wider mt-1"><CalendarClock className="h-3 w-3 text-orange-500"/> Sakit</p>
                             </Card>
@@ -201,7 +212,7 @@ export default function ReportClientShell({
             </Card>
 
             {/* --- Details Table --- */}
-            <Card className="rounded-xl border shadow-none overflow-hidden">
+            <Card className="rounded-xl border border-muted-foreground/10 shadow-none overflow-hidden bg-card">
                 <CardHeader className="p-4 border-b border-muted-foreground/10">
                     <CardTitle className="text-xs uppercase font-bold tracking-tight text-primary">Detail Laporan Harian</CardTitle>
                 </CardHeader>

@@ -145,6 +145,15 @@ export default function LaporanPage() {
       setCurrentMonth(prev => addMonths(prev, 1));
   };
 
+  const getStatusColorClass = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'hadir' || s === 'terlambat') return "bg-emerald-500/10 text-emerald-600";
+    if (s === 'sakit') return "bg-orange-500/10 text-orange-600";
+    if (s.includes('izin')) return "bg-amber-500/10 text-amber-600";
+    if (s === 'alpa') return "bg-red-500/10 text-red-600";
+    return "bg-primary/10 text-primary";
+  };
+
   const isLoading = isAuthLoading || isConfigLoading || isReportLoading;
   const canGoPrev = currentMonth > new Date(2026, 0, 1);
 
@@ -162,7 +171,7 @@ export default function LaporanPage() {
   return (
     <div className="flex-1 pt-2 pb-24 md:p-8">
         <div className="max-w-7xl mx-auto space-y-4">
-            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-md rounded-xl">
+            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
               <CardHeader className="p-4 text-primary border-b border-muted-foreground/10">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
@@ -223,7 +232,10 @@ export default function LaporanPage() {
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkIn}</TableCell>
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkOut}</TableCell>
                                         <TableCell className="text-center">
-                                            <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-tight whitespace-nowrap">
+                                            <span className={cn(
+                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap",
+                                                getStatusColorClass(record.status)
+                                            )}>
                                                 {record.status}
                                             </span>
                                         </TableCell>
