@@ -172,13 +172,16 @@ const AbsentUsersTable = () => {
 
   const getStatusStyle = (status: string) => {
       const s = status.toLowerCase();
-      if (s === 'alpa') return 'bg-red-600 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
+      // Alpa: Merah
+      if (s === 'alpa') return 'bg-red-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
+      // Sakit: Oranye
       if (s === 'sakit') return 'bg-orange-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
-      if (s === 'izin' || s.includes('izin pribadi')) return 'bg-blue-800 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
-      if (s.includes('dinas') || s.includes('pulang cepat')) return 'bg-purple-800 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
-      if (s === 'menunggu') return 'bg-slate-700 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
+      // Izin/Izin Pribadi/Dinas/Pulang Cepat: Kuning/Amber
+      if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return 'bg-amber-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
+      // Menunggu/Proses: Slate
+      if (s === 'menunggu') return 'bg-slate-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
       
-      return 'bg-primary text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
+      return 'bg-emerald-500 text-white border-none rounded-full px-5 py-1.5 h-auto shadow-sm';
   }
 
   return (
