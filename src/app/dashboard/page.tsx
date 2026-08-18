@@ -6,7 +6,7 @@ import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, TrendingUp } from 'lucide-react';
+import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, TrendingUp, Lock, CalendarOff, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -204,56 +204,94 @@ export default function DashboardPage() {
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
 
+    // Loading states
+    if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) {
+        return (
+            <div className="w-full bg-muted/20 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Memeriksa status...</span>
+            </div>
+        );
+    }
+
+    // Holiday / System Disabled
+    if (stats.isManualDisabled || windowStatus === 'DISABLED') {
+         return (
+            <div className="w-full bg-muted/40 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-3">
+                <Lock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Sistem dinonaktifkan</span>
+            </div>
+        );
+    }
+
+    if (stats.isHoliday || windowStatus === 'SESSION_INACTIVE') {
+         const label = stats.isCalendarHoliday ? 'Hari libur (Kalender)' : 'Hari libur rutin';
+         return (
+            <div className="w-full bg-muted/40 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-3">
+                <CalendarOff className="h-4 w-4 text-muted-foreground" />
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">{label}</span>
+            </div>
+        );
+    }
+
+    // Active Leave
     if (currentActiveLeave) {
         return (
-            <div className="w-full bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center justify-center gap-3">
+            <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-12 flex items-center justify-center gap-3">
                 <Sparkles className="h-4 w-4 text-blue-500" />
                 <span className="text-[11px] font-black text-blue-600 uppercase tracking-tight">{currentActiveLeave.type} Disetujui</span>
             </div>
         );
     }
 
+    // Attendance Flow
     if (isCheckedOut) {
         return (
-            <div className="w-full bg-green-50 border border-green-100 rounded-xl p-3 flex items-center justify-center gap-3">
+            <div className="w-full bg-green-50 border border-green-100 rounded-xl h-12 flex items-center justify-center gap-3">
                 <Sparkles className="h-4 w-4 text-green-500" />
-                <span className="text-[11px] font-black text-green-600 uppercase tracking-tight">Absensi hari ini selesai</span>
+                <span className="text-[11px] font-black text-green-600 uppercase tracking-tight">Absensi hari ini tuntas</span>
             </div>
         );
     }
 
-    if (windowStatus === 'AFTER_IN' && !isCheckedIn) {
-        return (
-            <div className="w-full bg-red-50 border border-red-100 rounded-xl p-3 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-2">
-                <div className="bg-white rounded-full p-1 border border-red-200">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
+    if (!isCheckedIn) {
+        if (windowStatus === 'BEFORE_IN') {
+            return (
+                <div className="w-full bg-muted/30 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-3">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-[11px] font-black text-muted-foreground uppercase tracking-tight">Belum jam masuk</span>
                 </div>
-                <span className="text-[11px] font-black text-red-500">Batas jam masuk berakhir</span>
-            </div>
-        );
-    }
-
-    if (windowStatus === 'CHECK_IN_OPEN' && !isCheckedIn) {
+            );
+        }
+        if (windowStatus === 'CHECK_IN_OPEN') {
+            return (
+                <Button asChild className="w-full h-12 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs">
+                    <Link href="/dashboard/absen">Absen masuk sekarang</Link>
+                </Button>
+            );
+        }
+        if (windowStatus === 'AFTER_IN' || windowStatus === 'CHECK_OUT_OPEN' || windowStatus === 'CLOSED') {
+             return (
+                <div className="w-full bg-red-50 border border-red-100 rounded-xl h-12 flex items-center justify-center gap-3">
+                    <div className="bg-white rounded-full p-1 border border-red-200">
+                        <AlertCircle className="h-3 w-3 text-red-500" />
+                    </div>
+                    <span className="text-[11px] font-black text-red-500 uppercase tracking-tight">Batas jam masuk berakhir</span>
+                </div>
+            );
+        }
+    } else { // Already Checked In
+        if (windowStatus === 'CHECK_OUT_OPEN') {
+            return (
+                <Button asChild className="w-full h-12 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs">
+                    <Link href="/dashboard/absen">Absen pulang sekarang</Link>
+                </Button>
+            );
+        }
         return (
-            <Button asChild className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all text-xs">
-                <Link href="/dashboard/absen">Absen Masuk Sekarang</Link>
-            </Button>
-        );
-    }
-
-    if (windowStatus === 'CHECK_OUT_OPEN' && isCheckedIn && !isCheckedOut) {
-        return (
-            <Button asChild className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs">
-                <Link href="/dashboard/absen">Absen Pulang Sekarang</Link>
-            </Button>
-        );
-    }
-
-    if (windowStatus === 'BEFORE_IN') {
-        return (
-            <div className="w-full bg-muted/30 border border-border/50 rounded-xl p-3 flex items-center justify-center gap-3">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-[11px] font-black text-muted-foreground uppercase tracking-tight">Belum waktu jam masuk</span>
+            <div className="w-full bg-green-50 border border-green-100 rounded-xl h-12 flex items-center justify-center gap-3">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-[11px] font-black text-green-600 uppercase tracking-tight">Sudah absen masuk</span>
             </div>
         );
     }
@@ -295,9 +333,8 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* MAIN ATTENDANCE CARD WITH WAVES DECORATION */}
+                {/* MAIN ATTENDANCE CARD */}
                 <Card className="w-full border-none shadow-xl shadow-blue-600/10 rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
-                    {/* DECORATIVE SVG WAVES */}
                     <div className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-0 opacity-80">
                         <svg viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
                             <path d="M0 150V100C100 50 300 150 400 100V150H0Z" fill="#eff6ff" opacity="0.4"/>
@@ -343,14 +380,8 @@ export default function DashboardPage() {
                             </div>
 
                             {/* FOOTER LINK */}
-                            <Link href="/dashboard/laporan" className="flex items-center justify-center gap-3 group">
-                                <div className="bg-white border border-border/50 shadow-sm p-2 rounded-xl group-hover:bg-primary group-hover:border-primary transition-all">
-                                    <CalendarCheck className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
-                                </div>
-                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] group-hover:opacity-70 transition-opacity">
-                                    Lihat riwayat lengkap
-                                </span>
-                                <ChevronRight className="h-3.5 w-3.5 text-primary/40 group-hover:translate-x-1 transition-transform" />
+                            <Link href="/dashboard/laporan" className="text-[11px] font-bold text-slate-400 hover:text-primary transition-colors underline underline-offset-4 decoration-slate-200">
+                                Lihat riwayat lengkap
                             </Link>
                         </div>
                     </CardContent>
