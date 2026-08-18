@@ -9,14 +9,14 @@ import { format, isValid, parseISO, startOfDay, endOfDay, isSameMonth, startOfMo
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -394,16 +394,37 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5">
-                    <CardContent className="p-0">
-                        <div className="p-4 space-y-6">
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl">
+                    {/* Header Card - Biru Gradasi */}
+                    <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
+                        {/* Dekorasi Background */}
+                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                            <FileText className="w-24 h-24 text-white" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/20 p-2.5 rounded-xl text-white shrink-0 backdrop-blur-sm border border-white/10">
+                                    <Calendar className="h-6 w-6" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
+                                    {userData && <p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat riwayat kehadiran untuk {userData.name}.</p>}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-0 bg-background">
+                        {/* Area Pemilihan Bulan & Aksi */}
+                        <div className="p-4 space-y-6 bg-slate-50 dark:bg-slate-900/50">
                             <div className="flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <div className="flex items-center">
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-10 w-10 rounded-xl shrink-0" 
+                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none" 
                                             onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
                                             disabled={isLoading || !canGoPrev}
                                         >
@@ -425,7 +446,7 @@ export default function UserReportDetailPage() {
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-10 w-10 rounded-xl shrink-0" 
+                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none" 
                                             onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
                                             disabled={isLoading || !canGoNext}
                                         >
@@ -442,6 +463,7 @@ export default function UserReportDetailPage() {
                             </div>
                         </div>
 
+                        {/* Area Tabel */}
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
@@ -517,7 +539,7 @@ export default function UserReportDetailPage() {
                                                             </span>
                                                         )}
                                                     </TableCell>
-                                                    <TableCell className="text-[11px] text-muted-foreground font-bold italic">{item.description || '-'}</TableCell>
+                                                    <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description || '-'}</TableCell>
                                                 </TableRow>
                                             );
                                         })
@@ -525,65 +547,29 @@ export default function UserReportDetailPage() {
                                 </TableBody>
                             </Table>
                         </div>
-                    </CardContent>
-                </Card>
 
-                {!isLoading && stats && (
-                    <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5">
-                        <CardHeader className="p-6 border-b border-muted-foreground/5">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-xl">
-                                        <PieIcon className="h-5 w-5 text-primary" />
+                        {/* Statistik Footer */}
+                        {!isLoading && stats && (
+                            <div className="p-6 border-t border-muted-foreground/5 bg-slate-50 dark:bg-slate-900/30">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-primary/10 rounded-xl">
+                                            <PieIcon className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold">Statistik Kehadiran</h3>
+                                            <p className="text-xs font-medium text-muted-foreground">Persentase kehadiran bulan ini.</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <CardTitle className="text-lg font-bold">Presentasi kehadiran</CardTitle>
-                                        <CardDescription className="text-xs font-medium">Visualisasi performa kehadiran personil bulan ini.</CardDescription>
+                                    <div className="bg-white dark:bg-slate-800 px-6 py-4 rounded-[2rem] text-center min-w-[120px] shadow-sm border border-muted-foreground/5">
+                                        <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
+                                        <p className="text-lg font-black text-primary leading-none">{stats.persentase}</p>
                                     </div>
                                 </div>
-                                <div className="bg-primary/5 px-6 py-4 rounded-[2rem] text-center min-w-[120px]">
-                                    <p className="text-[10px] font-bold text-muted-foreground tracking-widest mb-1">Skor akhir</p>
-                                    <p className="text-lg font-black text-primary leading-none">{stats.persentase}</p>
-                                </div>
                             </div>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="h-[340px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={chartData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={70}
-                                            outerRadius={110}
-                                            paddingAngle={6}
-                                            dataKey="value"
-                                        >
-                                            {chartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                            ))}
-                                        </Pie>
-                                        <RechartsTooltip 
-                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
-                                            itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
-                                            formatter={(value) => [`${value} hari`, 'Jumlah']}
-                                        />
-                                        <Legend 
-                                            verticalAlign="bottom" 
-                                            height={40} 
-                                            formatter={(value, entry: any) => (
-                                                <span className="text-[11px] font-medium text-muted-foreground mx-1">
-                                                    {value}: <span className="text-foreground">{entry.payload.value} hari</span>
-                                                </span>
-                                            )}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                        )}
+                    </div>
+                </Card>
             </div>
         </div>
     );
