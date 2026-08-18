@@ -189,7 +189,7 @@ export default function DashboardPage() {
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
         window.scrollTo({
-            top: elementPosition + window.pageYOffset - headerOffset,
+            top: offsetPosition,
             behavior: 'smooth'
         });
     }
@@ -370,7 +370,7 @@ export default function DashboardPage() {
 
                         <div className="w-full flex flex-col items-center gap-4 px-2">
                             <div className="w-full">
-                                {renderStatusAlert()}
+                                {renderAttendanceButton()}
                             </div>
                             
                             <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-4 py-5 hover:opacity-80 transition-opacity group relative">
@@ -502,3 +502,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
