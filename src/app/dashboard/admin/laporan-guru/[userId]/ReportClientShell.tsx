@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileWarning, CalendarClock, MoreVertical } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileWarning, CalendarClock, MoreVertical, RefreshCw, Calendar, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // --- Type Definitions ---
@@ -154,13 +154,13 @@ export default function ReportClientShell({
         const isManualLate = (status === 'Terlambat' || item.description === 'Terlambat');
         const displayStatus = isManualLate ? 'Hadir' : status;
         const colorClass = getStatusColorClass(displayStatus, item.description, hasOut);
-        const baseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap";
+        const baseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none";
 
         if (status === 'Alpa' && !isManualLate) {
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button className={cn(baseClass, colorClass, "cursor-pointer hover:opacity-80 flex items-center justify-center gap-1 mx-auto shadow-none border-none")}>
+                        <button className={cn(baseClass, colorClass, "cursor-pointer hover:opacity-80 flex items-center justify-center gap-1 mx-auto")}>
                             Alpa <MoreVertical className="h-3 w-3" />
                         </button>
                     </DropdownMenuTrigger>
@@ -230,12 +230,29 @@ export default function ReportClientShell({
             </Card>
 
             {/* --- Details Table --- */}
-            <Card className="rounded-xl border border-muted-foreground/10 shadow-none overflow-hidden bg-card">
-                <CardHeader className="p-4 border-b border-muted-foreground/10">
-                    <CardTitle className="text-xs uppercase font-bold tracking-tight text-primary">Detail Laporan Harian</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="p-4 space-y-4">
+            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
+                {/* Header Card - Biru Gradasi Persis Dashboard */}
+                <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
+                    {/* Ikon Laporan Dekoratif (Samar di sebelah kanan) */}
+                    <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                        <FileText className="w-24 h-24 text-white" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
+                                <Calendar className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-0.5">
+                                <h2 className="font-bold text-2xl tracking-tight leading-tight">Detail Laporan Harian</h2>
+                                <p className="text-[11px] font-medium text-white/80 leading-relaxed">Rincian catatan kehadiran personil setiap hari.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-0 bg-background">
+                    <div className="p-4 space-y-4 bg-slate-50/80 dark:bg-slate-900/50">
                         <div className="flex flex-col items-center justify-center gap-4 py-2">
                             <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
                                 <Button 
@@ -261,16 +278,16 @@ export default function ReportClientShell({
                         </div>
                     </div>
                     
-                    <div className="overflow-x-auto border-t border-muted-foreground/5">
+                    <div className="overflow-x-auto">
                         <Table>
-                            <TableHeader className="bg-muted/30">
+                            <TableHeader className="bg-blue-600">
                                 <TableRow className="border-none">
-                                    <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase">No</TableHead>
-                                    <TableHead className="font-bold text-[10px] uppercase">Tanggal</TableHead>
-                                    <TableHead className="text-center font-bold text-[10px] uppercase">Masuk</TableHead>
-                                    <TableHead className="text-center font-bold text-[10px] uppercase">Pulang</TableHead>
-                                    <TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead>
-                                    <TableHead className="font-bold text-[10px] uppercase">Keterangan</TableHead>
+                                    <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">No</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Tanggal</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Masuk</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Pulang</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Status</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -300,7 +317,7 @@ export default function ReportClientShell({
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground">
+                                        <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">
                                             Tidak ada data untuk periode ini.
                                         </TableCell>
                                     </TableRow>
@@ -308,7 +325,7 @@ export default function ReportClientShell({
                             </TableBody>
                         </Table>
                     </div>
-                </CardContent>
+                </div>
             </Card>
         </div>
     );

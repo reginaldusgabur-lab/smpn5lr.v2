@@ -158,6 +158,11 @@ export default function LaporanPage() {
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
               {/* Header Card - Biru Gradasi Persis Gambar */}
               <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
+                {/* Ikon Laporan Dekoratif (Samar di sebelah kanan) */}
+                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                    <FileText className="w-24 h-24 text-white" />
+                </div>
+
                 <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-4">
                         {/* Ikon Kalender dalam kotak transparan */}
@@ -196,7 +201,7 @@ export default function LaporanPage() {
                                 <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col">
                                     <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-[0.1em] leading-none">Thn ajaran</span>
-                                    <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "-"}</span>
+                                    <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                 </div>
                             </div>
                         </div>
