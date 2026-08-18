@@ -330,7 +330,7 @@ export default function DashboardPage() {
                             <div className="bg-green-50/60 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
                                     <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
-                                        <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" fill="#2ecc71" opacity="0.1" />
+                                        <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="fill-[#2ecc71] dark:fill-[#2ecc71]/40" opacity="0.1" />
                                     </svg>
                                 </div>
                                 <div className="bg-[#2ecc71] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
@@ -347,7 +347,7 @@ export default function DashboardPage() {
                             <div className="bg-blue-50/60 dark:bg-blue-950/10 rounded-2xl p-3 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
                                     <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
-                                        <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" fill="#3498db" opacity="0.1" />
+                                        <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="fill-[#3498db] dark:fill-[#3498db]/40" opacity="0.1" />
                                     </svg>
                                 </div>
                                 <div className="bg-[#3498db] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
@@ -370,8 +370,8 @@ export default function DashboardPage() {
                     <div className="relative mt-0 overflow-hidden bg-transparent">
                         <div className="absolute inset-0 z-0">
                             <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
-                                <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="fill-slate-50 dark:fill-slate-800/40" />
-                                <path d="M0 120 V70 C 150 40 250 110 400 60 V120 H0 Z" className="fill-slate-100 dark:fill-slate-800/20" opacity="0.3" />
+                                <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="fill-slate-50 dark:fill-slate-900/60" />
+                                <path d="M0 120 V70 C 150 40 250 110 400 60 V120 H0 Z" className="fill-slate-100 dark:fill-slate-800/40" opacity="0.4" />
                             </svg>
                         </div>
                         
