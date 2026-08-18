@@ -56,7 +56,7 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <h2 className="text-3xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
+            <h2 className="text-4xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
             <p className="text-[10px] font-bold text-slate-400 mt-2 tracking-normal opacity-70">
@@ -329,7 +329,7 @@ export default function DashboardPage() {
                         </svg>
                     </div>
                     
-                    <CardContent className="p-6 flex flex-col items-center gap-6 relative z-10">
+                    <CardContent className="p-4 sm:p-6 flex flex-col items-center gap-4 relative z-10">
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full px-2">
@@ -368,12 +368,12 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="w-full flex flex-col items-center gap-4 px-2">
+                        <div className="w-full flex flex-col items-center gap-2 px-2">
                             <div className="w-full">
                                 {renderAttendanceButton()}
                             </div>
                             
-                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-4 py-5 hover:opacity-80 transition-opacity group relative">
+                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-4 py-2 hover:opacity-80 transition-opacity group relative">
                                 <div className="bg-white p-2 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-slate-50 shrink-0 relative z-10">
                                     <CalendarCheck className="h-4 w-4 text-blue-500" />
                                 </div>
