@@ -248,7 +248,7 @@ export default function DashboardPage() {
 
     if (windowStatus === 'CHECK_OUT_OPEN') {
         return (
-            <Button asChild className="w-full h-14 rounded-2xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
+            <Button asChild className="w-full h-14 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
                 <Link href="/dashboard/absen">Absen pulang sekarang</Link>
             </Button>
         );
@@ -265,13 +265,13 @@ export default function DashboardPage() {
         }
         if (windowStatus === 'CHECK_IN_OPEN') {
             return (
-                <Button asChild className="w-full h-14 rounded-2xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
+                <Button asChild className="w-full h-14 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
                     <Link href="/dashboard/absen">Absen masuk sekarang</Link>
                 </Button>
             );
         }
         return (
-            <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-2xl h-14 flex items-center justify-center gap-3 shadow-none">
+            <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none">
                 <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 border border-red-200 dark:border-red-900/30 shadow-sm">
                     <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                 </div>
@@ -306,12 +306,12 @@ export default function DashboardPage() {
 
         {!isAdmin && (
             <div className="w-full space-y-6">
-                {/* Header Card Separate */}
-                <Card className="w-full border-none shadow-sm rounded-3xl bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
+                {/* Header Card */}
+                <Card className="w-full border-none shadow-sm rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
                     <div className="absolute right-[-5%] bottom-[-20%] opacity-10 rotate-12">
                         <User className="w-32 h-32 text-white" />
                     </div>
-                    <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 backdrop-blur-sm border border-white/10">
+                    <div className="bg-white/20 p-3 rounded-xl text-white shrink-0 backdrop-blur-sm border border-white/10">
                         <CalendarDays className="h-6 w-6" />
                     </div>
                     <div className="flex flex-col relative z-10">
@@ -321,14 +321,14 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Main Body Card */}
-                <Card className="w-full border border-muted-foreground/10 shadow-sm rounded-3xl bg-white dark:bg-slate-900 relative overflow-hidden">
+                <Card className="w-full border border-muted-foreground/10 shadow-sm rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
                     <CardContent className="p-8 flex flex-col items-center gap-8 relative z-10 pt-10">
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full">
                             {/* Card Masuk */}
-                            <div className="bg-green-50/50 dark:bg-green-950/20 rounded-2xl p-5 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#2ecc71] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
+                            <div className="bg-green-50/50 dark:bg-green-950/20 rounded-xl p-5 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#2ecc71] p-2 rounded-xl text-white shrink-0 shadow-lg shadow-green-500/20">
                                     <LogIn className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
@@ -340,8 +340,8 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Card Pulang */}
-                            <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl p-5 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#3498db] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
+                            <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-xl p-5 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#3498db] p-2 rounded-xl text-white shrink-0 shadow-lg shadow-blue-500/20">
                                     <LogOut className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
@@ -440,7 +440,7 @@ export default function DashboardPage() {
         )}
 
         {isStaffOnly && !isAdmin && (
-            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-2xl bg-primary/5 mt-2 overflow-hidden">
+            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 mt-2 overflow-hidden">
                 <div className="p-6 pb-2">
                     <div className="flex items-start justify-between">
                         <div className="space-y-0.5">
@@ -487,3 +487,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

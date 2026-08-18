@@ -38,7 +38,7 @@ const AdminDashboardSkeletons = () => (
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-                <Card key={i}>
+                <Card key={i} className="rounded-2xl">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <Skeleton className="h-4 w-1/2" />
                         <Skeleton className="h-5 w-5 rounded-full" />
@@ -50,7 +50,7 @@ const AdminDashboardSkeletons = () => (
                 </Card>
             ))}
         </div>
-        <Card>
+        <Card className="rounded-2xl">
             <CardHeader>
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
@@ -209,7 +209,7 @@ export default function AdminDashboardPage() {
       
        <div className="grid gap-6">
         {isTemporaryAdmin && (
-            <Alert variant="default" className="bg-amber-50 border-amber-300 text-amber-900 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-200">
+            <Alert variant="default" className="bg-amber-50 border-amber-300 text-amber-900 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-200 rounded-2xl">
                 <ShieldAlert className="h-4 w-4" />
                 <AlertTitle className="font-semibold">Langkah Keamanan Penting</AlertTitle>
                 <AlertDescription>
@@ -219,13 +219,13 @@ export default function AdminDashboardPage() {
         )}
         
         {isManualDisabled ? (
-            <Alert className="bg-amber-50 border-amber-200">
+            <Alert className="bg-amber-50 border-amber-200 rounded-2xl">
                 <Lock className="h-4 w-4 text-amber-600" />
                 <AlertTitle className="text-amber-800 font-bold">Sistem Absensi Dinonaktifkan</AlertTitle>
                 <AlertDescription className="text-amber-700">Sistem saat ini sedang dinonaktifkan secara manual oleh Administrator.</AlertDescription>
             </Alert>
         ) : isHoliday && (
-            <Alert className="bg-blue-50 border-blue-200">
+            <Alert className="bg-blue-50 border-blue-200 rounded-2xl">
                 <CalendarOff className="h-4 w-4 text-blue-600" />
                 <AlertTitle className="text-blue-800 font-bold">Hari Libur Terdeteksi</AlertTitle>
                 <AlertDescription className="text-blue-700">Sistem absensi non-aktif hari ini berdasarkan jadwal libur.</AlertDescription>
@@ -274,7 +274,7 @@ export default function AdminDashboardPage() {
             </Card>
         </div>
 
-        <Card className="shadow-none overflow-hidden border-muted-foreground/10 bg-primary/5 rounded-xl">
+        <Card className="shadow-none overflow-hidden border-muted-foreground/10 bg-primary/5 rounded-2xl">
             <CardHeader className="bg-muted/20 border-b border-muted-foreground/5">
                 <CardTitle className="text-lg font-bold">Aktivitas Kehadiran Terbaru</CardTitle>
                 <CardDescription>Daftar personil yang telah melakukan absensi hari ini.</CardDescription>
@@ -321,3 +321,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

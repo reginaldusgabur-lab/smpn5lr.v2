@@ -64,7 +64,7 @@ const KepalaSekolahDashboardSkeleton = () => (
             <Skeleton className="h-4 w-3/4 !mt-2" />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="w-full lg:col-span-2">
+            <Card className="w-full lg:col-span-2 rounded-2xl">
                 <CardHeader>
                     <Skeleton className="h-6 w-1/2" />
                     <Skeleton className="h-4 w-3/4" />
@@ -82,7 +82,7 @@ const KepalaSekolahDashboardSkeleton = () => (
             </Card>
             <div className="space-y-6">
                 {[...Array(3)].map((_, i) => (
-                    <Card key={i}>
+                    <Card key={i} className="rounded-2xl">
                         <CardHeader className="pb-2">
                             <Skeleton className="h-4 w-1/2" />
                         </CardHeader>
@@ -95,7 +95,7 @@ const KepalaSekolahDashboardSkeleton = () => (
                 ))}
             </div>
         </div>
-        <Card>
+        <Card className="rounded-2xl">
             <CardHeader>
                 <Skeleton className="h-6 w-1/2" />
                 <Skeleton className="h-4 w-3/4" />
@@ -300,7 +300,7 @@ export default function KepalaSekolahDashboardPage() {
       </div>
 
       {isHoliday && (
-        <Alert className="bg-blue-50 border-blue-200 rounded-2xl shadow-none">
+        <Alert className="bg-blue-50 border-blue-200 rounded-xl shadow-none">
           <CalendarOff className="h-4 w-4 text-blue-600" />
           <AlertTitle className="text-blue-800 font-bold">Hari Libur Terdeteksi</AlertTitle>
           <AlertDescription className="text-blue-700 text-xs font-bold">Sistem absensi sedang non-aktif hari ini.</AlertDescription>
@@ -316,7 +316,7 @@ export default function KepalaSekolahDashboardPage() {
           <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
             <LiveClock />
             <div className="grid grid-cols-2 gap-4 text-center w-full max-w-sm pt-4">
-              <div className="rounded-lg border bg-card p-4">
+              <div className="rounded-xl border bg-card p-4">
                   <div className="flex items-center justify-center gap-2 mb-1">
                       <LogIn className="w-4 h-4 text-muted-foreground" />
                       <p className="text-sm font-medium text-muted-foreground">Absen Masuk</p>
@@ -325,7 +325,7 @@ export default function KepalaSekolahDashboardPage() {
                   {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
                 </p>
               </div>
-              <div className="rounded-lg border bg-card p-4">
+              <div className="rounded-xl border bg-card p-4">
                   <div className="flex items-center justify-center gap-2 mb-1">
                       <LogOut className="w-4 h-4 text-muted-foreground" />
                       <p className="text-sm font-medium text-muted-foreground">Absen Pulang</p>
@@ -384,7 +384,7 @@ export default function KepalaSekolahDashboardPage() {
         </div>
       </div>
 
-      <Card className="shadow-none border-muted-foreground/10 overflow-hidden rounded-xl bg-primary/5">
+      <Card className="shadow-none border-muted-foreground/10 overflow-hidden rounded-2xl bg-primary/5">
         <CardHeader className="bg-muted/20 border-b border-muted-foreground/5">
             <CardTitle className="text-lg font-bold">Riwayat Kehadiran Staf Terbaru</CardTitle>
             <CardDescription>Aktivitas kehadiran guru & pegawai yang tercatat hari ini.</CardDescription>
@@ -431,3 +431,4 @@ export default function KepalaSekolahDashboardPage() {
     </div>
   );
 }
+
