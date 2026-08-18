@@ -325,11 +325,11 @@ export default function DashboardPage() {
                 </Card>
 
                 <Card className="w-full border-none shadow-[0_0_50px_-12px_rgba(0,0,0,0.12)] rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px]" />
-                    <div className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-0 opacity-80">
-                        <svg viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-                            <path d="M0 150V100C100 50 300 150 400 100V150H0Z" fill="#eff6ff" opacity="0.4"/>
-                            <path d="M0 150V120C150 80 250 180 400 130V150H0Z" fill="#dbeafe" opacity="0.6"/>
+                    {/* Background decoration precisely as requested */}
+                    <div className="absolute bottom-0 left-0 w-full h-1/2 pointer-events-none z-0">
+                        <svg viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full opacity-60">
+                            <path d="M0 150V100C100 50 300 150 400 100V150H0Z" fill="#eff6ff" />
+                            <path d="M0 150V120C150 80 250 180 400 130V150H0Z" fill="#dbeafe" opacity="0.4" />
                         </svg>
                     </div>
                     
@@ -337,7 +337,6 @@ export default function DashboardPage() {
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full">
-                            {/* KARTU MASUK */}
                             <div className="bg-green-50/60 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="absolute top-0 right-0 h-full w-2/3 pointer-events-none z-0 opacity-40">
                                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
@@ -355,7 +354,6 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            {/* KARTU PULANG */}
                             <div className="bg-blue-50/60 dark:bg-blue-950/10 rounded-2xl p-3 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="absolute top-0 right-0 h-full w-2/3 pointer-events-none z-0 opacity-40">
                                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
@@ -379,12 +377,15 @@ export default function DashboardPage() {
                                 {renderStatusAlert()}
                             </div>
                             
-                            <Link href="/dashboard/laporan" className="flex items-center gap-2 text-[10px] font-black text-primary hover:opacity-70 transition-all uppercase tracking-[0.1em]">
-                                <div className="bg-white p-1 rounded-md shadow-sm border border-primary/10">
-                                    <CalendarCheck className="h-3.5 w-3.5" />
+                            {/* Improved History Link to match image */}
+                            <Link href="/dashboard/laporan" className="flex items-center gap-3 py-2 px-1 hover:opacity-70 transition-all group">
+                                <div className="bg-white p-2 rounded-full shadow-md border border-slate-100 relative z-10">
+                                    <CalendarCheck className="h-4 w-4 text-blue-600" />
                                 </div>
-                                Lihat riwayat lengkap
-                                <ChevronRight className="h-3 w-3 ml-0.5" />
+                                <span className="text-[11px] font-black text-blue-600 uppercase tracking-wider">
+                                    Lihat riwayat lengkap
+                                </span>
+                                <ChevronRight className="h-3 w-3 text-blue-400 group-hover:translate-x-1 transition-transform" />
                             </Link>
                         </div>
                     </CardContent>
