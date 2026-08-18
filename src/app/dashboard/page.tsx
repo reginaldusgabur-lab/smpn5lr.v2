@@ -56,7 +56,7 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <h2 className="text-4xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
+            <h2 className="text-5xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
             <p className="text-[10px] font-bold text-slate-400 mt-2 tracking-normal opacity-70">
@@ -189,7 +189,7 @@ export default function DashboardPage() {
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
         window.scrollTo({
-            top: offsetPosition,
+            top: elementPosition - headerOffset,
             behavior: 'smooth'
         });
     }
@@ -230,18 +230,18 @@ export default function DashboardPage() {
 
     if (currentActiveLeave) {
         return (
-            <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-14 flex items-center justify-center gap-3">
+            <div className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl h-14 flex items-center justify-center gap-3">
                 <Sparkles className="h-4 w-4 text-blue-500" />
-                <span className="text-[11px] font-black text-blue-600 uppercase tracking-tight">{currentActiveLeave.type} Disetujui</span>
+                <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">{currentActiveLeave.type} Disetujui</span>
             </div>
         );
     }
 
     if (isCheckedOut) {
         return (
-            <div className="w-full bg-green-50 border border-green-100 rounded-xl h-14 flex items-center justify-center gap-3">
+            <div className="w-full bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/20 rounded-xl h-14 flex items-center justify-center gap-3">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-[11px] font-black text-green-600 uppercase tracking-tight">Absensi hari ini tuntas</span>
+                <span className="text-[11px] font-black text-green-600 dark:text-green-400 uppercase tracking-tight">Absensi hari ini tuntas</span>
             </div>
         );
     }
@@ -271,18 +271,18 @@ export default function DashboardPage() {
             );
         }
         return (
-            <div className="w-full bg-[#fef2f2] border border-red-100 rounded-2xl h-14 flex items-center justify-center gap-3 shadow-none">
-                <div className="bg-white rounded-full p-1.5 border border-red-200 shadow-sm">
+            <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-2xl h-14 flex items-center justify-center gap-3 shadow-none">
+                <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 border border-red-200 dark:border-red-900/30 shadow-sm">
                     <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                 </div>
-                <span className="text-[12px] font-bold text-red-600 tracking-tight">Batas jam masuk berakhir</span>
+                <span className="text-[12px] font-bold text-red-600 dark:text-red-400 tracking-tight">Batas jam masuk berakhir</span>
             </div>
         );
     } else {
         return (
-            <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-14 flex items-center justify-center gap-3">
+            <div className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl h-14 flex items-center justify-center gap-3">
                 <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                <span className="text-[11px] font-black text-blue-600 uppercase tracking-tight">Sudah absen masuk</span>
+                <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">Sudah absen masuk</span>
             </div>
         );
     }
@@ -306,85 +306,49 @@ export default function DashboardPage() {
 
         {!isAdmin && (
             <div className="w-full space-y-4">
-                <Card className="w-full border-none shadow-none rounded-2xl bg-gradient-to-r from-blue-600 to-blue-400 overflow-hidden relative">
-                    <CardContent className="p-6 flex items-center gap-5 text-white">
-                        <div className="bg-white/20 p-3 rounded-xl backdrop-blur-md">
-                            <CalendarDays className="h-7 w-7 text-white" />
-                        </div>
-                        <div className="flex flex-col gap-0.5 relative z-10">
-                            <h2 className="text-xl font-bold tracking-tight leading-tight">Kehadiran hari ini</h2>
-                            <p className="text-[10px] font-medium text-white/80">Kelola absensi dan pantau kehadiran Anda dengan mudah.</p>
-                        </div>
-                        <div className="absolute top-1/2 -right-4 -translate-y-1/2 opacity-10">
-                            <User className="h-24 w-24" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="w-full border-none shadow-[0_0_50px_-12px_rgba(0,0,0,0.12)] rounded-3xl bg-white dark:bg-slate-900 relative overflow-hidden">
-                    <CardContent className="p-4 sm:p-6 pb-0 flex flex-col items-center gap-4 relative z-10">
+                <Card className="w-full border-none shadow-[0_4px_20px_-12px_rgba(0,0,0,0.1)] rounded-3xl bg-white dark:bg-slate-900 relative overflow-hidden">
+                    <CardContent className="p-4 sm:p-6 pb-6 flex flex-col items-center gap-4 relative z-10">
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full px-2">
                             {/* Card Masuk */}
-                            <div className="bg-green-50/60 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
-                                <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-green-500/10 blur-2xl rounded-full opacity-50" />
-                                <div className="bg-[#2ecc71] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
-                                    <LogIn className="h-4 w-4" />
+                            <div className="bg-green-50 dark:bg-green-950/20 rounded-2xl p-4 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#2ecc71] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
+                                    <LogIn className="h-5 w-5" />
                                 </div>
-                                <div className="flex flex-col relative z-10">
-                                    <p className="text-[10px] font-black text-[#2ecc71] mb-0.5">Masuk</p>
-                                    <p className="text-lg font-black tabular-nums text-slate-800 dark:text-white">
+                                <div className="flex flex-col">
+                                    <p className="text-[11px] font-bold text-[#2ecc71] mb-0.5">Masuk</p>
+                                    <p className="text-xl font-black tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Card Pulang */}
-                            <div className="bg-blue-50/60 dark:bg-blue-950/10 rounded-2xl p-3 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
-                                <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-blue-500/10 blur-2xl rounded-full opacity-50" />
-                                <div className="bg-[#3498db] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
-                                    <LogOut className="h-4 w-4" />
+                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#3498db] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
+                                    <LogOut className="h-5 w-5" />
                                 </div>
-                                <div className="flex flex-col relative z-10">
-                                    <p className="text-[10px] font-black text-[#3498db] mb-0.5">Pulang</p>
-                                    <p className="text-lg font-black tabular-nums text-slate-800 dark:text-white">
+                                <div className="flex flex-col">
+                                    <p className="text-[11px] font-bold text-[#3498db] mb-0.5">Pulang</p>
+                                    <p className="text-xl font-black tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="w-full flex flex-col items-center gap-2 px-2">
+                        <div className="w-full flex flex-col items-center gap-2 px-2 mt-2">
                             {renderAttendanceButton()}
                         </div>
                     </CardContent>
 
-                    {/* Footer Area with Colored Glow */}
-                    <div className="relative mt-2 overflow-hidden bg-transparent w-full">
-                        {/* Colored Glow Layer */}
-                        <div className="absolute inset-x-0 bottom-0 h-full bg-gradient-to-t from-primary/10 via-primary/5 to-transparent pointer-events-none" />
-                        
-                        {/* Wave SVG with Color Gradation Mask */}
-                        <div className="absolute inset-x-0 bottom-0 z-0 h-20 pointer-events-none">
-                            <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
-                                <defs>
-                                    <linearGradient id="waveGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                                        <stop offset="0%" stopColor="currentColor" className="text-primary/20 dark:text-primary/10" stopOpacity="1" />
-                                        <stop offset="100%" stopColor="currentColor" className="text-primary/20 dark:text-primary/10" stopOpacity="0" />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" fill="url(#waveGradient)" />
-                            </svg>
-                        </div>
-                        
-                        <Link href="/dashboard/laporan" className="relative z-10 w-full flex items-center justify-center gap-3 py-4 hover:opacity-80 transition-opacity active:scale-[0.98]">
+                    <div className="w-full border-t border-muted-foreground/5 bg-primary/5 dark:bg-primary/5">
+                        <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-2 py-4 hover:opacity-80 transition-opacity active:scale-[0.98]">
                             <span className="text-[11px] font-black text-primary dark:text-blue-400 tracking-tight">
                                 Lihat riwayat lengkap
                             </span>
-                            <ChevronRight className="h-3 w-3 text-primary/50 dark:text-blue-400/50" />
+                            <ChevronRight className="h-3.5 w-3.5 text-primary/60" />
                         </Link>
                     </div>
                 </Card>
@@ -505,3 +469,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
