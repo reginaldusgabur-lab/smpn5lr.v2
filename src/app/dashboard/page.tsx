@@ -279,7 +279,7 @@ export default function DashboardPage() {
                 <div className="bg-white rounded-full p-1.5 border border-red-200 shadow-sm">
                     <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                 </div>
-                <span className="text-[12px] font-black text-red-600 uppercase tracking-widest">BATAS JAM MASUK BERAKHIR</span>
+                <span className="text-[12px] font-bold text-red-600 tracking-tight">Batas jam masuk berakhir</span>
             </div>
         );
     } else {
