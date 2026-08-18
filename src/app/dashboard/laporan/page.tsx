@@ -156,16 +156,14 @@ export default function LaporanPage() {
     <div className="flex-1 pt-2 pb-24 px-4 md:p-8">
         <div className="max-w-7xl mx-auto">
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
-              {/* Header Card - Biru Gradasi Persis Gambar */}
+              {/* Header Card - Biru Gradasi */}
               <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                {/* Ikon Laporan Dekoratif (Samar di sebelah kanan) */}
                 <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                     <FileText className="w-24 h-24 text-white" />
                 </div>
 
                 <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-4">
-                        {/* Ikon Kalender dalam kotak transparan */}
                         <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
                             <Calendar className="h-6 w-6" />
                         </div>
@@ -174,17 +172,16 @@ export default function LaporanPage() {
                             <p className="text-[11px] font-medium text-white/80 leading-relaxed">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</p>
                         </div>
                     </div>
-                    {/* Ikon Refresh di sebelah kanan */}
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={handleRefresh} disabled={isLoading}>
                         <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     </Button>
                 </div>
               </div>
 
-              {/* Area Gabungan Navigasi & Header Tabel - Menggunakan Biru Solid yang sama agar menyatu */}
+              {/* Area Gabungan Navigasi & Header Tabel - SATU KESATUAN BIRU */}
               <div className="p-0 bg-blue-600">
-                {/* Month Selection Area - Background Biru Tanpa Border Bawah */}
-                <div className="p-4 flex items-center justify-center">
+                {/* Month Selection Area (Pill Design) */}
+                <div className="p-4 flex items-center justify-center bg-blue-600">
                     <div className="flex items-center justify-between w-full max-w-full bg-white/10 rounded-2xl border border-white/10 p-1">
                         <div className="flex items-center">
                             <Button 
@@ -198,9 +195,9 @@ export default function LaporanPage() {
                             </Button>
                             
                             <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
-                                <CalendarDays className="h-4 w-4 text-white" />
+                                <CalendarDays className="h-4 w-4 text-white/70" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-bold uppercase text-white/50 tracking-[0.1em] leading-none">Thn ajaran</span>
+                                    <span className="text-[7px] font-black uppercase text-white/50 tracking-[0.1em] leading-none">Thn ajaran</span>
                                     <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                 </div>
                             </div>
@@ -223,17 +220,17 @@ export default function LaporanPage() {
                     </div>
                 </div>
 
-                {/* Table Area - Judul Kolom Biru Identik dan menyatu */}
+                {/* Table Header Area - Menyatu dengan blok biru */}
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-blue-600">
-                            <TableRow className="border-none">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">No</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Tanggal</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Status</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
+                            <TableRow className="border-none h-11">
+                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">No</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Tanggal</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Status</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody className="bg-background">

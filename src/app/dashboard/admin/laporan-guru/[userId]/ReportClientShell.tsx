@@ -231,9 +231,8 @@ export default function ReportClientShell({
 
             {/* --- Details Table --- */}
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
-                {/* Header Card - Biru Gradasi Persis Gambar */}
+                {/* Header Card - Biru Gradasi */}
                 <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                    {/* Ikon Laporan Dekoratif (Samar di sebelah kanan) */}
                     <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                         <FileText className="w-24 h-24 text-white" />
                     </div>
@@ -289,13 +288,13 @@ export default function ReportClientShell({
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader className="bg-blue-600">
-                                <TableRow className="border-none">
-                                    <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">No</TableHead>
-                                    <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Tanggal</TableHead>
-                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Masuk</TableHead>
-                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Pulang</TableHead>
-                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Status</TableHead>
-                                    <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
+                                <TableRow className="border-none h-11">
+                                    <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">No</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Tanggal</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Masuk</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Pulang</TableHead>
+                                    <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Status</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Keterangan</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody className="bg-background">
