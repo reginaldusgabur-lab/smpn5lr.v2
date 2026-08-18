@@ -291,7 +291,7 @@ export default function AdminDashboardPage() {
                         </TableHeader>
                         <TableBody>
                             {recentUserActivity.length > 0 ? recentUserActivity.map((item) => (
-                                <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5">
+                                <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
                                     <TableCell className="text-center font-bold text-muted-foreground">{item.sequence}</TableCell>
                                     <TableCell>
                                         <div className="font-bold text-sm">{item.name}</div>
