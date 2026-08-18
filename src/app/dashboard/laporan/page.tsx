@@ -44,7 +44,6 @@ export default function LaporanPage() {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthlyReportData, setMonthlyReportData] = useState<ReportItem[]>([]);
-  const [stats, setStats] = useState<any>(null);
   const [isReportLoading, setIsReportLoading] = useState(true);
   const [academicYear, setAcademicYear] = useState("");
 
@@ -158,7 +157,6 @@ export default function LaporanPage() {
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
               {/* Header Card - Biru Gradasi */}
               <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                {/* Dekorasi Background */}
                 <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                     <FileText className="w-24 h-24 text-white" />
                 </div>
@@ -179,47 +177,59 @@ export default function LaporanPage() {
                 </div>
               </div>
 
-              {/* Body Card */}
+              {/* Body Card Area */}
               <div className="p-0 bg-background">
-                {/* Month Selection Area */}
-                <div className="p-4 flex items-center justify-center bg-slate-50 dark:bg-slate-900/50">
-                    <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
+                {/* Month Selection Area - Presisi Lurus */}
+                <div className="p-4 flex items-center justify-center bg-slate-50/80 dark:bg-slate-900/50">
+                    <div className="flex items-center justify-between w-full max-w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                         <div className="flex items-center">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shadow-none" onClick={handlePrevMonth} disabled={isLoading || !canGoPrev}>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-10 w-10 rounded-xl shadow-none" 
+                                onClick={handlePrevMonth} 
+                                disabled={isLoading || !canGoPrev}
+                            >
                                 <ChevronLeft className="h-5 w-5 text-primary" />
                             </Button>
                             
-                            <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
+                            <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1.5 min-w-max">
                                 <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-bold uppercase text-muted-foreground/50 leading-none">Thn ajaran</span>
+                                    <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-[0.1em] leading-none">Thn ajaran</span>
                                     <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "-"}</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-base text-primary capitalize px-2">
+                            <span className="font-bold text-base text-primary tracking-tight capitalize px-2 min-w-[120px] text-center">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shadow-none" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-10 w-10 rounded-xl shadow-none" 
+                                onClick={handleNextMonth} 
+                                disabled={isSameMonth(currentMonth, new Date())}
+                            >
                                 <ChevronRight className="h-5 w-5 text-primary" />
                             </Button>
                         </div>
                     </div>
                 </div>
 
-                {/* Table Area */}
+                {/* Table Area - Presisi Lurus */}
                 <div className="border-t border-muted-foreground/5 overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-muted/30">
                             <TableRow className="border-none">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Tanggal</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Status</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Keterangan</TableHead>
+                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">No</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Tanggal</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Status</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -243,7 +253,7 @@ export default function LaporanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-xs tracking-widest">Tidak ada data.</TableCell>
+                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data untuk periode ini.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

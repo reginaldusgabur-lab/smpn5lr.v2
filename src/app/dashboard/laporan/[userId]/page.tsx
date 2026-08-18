@@ -248,24 +248,6 @@ export default function UserReportDetailPage() {
         finally { setIsMutating(false); }
     };
 
-    const getStatusColorClass = (status: string, desc: string, hasOut: boolean) => {
-        const s = status.toLowerCase();
-        const d = (desc || '').toLowerCase();
-
-        if (s === 'alpa') return "bg-red-500 text-white";
-        if (s === 'sakit') return "bg-orange-500 text-white";
-        if (s.includes('izin') || s.includes('dinas') || s.includes('kegiatan')) return "bg-amber-500 text-white";
-        
-        if (s === 'hadir' || s === 'terlambat') {
-            if (!hasOut && !d.includes('tugas') && !d.includes('pulang cepat')) {
-                return "bg-blue-600 text-white"; // Sedang di sekolah
-            }
-            return "bg-emerald-500 text-white"; // Sudah pulang/tuntas
-        }
-        
-        return "bg-primary text-white";
-    };
-
     const handleDownloadPdf = () => {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
@@ -412,14 +394,17 @@ export default function UserReportDetailPage() {
                                     {userData && <p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat riwayat kehadiran untuk {userData.name}.</p>}
                                 </div>
                             </div>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={fetchData} disabled={isLoading || isMutating}>
+                                <RefreshCw className={cn("h-4 w-4", (isLoading || isMutating) && "animate-spin")} />
+                            </Button>
                         </div>
                     </div>
 
                     <div className="p-0 bg-background">
-                        {/* Area Pemilihan Bulan & Aksi */}
-                        <div className="p-4 space-y-6 bg-slate-50 dark:bg-slate-900/50">
+                        {/* Area Pemilihan Bulan & Aksi - Presisi Lurus */}
+                        <div className="p-4 space-y-6 bg-slate-50/80 dark:bg-slate-900/50">
                             <div className="flex flex-col items-center justify-center">
-                                <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
+                                <div className="flex items-center justify-between w-full max-w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <div className="flex items-center">
                                         <Button 
                                             variant="ghost" 
@@ -430,10 +415,10 @@ export default function UserReportDetailPage() {
                                         >
                                             <ChevronLeft className="h-5 w-5 text-primary" />
                                         </Button>
-                                        <div className="flex items-center gap-1.5 pl-0.5 pr-2 min-w-max border-r border-muted-foreground/10 mr-1.5">
+                                        <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1.5 min-w-max">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
-                                                <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-widest leading-none">Thn ajaran</span>
+                                                <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-[0.1em] leading-none">Thn ajaran</span>
                                                 <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                             </div>
                                         </div>
@@ -463,7 +448,7 @@ export default function UserReportDetailPage() {
                             </div>
                         </div>
 
-                        {/* Area Tabel */}
+                        {/* Area Tabel - Presisi Lurus */}
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
@@ -543,14 +528,14 @@ export default function UserReportDetailPage() {
                                                 </TableRow>
                                             );
                                         })
-                                    ) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-xs tracking-widest">Tidak ada data untuk periode ini.</TableCell></TableRow>}
+                                    ) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Tidak ada data untuk periode ini.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>
 
-                        {/* Statistik Footer */}
+                        {/* Statistik Footer - Presisi Lurus */}
                         {!isLoading && stats && (
-                            <div className="p-6 border-t border-muted-foreground/5 bg-slate-50 dark:bg-slate-900/30">
+                            <div className="p-6 border-t border-muted-foreground/5 bg-slate-50/50 dark:bg-slate-900/30">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-primary/10 rounded-xl">
