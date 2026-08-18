@@ -199,6 +199,10 @@ export default function DashboardPage() {
     const record = todaysAttendance?.[0];
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
+    const isManualFinished = record?.manualEntry && (record?.reasonForUpdate === 'Pulang cepat' || record?.reasonForUpdate === 'Dinas siang' || record?.reasonForUpdate === 'Kehadiran penuh');
+
+    // Gaya dasar untuk tombol/status yang tidak aktif (abu-abu halus)
+    const disabledStyle = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none";
 
     if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) {
         return (
@@ -209,46 +213,49 @@ export default function DashboardPage() {
         );
     }
 
+    if (currentActiveLeave) {
+        return (
+            <div className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none">
+                <Sparkles className="h-4 w-4 text-blue-500" /> 
+                <span className="text-[12px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">{currentActiveLeave.type} Disetujui</span>
+            </div>
+        );
+    }
+
+    // LOGIKA PERBAIKAN: Jika sudah absen pulang atau sesi keseluruhan hari ini berakhir
+    if (isCheckedOut || isManualFinished || windowStatus === 'CLOSED') {
+        return (
+            <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none">
+                <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 border border-red-200 dark:border-red-900/30 shadow-sm">
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                </div>
+                <span className="text-[12px] font-bold text-red-600 dark:text-red-400 tracking-tight">Waktu absensi hari ini berakhir</span>
+            </div>
+        );
+    }
+
     if (stats.isManualDisabled || windowStatus === 'DISABLED') {
          return (
-            <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl h-14 flex items-center justify-center gap-3">
+            <div className={disabledStyle}>
                 <Lock className="h-4 w-4 text-slate-500" />
                 <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">Sistem dinonaktifkan</span>
             </div>
         );
     }
 
-    if (stats.isHoliday || windowStatus === 'SESSION_INACTIVE') {
-         const label = stats.isCalendarHoliday ? 'Hari libur (Kalender)' : 'Hari libur rutin';
-         return (
-            <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl h-14 flex items-center justify-center gap-3">
+    if (!isCheckedIn && (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday)) {
+        const label = stats.isCalendarHoliday ? 'Hari libur (Kalender)' : 'Hari libur rutin';
+        return (
+            <div className={disabledStyle}>
                 <CalendarOff className="h-4 w-4 text-slate-500" />
                 <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">{label}</span>
             </div>
         );
     }
 
-    if (currentActiveLeave) {
-        return (
-            <div className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl h-14 flex items-center justify-center gap-3">
-                <Sparkles className="h-4 w-4 text-blue-500" />
-                <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">{currentActiveLeave.type} Disetujui</span>
-            </div>
-        );
-    }
-
-    if (isCheckedOut) {
-        return (
-            <div className="w-full bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/20 rounded-xl h-14 flex items-center justify-center gap-3">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-[11px] font-black text-green-600 dark:text-green-400 uppercase tracking-tight">Absensi hari ini tuntas</span>
-            </div>
-        );
-    }
-
     if (windowStatus === 'CHECK_OUT_OPEN') {
         return (
-            <Button asChild className="w-full h-14 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
+            <Button asChild size="lg" className="w-full h-14 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
                 <Link href="/dashboard/absen">Absen pulang sekarang</Link>
             </Button>
         );
@@ -257,7 +264,7 @@ export default function DashboardPage() {
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') {
             return (
-                <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl h-14 flex items-center justify-center gap-3">
+                <div className={disabledStyle}>
                     <Clock className="h-4 w-4 text-slate-500" />
                     <span className="text-[11px] font-black text-slate-500 uppercase tracking-tight">Belum jam masuk</span>
                 </div>
@@ -265,11 +272,13 @@ export default function DashboardPage() {
         }
         if (windowStatus === 'CHECK_IN_OPEN') {
             return (
-                <Button asChild className="w-full h-14 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
+                <Button asChild size="lg" className="w-full h-14 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
                     <Link href="/dashboard/absen">Absen masuk sekarang</Link>
                 </Button>
             );
         }
+        
+        // Sesi masuk berakhir (AFTER_IN)
         return (
             <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none">
                 <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 border border-red-200 dark:border-red-900/30 shadow-sm">
@@ -279,16 +288,15 @@ export default function DashboardPage() {
             </div>
         );
     } else {
+        // Sudah absen masuk, menunggu jadwal pulang
         return (
-            <div className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl h-14 flex items-center justify-center gap-3">
-                <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">Sudah absen masuk</span>
+            <div className={disabledStyle}>
+                <Clock className="h-4 w-4 text-slate-500" />
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-tight">Belum waktu jam pulang</span>
             </div>
         );
     }
   };
-
-  if (isUserLoading || !isClient) return <div className="w-full space-y-6 animate-pulse p-4"><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-48" /></div><div className="pt-10 space-y-4"><Skeleton className="h-64 w-full rounded-xl" /><Skeleton className="h-40 w-full rounded-xl" /></div></div>;
 
   const isAdmin = user?.role === 'admin';
   const isKepsek = user?.role === 'kepala_sekolah';
@@ -487,4 +495,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
