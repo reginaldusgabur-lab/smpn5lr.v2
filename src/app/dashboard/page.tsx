@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -327,10 +326,16 @@ export default function DashboardPage() {
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full px-2">
-                            <div className="bg-green-50/60 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
+                            <div className="bg-green-50/60 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="absolute inset-0 z-0">
                                     <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
-                                        <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="fill-[#2ecc71] dark:fill-[#2ecc71]/40" opacity="0.1" />
+                                        <defs>
+                                            <linearGradient id="grad-green" x1="0%" y1="100%" x2="0%" y2="0%">
+                                                <stop offset="0%" stopColor="#2ecc71" stopOpacity="0.15" />
+                                                <stop offset="100%" stopColor="#2ecc71" stopOpacity="0" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" fill="url(#grad-green)" />
                                     </svg>
                                 </div>
                                 <div className="bg-[#2ecc71] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
@@ -344,10 +349,16 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-blue-50/60 dark:bg-blue-950/10 rounded-2xl p-3 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
+                            <div className="bg-blue-50/60 dark:bg-blue-950/10 rounded-2xl p-3 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="absolute inset-0 z-0">
                                     <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
-                                        <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="fill-[#3498db] dark:fill-[#3498db]/40" opacity="0.1" />
+                                        <defs>
+                                            <linearGradient id="grad-blue" x1="0%" y1="100%" x2="0%" y2="0%">
+                                                <stop offset="0%" stopColor="#3498db" stopOpacity="0.15" />
+                                                <stop offset="100%" stopColor="#3498db" stopOpacity="0" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" fill="url(#grad-blue)" />
                                     </svg>
                                 </div>
                                 <div className="bg-[#3498db] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
@@ -367,15 +378,20 @@ export default function DashboardPage() {
                         </div>
                     </CardContent>
 
-                    <div className="relative mt-0 overflow-hidden bg-transparent">
+                    <div className="relative mt-2 overflow-hidden bg-transparent">
                         <div className="absolute inset-0 z-0">
                             <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
-                                <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="fill-slate-50 dark:fill-slate-900/60" />
-                                <path d="M0 120 V70 C 150 40 250 110 400 60 V120 H0 Z" className="fill-slate-100 dark:fill-slate-800/40" opacity="0.4" />
+                                <defs>
+                                    <linearGradient id="grad-footer" x1="0%" y1="100%" x2="0%" y2="0%">
+                                        <stop offset="0%" stopColor="currentColor" stopOpacity="1" />
+                                        <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="text-slate-50 dark:text-slate-900" fill="url(#grad-footer)" />
                             </svg>
                         </div>
                         
-                        <Link href="/dashboard/laporan" className="relative z-10 w-full flex items-center justify-center gap-3 py-3 hover:opacity-80 transition-opacity active:scale-[0.98]">
+                        <Link href="/dashboard/laporan" className="relative z-10 w-full flex items-center justify-center gap-3 py-4 hover:opacity-80 transition-opacity active:scale-[0.98]">
                             <div className="bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 shrink-0">
                                 <CalendarCheck className="h-4 w-4 text-blue-500" />
                             </div>
