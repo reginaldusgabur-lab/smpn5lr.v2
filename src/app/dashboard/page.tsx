@@ -305,29 +305,29 @@ export default function DashboardPage() {
         </div>
 
         {!isAdmin && (
-            <div className="w-full space-y-4">
-                <Card className="w-full border-none shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] rounded-[2.5rem] bg-white dark:bg-slate-900 relative overflow-hidden">
-                    {/* Banner Header RESTORED */}
-                    <div className="w-full bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
-                        {/* Background Decoration */}
-                        <div className="absolute right-[-5%] bottom-[-20%] opacity-10 rotate-12">
-                            <User className="w-32 h-32 text-white" />
-                        </div>
-                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 backdrop-blur-sm border border-white/10">
-                            <CalendarDays className="h-6 w-6" />
-                        </div>
-                        <div className="flex flex-col relative z-10">
-                            <h2 className="text-xl font-bold text-white leading-none tracking-tight">Kehadiran hari ini</h2>
-                            <p className="text-[11px] font-medium text-white/80 mt-1.5 leading-relaxed">Kelola absensi dan pantau kehadiran Anda dengan mudah.</p>
-                        </div>
+            <div className="w-full space-y-6">
+                {/* Header Card Separate */}
+                <Card className="w-full border-none shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] rounded-[2rem] bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
+                    <div className="absolute right-[-5%] bottom-[-20%] opacity-10 rotate-12">
+                        <User className="w-32 h-32 text-white" />
                     </div>
+                    <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 backdrop-blur-sm border border-white/10">
+                        <CalendarDays className="h-6 w-6" />
+                    </div>
+                    <div className="flex flex-col relative z-10">
+                        <h2 className="text-xl font-bold text-white leading-none tracking-tight">Kehadiran hari ini</h2>
+                        <p className="text-[11px] font-medium text-white/80 mt-1.5 leading-relaxed">Kelola absensi dan pantau kehadiran Anda dengan mudah.</p>
+                    </div>
+                </Card>
 
-                    <CardContent className="p-6 sm:p-8 pb-4 flex flex-col items-center gap-6 relative z-10 pt-10">
+                {/* Main Body Card */}
+                <Card className="w-full border-none shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] rounded-[2.5rem] bg-white dark:bg-slate-900 relative overflow-hidden">
+                    <CardContent className="p-8 flex flex-col items-center gap-8 relative z-10 pt-10">
                         <LiveClockUI />
 
-                        <div className="grid grid-cols-2 gap-4 w-full px-1">
+                        <div className="grid grid-cols-2 gap-4 w-full">
                             {/* Card Masuk */}
-                            <div className="bg-green-50 dark:bg-green-950/20 rounded-3xl p-5 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-green-50/50 dark:bg-green-950/20 rounded-[1.8rem] p-5 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#2ecc71] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
                                     <LogIn className="h-5 w-5" />
                                 </div>
@@ -340,7 +340,7 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Card Pulang */}
-                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-3xl p-5 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-[1.8rem] p-5 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#3498db] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
                                     <LogOut className="h-5 w-5" />
                                 </div>
@@ -353,14 +353,17 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="w-full flex flex-col items-center gap-2 px-1 mt-2">
+                        <div className="w-full flex flex-col items-center gap-2 px-1">
                             {renderAttendanceButton()}
                         </div>
                     </CardContent>
 
                     <div className="w-full border-t border-muted-foreground/5 bg-slate-50/50 dark:bg-slate-800/20">
-                        <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-2 py-4 hover:opacity-80 transition-opacity active:scale-[0.98]">
-                            <span className="text-[11px] font-black text-primary dark:text-blue-400 tracking-tight">
+                        <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-3 py-5 hover:opacity-80 transition-opacity active:scale-[0.98]">
+                            <div className="bg-white dark:bg-slate-800 p-1.5 rounded-lg border border-muted-foreground/10 shadow-sm">
+                                <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                            </div>
+                            <span className="text-[11px] font-black text-primary dark:text-blue-400 tracking-tight uppercase">
                                 Lihat riwayat lengkap
                             </span>
                             <ChevronRight className="h-3.5 w-3.5 text-primary/60" />
