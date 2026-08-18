@@ -347,7 +347,7 @@ export default function DashboardPage() {
                                     <LogIn className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col relative z-10">
-                                    <p className="text-[10px] font-black text-[#2ecc71] uppercase tracking-wider mb-0.5">Masuk</p>
+                                    <p className="text-[10px] font-black text-[#2ecc71] mb-0.5">Masuk</p>
                                     <p className="text-lg font-black tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
@@ -364,7 +364,7 @@ export default function DashboardPage() {
                                     <LogOut className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col relative z-10">
-                                    <p className="text-[10px] font-black text-[#3498db] uppercase tracking-wider mb-0.5">Pulang</p>
+                                    <p className="text-[10px] font-black text-[#3498db] mb-0.5">Pulang</p>
                                     <p className="text-lg font-black tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
@@ -507,3 +507,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
