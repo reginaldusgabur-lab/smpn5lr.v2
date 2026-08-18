@@ -376,7 +376,7 @@ export default function DashboardPage() {
                                 {renderStatusAlert()}
                             </div>
                             
-                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-between px-2 py-2 hover:opacity-80 transition-opacity group relative">
+                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-between px-10 py-2 hover:opacity-80 transition-opacity group relative">
                                 <div className="flex items-center gap-4 relative z-10">
                                     <div className="bg-white p-2.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-slate-50 shrink-0">
                                         <CalendarCheck className="h-4 w-4 text-blue-500" />
