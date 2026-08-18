@@ -56,9 +56,6 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-full mb-3 ring-4 ring-blue-50/30">
-                <Clock className="h-3 w-3 text-primary" />
-            </div>
             <h2 className="text-3xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
@@ -192,13 +189,13 @@ export default function DashboardPage() {
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
         window.scrollTo({
-            top: offsetPosition,
+            top: elementPosition + window.pageYOffset - headerOffset,
             behavior: 'smooth'
         });
     }
   };
 
-  const renderStatusAlert = () => {
+  const renderAttendanceButton = () => {
     const record = todaysAttendance?.[0];
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
@@ -332,18 +329,18 @@ export default function DashboardPage() {
                         </svg>
                     </div>
                     
-                    <CardContent className="p-10 flex flex-col items-center gap-8 relative z-10">
+                    <CardContent className="p-6 flex flex-col items-center gap-6 relative z-10">
                         <LiveClockUI />
 
-                        <div className="grid grid-cols-2 gap-4 w-full">
+                        <div className="grid grid-cols-2 gap-4 w-full px-2">
                             <div className="bg-green-50/60 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="absolute top-0 right-0 h-full w-2/3 pointer-events-none z-0 opacity-40">
                                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
                                         <path d="M100 0 L100 100 C 50 100, 50 0, 100 0 Z" fill="#2ecc71" opacity="0.1" />
                                     </svg>
                                 </div>
-                                <div className="bg-[#2ecc71] p-3 rounded-[1.25rem] text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
-                                    <LogIn className="h-5 w-5" />
+                                <div className="bg-[#2ecc71] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
+                                    <LogIn className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col relative z-10">
                                     <p className="text-[10px] font-black text-[#2ecc71] mb-0.5">Masuk</p>
@@ -359,8 +356,8 @@ export default function DashboardPage() {
                                         <path d="M100 0 L100 100 C 50 100, 50 0, 100 0 Z" fill="#3498db" opacity="0.1" />
                                     </svg>
                                 </div>
-                                <div className="bg-[#3498db] p-3 rounded-[1.25rem] text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
-                                    <LogOut className="h-5 w-5" />
+                                <div className="bg-[#3498db] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
+                                    <LogOut className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col relative z-10">
                                     <p className="text-[10px] font-black text-[#3498db] mb-0.5">Pulang</p>
@@ -371,16 +368,16 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="w-full flex flex-col items-center gap-8">
+                        <div className="w-full flex flex-col items-center gap-4 px-2">
                             <div className="w-full">
                                 {renderStatusAlert()}
                             </div>
                             
-                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-5 py-8 hover:opacity-80 transition-opacity group relative">
-                                <div className="bg-white p-2.5 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-50 shrink-0 relative z-10">
-                                    <CalendarCheck className="h-5 w-5 text-blue-500" />
+                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-4 py-5 hover:opacity-80 transition-opacity group relative">
+                                <div className="bg-white p-2 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-slate-50 shrink-0 relative z-10">
+                                    <CalendarCheck className="h-4 w-4 text-blue-500" />
                                 </div>
-                                <span className="text-[12px] font-bold text-blue-600 tracking-tight relative z-10">
+                                <span className="text-[11px] font-bold text-blue-600 tracking-tight relative z-10 uppercase">
                                     Lihat riwayat lengkap
                                 </span>
                                 <ChevronRight className="h-3 w-3 text-slate-200 group-hover:translate-x-1 transition-transform relative z-10" />
@@ -439,7 +436,7 @@ export default function DashboardPage() {
                     >
                         <div className="flex items-center justify-between mb-3">
                             <span className="text-[10px] font-normal opacity-80">Alpa</span>
-                            <User className="h-3 w-3 opacity-60" />
+                            <UserX className="h-3 w-3 opacity-60" />
                         </div>
                         <div className="text-3xl font-normal tracking-tight">
                             {isStatsLoading ? '...' : stats.alpa}
