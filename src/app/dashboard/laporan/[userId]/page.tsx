@@ -272,9 +272,75 @@ export default function UserReportDetailPage() {
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
+    const handleDownloadPdf = async () => {
+        if (!userData || monthlyReportData.length === 0) return;
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const centerX = pageWidth / 2;
+        const margin = 14;
+        const config = schoolConfigData || ({} as any);
+
+        doc.setFont('times', 'bold').setFontSize(14);
+        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+        doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
+        doc.setFont('times', 'normal').setFontSize(9);
+        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+        
+        doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
+        doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
+
+        doc.setFont('times', 'bold').setFontSize(12);
+        doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
+        doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
+        doc.setFontSize(10).setFont('times', 'normal');
+        doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+
+        let currentY = 70;
+
+        doc.setFontSize(11).setFont('times', 'normal');
+        doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
+        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 6;
+        const posLabel = (userData.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
+        const displayRole = (userData.role || 'user').replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        doc.text(`Jabatan/Status : ${displayRole} / ${posLabel}`, margin, currentY);
+        currentY += 10;
+
+        const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
+        const tableRows = monthlyReportData.map((item, index) => [
+            index + 1,
+            safeFormat(item.date, 'eeee, dd MMMM yyyy'),
+            (item.status === 'Terlambat' || item.description === 'Terlambat' && !item.checkInTime) ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
+            safeFormat(item.checkOutTime, 'HH:mm:ss'),
+            (item.status === 'Terlambat' || item.description === 'Terlambat') ? 'Hadir' : item.status,
+            item.description || '-'
+        ]);
+
+        autoTable(doc, {
+            startY: currentY,
+            head: tableHead,
+            body: tableRows,
+            theme: 'striped',
+            margin: { bottom: 35 },
+            styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
+        });
+
+        const finalY = (doc as any).lastAutoTable.finalY + 15;
+        const signatureX = pageWidth - 85;
+        doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, finalY);
+        doc.text('Kepala Sekolah', signatureX, finalY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, finalY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, finalY + 44);
+
+        doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
+    };
+
     return (
         <div className="flex-1 pt-2 pb-24 px-4 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-4">
+            <div className="max-w-4xl mx-auto space-y-4">
                 <div className="px-4 md:px-0">
                     <div className="flex items-center gap-2 mb-0.5">
                         <button onClick={() => router.back()} className="h-8 w-8 -ml-2 rounded-full hover:bg-muted flex items-center justify-center transition-colors"><ArrowLeft className="h-5 w-5" /></button>
@@ -288,14 +354,12 @@ export default function UserReportDetailPage() {
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
                     {/* Header Card - Biru Gradasi Persis Gambar */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                        {/* Ikon Laporan Dekoratif (Samar di sebelah kanan) */}
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                             <FileText className="w-24 h-24 text-white" />
                         </div>
                         
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
-                                {/* Ikon Kalender dalam kotak transparan */}
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
                                     <Calendar className="h-6 w-6" />
                                 </div>
@@ -311,10 +375,9 @@ export default function UserReportDetailPage() {
                     </div>
 
                     <div className="p-0 bg-blue-600">
-                        {/* Area Pemilihan Bulan & Aksi - Diatur agar warna biru menyatu */}
                         <div className="p-4 space-y-6 bg-blue-600">
                             <div className="flex flex-col items-center justify-center">
-                                <div className="flex items-center justify-between w-full max-w-full bg-white/10 rounded-2xl border border-white/10 p-1">
+                                <div className="flex items-center justify-between w-full bg-white/10 rounded-2xl border border-white/10 p-1">
                                     <div className="flex items-center">
                                         <Button 
                                             variant="ghost" 
@@ -351,18 +414,17 @@ export default function UserReportDetailPage() {
                                 </div>
                             </div>
 
-                            <div className="flex justify-end max-w-2xl mx-auto">
+                            <div className="flex justify-end">
                                 <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-white text-blue-600 hover:bg-white/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
                                     {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
                                 </Button>
                             </div>
                         </div>
 
-                        {/* Area Tabel - Judul Kolom Biru Identik */}
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-blue-600">
-                                    <TableRow className="border-none">
+                                    <TableRow className="border-none h-11">
                                         <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">No</TableHead>
                                         <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Masuk</TableHead>
@@ -469,3 +531,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+
