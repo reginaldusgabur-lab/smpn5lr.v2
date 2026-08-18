@@ -395,7 +395,7 @@ export default function UserReportDetailPage() {
                 </div>
 
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
-                    {/* Header Card - Biru Gradasi */}
+                    {/* Header Card - Biru Gradasi Persis Gambar */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                             <FileText className="w-24 h-24 text-white" />
@@ -403,7 +403,8 @@ export default function UserReportDetailPage() {
                         
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
-                                <div className="bg-white/20 p-2.5 rounded-xl text-white shrink-0 backdrop-blur-sm border border-white/10">
+                                {/* Ikon Kalender dalam kotak transparan */}
+                                <div className="bg-white/20 p-3 rounded-xl text-white shrink-0 backdrop-blur-sm border border-white/10 shadow-sm">
                                     <Calendar className="h-6 w-6" />
                                 </div>
                                 <div className="space-y-0.5">

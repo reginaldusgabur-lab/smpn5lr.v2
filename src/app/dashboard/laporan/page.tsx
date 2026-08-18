@@ -156,15 +156,12 @@ export default function LaporanPage() {
     <div className="flex-1 pt-2 pb-24 px-4 md:p-8">
         <div className="max-w-7xl mx-auto">
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
-              {/* Header Card - Biru Gradasi */}
+              {/* Header Card - Biru Gradasi Persis Gambar */}
               <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
-                    <FileText className="w-24 h-24 text-white" />
-                </div>
-                
                 <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-2.5 rounded-xl text-white shrink-0 backdrop-blur-sm border border-white/10">
+                        {/* Ikon Kalender dalam kotak transparan */}
+                        <div className="bg-white/10 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm">
                             <Calendar className="h-6 w-6" />
                         </div>
                         <div className="space-y-0.5">
@@ -172,6 +169,7 @@ export default function LaporanPage() {
                             <p className="text-[11px] font-medium text-white/80 leading-relaxed">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</p>
                         </div>
                     </div>
+                    {/* Ikon Refresh di sebelah kanan */}
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={handleRefresh} disabled={isLoading}>
                         <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     </Button>
@@ -180,7 +178,7 @@ export default function LaporanPage() {
 
               {/* Body Card Area */}
               <div className="p-0 bg-background">
-                {/* Month Selection Area - Presisi Lurus */}
+                {/* Month Selection Area */}
                 <div className="p-4 flex items-center justify-center bg-slate-50/80 dark:bg-slate-900/50">
                     <div className="flex items-center justify-between w-full max-w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                         <div className="flex items-center">
@@ -220,7 +218,7 @@ export default function LaporanPage() {
                     </div>
                 </div>
 
-                {/* Table Area - Presisi Lurus dengan Header Abu Kebiruan */}
+                {/* Table Area dengan Header Abu Kebiruan Kapital */}
                 <div className="border-t border-muted-foreground/5 overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-slate-100/60 dark:bg-slate-800/40">
