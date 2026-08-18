@@ -6,7 +6,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, ChevronRight, CalendarDays } from 'lucide-react';
+import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -57,13 +57,13 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-full mb-4 shadow-inner">
-                <Clock className="h-3.5 w-3.5 text-primary" />
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-full mb-6 ring-4 ring-blue-50/50">
+                <Clock className="h-4 w-4 text-primary" />
             </div>
-            <h2 className="text-6xl font-bold tracking-tighter tabular-nums text-slate-900 dark:text-white leading-none">
+            <h2 className="text-7xl font-bold tracking-tighter tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-black text-slate-400 mt-5 uppercase tracking-[0.35em] opacity-80">
+            <p className="text-[10px] font-black text-slate-400 mt-6 uppercase tracking-[0.3em] opacity-80">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
 
         {!isAdmin && (
             <div className="w-full space-y-4">
-                {/* BLUE HEADER CARD */}
+                {/* BANNER HEADER */}
                 <Card className="w-full border-none shadow-none rounded-2xl bg-gradient-to-r from-blue-600 to-blue-400 overflow-hidden relative">
                     <CardContent className="p-6 flex items-center gap-5 text-white">
                         <div className="bg-white/20 p-3 rounded-xl backdrop-blur-md">
@@ -289,28 +289,27 @@ export default function DashboardPage() {
                             <h2 className="text-xl font-bold tracking-tight leading-tight">Kehadiran hari ini</h2>
                             <p className="text-[10px] font-medium text-white/80">Kelola absensi dan pantau kehadiran Anda dengan mudah.</p>
                         </div>
-                        {/* DECORATIVE ICON */}
                         <div className="absolute top-1/2 -right-4 -translate-y-1/2 opacity-10">
                             <User className="h-24 w-24" />
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* MAIN WHITE CARD WITH MOTIF */}
-                <Card className="w-full border-none shadow-xl shadow-blue-600/5 rounded-[2.5rem] bg-card relative overflow-hidden">
-                    {/* SUBTLE DOT MOTIF BACKGROUND */}
+                {/* MAIN ATTENDANCE CARD WITH MOTIF */}
+                <Card className="w-full border-none shadow-xl shadow-blue-600/5 rounded-2xl bg-card relative overflow-hidden">
+                    {/* DOT MOTIF BACKGROUND */}
                     <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
                          style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '20px 20px' }}>
                     </div>
                     
-                    <CardContent className="p-10 flex flex-col items-center gap-8 relative z-10">
+                    <CardContent className="p-10 flex flex-col items-center gap-10 relative z-10">
                         {/* CLOCK SECTION */}
                         <LiveClockUI />
 
-                        {/* STATUS GRID WITH GRADIENTS AND SOLID ICON BOXES */}
+                        {/* STATUS GRID */}
                         <div className="grid grid-cols-2 gap-4 w-full">
-                            <div className="bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-transparent rounded-3xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#2ecc71] p-3 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
+                            <div className="bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-transparent rounded-2xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#2ecc71] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-green-500/20">
                                     <LogIn className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
@@ -321,8 +320,8 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-transparent rounded-3xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#3498db] p-3 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
+                            <div className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-transparent rounded-2xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#3498db] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-blue-500/20">
                                     <LogOut className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
@@ -334,21 +333,23 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* ALERT / BUTTON SECTION */}
-                        <div className="w-full">
-                            {renderStatusAlert()}
-                        </div>
-
-                        {/* FOOTER LINK - RE-STYLIZED */}
-                        <Link href="/dashboard/laporan" className="flex items-center justify-center gap-3 py-2 px-6 rounded-full hover:bg-primary/5 transition-all group">
-                            <div className="p-2 rounded-xl bg-blue-50 text-primary group-hover:bg-primary group-hover:text-white transition-colors shadow-sm">
-                                <CalendarCheck className="h-4.5 w-4.5" />
+                        {/* ACTION SECTION */}
+                        <div className="w-full flex flex-col items-center gap-8">
+                            <div className="w-full">
+                                {renderStatusAlert()}
                             </div>
-                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
-                                Lihat riwayat lengkap
-                            </span>
-                            <ChevronRight className="h-3.5 w-3.5 text-primary/40 group-hover:translate-x-1 transition-transform" />
-                        </Link>
+
+                            {/* FOOTER LINK */}
+                            <Link href="/dashboard/laporan" className="flex items-center justify-center gap-3 group">
+                                <div className="bg-white border border-border/50 shadow-sm p-2 rounded-xl group-hover:bg-primary group-hover:border-primary transition-all">
+                                    <CalendarCheck className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
+                                </div>
+                                <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] group-hover:opacity-70 transition-opacity">
+                                    Lihat riwayat lengkap
+                                </span>
+                                <ChevronRight className="h-3.5 w-3.5 text-primary/40 group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -356,7 +357,6 @@ export default function DashboardPage() {
 
         {(isAdmin || isKepsek) && (
             <div className="w-full space-y-4 pt-2">
-                {/* STATS SUMMARY SECTION */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card 
                         className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer hover:opacity-90 transition-all group text-white"
