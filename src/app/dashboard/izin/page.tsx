@@ -1,4 +1,17 @@
 'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Clock, CheckCircle2, AlertCircle, Trash2, MessageSquare, Info } from 'lucide-react';
+import { startOfDay, endOfDay, addDays, setHours, setMinutes, format } from 'date-fns';
+import { id as indonesiaLocale } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -17,20 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useUser, useFirestore, FirestorePermissionError, errorEmitter, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, CheckCircle2, AlertCircle, Trash2, MessageSquare } from 'lucide-react';
-import { startOfDay, endOfDay, addDays, setHours, setMinutes, format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
-import { PageWrapper } from '@/components/layout/page-wrapper';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,11 +47,11 @@ const leaveRequestSchema = z.object({
   leaveDate: z.enum(['today', 'tomorrow'], {
     required_error: 'Tanggal pengajuan wajib dipilih.',
   }),
-  type: z.enum(['Sakit', 'Izin Pribadi', 'Dinas', 'Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Kegiatan Luar Sekolah', 'Terlambat'], {
+  type: z.string({
     required_error: 'Jenis pengajuan wajib dipilih.',
   }),
   reason: z.string().min(5, { message: 'Alasan terlalu singkat.' }),
-  proofUrl: z.string().url({ message: 'URL bukti tidak valid.' }).optional().or(z.literal('')),
+  proofUrl: z.string().optional().or(z.literal('')),
 });
 
 export default function IzinPage() {
@@ -89,39 +89,14 @@ export default function IzinPage() {
     }, [currentTime]);
 
     const schoolConfigRef = useMemoFirebase(() => user ? doc(firestore, 'schoolConfig', 'default') : null, [firestore, user]);
-    const { data: schoolConfig, isLoading: isSchoolConfigLoading } = useDoc(user, schoolConfigRef);
+    const { data: schoolConfig } = useDoc(user, schoolConfigRef);
 
     const monthlyConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'monthlyConfigs', currentMonthId) : null, [firestore, currentMonthId]);
-    const { data: monthlyConfig, isLoading: isMonthlyLoading } = useDoc(user, monthlyConfigRef);
-
-    const nextMonthlyConfigRef = useMemoFirebase(() => 
-        (firestore && currentMonthId !== nextMonthId) ? doc(firestore, 'monthlyConfigs', nextMonthId) : null, 
-        [firestore, currentMonthId, nextMonthId]
-    );
-    const { data: nextMonthlyConfig, isLoading: isNextMonthlyLoading } = useDoc(user, nextMonthlyConfigRef);
-
-    const isDateHoliday = (date: Date) => {
-        if (!schoolConfig) return false;
-        if (schoolConfig.isAttendanceActive === false) return true;
-        const offDays = schoolConfig.offDays ?? [0, 6];
-        if (offDays.includes(date.getDay())) return true;
-        const dateStr = format(date, 'yyyy-MM-dd');
-        const monthId = format(date, 'yyyy-MM');
-        const relevantConfig = monthId === currentMonthId ? monthlyConfig : nextMonthlyConfig;
-        if (relevantConfig?.holidays?.includes(dateStr)) return true;
-        return false;
-    };
-
-    const isTodayHoliday = useMemo(() => isDateHoliday(today), [schoolConfig, monthlyConfig, today]);
-    const isTomorrowHoliday = useMemo(() => isDateHoliday(tomorrow), [schoolConfig, nextMonthlyConfig, tomorrow]);
+    const { data: monthlyConfig } = useDoc(user, monthlyConfigRef);
 
     const selectedDateValue = form.watch('leaveDate');
-    const targetDate = useMemo(() => {
-        return selectedDateValue === 'tomorrow' ? tomorrow : today;
-    }, [selectedDateValue, today, tomorrow]);
-
+    const targetDate = useMemo(() => selectedDateValue === 'tomorrow' ? tomorrow : today, [selectedDateValue, today, tomorrow]);
     const targetDateStart = useMemo(() => startOfDay(targetDate), [targetDate]);
-    const targetDateEnd = useMemo(() => endOfDay(targetDate), [targetDate]);
 
     const attendanceQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -142,121 +117,10 @@ export default function IzinPage() {
     const { data: existingLeaves, isLoading: isLeavesLoading } = useCollection(user, existingLeaveQuery);
     const currentDayLeave = existingLeaves?.[0];
 
-    const hasCheckedIn = useMemo(() => !!(targetDateAttendance && targetDateAttendance[0]?.checkInTime), [targetDateAttendance]);
-    const hasCheckedOut = useMemo(() => !!(targetDateAttendance && targetDateAttendance[0]?.checkOutTime), [targetDateAttendance]);
+    const hasIn = !!targetDateAttendance?.[0]?.checkInTime;
 
-    const isPastCheckoutTime = useMemo(() => {
-        if (!schoolConfig?.checkOutStartTime) return false;
-        const [hours, minutes] = schoolConfig.checkOutStartTime.split(':').map(Number);
-        const checkOutStart = setMinutes(setHours(startOfDay(currentTime), hours), minutes);
-        return currentTime > checkOutStart;
-    }, [currentTime, schoolConfig]);
-    
-    const availableLeaveTypes = useMemo(() => {
-        const isTodaySelected = selectedDateValue === 'today';
-        return [
-            {
-                value: 'Pulang Cepat',
-                label: 'Izin Pulang Cepat',
-                disabled: !isTodaySelected || !hasCheckedIn || hasCheckedOut || !!currentDayLeave
-            },
-            {
-                value: 'Dinas Siang',
-                label: 'Dinas Siang',
-                disabled: !isTodaySelected || !hasCheckedIn || hasCheckedOut || !!currentDayLeave
-            },
-            {
-                value: 'Sakit',
-                label: 'Sakit',
-                disabled: hasCheckedIn || (isTodaySelected && isPastCheckoutTime) || !!currentDayLeave
-            },
-            {
-                value: 'Izin Pribadi',
-                label: 'Izin Pribadi',
-                disabled: hasCheckedIn || (isTodaySelected && isPastCheckoutTime) || !!currentDayLeave
-            },
-            {
-                value: 'Terlambat',
-                label: 'Izin Terlambat',
-                disabled: hasCheckedIn || (isTodaySelected && isPastCheckoutTime) || !!currentDayLeave
-            },
-            {
-                value: 'Dinas Pagi',
-                label: 'Dinas Pagi',
-                disabled: hasCheckedIn || (isTodaySelected && isPastCheckoutTime) || !!currentDayLeave
-            },
-            {
-                value: 'Dinas',
-                label: 'Perjalanan Dinas',
-                disabled: !!currentDayLeave
-            },
-            {
-                value: 'Kegiatan Luar Sekolah',
-                label: 'Kegiatan Luar Sekolah',
-                disabled: !!currentDayLeave
-            },
-        ];
-    }, [selectedDateValue, hasCheckedIn, hasCheckedOut, isPastCheckoutTime, currentDayLeave]);
-
-    const selectedType = form.watch('type');
-    const dynamicPlaceholder = useMemo(() => {
-        switch (selectedType) {
-            case 'Sakit': return 'Contoh: Demam tinggi, Sakit gigi, Perlu istirahat...';
-            case 'Izin Pribadi': return 'Contoh: Urusan keluarga mendesak, Menghadiri pernikahan...';
-            case 'Dinas': return 'Contoh: Rapat MKKS, Workshop Kurikulum di Dinas...';
-            case 'Dinas Pagi': return 'Contoh: Mengurus berkas di dinas sebelum ke sekolah...';
-            case 'Dinas Siang': return 'Contoh: Menghadiri rapat dinas di jam sekolah...';
-            case 'Kegiatan Luar Sekolah': return 'Contoh: Pendampingan lomba siswa, Studi lapangan...';
-            case 'Pulang Cepat': return 'Contoh: Ada urusan darurat di rumah...';
-            case 'Terlambat': return 'Contoh: Ban kendaraan bocor, Ada kendala di jalan...';
-            default: return 'Pilih jenis izin terlebih dahulu...';
-        }
-    }, [selectedType]);
-
-    useEffect(() => {
-        const selectedTypeVal = form.getValues('type');
-        if (selectedTypeVal) {
-            const typeIsDisabled = availableLeaveTypes.find(t => t.value === selectedTypeVal)?.disabled;
-            if (typeIsDisabled) {
-                form.resetField('type', { keepError: false });
-            }
-        }
-    }, [availableLeaveTypes, form]);
-
-    async function handleCancelLeave() {
-        if (!user || !firestore || !currentDayLeave) return;
-        setIsCancelling(true);
-        try {
-            const leaveRef = doc(firestore, 'users', user.uid, 'leaveRequests', currentDayLeave.id);
-            await deleteDoc(leaveRef);
-            toast({ title: 'Berhasil dibatalkan', description: 'Pengajuan izin Anda telah dihapus.' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Gagal membatalkan', description: error.message });
-        } finally {
-            setIsCancelling(false);
-        }
-    }
-
-    async function onSubmit(values: z.infer<typeof leaveRequestSchema>) {
+    const onSubmit = async (values: z.infer<typeof leaveRequestSchema>) => {
         if (!user || !firestore) return;
-        
-        if (currentDayLeave) {
-            toast({ variant: 'destructive', title: 'Sudah ada pengajuan', description: 'Anda sudah mengirim pengajuan untuk tanggal ini.' });
-            return;
-        }
-
-        if (values.type === 'Pulang Cepat' || values.type === 'Dinas Siang') {
-            if (!hasCheckedIn) {
-                toast({ variant: 'destructive', title: 'Gagal', description: 'Anda harus absen masuk terlebih dahulu.' });
-                return;
-            }
-        } else {
-            if (hasCheckedIn) {
-                toast({ variant: 'destructive', title: 'Gagal', description: `Anda sudah melakukan absensi hari ini.` });
-                return;
-            }
-        }
-
         setIsSubmitting(true);
 
         const dataToSave = {
@@ -265,191 +129,165 @@ export default function IzinPage() {
             startDate: Timestamp.fromDate(startOfDay(targetDate)),
             endDate: Timestamp.fromDate(endOfDay(targetDate)),
             reason: values.reason,
-            proofUrl: values.proofUrl || null,
             status: 'pending',
             createdAt: serverTimestamp(),
         };
 
-        const leaveCollectionRef = collection(firestore, 'users', user.uid, 'leaveRequests');
-        
-        addDoc(leaveCollectionRef, dataToSave)
-            .then(() => {
-                toast({ title: 'Terkirim', description: 'Pengajuan Anda telah dikirim.' });
-                form.reset();
-            })
-            .catch((error) => {
-                const contextualError = new FirestorePermissionError({ operation: 'create', path: leaveCollectionRef.path, requestResourceData: dataToSave });
-                errorEmitter.emit('permission-error', contextualError);
-                toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
-            })
-            .finally(() => setIsSubmitting(false));
-    }
+        try {
+            await addDoc(collection(firestore, 'users', user.uid, 'leaveRequests'), dataToSave);
+            toast({ title: 'Terkirim', description: 'Pengajuan Anda telah dikirim.' });
+            form.reset();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Gagal', description: error.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
-    const isChecking = isAttendanceLoading || isSchoolConfigLoading || isLeavesLoading || isMonthlyLoading || isNextMonthlyLoading;
+    const handleCancelLeave = async () => {
+        if (!user || !firestore || !currentDayLeave) return;
+        setIsCancelling(true);
+        try {
+            await deleteDoc(doc(firestore, 'users', user.uid, 'leaveRequests', currentDayLeave.id));
+            toast({ title: 'Dibatalkan', description: 'Pengajuan telah dihapus.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Gagal', description: error.message });
+        } finally {
+            setIsCancelling(false);
+        }
+    };
 
     return (
-        <PageWrapper>
-            <Card className="w-full overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
-                        <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div>
-                                    <CardTitle className="font-bold text-sm tracking-tight drop-shadow-sm">Formulir pengajuan izin</CardTitle>
-                                    <CardDescription className="text-muted-foreground font-medium pt-1">Isi formulir untuk mengajukan ketidakhadiran atau tugas dinas.</CardDescription>
+        <div className="flex-1 pt-2 pb-24 md:p-8">
+            <div className="max-w-7xl mx-auto">
+                <Card className="border border-muted-foreground/10 shadow-none rounded-2xl overflow-hidden bg-card">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                            <CardHeader className="p-6 border-b border-muted-foreground/5 bg-white dark:bg-slate-900/20">
+                                <div className="flex items-start justify-between">
+                                    <div className="space-y-1">
+                                        <CardTitle className="text-blue-600 dark:text-blue-400 font-bold text-base tracking-tight">Formulir pengajuan izin</CardTitle>
+                                        <CardDescription className="text-muted-foreground font-medium text-xs">Isi formulir untuk mengajukan ketidakhadiran atau tugas dinas.</CardDescription>
+                                    </div>
+                                    {currentDayLeave && (
+                                        <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 font-bold px-3 py-1">
+                                            {currentDayLeave.status === 'pending' ? 'Menunggu' : currentDayLeave.status}
+                                        </Badge>
+                                    )}
                                 </div>
-                                {currentDayLeave && (
-                                    <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-xl border border-border/50 shadow-inner">
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status:</span>
-                                        {currentDayLeave.status === 'pending' ? (
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 animate-pulse font-bold px-3">
-                                                    <Clock className="w-3 h-3 mr-1.5" /> Menunggu
-                                                </Badge>
-                                                
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <button type="button" className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full flex items-center justify-center transition-colors" disabled={isCancelling}>
-                                                            {isCancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                                        </button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle className="font-bold">Batalkan pengajuan?</AlertDialogTitle>
-                                                            <AlertDialogDescription className="text-sm font-medium">
-                                                                Apakah Anda yakin ingin membatalkan pengajuan <strong>{currentDayLeave.type}</strong> ini?
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel className="rounded-xl font-bold">Kembali</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={handleCancelLeave} className="bg-destructive hover:bg-destructive/90 rounded-xl font-bold text-white border-none">Ya, Batalkan</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </div>
-                                        ) : currentDayLeave.status === 'approved' ? (
-                                            <Badge variant="default" className="bg-green-500 text-white font-bold px-3 border-none">
-                                                <CheckCircle2 className="w-3 h-3 mr-1.5" /> Disetujui
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="destructive" className="font-bold px-3 border-none">Ditolak</Badge>
+                            </CardHeader>
+                            
+                            <CardContent className="p-8 space-y-8 bg-white dark:bg-slate-900/20">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <FormField
+                                        control={form.control}
+                                        name="leaveDate"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-3">
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pilih Tanggal</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-900/50 border-muted-foreground/10 shadow-none font-bold text-sm">
+                                                            <SelectValue placeholder="Pilih tanggal" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                        <SelectItem value="today" className="rounded-lg font-bold">Hari Ini</SelectItem>
+                                                        <SelectItem value="tomorrow" className="rounded-lg font-bold">Besok</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage className="text-[10px] font-bold" />
+                                            </FormItem>
                                         )}
-                                    </div>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-6 space-y-6">
-                            {currentDayLeave && (
-                                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3 shadow-inner">
-                                    <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-xs font-bold text-primary">Informasi Pengajuan</p>
-                                        <p className="text-[11px] text-muted-foreground font-bold leading-relaxed">
-                                            Anda telah mengajukan <strong>{currentDayLeave.type}</strong> untuk tanggal ini. 
-                                            {currentDayLeave.status === 'pending' ? ' Anda dapat membatalkan pengajuan ini sebelum diproses.' : ' Pengajuan Anda sudah selesai diproses.'}
-                                        </p>
-                                    </div>
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="type"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-3">
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Jenis Pengajuan</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-900/50 border-muted-foreground/10 shadow-none font-bold text-sm">
+                                                            <SelectValue placeholder="Pilih jenis" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                        <SelectItem value="Sakit" className="rounded-lg font-bold">Sakit</SelectItem>
+                                                        <SelectItem value="Izin Pribadi" className="rounded-lg font-bold">Izin Pribadi</SelectItem>
+                                                        <SelectItem value="Dinas" className="rounded-lg font-bold">Perjalanan Dinas</SelectItem>
+                                                        <SelectItem value="Terlambat" className="rounded-lg font-bold">Izin Terlambat</SelectItem>
+                                                        <SelectItem value="Pulang Cepat" className="rounded-lg font-bold">Izin Pulang Cepat</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage className="text-[10px] font-bold" />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
-                            )}
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
-                                    name="leaveDate"
+                                    name="reason"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1 uppercase tracking-wider text-muted-foreground">Pilih Tanggal</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold">
-                                                        <SelectValue placeholder="Pilih tanggal" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className="rounded-xl border-none shadow-2xl">
-                                                    <SelectItem value="today" className="rounded-lg font-bold">
-                                                        Hari Ini {isTodayHoliday && '(Libur)'}
-                                                    </SelectItem>
-                                                    <SelectItem value="tomorrow" className="rounded-lg font-bold">
-                                                        Besok {isTomorrowHoliday && '(Libur)'}
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                        <FormItem className="space-y-3">
+                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Alasan</FormLabel>
+                                            <FormControl>
+                                                <Textarea 
+                                                    placeholder="Pilih jenis izin terlebih dahulu..." 
+                                                    {...field} 
+                                                    className="min-h-[140px] rounded-xl bg-slate-50 dark:bg-slate-900/50 border-muted-foreground/10 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold text-sm shadow-none" 
+                                                />
+                                            </FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
-                                    control={form.control}
-                                    name="type"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1 uppercase tracking-wider text-muted-foreground">Jenis Pengajuan</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={!!currentDayLeave}>
-                                                <FormControl>
-                                                    <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold">
-                                                        <SelectValue placeholder="Pilih jenis" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className="rounded-xl border-none shadow-2xl">
-                                                    {availableLeaveTypes.map(type => (
-                                                        <SelectItem key={type.value} value={type.value} disabled={type.disabled} className="rounded-lg font-bold">
-                                                            {type.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage className="text-[10px] font-bold" />
-                                        </FormItem>
+
+                                <div className="p-4 bg-blue-50/30 dark:bg-blue-900/10 border border-dashed border-blue-200/50 dark:border-blue-800/50 rounded-xl flex items-start gap-3">
+                                    <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
+                                        <span className="text-blue-600 dark:text-blue-400 uppercase tracking-widest mr-1">Petunjuk:</span>
+                                        Isi dengan alasan singkat saja (misal: Sakit demam). Kalimat sapaan atau permohonan izin lengkap harap dikirim langsung kepada <span className="text-slate-900 dark:text-slate-200">Kepala Sekolah melalui WhatsApp atau menyesuaikan aturan sekolah.</span>
+                                    </p>
+                                </div>
+                            </CardContent>
+
+                            <CardFooter className="p-6 border-t border-muted-foreground/5 bg-slate-50/50 dark:bg-slate-900/40">
+                                <div className="flex items-center justify-between w-full">
+                                    <Button 
+                                        type="submit" 
+                                        disabled={isSubmitting || isAttendanceLoading || isLeavesLoading || !!currentDayLeave}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white font-black tracking-widest text-[11px] h-12 px-8 rounded-xl shadow-lg shadow-blue-600/20 uppercase"
+                                    >
+                                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kirim Pengajuan"}
+                                    </Button>
+
+                                    {currentDayLeave && currentDayLeave.status === 'pending' && (
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button type="button" variant="ghost" className="text-red-500 font-bold text-[10px] uppercase hover:bg-red-50">
+                                                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Batalkan
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent className="rounded-2xl border-none">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle className="font-bold text-lg">Batalkan pengajuan?</AlertDialogTitle>
+                                                    <AlertDialogDescription className="text-sm font-medium">Pengajuan izin Anda akan dihapus secara permanen.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel className="rounded-xl font-bold">Kembali</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleCancelLeave} className="bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold border-none">Ya, Hapus</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     )}
-                                />
-                            </div>
-                            <FormField
-                                control={form.control}
-                                name="reason"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-1.5">
-                                        <FormLabel className="text-xs font-bold ml-1 uppercase tracking-wider text-muted-foreground">Alasan</FormLabel>
-                                        <FormControl>
-                                            <Textarea 
-                                                placeholder={dynamicPlaceholder} 
-                                                disabled={!!currentDayLeave}
-                                                {...field} 
-                                                className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none" 
-                                            />
-                                        </FormControl>
-                                        <div className="flex items-start gap-2 p-3 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 mt-2">
-                                            <MessageSquare className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
-                                            <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
-                                                <strong className="text-primary uppercase tracking-tight mr-1">Petunjuk:</strong> 
-                                                Isi dengan alasan singkat saja (misal: Sakit demam). Kalimat sapaan atau permohonan izin lengkap harap dikirim langsung kepada <span className="text-foreground">Kepala Sekolah melalui WhatsApp atau menyesuaikan aturan sekolah</span>.
-                                            </p>
-                                        </div>
-                                        <FormMessage className="text-[10px] font-bold" />
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                        <CardFooter className="border-t p-6 bg-muted/5">
-                            <Button 
-                                type="submit" 
-                                disabled={isSubmitting || isChecking || !!currentDayLeave} 
-                                className={cn(
-                                    "w-full sm:w-auto h-12 rounded-xl font-black tracking-widest shadow-lg active:scale-95 transition-all bg-primary",
-                                    currentDayLeave?.status === 'pending' && "bg-amber-500 hover:bg-amber-600"
-                                )}
-                            >
-                               {isSubmitting || isChecking ? (
-                                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> PROSES...</>
-                               ) : currentDayLeave ? (
-                                   "DATA SUDAH ADA"
-                               ) : (
-                                   "KIRIM PENGAJUAN"
-                               )}
-                            </Button>
-                        </CardFooter>
-                    </form>
-                </Form>
-            </Card>
-        </PageWrapper>
+                                </div>
+                            </CardFooter>
+                        </form>
+                    </Form>
+                </Card>
+            </div>
+        </div>
     );
 }

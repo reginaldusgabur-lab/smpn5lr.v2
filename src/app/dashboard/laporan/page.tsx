@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -16,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Download, Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -26,6 +25,8 @@ import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/atte
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ReportItem {
   id: string;
@@ -141,6 +142,58 @@ export default function LaporanPage() {
   const isLoading = isAuthLoading || isConfigLoading || isReportLoading;
   const canGoPrev = currentMonth > new Date(2026, 0, 1);
 
+  const handleDownloadPdf = async () => {
+        if (!user || monthlyReportData.length === 0) return;
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const centerX = pageWidth / 2;
+        const margin = 14;
+        const config = schoolConfig || ({} as any);
+
+        doc.setFont('times', 'bold').setFontSize(14);
+        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+        doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
+        doc.setFont('times', 'normal').setFontSize(9);
+        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+        doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
+        doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
+
+        doc.setFont('times', 'bold').setFontSize(12);
+        doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
+        doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
+        doc.setFontSize(10).setFont('times', 'normal');
+        doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+
+        let currentY = 70;
+        doc.setFontSize(11).setFont('times', 'normal');
+        doc.text(`Nama : ${user.displayName || user.name}`, margin, currentY); currentY += 6;
+        doc.text(`NIP : ${user.nip || '-'}`, margin, currentY); currentY += 10;
+
+        const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
+        const tableRows = monthlyReportData.map((item, index) => [
+            index + 1,
+            item.dateString,
+            item.checkIn,
+            item.checkOut,
+            item.status,
+            item.description || '-'
+        ]);
+
+        autoTable(doc, {
+            startY: currentY,
+            head: tableHead,
+            body: tableRows,
+            theme: 'striped',
+            styles: { font: 'times', fontSize: 10, cellPadding: 2 },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center' },
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' } }
+        });
+
+        doc.save(`Laporan_${(user.displayName || 'User').replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
+  };
+
   if (isLoading && monthlyReportData.length === 0) {
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
@@ -172,9 +225,11 @@ export default function LaporanPage() {
                             <p className="text-[11px] font-medium text-white/80 leading-relaxed">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</p>
                         </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={handleRefresh} disabled={isLoading}>
-                        <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={handleRefresh} disabled={isLoading}>
+                            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+                        </Button>
+                    </div>
                 </div>
               </div>
 
@@ -218,6 +273,12 @@ export default function LaporanPage() {
                             </Button>
                         </div>
                     </div>
+                </div>
+
+                <div className="px-4 pb-4 flex justify-end bg-blue-600">
+                    <Button onClick={handleDownloadPdf} variant="secondary" size="sm" className="h-9 px-4 rounded-xl font-bold bg-white text-blue-600 hover:bg-white/90">
+                        <Download className="mr-2 h-4 w-4" /> UNDUH PDF
+                    </Button>
                 </div>
 
                 {/* Table Header Area - Menyatu dengan blok biru */}
