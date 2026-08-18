@@ -295,12 +295,15 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* MAIN ATTENDANCE CARD WITH BRIGHT WHITE AND DECORATIVE WAVES */}
+                {/* MAIN ATTENDANCE CARD WITH WAVES DECORATION */}
                 <Card className="w-full border-none shadow-xl shadow-blue-600/10 rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
-                    {/* DECORATIVE ELEMENTS (WAVES) */}
-                    <div className="absolute bottom-0 right-0 w-80 h-32 bg-blue-50/60 rounded-[100%] blur-3xl -mr-20 -mb-10 pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-64 h-24 bg-blue-100/40 rounded-[100%] blur-3xl -ml-16 -mb-10 pointer-events-none" />
-                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-blue-50/20 to-transparent pointer-events-none" />
+                    {/* DECORATIVE SVG WAVES */}
+                    <div className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-0 opacity-80">
+                        <svg viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+                            <path d="M0 150V100C100 50 300 150 400 100V150H0Z" fill="#eff6ff" opacity="0.4"/>
+                            <path d="M0 150V120C150 80 250 180 400 130V150H0Z" fill="#dbeafe" opacity="0.6"/>
+                        </svg>
+                    </div>
                     
                     <CardContent className="p-10 flex flex-col items-center gap-10 relative z-10">
                         {/* CLOCK SECTION */}
