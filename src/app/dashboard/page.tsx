@@ -57,13 +57,13 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-1 rounded-full mb-3">
-                <Clock className="h-3 w-3 text-primary" />
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-full mb-4 shadow-inner">
+                <Clock className="h-3.5 w-3.5 text-primary" />
             </div>
-            <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
+            <h2 className="text-6xl font-bold tracking-tighter tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-black text-muted-foreground mt-3 uppercase tracking-[0.3em] opacity-60">
+            <p className="text-[10px] font-black text-slate-400 mt-5 uppercase tracking-[0.35em] opacity-80">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -296,33 +296,38 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* MAIN WHITE CARD */}
-                <Card className="w-full border-none shadow-xl shadow-blue-600/5 rounded-3xl bg-card overflow-hidden">
-                    <CardContent className="p-8 flex flex-col items-center gap-6">
+                {/* MAIN WHITE CARD WITH MOTIF */}
+                <Card className="w-full border-none shadow-xl shadow-blue-600/5 rounded-[2.5rem] bg-card relative overflow-hidden">
+                    {/* SUBTLE DOT MOTIF BACKGROUND */}
+                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+                         style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '20px 20px' }}>
+                    </div>
+                    
+                    <CardContent className="p-10 flex flex-col items-center gap-8 relative z-10">
                         {/* CLOCK SECTION */}
                         <LiveClockUI />
 
-                        {/* STATUS GRID WITH GRADIENTS */}
-                        <div className="grid grid-cols-2 gap-3 w-full">
-                            <div className="bg-gradient-to-br from-green-50/80 to-white dark:from-green-950/10 dark:to-transparent rounded-2xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#2ecc71] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
+                        {/* STATUS GRID WITH GRADIENTS AND SOLID ICON BOXES */}
+                        <div className="grid grid-cols-2 gap-4 w-full">
+                            <div className="bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-transparent rounded-3xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#2ecc71] p-3 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
                                     <LogIn className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-[9px] font-black text-[#2ecc71] uppercase tracking-widest">MASUK</p>
-                                    <p className="text-xl font-bold tabular-nums text-foreground">
+                                    <p className="text-[10px] font-black text-[#2ecc71] uppercase tracking-[0.15em] mb-1">MASUK</p>
+                                    <p className="text-xl font-bold tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-blue-50/80 to-white dark:from-blue-950/10 dark:to-transparent rounded-2xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#3498db] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
+                            <div className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-transparent rounded-3xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#3498db] p-3 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
                                     <LogOut className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-[9px] font-black text-[#3498db] uppercase tracking-widest">PULANG</p>
-                                    <p className="text-xl font-bold tabular-nums text-foreground">
+                                    <p className="text-[10px] font-black text-[#3498db] uppercase tracking-[0.15em] mb-1">PULANG</p>
+                                    <p className="text-xl font-bold tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
@@ -334,11 +339,15 @@ export default function DashboardPage() {
                             {renderStatusAlert()}
                         </div>
 
-                        {/* FOOTER LINK */}
-                        <Link href="/dashboard/laporan" className="flex items-center gap-2 text-[10px] font-black text-primary hover:opacity-70 transition-all uppercase tracking-[0.1em]">
-                            <CalendarCheck className="h-4 w-4" />
-                            Lihat riwayat lengkap
-                            <ChevronRight className="h-3 w-3 ml-0.5" />
+                        {/* FOOTER LINK - RE-STYLIZED */}
+                        <Link href="/dashboard/laporan" className="flex items-center justify-center gap-3 py-2 px-6 rounded-full hover:bg-primary/5 transition-all group">
+                            <div className="p-2 rounded-xl bg-blue-50 text-primary group-hover:bg-primary group-hover:text-white transition-colors shadow-sm">
+                                <CalendarCheck className="h-4.5 w-4.5" />
+                            </div>
+                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
+                                Lihat riwayat lengkap
+                            </span>
+                            <ChevronRight className="h-3.5 w-3.5 text-primary/40 group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </CardContent>
                 </Card>
