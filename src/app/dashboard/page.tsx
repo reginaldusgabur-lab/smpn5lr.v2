@@ -5,7 +5,7 @@ import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LogIn, LogOut, Sparkles, User, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, CheckCircle2, Loader2, CalendarOff, Lock } from 'lucide-react';
+import { LogIn, LogOut, Sparkles, User, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, CheckCircle2, Loader2, CalendarOff, Lock, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -56,13 +56,13 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-full mb-4 ring-4 ring-blue-50/50">
-                <Clock className="h-4 w-4 text-primary" />
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-full mb-4 ring-4 ring-blue-50/50">
+                <Clock className="h-3.5 w-3.5 text-primary" />
             </div>
             <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-black text-slate-400 mt-4 tracking-widest opacity-80">
+            <p className="text-[10px] font-black text-slate-400 mt-5 tracking-[0.2em] opacity-80">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -489,3 +489,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
