@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -324,50 +325,50 @@ export default function DashboardPage() {
             <div className="w-full space-y-3 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card 
-                        className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-green-500/10 transition-colors group"
+                        className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-2xl overflow-hidden p-3 cursor-pointer hover:opacity-90 transition-all group text-white"
                         onClick={() => scrollToId('recent-attendance')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600 drop-shadow-sm">Hadir</CardTitle>
-                            <UserCheck className="h-3 w-3 text-green-600 group-hover:scale-110 transition-transform" />
+                            <CardTitle className="text-sm font-normal">Hadir</CardTitle>
+                            <UserCheck className="h-5 w-5 text-white/60 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-2xl font-black text-green-600 tracking-tighter">
+                        <div className="text-4xl font-normal">
                             {isStatsLoading ? '...' : stats.hadir}
                         </div>
                     </Card>
                     <Card 
-                        className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-blue-500/10 transition-colors group"
+                        className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-2xl overflow-hidden p-3 cursor-pointer hover:opacity-90 transition-all group text-white"
                         onClick={() => scrollToId('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-600 drop-shadow-sm">Izin/Sakit</CardTitle>
-                            <BookUser className="h-3 w-3 text-blue-600 group-hover:scale-110 transition-transform" />
+                            <CardTitle className="text-sm font-normal">Izin/Sakit</CardTitle>
+                            <BookUser className="h-5 w-5 text-white/60 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-2xl font-black text-blue-600 tracking-tighter">
+                        <div className="text-4xl font-normal">
                             {isStatsLoading ? '...' : stats.izin + stats.sakit}
                         </div>
                     </Card>
                     <Card 
-                        className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-amber-500/10 transition-colors group"
+                        className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-2xl overflow-hidden p-3 cursor-pointer hover:opacity-90 transition-all group text-white"
                         onClick={navigateToApproval}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-amber-600 drop-shadow-sm">Menunggu</CardTitle>
-                            <MailWarning className="h-3 w-3 text-amber-600 group-hover:scale-110 transition-transform" />
+                            <CardTitle className="text-sm font-normal">Menunggu</CardTitle>
+                            <MailWarning className="h-5 w-5 text-white/60 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-2xl font-black text-amber-600 tracking-tighter">
+                        <div className="text-4xl font-normal">
                             {isStatsLoading ? '...' : stats.pending}
                         </div>
                     </Card>
                     <Card 
-                        className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden p-3 cursor-pointer hover:bg-red-500/10 transition-colors group"
+                        className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-2xl overflow-hidden p-3 cursor-pointer hover:opacity-90 transition-all group text-white"
                         onClick={() => scrollToId('absent-users')}
                     >
                         <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600 drop-shadow-sm">Alpa</CardTitle>
-                            <UserX className="h-3 w-3 text-red-600 group-hover:scale-110 transition-transform" />
+                            <CardTitle className="text-sm font-normal">Alpa</CardTitle>
+                            <UserX className="h-5 w-5 text-white/60 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-2xl font-black text-red-600 tracking-tighter">
+                        <div className="text-4xl font-normal">
                             {isStatsLoading ? '...' : stats.alpa}
                         </div>
                     </Card>

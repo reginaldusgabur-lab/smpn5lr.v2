@@ -234,40 +234,40 @@ export default function AdminDashboardPage() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl">
+            <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-2xl overflow-hidden text-white">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600">Hadir</CardTitle>
-                    <UserCheck className="h-4 w-4 text-green-600" />
+                    <CardTitle className="text-sm font-normal">Hadir</CardTitle>
+                    <UserCheck className="h-5 w-5 text-white/80" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-black text-green-600 tracking-tighter">{dashboardData.stats.hadir}</div>
+                    <div className="text-4xl font-normal">{dashboardData.stats.hadir}</div>
                 </CardContent>
             </Card>
-            <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl">
+            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-2xl overflow-hidden text-white">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Izin/Sakit</CardTitle>
-                    <BookUser className="h-4 w-4 text-blue-600" />
+                    <CardTitle className="text-sm font-normal">Izin/Sakit</CardTitle>
+                    <BookUser className="h-5 w-5 text-white/80" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-black text-blue-600 tracking-tighter">{dashboardData.stats.izin + dashboardData.stats.sakit}</div>
+                    <div className="text-4xl font-normal">{dashboardData.stats.izin + dashboardData.stats.sakit}</div>
                 </CardContent>
             </Card>
-            <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl">
+            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-2xl overflow-hidden text-white">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Menunggu</CardTitle>
-                    <FileWarning className="h-4 w-4 text-amber-600" />
+                    <CardTitle className="text-sm font-normal">Menunggu</CardTitle>
+                    <FileWarning className="h-5 w-5 text-white/80" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-black text-amber-600 tracking-tighter">{dashboardData.stats.pending}</div>
+                    <div className="text-4xl font-normal">{dashboardData.stats.pending}</div>
                 </CardContent>
             </Card>
-            <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl">
+            <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-2xl overflow-hidden text-white">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600">Alpa</CardTitle>
-                    <UserX className="h-4 w-4 text-red-600" />
+                    <CardTitle className="text-sm font-normal">Alpa</CardTitle>
+                    <UserX className="h-5 w-5 text-white/80" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-black text-red-600 tracking-tighter">{dashboardData.stats.alpa}</div>
+                    <div className="text-4xl font-normal">{dashboardData.stats.alpa}</div>
                 </CardContent>
             </Card>
         </div>

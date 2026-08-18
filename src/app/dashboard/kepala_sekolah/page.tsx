@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, CalendarOff, LogIn, LogOut, ClipboardCheck, ArrowRight, FileText, UserCheck, AlertCircle, UserX, BookUser } from 'lucide-react';
+import { Loader2, CalendarOff, LogIn, LogOut, ClipboardCheck, ArrowRight, FileText, UserCheck, AlertCircle, UserX, BookUser, MailWarning } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, Timestamp, getDocs, type DocumentData, collectionGroup, getDoc } from 'firebase/firestore';
 import { format, startOfDay, endOfDay } from 'date-fns';
@@ -335,7 +335,7 @@ export default function KepalaSekolahDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
             <LiveClock />
-            <div className="grid grid-cols-2 gap-4 text-center w-full max-w-sm pt-4">
+            <div className="grid grid-cols-2 gap-4 text-center w-full max-sm pt-4">
               <div className="rounded-lg border bg-card p-4">
                   <div className="flex items-center justify-center gap-2 mb-1">
                       <LogIn className="w-4 h-4 text-muted-foreground" />
@@ -367,37 +367,37 @@ export default function KepalaSekolahDashboardPage() {
 
         {/* Monitoring Cards */}
         <div className="space-y-4">
-          <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl p-3">
+          <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-2xl p-3 text-white">
             <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-600">Guru & Pegawai Hadir</CardTitle>
-                <UserCheck className="h-4 w-4 text-green-600" />
+                <CardTitle className="text-[10px] font-normal uppercase tracking-widest text-white/80">Guru & Pegawai Hadir</CardTitle>
+                <UserCheck className="h-4 w-4 text-white/60" />
             </CardHeader>
-            <div className="text-2xl font-black text-green-600 tracking-tighter">
-                {staffPresentToday}<span className="text-lg font-normal text-muted-foreground opacity-50">/{totalStaff}</span>
+            <div className="text-2xl font-normal tracking-tighter">
+                {staffPresentToday}<span className="text-lg font-normal text-white/50">/{totalStaff}</span>
             </div>
           </Card>
           
-          <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl p-3">
+          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-2xl p-3 text-white">
             <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Persetujuan Izin</CardTitle>
-              <ClipboardCheck className="h-4 w-4 text-amber-600" />
+              <CardTitle className="text-[10px] font-normal uppercase tracking-widest text-white/80">Persetujuan Izin</CardTitle>
+              <ClipboardCheck className="h-4 w-4 text-white/60" />
             </CardHeader>
             <div className="flex items-center justify-between">
-                <div className="text-2xl font-black text-amber-600 tracking-tighter">{dashboardData.pendingLeaveRequests?.length || 0}</div>
-                <Button asChild variant="outline" size="sm" className="h-7 rounded-lg font-bold text-[10px] shadow-none bg-background">
+                <div className="text-2xl font-normal tracking-tighter">{dashboardData.pendingLeaveRequests?.length || 0}</div>
+                <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
                     <Link href="/dashboard/izin-kepala-sekolah">DETAIL</Link>
                 </Button>
             </div>
           </Card>
           
-           <Card className="bg-primary/5 border border-muted-foreground/10 shadow-none rounded-xl p-3">
+           <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-2xl p-3 text-white">
             <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-primary">Laporan Sekolah</CardTitle>
-              <FileText className="h-4 w-4 text-primary" />
+              <CardTitle className="text-[10px] font-normal uppercase tracking-widest text-white/80">Laporan Sekolah</CardTitle>
+              <FileText className="h-4 w-4 text-white/60" />
             </CardHeader>
             <div className="flex items-center justify-between mt-1">
-                <p className="text-[10px] font-bold text-muted-foreground">Akses semua data</p>
-                <Button asChild variant="outline" size="sm" className="h-7 rounded-lg font-bold text-[10px] shadow-none bg-background">
+                <p className="text-[10px] font-normal text-white/70">Akses semua data</p>
+                <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
                     <Link href="/dashboard/laporan-sekolah">BUKA</Link>
                 </Button>
             </div>
