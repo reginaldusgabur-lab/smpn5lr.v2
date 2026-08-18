@@ -6,7 +6,7 @@ import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, TrendingUp } from 'lucide-react';
+import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
