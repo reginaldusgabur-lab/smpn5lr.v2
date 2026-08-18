@@ -56,13 +56,13 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-full mb-6 ring-4 ring-blue-50/50">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-full mb-4 ring-4 ring-blue-50/50">
                 <Clock className="h-4 w-4 text-primary" />
             </div>
-            <h2 className="text-7xl font-bold tracking-tighter tabular-nums text-slate-900 dark:text-white leading-none">
+            <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-black text-slate-400 mt-6 uppercase tracking-[0.3em] opacity-80">
+            <p className="text-[10px] font-black text-slate-400 mt-4 tracking-widest opacity-80">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -249,7 +249,6 @@ export default function DashboardPage() {
         );
     }
 
-    // PENTING: Jika sudah waktu pulang, tampilkan tombol pulang meskipun belum absen masuk
     if (windowStatus === 'CHECK_OUT_OPEN') {
         return (
             <Button asChild className="w-full h-14 rounded-2xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
@@ -283,7 +282,6 @@ export default function DashboardPage() {
             </div>
         );
     } else {
-        // Sudah absen masuk, tapi belum masuk jendela pulang
         return (
             <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-14 flex items-center justify-center gap-3">
                 <CheckCircle2 className="h-4 w-4 text-blue-500" />
@@ -335,7 +333,7 @@ export default function DashboardPage() {
                         </svg>
                     </div>
                     
-                    <CardContent className="p-10 flex flex-col items-center gap-10 relative z-10">
+                    <CardContent className="p-10 flex flex-col items-center gap-8 relative z-10">
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full">
@@ -344,7 +342,7 @@ export default function DashboardPage() {
                                     <LogIn className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-[10px] font-black text-[#2ecc71] uppercase tracking-[0.15em] mb-1">MASUK</p>
+                                    <p className="text-[10px] font-black text-[#2ecc71] tracking-[0.15em] mb-1">Masuk</p>
                                     <p className="text-xl font-bold tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
@@ -356,7 +354,7 @@ export default function DashboardPage() {
                                     <LogOut className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-[10px] font-black text-[#3498db] uppercase tracking-[0.15em] mb-1">PULANG</p>
+                                    <p className="text-[10px] font-black text-[#3498db] tracking-[0.15em] mb-1">Pulang</p>
                                     <p className="text-xl font-bold tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
