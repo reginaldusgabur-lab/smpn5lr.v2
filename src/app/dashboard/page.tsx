@@ -59,10 +59,10 @@ const LiveClockUI = memo(() => {
             <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-full mb-3 ring-4 ring-blue-50/30">
                 <Clock className="h-3 w-3 text-primary" />
             </div>
-            <h2 className="text-4xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
+            <h2 className="text-3xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-black text-slate-400 mt-4 tracking-[0.2em] opacity-70">
+            <p className="text-[10px] font-bold text-slate-400 mt-4 tracking-normal opacity-70">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -338,10 +338,15 @@ export default function DashboardPage() {
 
                         <div className="grid grid-cols-2 gap-4 w-full">
                             <div className="bg-gradient-to-br from-green-50/80 to-white/60 dark:from-green-950/20 dark:to-transparent rounded-2xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#2ecc71] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-green-500/20">
+                                <div className="absolute top-0 right-0 h-full w-full pointer-events-none opacity-20 z-0">
+                                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
+                                        <path d="M100 100 C 80 100, 60 80, 60 50 C 60 20, 80 0, 100 0 Z" fill="#2ecc71" />
+                                    </svg>
+                                </div>
+                                <div className="bg-[#2ecc71] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
                                     <LogIn className="h-5 w-5" />
                                 </div>
-                                <div className="flex flex-col">
+                                <div className="flex flex-col relative z-10">
                                     <p className="text-[10px] font-black text-[#2ecc71] tracking-[0.15em] mb-1">Masuk</p>
                                     <p className="text-xl font-bold tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
@@ -350,10 +355,15 @@ export default function DashboardPage() {
                             </div>
 
                             <div className="bg-gradient-to-br from-blue-50/80 to-white/60 dark:from-blue-950/20 dark:to-transparent rounded-2xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#3498db] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-blue-500/20">
+                                <div className="absolute top-0 right-0 h-full w-full pointer-events-none opacity-20 z-0">
+                                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
+                                        <path d="M100 100 C 80 100, 60 80, 60 50 C 60 20, 80 0, 100 0 Z" fill="#3498db" />
+                                    </svg>
+                                </div>
+                                <div className="bg-[#3498db] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
                                     <LogOut className="h-5 w-5" />
                                 </div>
-                                <div className="flex flex-col">
+                                <div className="flex flex-col relative z-10">
                                     <p className="text-[10px] font-black text-[#3498db] tracking-[0.15em] mb-1">Pulang</p>
                                     <p className="text-xl font-bold tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
@@ -494,3 +504,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
