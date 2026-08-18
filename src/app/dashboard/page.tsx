@@ -377,15 +377,16 @@ export default function DashboardPage() {
                                 {renderStatusAlert()}
                             </div>
                             
-                            {/* Improved History Link to match image */}
-                            <Link href="/dashboard/laporan" className="flex items-center gap-3 py-2 px-1 hover:opacity-70 transition-all group">
-                                <div className="bg-white p-2 rounded-full shadow-md border border-slate-100 relative z-10">
-                                    <CalendarCheck className="h-4 w-4 text-blue-600" />
+                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-between px-2 py-2 hover:opacity-80 transition-opacity group relative">
+                                <div className="flex items-center gap-3 relative z-10">
+                                    <div className="bg-white p-2 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-slate-50">
+                                        <CalendarCheck className="h-4 w-4 text-blue-500" />
+                                    </div>
+                                    <span className="text-[10px] font-black text-blue-600 tracking-wider uppercase">
+                                        LIHAT RIWAYAT LENGKAP
+                                    </span>
                                 </div>
-                                <span className="text-[11px] font-black text-blue-600 uppercase tracking-wider">
-                                    Lihat riwayat lengkap
-                                </span>
-                                <ChevronRight className="h-3 w-3 text-blue-400 group-hover:translate-x-1 transition-transform" />
+                                <ChevronRight className="h-3 w-3 text-slate-300 group-hover:translate-x-1 transition-transform relative z-10" />
                             </Link>
                         </div>
                     </CardContent>
