@@ -9,6 +9,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -26,9 +34,6 @@ import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToExcel, exportToPdf } from '@/lib/export';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getInitials } from '@/lib/utils';
-import { cn } from '@/lib/utils';
 
 function useStaffAttendanceSummary(currentMonth: Date) {
     const { user } = useUser();
@@ -145,88 +150,61 @@ function useStaffAttendanceSummary(currentMonth: Date) {
     return { summary, isLoading, academicYear, schoolConfig };
 }
 
-const StaffReportListView = ({ data, isLoading, currentMonth }: { data: any[], isLoading: boolean, currentMonth: Date }) => {
+const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLoading: boolean, currentMonth: Date }) => {
     const router = useRouter();
-    const rowAccentColors = ['bg-blue-600', 'bg-indigo-600', 'bg-cyan-500', 'bg-emerald-500', 'bg-orange-500', 'bg-pink-500'];
-
-    if (isLoading) return <div className="space-y-3 pt-4">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}</div>;
+    if (isLoading) return <div className="space-y-3 pt-4">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}</div>;
 
     return (
-        <div className="p-0 lg:p-2 space-y-3 pt-4">
-            {/* Static Header */}
-            <div className="hidden lg:grid grid-cols-12 gap-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2">
-                <div className="col-span-1 text-center">No</div>
-                <div className="col-span-5 pl-12">Nama & NIP</div>
-                <div className="col-span-6 grid grid-cols-4 gap-2 text-center">
-                    <div>Hadir</div>
-                    <div>Izin</div>
-                    <div>Sakit</div>
-                    <div>Alpa</div>
-                </div>
-            </div>
-
-            {data && data.length > 0 ? (
-                data.map((item, index) => {
-                    const accentColor = rowAccentColors[index % rowAccentColors.length];
-                    return (
-                        <div key={item.id} className="relative bg-card border border-border/40 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all group overflow-hidden">
-                            {/* Left Accent Bar */}
-                            <div className={cn("absolute left-0 top-3 bottom-3 w-1.5 rounded-r-full", accentColor)} />
-                            
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center pl-4">
-                                {/* NO Column */}
-                                <div className="hidden lg:flex lg:col-span-1 justify-center">
-                                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center font-black text-sm", accentColor.replace('bg-', 'bg-').replace('600', '10').replace('500', '10'), accentColor.replace('bg-', 'text-'))}>
-                                        {item.sequenceNumber || index + 1}
+        <div className="overflow-x-auto border rounded-xl mt-4">
+            <Table>
+                <TableHeader className="bg-muted/30">
+                    <TableRow className="border-none">
+                        <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">No</TableHead>
+                        <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Nama & Identitas</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Hadir</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Izin</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Sakit</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Alpa</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">%</TableHead>
+                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Aksi</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {data && data.length > 0 ? (
+                        data.map((item, index) => (
+                            <TableRow key={item.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
+                                <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.sequenceNumber || index + 1}</TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-sm text-foreground">{item.name}</span>
+                                        <span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span>
                                     </div>
-                                </div>
-
-                                {/* NAMA & NIP Column */}
-                                <div className="col-span-1 lg:col-span-5 flex items-center gap-4">
-                                    <div className="lg:hidden w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-xs text-primary shrink-0">
-                                        {item.sequenceNumber || index + 1}
-                                    </div>
-                                    <Avatar className="h-11 w-11 border-2 border-background shadow-sm shrink-0">
-                                        <AvatarImage src={item.photoURL} />
-                                        <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{getInitials(item.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-bold text-sm text-foreground truncate" title={item.name}>{item.name}</span>
-                                        <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{item.nip}</span>
-                                    </div>
-                                </div>
-
-                                {/* STATS Column */}
-                                <div className="col-span-1 lg:col-span-6 grid grid-cols-4 gap-2 text-center">
-                                    <div className="bg-emerald-500/5 rounded-xl p-2 border border-emerald-500/10">
-                                        <p className="text-sm font-black text-emerald-600 leading-none">{Math.ceil(item.hadir)}</p>
-                                        <p className="text-[8px] font-bold text-emerald-600/60 uppercase mt-1">Hadir</p>
-                                    </div>
-                                    <div className="bg-blue-500/5 rounded-xl p-2 border border-blue-500/10">
-                                        <p className="text-sm font-black text-blue-600 leading-none">{item.izin}</p>
-                                        <p className="text-[8px] font-bold text-blue-600/60 uppercase mt-1">Izin</p>
-                                    </div>
-                                    <div className="bg-orange-500/5 rounded-xl p-2 border border-orange-500/10">
-                                        <p className="text-sm font-black text-orange-600 leading-none">{item.sakit}</p>
-                                        <p className="text-[8px] font-bold text-orange-600/60 uppercase mt-1">Sakit</p>
-                                    </div>
-                                    <div className="bg-red-500/5 rounded-xl p-2 border border-red-500/10">
-                                        <p className="text-sm font-black text-red-600 leading-none">{item.alpa}</p>
-                                        <p className="text-[8px] font-bold text-red-600/60 uppercase mt-1">Alpa</p>
-                                    </div>
-                                </div>
-                                
-                                {/* Action */}
-                                <div className="lg:absolute lg:right-4 lg:top-1/2 lg:-translate-y-1/2">
-                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-primary/10 group-hover:scale-110 transition-all" onClick={() => router.push(`/dashboard/laporan/${item.id}?month=${format(currentMonth, 'yyyy-MM')}`)}>
+                                </TableCell>
+                                <TableCell className="text-center font-black text-green-600">
+                                    {Math.ceil(item.hadir)}
+                                </TableCell>
+                                <TableCell className="text-center font-black text-blue-500">
+                                    {item.izin}
+                                </TableCell>
+                                <TableCell className="text-center font-black text-orange-500">
+                                    {item.sakit}
+                                </TableCell>
+                                <TableCell className="text-center font-black text-red-500">
+                                    {item.alpa}
+                                </TableCell>
+                                <TableCell className="text-center font-black text-primary">
+                                    {item.presentasi}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10" onClick={() => router.push(`/dashboard/laporan/${item.id}?month=${format(currentMonth, 'yyyy-MM')}`)}>
                                         <Eye className="h-4 w-4 text-primary" />
                                     </Button>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })
-            ) : <div className="h-48 flex items-center justify-center font-bold text-muted-foreground opacity-50 uppercase text-xs tracking-widest">Tidak ada data.</div>}
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    ) : <TableRow><TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-xs tracking-widest">Tidak ada data.</TableCell></TableRow>}
+                </TableBody>
+            </Table>
         </div>
     );
 };
@@ -244,7 +222,7 @@ function StaffReportView() {
     <div className="flex-1 pt-2 pb-24 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="px-4 md:px-0"><h1 className="text-3xl font-normal tracking-tight">Laporan Staf</h1></div>
-        <Card className="w-full">
+        <Card className="w-full border border-muted-foreground/10 shadow-md rounded-xl bg-card">
           <CardHeader>
              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div><CardTitle className="font-normal">Rekapitulasi Kehadiran</CardTitle><CardDescription>Pilih kategori staf dan bulan untuk melihat laporan.</CardDescription></div>
@@ -296,9 +274,9 @@ function StaffReportView() {
                     </div>
                 </div>
 
-                <TabsContent value="guru"><StaffReportListView data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
-                <TabsContent value="pegawai"><StaffReportListView data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
-                <TabsContent value="kepala_sekolah"><StaffReportListView data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
+                <TabsContent value="guru"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
+                <TabsContent value="pegawai"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
+                <TabsContent value="kepala_sekolah"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
             </Tabs>
           </CardContent>
         </Card>
