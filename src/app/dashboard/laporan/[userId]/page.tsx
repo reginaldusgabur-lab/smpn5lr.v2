@@ -466,17 +466,17 @@ export default function UserReportDetailPage() {
                             </div>
                         </div>
 
-                        {/* Area Tabel dengan Header Abu Kebiruan Kapital - IDENTIK GAMBAR */}
+                        {/* Area Tabel dengan Judul Kolom BIRU - IDENTIK GAMBAR */}
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
-                                <TableHeader className="bg-slate-100/60 dark:bg-slate-800/40">
+                                <TableHeader className="bg-blue-600">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">No</TableHead>
-                                        <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Tanggal</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Masuk</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Pulang</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Status</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Keterangan</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">No</TableHead>
+                                        <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Tanggal</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Masuk</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Status</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -577,3 +577,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+

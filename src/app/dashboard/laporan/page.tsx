@@ -161,7 +161,7 @@ export default function LaporanPage() {
                 <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-4">
                         {/* Ikon Kalender dalam kotak transparan */}
-                        <div className="bg-white/10 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm">
+                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
                             <Calendar className="h-6 w-6" />
                         </div>
                         <div className="space-y-0.5">
@@ -218,17 +218,17 @@ export default function LaporanPage() {
                     </div>
                 </div>
 
-                {/* Table Area dengan Header Abu Kebiruan Kapital - IDENTIK GAMBAR */}
+                {/* Table Area - Judul Kolom diubah menjadi BIRU - IDENTIK GAMBAR */}
                 <div className="border-t border-muted-foreground/5 overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-slate-100/60 dark:bg-slate-800/40">
+                        <TableHeader className="bg-blue-600">
                             <TableRow className="border-none">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">No</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Tanggal</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Status</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Keterangan</TableHead>
+                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">No</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Tanggal</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Status</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
