@@ -338,36 +338,36 @@ export default function DashboardPage() {
 
                         <div className="grid grid-cols-2 gap-4 w-full">
                             {/* KARTU MASUK */}
-                            <div className="bg-green-50/50 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-green-50/60 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="absolute top-0 right-0 h-full w-2/3 pointer-events-none z-0 opacity-40">
                                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
-                                        <path d="M100 0 L100 100 C 40 100, 40 0, 100 0 Z" fill="#2ecc71" />
+                                        <path d="M100 0 L100 100 C 50 100, 50 0, 100 0 Z" fill="#2ecc71" opacity="0.1" />
                                     </svg>
                                 </div>
-                                <div className="bg-[#2ecc71] p-2.5 rounded-xl text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
-                                    <LogIn className="h-4 w-4" />
+                                <div className="bg-[#2ecc71] p-3 rounded-[1.25rem] text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
+                                    <LogIn className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col relative z-10">
-                                    <p className="text-[9px] font-black text-[#2ecc71] uppercase tracking-wider mb-0.5">Masuk</p>
-                                    <p className="text-base font-bold tabular-nums text-slate-800 dark:text-white">
+                                    <p className="text-[10px] font-black text-[#2ecc71] uppercase tracking-wider mb-0.5">Masuk</p>
+                                    <p className="text-lg font-black tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
                             </div>
 
                             {/* KARTU PULANG */}
-                            <div className="bg-blue-50/50 dark:bg-blue-950/10 rounded-2xl p-3 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-blue-50/60 dark:bg-blue-950/10 rounded-2xl p-3 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="absolute top-0 right-0 h-full w-2/3 pointer-events-none z-0 opacity-40">
                                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
-                                        <path d="M100 0 L100 100 C 40 100, 40 0, 100 0 Z" fill="#3498db" />
+                                        <path d="M100 0 L100 100 C 50 100, 50 0, 100 0 Z" fill="#3498db" opacity="0.1" />
                                     </svg>
                                 </div>
-                                <div className="bg-[#3498db] p-2.5 rounded-xl text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
-                                    <LogOut className="h-4 w-4" />
+                                <div className="bg-[#3498db] p-3 rounded-[1.25rem] text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
+                                    <LogOut className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col relative z-10">
-                                    <p className="text-[9px] font-black text-[#3498db] uppercase tracking-wider mb-0.5">Pulang</p>
-                                    <p className="text-base font-bold tabular-nums text-slate-800 dark:text-white">
+                                    <p className="text-[10px] font-black text-[#3498db] uppercase tracking-wider mb-0.5">Pulang</p>
+                                    <p className="text-lg font-black tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
@@ -506,4 +506,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
