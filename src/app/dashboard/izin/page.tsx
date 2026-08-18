@@ -3,12 +3,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, CheckCircle2, AlertCircle, Trash2, MessageSquare, Info } from 'lucide-react';
-import { startOfDay, endOfDay, addDays, setHours, setMinutes, format } from 'date-fns';
+import { Loader2, Trash2, MessageSquare, AlertCircle, Sparkles, CalendarDays, Clock } from 'lucide-react';
+import { startOfDay, endOfDay, addDays, format } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -77,22 +77,18 @@ export default function IzinPage() {
         return () => clearInterval(timerId);
     }, []);
 
-    const { today, tomorrow, currentMonthId, nextMonthId } = useMemo(() => {
+    const { today, tomorrow, currentMonthId } = useMemo(() => {
         const t = startOfDay(currentTime);
         const tom = addDays(t, 1);
         return {
             today: t,
             tomorrow: tom,
             currentMonthId: format(t, 'yyyy-MM'),
-            nextMonthId: format(tom, 'yyyy-MM')
         };
     }, [currentTime]);
 
     const schoolConfigRef = useMemoFirebase(() => user ? doc(firestore, 'schoolConfig', 'default') : null, [firestore, user]);
     const { data: schoolConfig } = useDoc(user, schoolConfigRef);
-
-    const monthlyConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'monthlyConfigs', currentMonthId) : null, [firestore, currentMonthId]);
-    const { data: monthlyConfig } = useDoc(user, monthlyConfigRef);
 
     const selectedDateValue = form.watch('leaveDate');
     const targetDate = useMemo(() => selectedDateValue === 'tomorrow' ? tomorrow : today, [selectedDateValue, today, tomorrow]);
@@ -105,7 +101,7 @@ export default function IzinPage() {
             where('date', '==', format(targetDate, 'yyyy-MM-dd'))
         );
     }, [user, firestore, targetDate]);
-    const { data: targetDateAttendance, isLoading: isAttendanceLoading } = useCollection(user, attendanceQuery);
+    const { data: targetDateAttendance } = useCollection(user, attendanceQuery);
     
     const existingLeaveQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -114,10 +110,8 @@ export default function IzinPage() {
             where('startDate', '==', Timestamp.fromDate(targetDateStart))
         );
     }, [user, firestore, targetDateStart]);
-    const { data: existingLeaves, isLoading: isLeavesLoading } = useCollection(user, existingLeaveQuery);
+    const { data: existingLeaves } = useCollection(user, existingLeaveQuery);
     const currentDayLeave = existingLeaves?.[0];
-
-    const hasIn = !!targetDateAttendance?.[0]?.checkInTime;
 
     const onSubmit = async (values: z.infer<typeof leaveRequestSchema>) => {
         if (!user || !firestore) return;
@@ -158,16 +152,21 @@ export default function IzinPage() {
     };
 
     return (
-        <div className="flex-1 pt-2 pb-24 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                <Card className="border border-muted-foreground/10 shadow-none rounded-2xl overflow-hidden bg-card">
+        <div className="flex-1 pt-4 pb-24 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-4">
+                <div className="px-4 md:px-0">
+                    <h1 className="text-2xl font-normal tracking-tight text-foreground">Formulir pengajuan izin</h1>
+                    <p className="text-sm font-bold text-muted-foreground mt-0.5">Isi detail untuk permohonan ketidakhadiran.</p>
+                </div>
+
+                <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)}>
                             <CardHeader className="p-6 border-b border-muted-foreground/5 bg-white dark:bg-slate-900/20">
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1">
-                                        <CardTitle className="text-blue-600 dark:text-blue-400 font-bold text-base tracking-tight">Formulir pengajuan izin</CardTitle>
-                                        <CardDescription className="text-muted-foreground font-medium text-xs">Isi formulir untuk mengajukan ketidakhadiran atau tugas dinas.</CardDescription>
+                                        <CardTitle className="text-blue-600 dark:text-blue-400 font-bold text-base tracking-tight">Data Permohonan</CardTitle>
+                                        <CardDescription className="text-muted-foreground font-medium text-xs">Pastikan informasi yang diberikan sudah benar.</CardDescription>
                                     </div>
                                     {currentDayLeave && (
                                         <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 font-bold px-3 py-1">
@@ -257,7 +256,7 @@ export default function IzinPage() {
                                 <div className="flex items-center justify-between w-full">
                                     <Button 
                                         type="submit" 
-                                        disabled={isSubmitting || isAttendanceLoading || isLeavesLoading || !!currentDayLeave}
+                                        disabled={isSubmitting || !!currentDayLeave}
                                         className="bg-blue-600 hover:bg-blue-700 text-white font-black tracking-widest text-[11px] h-12 px-8 rounded-xl shadow-lg shadow-blue-600/20 uppercase"
                                     >
                                         {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kirim Pengajuan"}
@@ -270,14 +269,14 @@ export default function IzinPage() {
                                                     <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Batalkan
                                                 </Button>
                                             </AlertDialogTrigger>
-                                            <AlertDialogContent className="rounded-2xl border-none">
+                                            <AlertDialogContent className="rounded-2xl border-none shadow-none">
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle className="font-bold text-lg">Batalkan pengajuan?</AlertDialogTitle>
                                                     <AlertDialogDescription className="text-sm font-medium">Pengajuan izin Anda akan dihapus secara permanen.</AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel className="rounded-xl font-bold">Kembali</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleCancelLeave} className="bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold border-none">Ya, Hapus</AlertDialogAction>
+                                                    <AlertDialogCancel className="rounded-xl font-bold shadow-none">Kembali</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleCancelLeave} className="bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold border-none shadow-none">Ya, Hapus</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
