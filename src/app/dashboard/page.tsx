@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
 import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { id as indonesiaLocale } from 'date-fns/locale';
 import { LogIn, LogOut, Sparkles, User, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, CheckCircle2, Loader2, CalendarOff, Lock, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +60,7 @@ const LiveClockUI = memo(() => {
                 {format(time, 'HH:mm:ss')}
             </h2>
             <p className="text-[10px] font-bold text-slate-400 mt-2 tracking-normal opacity-70">
-                {format(time, 'eeee, d MMMM yyyy', { locale: id })}
+                {format(time, 'eeee, d MMMM yyyy', { locale: indonesiaLocale })}
             </p>
         </div>
     );
@@ -189,7 +189,7 @@ export default function DashboardPage() {
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
         window.scrollTo({
-            top: elementPosition - headerOffset,
+            top: offsetPosition,
             behavior: 'smooth'
         });
     }
@@ -427,7 +427,7 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between">
                         <div className="space-y-0.5">
                             <h2 className="text-lg font-bold tracking-tight text-foreground">
-                                Riwayat Bulan {format(summaryMonth, 'MMMM', { locale: id })}
+                                Riwayat Bulan {format(summaryMonth, 'MMMM', { locale: indonesiaLocale })}
                             </h2>
                             <p className="text-xs font-bold text-muted-foreground">
                                 Persentase: {isPersonalSummaryLoading ? '...' : `${personalSummary.percentage}%`}
@@ -469,4 +469,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
