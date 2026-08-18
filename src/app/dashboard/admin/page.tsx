@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff, Lock, UserX, BookUser } from 'lucide-react';
+import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff, Lock, UserX, BookUser, Clock } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -232,42 +232,45 @@ export default function AdminDashboardPage() {
             </Alert>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-2xl overflow-hidden text-white">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-normal">Hadir</CardTitle>
-                    <UserCheck className="h-5 w-5 text-white/80" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-normal">{dashboardData.stats.hadir}</div>
-                </CardContent>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+            <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-normal opacity-80">Hadir</span>
+                    <UserCheck className="h-3.5 w-3.5 opacity-60" />
+                </div>
+                <div className="text-3xl font-normal tracking-tight">
+                    {dashboardData.stats.hadir}
+                </div>
             </Card>
-            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-2xl overflow-hidden text-white">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-normal">Izin/Sakit</CardTitle>
-                    <BookUser className="h-5 w-5 text-white/80" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-normal">{dashboardData.stats.izin + dashboardData.stats.sakit}</div>
-                </CardContent>
+
+            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-normal opacity-80">Izin/Sakit</span>
+                    <BookUser className="h-3.5 w-3.5 opacity-60" />
+                </div>
+                <div className="text-3xl font-normal tracking-tight">
+                    {dashboardData.stats.izin + dashboardData.stats.sakit}
+                </div>
             </Card>
-            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-2xl overflow-hidden text-white">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-normal">Menunggu</CardTitle>
-                    <FileWarning className="h-5 w-5 text-white/80" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-normal">{dashboardData.stats.pending}</div>
-                </CardContent>
+
+            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-normal opacity-80">Menunggu</span>
+                    <Clock className="h-3.5 w-3.5 opacity-60" />
+                </div>
+                <div className="text-3xl font-normal tracking-tight">
+                    {dashboardData.stats.pending}
+                </div>
             </Card>
-            <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-2xl overflow-hidden text-white">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-normal">Alpa</CardTitle>
-                    <UserX className="h-5 w-5 text-white/80" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-normal">{dashboardData.stats.alpa}</div>
-                </CardContent>
+
+            <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-normal opacity-80">Alpa</span>
+                    <UserX className="h-3.5 w-3.5 opacity-60" />
+                </div>
+                <div className="text-3xl font-normal tracking-tight">
+                    {dashboardData.stats.alpa}
+                </div>
             </Card>
         </div>
 

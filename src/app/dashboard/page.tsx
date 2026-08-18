@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -6,7 +5,7 @@ import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, TrendingUp, Lock, CalendarOff, CheckCircle2, Loader2 } from 'lucide-react';
+import { LogIn, LogOut, Sparkles, User, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, CheckCircle2, Loader2, CalendarOff, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -204,7 +203,6 @@ export default function DashboardPage() {
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
 
-    // Loading states
     if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) {
         return (
             <div className="w-full bg-muted/20 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-2">
@@ -214,7 +212,6 @@ export default function DashboardPage() {
         );
     }
 
-    // Holiday / System Disabled
     if (stats.isManualDisabled || windowStatus === 'DISABLED') {
          return (
             <div className="w-full bg-muted/40 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-3">
@@ -234,7 +231,6 @@ export default function DashboardPage() {
         );
     }
 
-    // Active Leave
     if (currentActiveLeave) {
         return (
             <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-12 flex items-center justify-center gap-3">
@@ -244,7 +240,6 @@ export default function DashboardPage() {
         );
     }
 
-    // Attendance Flow
     if (isCheckedOut) {
         return (
             <div className="w-full bg-green-50 border border-green-100 rounded-xl h-12 flex items-center justify-center gap-3">
@@ -272,15 +267,15 @@ export default function DashboardPage() {
         }
         if (windowStatus === 'AFTER_IN' || windowStatus === 'CHECK_OUT_OPEN' || windowStatus === 'CLOSED') {
              return (
-                <div className="w-full bg-red-50 border border-red-100 rounded-xl h-12 flex items-center justify-center gap-3">
-                    <div className="bg-white rounded-full p-1 border border-red-200">
-                        <AlertCircle className="h-3 w-3 text-red-500" />
+                <div className="w-full bg-[#fef2f2] border border-red-100 rounded-2xl h-14 flex items-center justify-center gap-3 shadow-none">
+                    <div className="bg-white rounded-full p-1.5 border border-red-200 shadow-sm">
+                        <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                     </div>
-                    <span className="text-[11px] font-black text-red-500 uppercase tracking-tight">Batas jam masuk berakhir</span>
+                    <span className="text-[12px] font-black text-red-600 uppercase tracking-widest">BATAS JAM MASUK BERAKHIR</span>
                 </div>
             );
         }
-    } else { // Already Checked In
+    } else {
         if (windowStatus === 'CHECK_OUT_OPEN') {
             return (
                 <Button asChild className="w-full h-12 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs">
@@ -295,7 +290,6 @@ export default function DashboardPage() {
             </div>
         );
     }
-
     return null;
   };
 
@@ -317,7 +311,6 @@ export default function DashboardPage() {
 
         {!isAdmin && (
             <div className="w-full space-y-4">
-                {/* BANNER HEADER */}
                 <Card className="w-full border-none shadow-none rounded-2xl bg-gradient-to-r from-blue-600 to-blue-400 overflow-hidden relative">
                     <CardContent className="p-6 flex items-center gap-5 text-white">
                         <div className="bg-white/20 p-3 rounded-xl backdrop-blur-md">
@@ -333,7 +326,6 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* MAIN ATTENDANCE CARD */}
                 <Card className="w-full border-none shadow-xl shadow-blue-600/10 rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
                     <div className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-0 opacity-80">
                         <svg viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
@@ -343,10 +335,8 @@ export default function DashboardPage() {
                     </div>
                     
                     <CardContent className="p-10 flex flex-col items-center gap-10 relative z-10">
-                        {/* CLOCK SECTION */}
                         <LiveClockUI />
 
-                        {/* STATUS GRID */}
                         <div className="grid grid-cols-2 gap-4 w-full">
                             <div className="bg-gradient-to-br from-green-50/80 to-white/60 dark:from-green-950/20 dark:to-transparent rounded-2xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#2ecc71] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-green-500/20">
@@ -373,13 +363,10 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* ACTION SECTION */}
                         <div className="w-full flex flex-col items-center gap-8">
                             <div className="w-full">
                                 {renderStatusAlert()}
                             </div>
-
-                            {/* FOOTER LINK */}
                             <Link href="/dashboard/laporan" className="text-[11px] font-bold text-slate-400 hover:text-primary transition-colors underline underline-offset-4 decoration-slate-200">
                                 Lihat riwayat lengkap
                             </Link>
@@ -397,10 +384,10 @@ export default function DashboardPage() {
                         onClick={() => scrollToId('recent-attendance')}
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[9px] font-bold uppercase tracking-widest opacity-80">Hadir</span>
+                            <span className="text-[10px] font-normal opacity-80">Hadir</span>
                             <User className="h-3 w-3 opacity-60" />
                         </div>
-                        <div className="text-2xl font-normal tracking-tight">
+                        <div className="text-3xl font-normal tracking-tight">
                             {isStatsLoading ? '...' : stats.hadir}
                         </div>
                     </Card>
@@ -410,10 +397,10 @@ export default function DashboardPage() {
                         onClick={() => scrollToId('absent-users')}
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[9px] font-bold uppercase tracking-widest opacity-80">Izin/Sakit</span>
+                            <span className="text-[10px] font-normal opacity-80">Izin/Sakit</span>
                             <User className="h-3 w-3 opacity-60" />
                         </div>
-                        <div className="text-2xl font-normal tracking-tight">
+                        <div className="text-3xl font-normal tracking-tight">
                             {isStatsLoading ? '...' : stats.izin + stats.sakit}
                         </div>
                     </Card>
@@ -423,10 +410,10 @@ export default function DashboardPage() {
                         onClick={navigateToApproval}
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[9px] font-bold uppercase tracking-widest opacity-80">Menunggu</span>
+                            <span className="text-[10px] font-normal opacity-80">Menunggu</span>
                             <Clock className="h-3 w-3 opacity-60" />
                         </div>
-                        <div className="text-2xl font-normal tracking-tight">
+                        <div className="text-3xl font-normal tracking-tight">
                             {isStatsLoading ? '...' : stats.pending}
                         </div>
                     </Card>
@@ -436,10 +423,10 @@ export default function DashboardPage() {
                         onClick={() => scrollToId('absent-users')}
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[9px] font-bold uppercase tracking-widest opacity-80">Alpa</span>
+                            <span className="text-[10px] font-normal opacity-80">Alpa</span>
                             <User className="h-3 w-3 opacity-60" />
                         </div>
-                        <div className="text-2xl font-normal tracking-tight">
+                        <div className="text-3xl font-normal tracking-tight">
                             {isStatsLoading ? '...' : stats.alpa}
                         </div>
                     </Card>

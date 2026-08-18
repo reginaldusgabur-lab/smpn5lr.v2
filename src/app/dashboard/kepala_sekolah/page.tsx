@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, CalendarOff, LogIn, LogOut, ClipboardCheck, ArrowRight, FileText, UserCheck, AlertCircle, UserX, BookUser, MailWarning } from 'lucide-react';
+import { Loader2, CalendarOff, LogIn, LogOut, ClipboardCheck, ArrowRight, FileText, UserCheck, AlertCircle, UserX, BookUser, MailWarning, Clock } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, Timestamp, getDocs, type DocumentData, collectionGroup, getDoc } from 'firebase/firestore';
 import { format, startOfDay, endOfDay } from 'date-fns';
@@ -166,7 +166,6 @@ export default function KepalaSekolahDashboardPage() {
             const today = new Date();
             const todayStr = format(today, 'yyyy-MM-dd');
             
-            // Re-using the same attendance logic to ensure consistency
             const attendanceQuery = collectionGroup(firestore, 'attendanceRecords');
             const leaveQuery = collectionGroup(firestore, 'leaveRequests');
 
@@ -192,7 +191,6 @@ export default function KepalaSekolahDashboardPage() {
                     return req.status === 'pending' && role && ['guru', 'kepala_sekolah', 'pegawai'].includes(role);
                 });
 
-            // Count real attendance status
             const presentIds = new Set(allAttendance.map(a => a.userId));
             
             setDashboardData({
@@ -200,7 +198,7 @@ export default function KepalaSekolahDashboardPage() {
                 pendingLeaveRequests: allPendingLeave,
                 stats: {
                     hadir: presentIds.size,
-                    izin: 0, // Placeholder as real-time calculation is better in useMemo
+                    izin: 0,
                     sakit: 0,
                     pending: allPendingLeave.length,
                     alpa: 0
@@ -279,35 +277,19 @@ export default function KepalaSekolahDashboardPage() {
     return <KepalaSekolahDashboardSkeleton />;
   }
 
-  const todaysRecord = todaysAttendance?.[0];
-  const checkInTime = todaysRecord?.checkInTime?.toDate();
-  const checkOutTime = todaysRecord?.checkOutTime?.toDate();
+  const personalButtonAction = () => {
+    const record = todaysAttendance?.[0];
+    const hasIn = !!record?.checkInTime;
+    const hasOut = !!record?.checkOutTime;
 
-  let isLate = false;
-  let isEarly = false;
-
-  if (schoolConfig?.useTimeValidation && checkInTime) {
-    const [lateH, lateM] = schoolConfig.checkInEndTime.split(':').map(Number);
-    const lateTime = new Date(checkInTime);
-    lateTime.setHours(lateH, lateM, 0, 0);
-    if (checkInTime > lateTime) isLate = true;
-  }
-
-  if (schoolConfig?.useTimeValidation && checkOutTime) {
-    const [earlyH, earlyM] = schoolConfig.checkOutStartTime.split(':').map(Number);
-    const earlyTime = new Date(checkOutTime);
-    earlyTime.setHours(earlyH, earlyM, 0, 0);
-    if (checkOutTime < earlyTime) isEarly = true;
-  }
-
-  let personalButtonAction;
-  if (checkInTime && !checkOutTime) {
-    personalButtonAction = <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
-  } else if (!checkInTime) {
-    personalButtonAction = <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
-  } else {
-    personalButtonAction = <Button disabled size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all">Absensi Selesai</Button>;
-  }
+    if (hasIn && !hasOut) {
+        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
+    } else if (!hasIn) {
+        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
+    } else {
+        return <Button disabled size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all">Absensi Selesai</Button>;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -318,15 +300,14 @@ export default function KepalaSekolahDashboardPage() {
       </div>
 
       {isHoliday && (
-        <Alert className="bg-blue-50 border-blue-200 rounded-2xl shadow-none animate-in fade-in slide-in-from-top-4 duration-500">
+        <Alert className="bg-blue-50 border-blue-200 rounded-2xl shadow-none">
           <CalendarOff className="h-4 w-4 text-blue-600" />
           <AlertTitle className="text-blue-800 font-bold">Hari Libur Terdeteksi</AlertTitle>
-          <AlertDescription className="text-blue-700 text-xs font-bold">Sistem absensi sedang non-aktif hari ini. Anda tetap dapat meninjau pengajuan izin yang masuk.</AlertDescription>
+          <AlertDescription className="text-blue-700 text-xs font-bold">Sistem absensi sedang non-aktif hari ini.</AlertDescription>
         </Alert>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Personal Attendance Card */}
         <Card className="w-full lg:col-span-2 shadow-none border-muted-foreground/10 bg-primary/5 rounded-2xl overflow-hidden">
           <CardHeader>
             <CardTitle>Kehadiran Anda Hari Ini</CardTitle>
@@ -334,14 +315,14 @@ export default function KepalaSekolahDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
             <LiveClock />
-            <div className="grid grid-cols-2 gap-4 text-center w-full max-sm pt-4">
+            <div className="grid grid-cols-2 gap-4 text-center w-full max-w-sm pt-4">
               <div className="rounded-lg border bg-card p-4">
                   <div className="flex items-center justify-center gap-2 mb-1">
                       <LogIn className="w-4 h-4 text-muted-foreground" />
                       <p className="text-sm font-medium text-muted-foreground">Absen Masuk</p>
                   </div>
-                <p className={cn("text-2xl font-bold text-foreground", isLate && "text-destructive")}>
-                  {checkInTime ? format(checkInTime, 'HH:mm') : '--:--'}
+                <p className="text-2xl font-bold text-foreground">
+                  {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
                 </p>
               </div>
               <div className="rounded-lg border bg-card p-4">
@@ -349,14 +330,14 @@ export default function KepalaSekolahDashboardPage() {
                       <LogOut className="w-4 h-4 text-muted-foreground" />
                       <p className="text-sm font-medium text-muted-foreground">Absen Pulang</p>
                   </div>
-                <p className={cn("text-2xl font-bold text-foreground", isEarly && "text-destructive")}>
-                  {checkOutTime ? format(checkOutTime, 'HH:mm') : '--:--'}
+                <p className="text-2xl font-bold text-foreground">
+                  {todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}
                 </p>
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
-            {!isHoliday ? personalButtonAction : (
+            {!isHoliday ? personalButtonAction() : (
                <div className="w-full p-4 bg-muted/30 rounded-xl text-center">
                   <p className="text-xs font-bold text-muted-foreground">Absensi pribadi dinonaktifkan hari ini</p>
                </div>
@@ -364,38 +345,37 @@ export default function KepalaSekolahDashboardPage() {
           </CardFooter>
         </Card>
 
-        {/* Monitoring Cards */}
         <div className="space-y-4">
-          <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-2xl p-3 text-white">
-            <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-normal uppercase tracking-widest text-white/80">Guru & Pegawai Hadir</CardTitle>
-                <UserCheck className="h-4 w-4 text-white/60" />
-            </CardHeader>
-            <div className="text-3xl font-normal tracking-tighter">
-                {staffPresentToday}<span className="text-lg font-normal text-white/50">/{totalStaff}</span>
+          <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+            <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-normal opacity-80">Hadir</span>
+                <UserCheck className="h-3.5 w-3.5 opacity-60" />
+            </div>
+            <div className="text-3xl font-normal tracking-tight">
+                {staffPresentToday}<span className="text-lg opacity-50">/{totalStaff}</span>
             </div>
           </Card>
           
-          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-2xl p-3 text-white">
-            <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[10px] font-normal uppercase tracking-widest text-white/80">Persetujuan Izin</CardTitle>
-              <ClipboardCheck className="h-4 w-4 text-white/60" />
-            </CardHeader>
+          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-normal opacity-80">Persetujuan Izin</span>
+              <ClipboardCheck className="h-3.5 w-3.5 opacity-60" />
+            </div>
             <div className="flex items-center justify-between">
-                <div className="text-3xl font-normal tracking-tighter">{dashboardData.pendingLeaveRequests?.length || 0}</div>
+                <div className="text-3xl font-normal tracking-tight">{dashboardData.pendingLeaveRequests?.length || 0}</div>
                 <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
                     <Link href="/dashboard/izin-kepala-sekolah">DETAIL</Link>
                 </Button>
             </div>
           </Card>
           
-           <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-2xl p-3 text-white">
-            <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[10px] font-normal uppercase tracking-widest text-white/80">Laporan Sekolah</CardTitle>
-              <FileText className="h-4 w-4 text-white/60" />
-            </CardHeader>
+           <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-normal opacity-80">Laporan Sekolah</span>
+              <FileText className="h-3.5 w-3.5 opacity-60" />
+            </div>
             <div className="flex items-center justify-between mt-1">
-                <p className="text-[10px] font-normal text-white/70">Akses semua data</p>
+                <p className="text-[10px] opacity-70">Akses data</p>
                 <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
                     <Link href="/dashboard/laporan-sekolah">BUKA</Link>
                 </Button>
@@ -439,7 +419,7 @@ export default function KepalaSekolahDashboardPage() {
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">
-                                    {isHoliday ? "Tidak ada aktivitas di hari libur" : "Belum ada aktivitas kehadiran hari ini"}
+                                    Belum ada aktivitas
                                 </TableCell>
                             </TableRow>
                         )}
