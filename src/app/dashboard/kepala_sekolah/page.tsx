@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -372,7 +371,7 @@ export default function KepalaSekolahDashboardPage() {
                 <CardTitle className="text-[10px] font-normal uppercase tracking-widest text-white/80">Guru & Pegawai Hadir</CardTitle>
                 <UserCheck className="h-4 w-4 text-white/60" />
             </CardHeader>
-            <div className="text-2xl font-normal tracking-tighter">
+            <div className="text-3xl font-normal tracking-tighter">
                 {staffPresentToday}<span className="text-lg font-normal text-white/50">/{totalStaff}</span>
             </div>
           </Card>
@@ -383,7 +382,7 @@ export default function KepalaSekolahDashboardPage() {
               <ClipboardCheck className="h-4 w-4 text-white/60" />
             </CardHeader>
             <div className="flex items-center justify-between">
-                <div className="text-2xl font-normal tracking-tighter">{dashboardData.pendingLeaveRequests?.length || 0}</div>
+                <div className="text-3xl font-normal tracking-tighter">{dashboardData.pendingLeaveRequests?.length || 0}</div>
                 <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
                     <Link href="/dashboard/izin-kepala-sekolah">DETAIL</Link>
                 </Button>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -332,7 +331,7 @@ export default function DashboardPage() {
                             <CardTitle className="text-sm font-normal">Hadir</CardTitle>
                             <UserCheck className="h-5 w-5 text-white/60 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-4xl font-normal">
+                        <div className="text-3xl font-normal">
                             {isStatsLoading ? '...' : stats.hadir}
                         </div>
                     </Card>
@@ -344,7 +343,7 @@ export default function DashboardPage() {
                             <CardTitle className="text-sm font-normal">Izin/Sakit</CardTitle>
                             <BookUser className="h-5 w-5 text-white/60 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-4xl font-normal">
+                        <div className="text-3xl font-normal">
                             {isStatsLoading ? '...' : stats.izin + stats.sakit}
                         </div>
                     </Card>
@@ -356,7 +355,7 @@ export default function DashboardPage() {
                             <CardTitle className="text-sm font-normal">Menunggu</CardTitle>
                             <MailWarning className="h-5 w-5 text-white/60 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-4xl font-normal">
+                        <div className="text-3xl font-normal">
                             {isStatsLoading ? '...' : stats.pending}
                         </div>
                     </Card>
@@ -368,7 +367,7 @@ export default function DashboardPage() {
                             <CardTitle className="text-sm font-normal">Alpa</CardTitle>
                             <UserX className="h-5 w-5 text-white/60 group-hover:scale-110 transition-transform" />
                         </CardHeader>
-                        <div className="text-4xl font-normal">
+                        <div className="text-3xl font-normal">
                             {isStatsLoading ? '...' : stats.alpa}
                         </div>
                     </Card>
@@ -435,4 +434,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

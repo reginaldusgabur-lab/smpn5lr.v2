@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -240,7 +239,7 @@ export default function AdminDashboardPage() {
                     <UserCheck className="h-5 w-5 text-white/80" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-4xl font-normal">{dashboardData.stats.hadir}</div>
+                    <div className="text-3xl font-normal">{dashboardData.stats.hadir}</div>
                 </CardContent>
             </Card>
             <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-2xl overflow-hidden text-white">
@@ -249,7 +248,7 @@ export default function AdminDashboardPage() {
                     <BookUser className="h-5 w-5 text-white/80" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-4xl font-normal">{dashboardData.stats.izin + dashboardData.stats.sakit}</div>
+                    <div className="text-3xl font-normal">{dashboardData.stats.izin + dashboardData.stats.sakit}</div>
                 </CardContent>
             </Card>
             <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-2xl overflow-hidden text-white">
@@ -258,7 +257,7 @@ export default function AdminDashboardPage() {
                     <FileWarning className="h-5 w-5 text-white/80" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-4xl font-normal">{dashboardData.stats.pending}</div>
+                    <div className="text-3xl font-normal">{dashboardData.stats.pending}</div>
                 </CardContent>
             </Card>
             <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-2xl overflow-hidden text-white">
@@ -267,7 +266,7 @@ export default function AdminDashboardPage() {
                     <UserX className="h-5 w-5 text-white/80" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-4xl font-normal">{dashboardData.stats.alpa}</div>
+                    <div className="text-3xl font-normal">{dashboardData.stats.alpa}</div>
                 </CardContent>
             </Card>
         </div>
