@@ -8,7 +8,7 @@ import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, st
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer, User as UserIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Label } from '@/components/ui/label';
 import {
@@ -19,11 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface ReportRowData {
     no: number;
@@ -39,6 +41,7 @@ interface ReportRowData {
     persentase: string;
     persentaseNum: number;
     sequenceNumber: number | null;
+    photoURL?: string;
 }
 
 const minDate = new Date(2026, 0, 1);
@@ -46,6 +49,7 @@ const minDate = new Date(2026, 0, 1);
 export default function SchoolReportPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const router = useRouter();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [reportData, setReportData] = useState<ReportRowData[]>([]);
     const [isReportLoading, setIsReportLoading] = useState(true);
@@ -180,6 +184,7 @@ export default function SchoolReportPage() {
                     uid: u.id, name: (u as any).name || '', nip: (u as any).nip || '-',
                     position: (u as any).position || '-', role: (u as any).role || '',
                     sequenceNumber: (u as any).sequenceNumber || null,
+                    photoURL: (u as any).photoURL || null,
                     totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa, 
                     persentaseNum, persentase
                 };
@@ -276,6 +281,8 @@ export default function SchoolReportPage() {
         } finally { setIsExporting(false); }
     };
 
+    const rowAccentColors = ['bg-blue-600', 'bg-indigo-600', 'bg-cyan-500', 'bg-emerald-500', 'bg-orange-500', 'bg-pink-500'];
+
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
@@ -286,7 +293,7 @@ export default function SchoolReportPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
+                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
@@ -324,39 +331,93 @@ export default function SchoolReportPage() {
                             </div>
                         </div>
 
-                        <div className="border-t border-muted-foreground/10 overflow-x-auto">
-                            <Table>
-                                <TableHeader className="bg-muted/30">
-                                    <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase">Nama & NIP</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Hadir</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Izin</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Sakit</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Alpa</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">%</TableHead>
-                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase">Aksi</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isReportLoading ? [...Array(6)].map((_, i) => <TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell></TableRow>) : filteredReports.length > 0 ? filteredReports.map((item) => (
-                                        <TableRow key={item.uid} className="hover:bg-primary/5">
-                                            <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.no}</TableCell>
-                                            <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{item.name}</span><span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span></div></TableCell>
-                                            <TableCell className="text-center font-bold text-green-600/80">{Math.ceil(item.totalHadir)}</TableCell>
-                                            <TableCell className="text-center font-bold text-blue-500/80">{item.totalIzin}</TableCell>
-                                            <TableCell className="text-center font-bold text-orange-500/80">{item.totalSakit}</TableCell>
-                                            <TableCell className="text-center font-bold text-destructive/80">{item.totalAlpa}</TableCell>
-                                            <TableCell className="text-center font-bold text-primary/80">{item.persentase}</TableCell>
-                                            <TableCell className="text-center"><Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}><Button variant="ghost" size="icon" className="rounded-full"><Eye className="h-5 w-5 text-primary" /></Button></Link></TableCell>
-                                        </TableRow>
-                                    )) : (
-                                        <TableRow>
-                                            <TableCell colSpan={8} className="h-48 text-center font-bold opacity-50 uppercase text-xs">Data tidak ditemukan</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                        {/* --- NEW CARD-STYLE LIST --- */}
+                        <div className="p-4 space-y-3">
+                            {/* Static Header */}
+                            <div className="hidden lg:grid grid-cols-12 gap-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2">
+                                <div className="col-span-1 text-center">No</div>
+                                <div className="col-span-5 pl-12">Nama & NIP</div>
+                                <div className="col-span-6 grid grid-cols-4 gap-2 text-center">
+                                    <div>Hadir</div>
+                                    <div>Izin</div>
+                                    <div>Sakit</div>
+                                    <div>Alpa</div>
+                                </div>
+                            </div>
+
+                            {isReportLoading ? (
+                                [...Array(5)].map((_, i) => (
+                                    <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+                                ))
+                            ) : filteredReports.length > 0 ? (
+                                filteredReports.map((item, index) => {
+                                    const accentColor = rowAccentColors[index % rowAccentColors.length];
+                                    return (
+                                        <div key={item.uid} className="relative bg-card border border-border/40 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all group overflow-hidden">
+                                            {/* Left Accent Bar */}
+                                            <div className={cn("absolute left-0 top-3 bottom-3 w-1.5 rounded-r-full", accentColor)} />
+                                            
+                                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center pl-4">
+                                                {/* NO Column */}
+                                                <div className="hidden lg:flex lg:col-span-1 justify-center">
+                                                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center font-black text-sm", accentColor.replace('bg-', 'bg-').replace('600', '10').replace('500', '10'), accentColor.replace('bg-', 'text-'))}>
+                                                        {item.sequenceNumber || index + 1}
+                                                    </div>
+                                                </div>
+
+                                                {/* NAMA & NIP Column */}
+                                                <div className="col-span-1 lg:col-span-5 flex items-center gap-4">
+                                                    <div className="lg:hidden w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-xs text-primary shrink-0">
+                                                        {item.sequenceNumber || index + 1}
+                                                    </div>
+                                                    <Avatar className="h-11 w-11 border-2 border-background shadow-sm shrink-0">
+                                                        <AvatarImage src={item.photoURL} />
+                                                        <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{getInitials(item.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-sm text-foreground truncate" title={item.name}>{item.name}</span>
+                                                        <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{item.nip}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* STATS Column */}
+                                                <div className="col-span-1 lg:col-span-6 grid grid-cols-4 gap-2 text-center">
+                                                    <div className="bg-emerald-500/5 rounded-xl p-2 border border-emerald-500/10">
+                                                        <p className="text-sm font-black text-emerald-600 leading-none">{Math.ceil(item.totalHadir)}</p>
+                                                        <p className="text-[8px] font-bold text-emerald-600/60 uppercase mt-1">Hadir</p>
+                                                    </div>
+                                                    <div className="bg-blue-500/5 rounded-xl p-2 border border-blue-500/10">
+                                                        <p className="text-sm font-black text-blue-600 leading-none">{item.totalIzin}</p>
+                                                        <p className="text-[8px] font-bold text-blue-600/60 uppercase mt-1">Izin</p>
+                                                    </div>
+                                                    <div className="bg-orange-500/5 rounded-xl p-2 border border-orange-500/10">
+                                                        <p className="text-sm font-black text-orange-600 leading-none">{item.totalSakit}</p>
+                                                        <p className="text-[8px] font-bold text-orange-600/60 uppercase mt-1">Sakit</p>
+                                                    </div>
+                                                    <div className="bg-red-500/5 rounded-xl p-2 border border-red-500/10">
+                                                        <p className="text-sm font-black text-red-600 leading-none">{item.totalAlpa}</p>
+                                                        <p className="text-[8px] font-bold text-red-600/60 uppercase mt-1">Alpa</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Action - Overlay or Float */}
+                                                <div className="lg:absolute lg:right-4 lg:top-1/2 lg:-translate-y-1/2">
+                                                    <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-primary/10 group-hover:scale-110 transition-all">
+                                                            <Eye className="h-4 w-4 text-primary" />
+                                                        </Button>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="h-48 flex flex-col items-center justify-center text-muted-foreground opacity-40 uppercase text-xs font-black tracking-widest">
+                                    <Award className="w-12 h-12 mb-2" />
+                                    Data tidak ditemukan
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

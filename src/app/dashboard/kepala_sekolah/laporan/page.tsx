@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -10,14 +9,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -27,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays, Eye } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, collectionGroup } from 'firebase/firestore';
 import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, setHours, setMinutes } from 'date-fns';
@@ -35,6 +26,9 @@ import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToExcel, exportToPdf } from '@/lib/export';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 function useStaffAttendanceSummary(currentMonth: Date) {
     const { user } = useUser();
@@ -125,8 +119,11 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     });
                 });
 
+                const pastWorkingDays = workingDays.filter(day => isBefore(day, startOfDay(new Date())) || isSameDay(day, new Date()));
+                const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+
                 const presentasi = Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%';
-                return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: 0, terlambat: 0, presentasi };
+                return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: alpaCount, terlambat: 0, presentasi };
             });
 
             const groupedByRole = userSummary.reduce((acc: any, user: any) => {
@@ -148,47 +145,88 @@ function useStaffAttendanceSummary(currentMonth: Date) {
     return { summary, isLoading, academicYear, schoolConfig };
 }
 
-const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLoading: boolean, currentMonth: Date }) => {
+const StaffReportListView = ({ data, isLoading, currentMonth }: { data: any[], isLoading: boolean, currentMonth: Date }) => {
     const router = useRouter();
-    if (isLoading) return <div className="rounded-md border"><Table><TableHeader><TableRow>{[...Array(9)].map((_, i) => <TableHead key={i}><Skeleton className="h-5 w-full" /></TableHead>)}</TableRow></TableHeader><TableBody>{[...Array(10)].map((_, i) => (<TableRow key={i}>{[...Array(9)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}</TableRow>))}</TableBody></Table></div>;
+    const rowAccentColors = ['bg-blue-600', 'bg-indigo-600', 'bg-cyan-500', 'bg-emerald-500', 'bg-orange-500', 'bg-pink-500'];
+
+    if (isLoading) return <div className="space-y-3 pt-4">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}</div>;
 
     return (
-        <div className="rounded-md border">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[50px] text-center">No.</TableHead>
-                        <TableHead>Nama</TableHead>
-                        <TableHead>NIP</TableHead>
-                        <TableHead>Status Kepegawaian</TableHead>
-                        <TableHead className="text-center">Hadir</TableHead>
-                        <TableHead className="text-center">Izin</TableHead>
-                        <TableHead className="text-center">Sakit</TableHead>
-                        <TableHead className="text-right">Aksi</TableHead> 
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data && data.length > 0 ? (
-                        data.map((user, index) => (
-                            <TableRow key={user.id}>
-                                <TableCell className="text-center font-medium">{user.sequenceNumber || index + 1}</TableCell>
-                                <TableCell className="font-medium whitespace-nowrap">{user.name}</TableCell>
-                                <TableCell>{user.nip || '-'}</TableCell>
-                                <TableCell>{user.position || '-'}</TableCell>
-                                <TableCell className="text-center font-bold">{user.hadir}</TableCell>
-                                <TableCell className="text-center font-bold">{user.izin}</TableCell>
-                                <TableCell className="text-center font-bold">{user.sakit}</TableCell>
-                                <TableCell className="text-right">
-                                     <DropdownMenu>
-                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end"><DropdownMenuItem onClick={() => router.push(`/dashboard/laporan/${user.id}?month=${format(currentMonth, 'yyyy-MM')}`)}>Lihat Detail</DropdownMenuItem></DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
-                        ))
-                    ) : <TableRow><TableCell colSpan={9} className="h-24 text-center">Tidak ada data.</TableCell></TableRow>}
-                </TableBody>
-            </Table>
+        <div className="p-0 lg:p-2 space-y-3 pt-4">
+            {/* Static Header */}
+            <div className="hidden lg:grid grid-cols-12 gap-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-2">
+                <div className="col-span-1 text-center">No</div>
+                <div className="col-span-5 pl-12">Nama & NIP</div>
+                <div className="col-span-6 grid grid-cols-4 gap-2 text-center">
+                    <div>Hadir</div>
+                    <div>Izin</div>
+                    <div>Sakit</div>
+                    <div>Alpa</div>
+                </div>
+            </div>
+
+            {data && data.length > 0 ? (
+                data.map((item, index) => {
+                    const accentColor = rowAccentColors[index % rowAccentColors.length];
+                    return (
+                        <div key={item.id} className="relative bg-card border border-border/40 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all group overflow-hidden">
+                            {/* Left Accent Bar */}
+                            <div className={cn("absolute left-0 top-3 bottom-3 w-1.5 rounded-r-full", accentColor)} />
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center pl-4">
+                                {/* NO Column */}
+                                <div className="hidden lg:flex lg:col-span-1 justify-center">
+                                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center font-black text-sm", accentColor.replace('bg-', 'bg-').replace('600', '10').replace('500', '10'), accentColor.replace('bg-', 'text-'))}>
+                                        {item.sequenceNumber || index + 1}
+                                    </div>
+                                </div>
+
+                                {/* NAMA & NIP Column */}
+                                <div className="col-span-1 lg:col-span-5 flex items-center gap-4">
+                                    <div className="lg:hidden w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-xs text-primary shrink-0">
+                                        {item.sequenceNumber || index + 1}
+                                    </div>
+                                    <Avatar className="h-11 w-11 border-2 border-background shadow-sm shrink-0">
+                                        <AvatarImage src={item.photoURL} />
+                                        <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{getInitials(item.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="font-bold text-sm text-foreground truncate" title={item.name}>{item.name}</span>
+                                        <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{item.nip}</span>
+                                    </div>
+                                </div>
+
+                                {/* STATS Column */}
+                                <div className="col-span-1 lg:col-span-6 grid grid-cols-4 gap-2 text-center">
+                                    <div className="bg-emerald-500/5 rounded-xl p-2 border border-emerald-500/10">
+                                        <p className="text-sm font-black text-emerald-600 leading-none">{Math.ceil(item.hadir)}</p>
+                                        <p className="text-[8px] font-bold text-emerald-600/60 uppercase mt-1">Hadir</p>
+                                    </div>
+                                    <div className="bg-blue-500/5 rounded-xl p-2 border border-blue-500/10">
+                                        <p className="text-sm font-black text-blue-600 leading-none">{item.izin}</p>
+                                        <p className="text-[8px] font-bold text-blue-600/60 uppercase mt-1">Izin</p>
+                                    </div>
+                                    <div className="bg-orange-500/5 rounded-xl p-2 border border-orange-500/10">
+                                        <p className="text-sm font-black text-orange-600 leading-none">{item.sakit}</p>
+                                        <p className="text-[8px] font-bold text-orange-600/60 uppercase mt-1">Sakit</p>
+                                    </div>
+                                    <div className="bg-red-500/5 rounded-xl p-2 border border-red-500/10">
+                                        <p className="text-sm font-black text-red-600 leading-none">{item.alpa}</p>
+                                        <p className="text-[8px] font-bold text-red-600/60 uppercase mt-1">Alpa</p>
+                                    </div>
+                                </div>
+                                
+                                {/* Action */}
+                                <div className="lg:absolute lg:right-4 lg:top-1/2 lg:-translate-y-1/2">
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-primary/10 group-hover:scale-110 transition-all" onClick={() => router.push(`/dashboard/laporan/${item.id}?month=${format(currentMonth, 'yyyy-MM')}`)}>
+                                        <Eye className="h-4 w-4 text-primary" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })
+            ) : <div className="h-48 flex items-center justify-center font-bold text-muted-foreground opacity-50 uppercase text-xs tracking-widest">Tidak ada data.</div>}
         </div>
     );
 };
@@ -258,9 +296,9 @@ function StaffReportView() {
                     </div>
                 </div>
 
-                <TabsContent value="guru"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
-                <TabsContent value="pegawai"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
-                <TabsContent value="kepala_sekolah"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
+                <TabsContent value="guru"><StaffReportListView data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
+                <TabsContent value="pegawai"><StaffReportListView data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
+                <TabsContent value="kepala_sekolah"><StaffReportListView data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
             </Tabs>
           </CardContent>
         </Card>
