@@ -62,7 +62,7 @@ const LiveClockUI = memo(() => {
             <h2 className="text-3xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-bold text-slate-400 mt-4 tracking-normal opacity-70">
+            <p className="text-[10px] font-bold text-slate-400 mt-2 tracking-normal opacity-70">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
         window.scrollTo({
-            top: elementPosition - headerOffset,
+            top: offsetPosition,
             behavior: 'smooth'
         });
     }
@@ -376,16 +376,14 @@ export default function DashboardPage() {
                                 {renderStatusAlert()}
                             </div>
                             
-                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-between px-10 py-2 hover:opacity-80 transition-opacity group relative">
-                                <div className="flex items-center gap-4 relative z-10">
-                                    <div className="bg-white p-2.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-slate-50 shrink-0">
-                                        <CalendarCheck className="h-4 w-4 text-blue-500" />
-                                    </div>
-                                    <span className="text-[11px] font-bold text-blue-600 tracking-tight">
-                                        Lihat riwayat lengkap
-                                    </span>
+                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-5 py-8 hover:opacity-80 transition-opacity group relative">
+                                <div className="bg-white p-2.5 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-50 shrink-0 relative z-10">
+                                    <CalendarCheck className="h-5 w-5 text-blue-500" />
                                 </div>
-                                <ChevronRight className="h-3 w-3 text-slate-300 group-hover:translate-x-1 transition-transform relative z-10 mr-2" />
+                                <span className="text-[12px] font-bold text-blue-600 tracking-tight relative z-10">
+                                    Lihat riwayat lengkap
+                                </span>
+                                <ChevronRight className="h-3 w-3 text-slate-200 group-hover:translate-x-1 transition-transform relative z-10" />
                             </Link>
                         </div>
                     </CardContent>
