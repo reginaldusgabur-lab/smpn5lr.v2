@@ -44,6 +44,7 @@ export default function LaporanPage() {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthlyReportData, setMonthlyReportData] = useState<ReportItem[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [isReportLoading, setIsReportLoading] = useState(true);
   const [academicYear, setAcademicYear] = useState("");
 
@@ -263,4 +264,3 @@ export default function LaporanPage() {
     </div>
   );
 }
-
