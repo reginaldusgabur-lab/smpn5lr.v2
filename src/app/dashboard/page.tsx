@@ -10,7 +10,7 @@ import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, Chevr
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
@@ -302,26 +302,26 @@ export default function DashboardPage() {
                         {/* CLOCK SECTION */}
                         <LiveClockUI />
 
-                        {/* STATUS GRID */}
+                        {/* STATUS GRID WITH GRADIENTS */}
                         <div className="grid grid-cols-2 gap-3 w-full">
-                            <div className="bg-green-50/50 dark:bg-green-950/10 rounded-2xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden">
-                                <div className="bg-[#2ecc71] p-2.5 rounded-xl text-white shrink-0">
+                            <div className="bg-gradient-to-br from-green-50/80 to-white dark:from-green-950/10 dark:to-transparent rounded-2xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#2ecc71] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
                                     <LogIn className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">MASUK</p>
+                                    <p className="text-[9px] font-black text-[#2ecc71] uppercase tracking-widest">MASUK</p>
                                     <p className="text-xl font-bold tabular-nums text-foreground">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="bg-blue-50/50 dark:bg-blue-950/10 rounded-2xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden">
-                                <div className="bg-[#3498db] p-2.5 rounded-xl text-white shrink-0">
+                            <div className="bg-gradient-to-br from-blue-50/80 to-white dark:from-blue-950/10 dark:to-transparent rounded-2xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                                <div className="bg-[#3498db] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
                                     <LogOut className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">PULANG</p>
+                                    <p className="text-[9px] font-black text-[#3498db] uppercase tracking-widest">PULANG</p>
                                     <p className="text-xl font-bold tabular-nums text-foreground">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
@@ -460,4 +460,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
