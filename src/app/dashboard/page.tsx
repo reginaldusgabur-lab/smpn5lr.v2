@@ -249,6 +249,15 @@ export default function DashboardPage() {
         );
     }
 
+    // PENTING: Jika sudah waktu pulang, tampilkan tombol pulang meskipun belum absen masuk
+    if (windowStatus === 'CHECK_OUT_OPEN') {
+        return (
+            <Button asChild className="w-full h-14 rounded-2xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
+                <Link href="/dashboard/absen">Absen pulang sekarang</Link>
+            </Button>
+        );
+    }
+
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') {
             return (
@@ -274,13 +283,7 @@ export default function DashboardPage() {
             </div>
         );
     } else {
-        if (windowStatus === 'CHECK_OUT_OPEN') {
-            return (
-                <Button asChild className="w-full h-14 rounded-2xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
-                    <Link href="/dashboard/absen">Absen pulang sekarang</Link>
-                </Button>
-            );
-        }
+        // Sudah absen masuk, tapi belum masuk jendela pulang
         return (
             <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-14 flex items-center justify-center gap-3">
                 <CheckCircle2 className="h-4 w-4 text-blue-500" />
@@ -409,7 +412,7 @@ export default function DashboardPage() {
                     >
                         <div className="flex items-center justify-between mb-3">
                             <span className="text-[10px] font-normal opacity-80">Menunggu</span>
-                            <Clock className="h-3 w-3 opacity-60" />
+                            <MailWarning className="h-3 w-3 opacity-60" />
                         </div>
                         <div className="text-3xl font-normal tracking-tight">
                             {isStatsLoading ? '...' : stats.pending}
