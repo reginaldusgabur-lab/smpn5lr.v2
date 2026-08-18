@@ -10,7 +10,7 @@ import { LogIn, LogOut, Sparkles, User, CalendarCheck, Clock, AlertCircle, Chevr
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';

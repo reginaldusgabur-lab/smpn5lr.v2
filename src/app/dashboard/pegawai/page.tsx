@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -15,7 +16,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { format, isBefore, addDays, startOfDay, endOfDay, eachDayOfInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -173,7 +174,7 @@ export default function PegawaiDashboardPage() {
 
     const attendanceRecords = attendanceHistory.map(rec => {
         const checkInTime = rec.checkInTime?.toDate();
-        const checkOutTime = rec.checkOutTime?.toDate();
+        const checkOutTime = rec.checkOutTime ? rec.checkOutTime.toDate() : null;
         let detailsText;
         if (checkInTime && checkOutTime) {
             detailsText = `Jam: ${format(checkInTime, 'HH:mm')} - ${format(checkOutTime, 'HH:mm')}`;
@@ -258,7 +259,7 @@ export default function PegawaiDashboardPage() {
     return (
         <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
           <LiveClock />
-          <div className="grid grid-cols-2 gap-4 text-center w-full max-w-sm pt-4">
+          <div className="grid grid-cols-2 gap-4 text-center w-full max-sm pt-4">
             <div className="rounded-lg border bg-card p-4">
                 <div className="flex items-center justify-center gap-2 mb-1">
                     <LogIn className="w-4 h-4 text-muted-foreground" />
