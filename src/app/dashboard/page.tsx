@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -321,15 +322,8 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="w-full border-none shadow-[0_0_50px_-12px_rgba(0,0,0,0.12)] rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
-                    <div className="absolute bottom-0 left-0 w-full h-1/2 pointer-events-none z-0">
-                        <svg viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full opacity-60">
-                            <path d="M0 150V100C100 50 300 150 400 100V150H0Z" fill="#eff6ff" />
-                            <path d="M0 150V120C150 80 250 180 400 130V150H0Z" fill="#dbeafe" opacity="0.4" />
-                        </svg>
-                    </div>
-                    
-                    <CardContent className="p-4 sm:p-6 flex flex-col items-center gap-4 relative z-10">
+                <Card className="w-full border-none shadow-[0_0_50px_-12px_rgba(0,0,0,0.12)] rounded-3xl bg-white dark:bg-slate-900 relative overflow-hidden">
+                    <CardContent className="p-4 sm:p-6 pb-2 flex flex-col items-center gap-4 relative z-10">
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full px-2">
@@ -368,22 +362,29 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="w-full flex flex-col items-center gap-2 px-2">
-                            <div className="w-full">
-                                {renderAttendanceButton()}
-                            </div>
-                            
-                            <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-4 py-2 hover:opacity-80 transition-opacity group relative">
-                                <div className="bg-white p-2 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-slate-50 shrink-0 relative z-10">
-                                    <CalendarCheck className="h-4 w-4 text-blue-500" />
-                                </div>
-                                <span className="text-[11px] font-bold text-blue-600 tracking-tight relative z-10 uppercase">
-                                    Lihat riwayat lengkap
-                                </span>
-                                <ChevronRight className="h-3 w-3 text-slate-200 group-hover:translate-x-1 transition-transform relative z-10" />
-                            </Link>
+                        <div className="w-full flex flex-col items-center gap-2 px-2 pb-2">
+                            {renderAttendanceButton()}
                         </div>
                     </CardContent>
+
+                    <div className="relative mt-2 overflow-hidden bg-transparent">
+                        <div className="absolute inset-0 z-0">
+                            <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
+                                <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" className="fill-slate-50 dark:fill-slate-800/40" />
+                                <path d="M0 120 V70 C 150 40 250 110 400 60 V120 H0 Z" className="fill-slate-100 dark:fill-slate-800/20" opacity="0.5" />
+                            </svg>
+                        </div>
+                        
+                        <Link href="/dashboard/laporan" className="relative z-10 w-full flex items-center justify-center gap-3 py-4 hover:opacity-80 transition-opacity active:scale-[0.98]">
+                            <div className="bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 shrink-0">
+                                <CalendarCheck className="h-4 w-4 text-blue-500" />
+                            </div>
+                            <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 tracking-tight uppercase">
+                                Lihat riwayat lengkap
+                            </span>
+                            <ChevronRight className="h-3 w-3 text-slate-300 dark:text-slate-600" />
+                        </Link>
+                    </div>
                 </Card>
             </div>
         )}
@@ -502,4 +503,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
