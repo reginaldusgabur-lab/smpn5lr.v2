@@ -5,7 +5,7 @@ import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LogIn, LogOut, Sparkles, User, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, CheckCircle2, Loader2, CalendarOff, Lock, TrendingUp } from 'lucide-react';
+import { LogIn, LogOut, Sparkles, User, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, CheckCircle2, Loader2, CalendarOff, Lock, TrendingUp, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -56,13 +56,13 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-full mb-4 ring-4 ring-blue-50/50">
-                <Clock className="h-3.5 w-3.5 text-primary" />
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-full mb-3 ring-4 ring-blue-50/30">
+                <Clock className="h-3 w-3 text-primary" />
             </div>
-            <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-slate-900 dark:text-white leading-none">
+            <h2 className="text-4xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-black text-slate-400 mt-5 tracking-[0.2em] opacity-80">
+            <p className="text-[10px] font-black text-slate-400 mt-4 tracking-[0.2em] opacity-70">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="w-full border-none shadow-xl shadow-blue-600/10 rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
+                <Card className="w-full border-none shadow-[0_0_50px_-12px_rgba(0,0,0,0.12)] rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px]" />
                     <div className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-0 opacity-80">
                         <svg viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
@@ -366,8 +366,13 @@ export default function DashboardPage() {
                             <div className="w-full">
                                 {renderStatusAlert()}
                             </div>
-                            <Link href="/dashboard/laporan" className="text-[11px] font-bold text-slate-400 hover:text-primary transition-colors underline underline-offset-4 decoration-slate-200">
+                            
+                            <Link href="/dashboard/laporan" className="flex items-center gap-2 text-[10px] font-black text-primary hover:opacity-70 transition-all uppercase tracking-[0.1em]">
+                                <div className="bg-white p-1 rounded-md shadow-sm border border-primary/10">
+                                    <CalendarCheck className="h-3.5 w-3.5" />
+                                </div>
                                 Lihat riwayat lengkap
+                                <ChevronRight className="h-3 w-3 ml-0.5" />
                             </Link>
                         </div>
                     </CardContent>
@@ -471,7 +476,7 @@ export default function DashboardPage() {
                             <ChartContainer config={chartConfig} className="h-full w-full">
                                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.2} />
-                                    <XAxis dataKey="name" axisLine={{ stroke: 'currentColor', opacity: 0.2 }} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.6, fontWeight: 'bold' }} />
+                                    <XAxis dataKey="name" axisLine={{ stroke: 'currentColor', opacity: 0.2 }} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.6, fontStyle: 'normal' }} />
                                     <YAxis axisLine={{ stroke: 'currentColor', opacity: 0.2 }} tickLine={false} tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.6, fontWeight: 'bold' }} allowDecimals={false} />
                                     <Tooltip cursor={{ fill: 'currentColor', opacity: 0.05, radius: 8 }} content={<CustomTooltip />} />
                                     <Bar dataKey="Jumlah" radius={[4, 4, 0, 0]} barSize={35}>
@@ -489,4 +494,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
