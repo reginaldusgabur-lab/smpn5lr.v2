@@ -248,119 +248,6 @@ export default function UserReportDetailPage() {
         finally { setIsMutating(false); }
     };
 
-    const handleDownloadPdf = () => {
-        if (!userData || monthlyReportData.length === 0) return;
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const centerX = pageWidth / 2;
-        const margin = 14;
-        const config = schoolConfigData || ({} as any);
-
-        doc.setFont('times', 'bold').setFontSize(14);
-        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
-        doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
-        doc.setFontSize(12);
-        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
-        doc.setFont('times', 'normal').setFontSize(9);
-        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
-        
-        doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
-        doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
-
-        doc.setFont('times', 'bold').setFontSize(12);
-        doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
-        doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
-        doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
-
-        let currentY = 70;
-
-        doc.setFontSize(11).setFont('times', 'normal');
-        doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
-        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 6;
-        
-        const posLabel = (userData.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
-        const displayRole = (userData.role || 'user').replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        doc.text(`Jabatan/Status : ${displayRole} / ${posLabel}`, margin, currentY);
-        currentY += 10;
-
-        const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
-        const tableRows = monthlyReportData.map((item, index) => [
-            index + 1,
-            safeFormat(item.date, 'eeee, dd MMMM yyyy'),
-            (item.status === 'Terlambat' || item.description === 'Terlambat' && !item.checkInTime) ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
-            safeFormat(item.checkOutTime, 'HH:mm:ss'),
-            (item.status === 'Terlambat' || item.description === 'Terlambat') ? 'Hadir' : item.status,
-            item.description || '-'
-        ]);
-
-        autoTable(doc, {
-            startY: currentY,
-            head: tableHead,
-            body: tableRows,
-            theme: 'striped',
-            margin: { bottom: 35 },
-            styles: { 
-              font: 'times', 
-              fontSize: 10, 
-              cellPadding: 1.5,
-              valign: 'middle',
-              textColor: [0, 0, 0],
-              lineColor: [200, 200, 200], 
-              lineWidth: 0.1
-            },
-            headStyles: { 
-                fillColor: [52, 152, 219], 
-                textColor: 255, 
-                halign: 'center', 
-                valign: 'middle',
-                fontStyle: 'bold',
-                minCellHeight: 12,
-                lineWidth: 0
-            },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
-        });
-
-        let finalY = (doc as any).lastAutoTable.finalY || currentY;
-        if (finalY > doc.internal.pageSize.getHeight() - 65) {
-            doc.addPage();
-            finalY = 20;
-        }
-
-        const signatureX = pageWidth - 85;
-        const signatureY = finalY + 15;
-        const today = format(new Date(), 'd MMMM yyyy', { locale: id });
-
-        doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`${config.reportCity || 'Mando'}, ${today}`, signatureX, signatureY);
-        doc.text('Mengetahui,', signatureX, signatureY + 6);
-        doc.text('Kepala Sekolah', signatureX, signatureY + 12);
-        
-        doc.setFont('times', 'bold');
-        doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
-        doc.setFont('times', 'normal');
-        doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
-
-        const totalPages = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            const pageHeight = doc.internal.pageSize.getHeight();
-            doc.setLineWidth(0.2);
-            doc.setDrawColor(0, 0, 0);
-            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-            doc.setFontSize(8).setFont('times', 'italic');
-            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
-            doc.setFontSize(9).setFont('times', 'normal');
-            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-        }
-
-        doc.save(`Laporan_Individu_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
-    };
-
-    const isAdmin = currentUser?.role === 'admin';
-    const canGoPrev = currentMonth > new Date(2026, 0, 1);
-    const canGoNext = !isSameMonth(currentMonth, new Date());
-
     const getStatusColorClass = (status: string, desc: string, hasOut: boolean) => {
         const s = status.toLowerCase();
         const d = (desc || '').toLowerCase();
@@ -380,6 +267,10 @@ export default function UserReportDetailPage() {
     };
 
     const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none";
+
+    const isAdmin = currentUser?.role === 'admin';
+    const canGoPrev = currentMonth > new Date(2026, 0, 1);
+    const canGoNext = !isSameMonth(currentMonth, new Date());
 
     return (
         <div className="flex-1 pt-2 pb-24 px-4 md:p-8">
@@ -419,56 +310,56 @@ export default function UserReportDetailPage() {
                         </div>
                     </div>
 
-                    <div className="p-0 bg-background">
-                        {/* Area Pemilihan Bulan & Aksi */}
-                        <div className="p-4 space-y-6 bg-slate-50/80 dark:bg-slate-900/50">
+                    <div className="p-0 bg-blue-600">
+                        {/* Area Pemilihan Bulan & Aksi - Diatur agar warna biru menyatu */}
+                        <div className="p-4 space-y-6 bg-blue-600">
                             <div className="flex flex-col items-center justify-center">
-                                <div className="flex items-center justify-between w-full max-w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
+                                <div className="flex items-center justify-between w-full max-w-full bg-white/10 rounded-2xl border border-white/10 p-1">
                                     <div className="flex items-center">
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none" 
+                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none text-white hover:bg-white/10" 
                                             onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} 
                                             disabled={isLoading || !canGoPrev}
                                         >
-                                            <ChevronLeft className="h-5 w-5 text-primary" />
+                                            <ChevronLeft className="h-5 w-5 text-white" />
                                         </Button>
-                                        <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1.5 min-w-max">
-                                            <CalendarDays className="h-4 w-4 text-primary/70" />
+                                        <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
+                                            <CalendarDays className="h-4 w-4 text-white/70" />
                                             <div className="flex flex-col min-w-max">
-                                                <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-[0.1em] leading-none">Thn ajaran</span>
-                                                <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
+                                                <span className="text-[7px] font-bold uppercase text-white/50 tracking-[0.1em] leading-none">Thn ajaran</span>
+                                                <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <div className="flex items-center gap-2">
-                                        <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
+                                        <span className="font-bold text-sm text-white tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                                             {format(currentMonth, 'MMMM yyyy', { locale: id })}
                                         </span>
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none" 
+                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none text-white hover:bg-white/10" 
                                             onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} 
                                             disabled={isLoading || !canGoNext}
                                         >
-                                            <ChevronRight className="h-5 w-5 text-primary" />
+                                            <ChevronRight className="h-5 w-5 text-white" />
                                         </Button>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex justify-end max-w-2xl mx-auto">
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
-                                    {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}unduh pdf
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-white text-blue-600 hover:bg-white/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
+                                    {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
                                 </Button>
                             </div>
                         </div>
 
-                        {/* Area Tabel dengan Judul Kolom BIRU - IDENTIK GAMBAR */}
-                        <div className="border-t border-muted-foreground/10 overflow-x-auto">
+                        {/* Area Tabel - Judul Kolom Biru Identik */}
+                        <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-blue-600">
                                     <TableRow className="border-none">
@@ -480,7 +371,7 @@ export default function UserReportDetailPage() {
                                         <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <TableBody>
+                                <TableBody className="bg-background">
                                     {isLoading ? (
                                         [...Array(8)].map((_, i) => (
                                             <TableRow key={i} className="border-muted-foreground/5">

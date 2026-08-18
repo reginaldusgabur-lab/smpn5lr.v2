@@ -193,7 +193,7 @@ export default function ReportClientShell({
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontStyle: 'normal', fontWeight: 'bold' }} />
                                     <YAxis hide />
                                     <Tooltip 
                                         cursor={{ fill: 'rgba(0,0,0,0.02)' }}
@@ -231,7 +231,7 @@ export default function ReportClientShell({
 
             {/* --- Details Table --- */}
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
-                {/* Header Card - Biru Gradasi Persis Dashboard */}
+                {/* Header Card - Biru Gradasi Persis Gambar */}
                 <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                     {/* Ikon Laporan Dekoratif (Samar di sebelah kanan) */}
                     <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
@@ -251,28 +251,36 @@ export default function ReportClientShell({
                     </div>
                 </div>
 
-                <div className="p-0 bg-background">
-                    <div className="p-4 space-y-4 bg-slate-50/80 dark:bg-slate-900/50">
+                <div className="p-0 bg-blue-600">
+                    {/* Area Pemilihan Bulan & Navigasi - Warna Biru Menyatu */}
+                    <div className="p-4 space-y-4 bg-blue-600">
                         <div className="flex flex-col items-center justify-center gap-4 py-2">
-                            <div className="flex items-center bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
+                            <div className="flex items-center bg-white/10 rounded-2xl border border-white/10 p-1 shrink-0">
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
+                                    className="h-10 w-10 rounded-xl hover:bg-white/10 shadow-none shrink-0 text-white" 
                                     onClick={() => handleMonthChange(-1)} 
                                     disabled={!canGoPrev}
                                 >
-                                    <ChevronLeft className="h-5 w-5 text-primary" />
+                                    <ChevronLeft className="h-5 w-5 text-white" />
                                 </Button>
-                                <span className="w-40 text-center font-bold text-sm text-primary tracking-tight capitalize whitespace-nowrap">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
+                                    <CalendarDays className="h-4 w-4 text-white/80" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[7px] font-bold uppercase text-white/60 tracking-[0.1em] leading-none">Thn ajaran</span>
+                                        <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">2026/2027</span>
+                                    </div>
+                                </div>
+                                <span className="w-40 text-center font-bold text-sm text-white tracking-tight capitalize whitespace-nowrap">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-10 w-10 rounded-xl hover:bg-background/50 shadow-none shrink-0" 
+                                    className="h-10 w-10 rounded-xl hover:bg-white/10 shadow-none shrink-0 text-white" 
                                     onClick={() => handleMonthChange(1)} 
                                     disabled={currentMonth >= endOfMonth(new Date())}
                                 >
-                                    <ChevronRight className="h-5 w-5 text-primary" />
+                                    <ChevronRight className="h-5 w-5 text-white" />
                                 </Button>
                             </div>
                         </div>
@@ -290,7 +298,7 @@ export default function ReportClientShell({
                                     <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
                                 </TableRow>
                             </TableHeader>
-                            <TableBody>
+                            <TableBody className="bg-background">
                                 {reportDetails.length > 0 ? (
                                     reportDetails.map((item, index) => {
                                         const isManualLate = (item.status === 'Terlambat' || item.description === 'Terlambat') && !item.checkInTime;

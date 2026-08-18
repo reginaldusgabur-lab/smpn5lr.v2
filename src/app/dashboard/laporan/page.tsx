@@ -181,50 +181,50 @@ export default function LaporanPage() {
                 </div>
               </div>
 
-              {/* Body Card Area */}
-              <div className="p-0 bg-background">
-                {/* Month Selection Area */}
-                <div className="p-4 flex items-center justify-center bg-slate-50/80 dark:bg-slate-900/50">
-                    <div className="flex items-center justify-between w-full max-w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
+              {/* Body Card Area - Diatur agar warna biru menyatu */}
+              <div className="p-0 bg-blue-600">
+                {/* Month Selection Area - Background Biru */}
+                <div className="p-4 flex items-center justify-center bg-blue-600">
+                    <div className="flex items-center justify-between w-full max-w-full bg-white/10 rounded-2xl border border-white/10 p-1">
                         <div className="flex items-center">
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-10 w-10 rounded-xl shadow-none" 
+                                className="h-10 w-10 rounded-xl shadow-none text-white hover:bg-white/10" 
                                 onClick={handlePrevMonth} 
                                 disabled={isLoading || !canGoPrev}
                             >
-                                <ChevronLeft className="h-5 w-5 text-primary" />
+                                <ChevronLeft className="h-5 w-5 text-white" />
                             </Button>
                             
-                            <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1.5 min-w-max">
-                                <CalendarDays className="h-4 w-4 text-primary/70" />
+                            <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
+                                <CalendarDays className="h-4 w-4 text-white/80" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-[0.1em] leading-none">Thn ajaran</span>
-                                    <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
+                                    <span className="text-[7px] font-bold uppercase text-white/60 tracking-[0.1em] leading-none">Thn ajaran</span>
+                                    <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-base text-primary tracking-tight capitalize px-2 min-w-[120px] text-center">
+                            <span className="font-bold text-base text-white tracking-tight capitalize px-2 min-w-[120px] text-center">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-10 w-10 rounded-xl shadow-none" 
+                                className="h-10 w-10 rounded-xl shadow-none text-white hover:bg-white/10" 
                                 onClick={handleNextMonth} 
                                 disabled={isSameMonth(currentMonth, new Date())}
                             >
-                                <ChevronRight className="h-5 w-5 text-primary" />
+                                <ChevronRight className="h-5 w-5 text-white" />
                             </Button>
                         </div>
                     </div>
                 </div>
 
-                {/* Table Area - Judul Kolom diubah menjadi BIRU - IDENTIK GAMBAR */}
-                <div className="border-t border-muted-foreground/5 overflow-x-auto">
+                {/* Table Area - Judul Kolom Biru Identik */}
+                <div className="overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-blue-600">
                             <TableRow className="border-none">
@@ -236,7 +236,7 @@ export default function LaporanPage() {
                                 <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody className="bg-background">
                             {monthlyReportData.length > 0 ? (
                                 monthlyReportData.map((record, index) => (
                                     <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
