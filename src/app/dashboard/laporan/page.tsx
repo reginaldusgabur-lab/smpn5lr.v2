@@ -44,6 +44,7 @@ export default function LaporanPage() {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthlyReportData, setMonthlyReportData] = useState<ReportItem[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [isReportLoading, setIsReportLoading] = useState(true);
   const [academicYear, setAcademicYear] = useState("");
 
@@ -142,8 +143,8 @@ export default function LaporanPage() {
 
   if (isLoading && monthlyReportData.length === 0) {
     return (
-        <div className="flex-1 pt-2 pb-24 px-4 md:p-8">
-            <div className="max-w-4xl mx-auto space-y-4">
+        <div className="flex-1 pt-4 pb-24 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-4">
                 <Skeleton className="h-32 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
             </div>
@@ -152,8 +153,8 @@ export default function LaporanPage() {
   }
 
   return (
-    <div className="flex-1 pt-2 pb-24 px-4 md:p-8">
-        <div className="max-w-4xl mx-auto">
+    <div className="flex-1 pt-4 pb-24 md:p-8">
+        <div className="max-w-7xl mx-auto">
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
               {/* Header Card - Biru Gradasi */}
               <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
@@ -181,7 +182,7 @@ export default function LaporanPage() {
               <div className="p-0 bg-blue-600">
                 {/* Month Selection Area (Pill Design) */}
                 <div className="p-4 flex items-center justify-center bg-blue-600">
-                    <div className="flex items-center justify-between w-full max-w-full bg-white/10 rounded-2xl border border-white/10 p-1">
+                    <div className="flex items-center justify-between w-full bg-white/10 rounded-2xl border border-white/10 p-1">
                         <div className="flex items-center">
                             <Button 
                                 variant="ghost" 
@@ -196,7 +197,7 @@ export default function LaporanPage() {
                             <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
                                 <CalendarDays className="h-4 w-4 text-white/70" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-bold uppercase text-white/60 tracking-[0.1em] leading-none">Thn ajaran</span>
+                                    <span className="text-[7px] font-bold uppercase text-white/50 tracking-[0.1em] leading-none">Thn ajaran</span>
                                     <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                 </div>
                             </div>

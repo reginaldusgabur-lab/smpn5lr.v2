@@ -339,8 +339,8 @@ export default function UserReportDetailPage() {
     };
 
     return (
-        <div className="flex-1 pt-2 pb-24 px-4 md:p-8">
-            <div className="max-w-4xl mx-auto space-y-4">
+        <div className="flex-1 pt-4 pb-24 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-4">
                 <div className="px-4 md:px-0">
                     <div className="flex items-center gap-2 mb-0.5">
                         <button onClick={() => router.back()} className="h-8 w-8 -ml-2 rounded-full hover:bg-muted flex items-center justify-center transition-colors"><ArrowLeft className="h-5 w-5" /></button>
@@ -352,7 +352,7 @@ export default function UserReportDetailPage() {
                 </div>
 
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
-                    {/* Header Card - Biru Gradasi Persis Gambar */}
+                    {/* Header Card - Biru Gradasi */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                             <FileText className="w-24 h-24 text-white" />
@@ -531,4 +531,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
