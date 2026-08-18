@@ -5,7 +5,7 @@ import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { LogIn, LogOut, Sparkles, User, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, CheckCircle2, Loader2, CalendarOff, Lock, TrendingUp, CalendarCheck } from 'lucide-react';
+import { LogIn, LogOut, Sparkles, User, Clock, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, UserX, BookUser, MailWarning, CheckCircle2, Loader2, CalendarOff, Lock, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -328,7 +328,8 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-2 gap-4 w-full px-2">
                             {/* Card Masuk */}
                             <div className="bg-green-50/60 dark:bg-green-950/10 rounded-2xl p-3 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="absolute top-1/2 left-2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#2ecc71]/10 blur-xl z-0" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
+                                <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-green-500/10 blur-2xl rounded-full opacity-50" />
                                 <div className="bg-[#2ecc71] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-green-500/20 relative z-10">
                                     <LogIn className="h-4 w-4" />
                                 </div>
@@ -342,7 +343,8 @@ export default function DashboardPage() {
 
                             {/* Card Pulang */}
                             <div className="bg-blue-50/60 dark:bg-blue-950/10 rounded-2xl p-3 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="absolute top-1/2 left-2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#3498db]/10 blur-xl z-0" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+                                <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-blue-500/10 blur-2xl rounded-full opacity-50" />
                                 <div className="bg-[#3498db] p-2.5 rounded-[1.1rem] text-white shrink-0 shadow-lg shadow-blue-500/20 relative z-10">
                                     <LogOut className="h-4 w-4" />
                                 </div>
@@ -360,14 +362,18 @@ export default function DashboardPage() {
                         </div>
                     </CardContent>
 
-                    {/* Footer Riwayat dengan Lengkungan Halus */}
+                    {/* Footer Area with Colored Glow */}
                     <div className="relative mt-2 overflow-hidden bg-transparent w-full">
+                        {/* Colored Glow Layer */}
+                        <div className="absolute inset-x-0 bottom-0 h-full bg-gradient-to-t from-primary/10 via-primary/5 to-transparent pointer-events-none" />
+                        
+                        {/* Wave SVG with Color Gradation Mask */}
                         <div className="absolute inset-x-0 bottom-0 z-0 h-20 pointer-events-none">
                             <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="w-full h-full">
                                 <defs>
                                     <linearGradient id="waveGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                                        <stop offset="0%" stopColor="currentColor" className="text-slate-100 dark:text-slate-800" stopOpacity="1" />
-                                        <stop offset="100%" stopColor="currentColor" className="text-slate-100 dark:text-slate-800" stopOpacity="0" />
+                                        <stop offset="0%" stopColor="currentColor" className="text-primary/20 dark:text-primary/10" stopOpacity="1" />
+                                        <stop offset="100%" stopColor="currentColor" className="text-primary/20 dark:text-primary/10" stopOpacity="0" />
                                     </linearGradient>
                                 </defs>
                                 <path d="M0 120 V50 C 100 10 300 90 400 30 V120 H0 Z" fill="url(#waveGradient)" />
@@ -375,10 +381,10 @@ export default function DashboardPage() {
                         </div>
                         
                         <Link href="/dashboard/laporan" className="relative z-10 w-full flex items-center justify-center gap-3 py-4 hover:opacity-80 transition-opacity active:scale-[0.98]">
-                            <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 tracking-tight">
+                            <span className="text-[11px] font-black text-primary dark:text-blue-400 tracking-tight">
                                 Lihat riwayat lengkap
                             </span>
-                            <ChevronRight className="h-3 w-3 text-blue-400 opacity-50" />
+                            <ChevronRight className="h-3 w-3 text-primary/50 dark:text-blue-400/50" />
                         </Link>
                     </div>
                 </Card>
@@ -499,4 +505,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
