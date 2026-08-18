@@ -307,7 +307,7 @@ export default function DashboardPage() {
         {!isAdmin && (
             <div className="w-full space-y-6">
                 {/* Header Card Separate */}
-                <Card className="w-full border-none shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] rounded-[2rem] bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
+                <Card className="w-full border-none shadow-sm rounded-3xl bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
                     <div className="absolute right-[-5%] bottom-[-20%] opacity-10 rotate-12">
                         <User className="w-32 h-32 text-white" />
                     </div>
@@ -321,13 +321,13 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Main Body Card */}
-                <Card className="w-full border-none shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] rounded-[2.5rem] bg-white dark:bg-slate-900 relative overflow-hidden">
+                <Card className="w-full border border-muted-foreground/10 shadow-sm rounded-3xl bg-white dark:bg-slate-900 relative overflow-hidden">
                     <CardContent className="p-8 flex flex-col items-center gap-8 relative z-10 pt-10">
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full">
                             {/* Card Masuk */}
-                            <div className="bg-green-50/50 dark:bg-green-950/20 rounded-[1.8rem] p-5 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-green-50/50 dark:bg-green-950/20 rounded-2xl p-5 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#2ecc71] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
                                     <LogIn className="h-5 w-5" />
                                 </div>
@@ -340,7 +340,7 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Card Pulang */}
-                            <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-[1.8rem] p-5 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl p-5 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#3498db] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
                                     <LogOut className="h-5 w-5" />
                                 </div>
