@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileWarning, CalendarClock, MoreVertical, RefreshCw, Calendar, FileText } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileWarning, CalendarClock, MoreVertical, RefreshCw, Calendar, FileText, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // --- Type Definitions ---
@@ -266,7 +266,7 @@ export default function ReportClientShell({
                                     <ChevronLeft className="h-5 w-5 text-white" />
                                 </Button>
                                 <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
-                                    <CalendarDays className="h-4 w-4 text-white/80" />
+                                    <CalendarDays className="h-4 w-4 text-white" />
                                     <div className="flex flex-col">
                                         <span className="text-[7px] font-bold uppercase text-white/60 tracking-[0.1em] leading-none">Thn ajaran</span>
                                         <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">2026/2027</span>

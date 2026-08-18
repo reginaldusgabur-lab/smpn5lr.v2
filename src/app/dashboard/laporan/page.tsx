@@ -181,10 +181,10 @@ export default function LaporanPage() {
                 </div>
               </div>
 
-              {/* Body Card Area - Diatur agar warna biru menyatu */}
+              {/* Area Gabungan Navigasi & Header Tabel - Menggunakan Biru Solid yang sama agar menyatu */}
               <div className="p-0 bg-blue-600">
-                {/* Month Selection Area - Background Biru */}
-                <div className="p-4 flex items-center justify-center bg-blue-600">
+                {/* Month Selection Area - Background Biru Tanpa Border Bawah */}
+                <div className="p-4 flex items-center justify-center">
                     <div className="flex items-center justify-between w-full max-w-full bg-white/10 rounded-2xl border border-white/10 p-1">
                         <div className="flex items-center">
                             <Button 
@@ -198,9 +198,9 @@ export default function LaporanPage() {
                             </Button>
                             
                             <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
-                                <CalendarDays className="h-4 w-4 text-white/80" />
+                                <CalendarDays className="h-4 w-4 text-white" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-bold uppercase text-white/60 tracking-[0.1em] leading-none">Thn ajaran</span>
+                                    <span className="text-[7px] font-bold uppercase text-white/50 tracking-[0.1em] leading-none">Thn ajaran</span>
                                     <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                 </div>
                             </div>
@@ -223,7 +223,7 @@ export default function LaporanPage() {
                     </div>
                 </div>
 
-                {/* Table Area - Judul Kolom Biru Identik */}
+                {/* Table Area - Judul Kolom Biru Identik dan menyatu */}
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-blue-600">
