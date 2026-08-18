@@ -205,7 +205,7 @@ export default function DashboardPage() {
 
     if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) {
         return (
-            <div className="w-full bg-muted/20 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-2">
+            <div className="w-full bg-muted/20 border border-border/50 rounded-xl h-14 flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Memeriksa status...</span>
             </div>
@@ -214,9 +214,9 @@ export default function DashboardPage() {
 
     if (stats.isManualDisabled || windowStatus === 'DISABLED') {
          return (
-            <div className="w-full bg-muted/40 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-3">
-                <Lock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Sistem dinonaktifkan</span>
+            <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl h-14 flex items-center justify-center gap-3">
+                <Lock className="h-4 w-4 text-slate-500" />
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">Sistem dinonaktifkan</span>
             </div>
         );
     }
@@ -224,16 +224,16 @@ export default function DashboardPage() {
     if (stats.isHoliday || windowStatus === 'SESSION_INACTIVE') {
          const label = stats.isCalendarHoliday ? 'Hari libur (Kalender)' : 'Hari libur rutin';
          return (
-            <div className="w-full bg-muted/40 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-3">
-                <CalendarOff className="h-4 w-4 text-muted-foreground" />
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">{label}</span>
+            <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl h-14 flex items-center justify-center gap-3">
+                <CalendarOff className="h-4 w-4 text-slate-500" />
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">{label}</span>
             </div>
         );
     }
 
     if (currentActiveLeave) {
         return (
-            <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-12 flex items-center justify-center gap-3">
+            <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-14 flex items-center justify-center gap-3">
                 <Sparkles className="h-4 w-4 text-blue-500" />
                 <span className="text-[11px] font-black text-blue-600 uppercase tracking-tight">{currentActiveLeave.type} Disetujui</span>
             </div>
@@ -242,8 +242,8 @@ export default function DashboardPage() {
 
     if (isCheckedOut) {
         return (
-            <div className="w-full bg-green-50 border border-green-100 rounded-xl h-12 flex items-center justify-center gap-3">
-                <Sparkles className="h-4 w-4 text-green-500" />
+            <div className="w-full bg-green-50 border border-green-100 rounded-xl h-14 flex items-center justify-center gap-3">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
                 <span className="text-[11px] font-black text-green-600 uppercase tracking-tight">Absensi hari ini tuntas</span>
             </div>
         );
@@ -252,45 +252,42 @@ export default function DashboardPage() {
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') {
             return (
-                <div className="w-full bg-muted/30 border border-border/50 rounded-xl h-12 flex items-center justify-center gap-3">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-[11px] font-black text-muted-foreground uppercase tracking-tight">Belum jam masuk</span>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl h-14 flex items-center justify-center gap-3">
+                    <Clock className="h-4 w-4 text-slate-500" />
+                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-tight">Belum jam masuk</span>
                 </div>
             );
         }
         if (windowStatus === 'CHECK_IN_OPEN') {
             return (
-                <Button asChild className="w-full h-12 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs">
+                <Button asChild className="w-full h-14 rounded-2xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
                     <Link href="/dashboard/absen">Absen masuk sekarang</Link>
                 </Button>
             );
         }
-        if (windowStatus === 'AFTER_IN' || windowStatus === 'CHECK_OUT_OPEN' || windowStatus === 'CLOSED') {
-             return (
-                <div className="w-full bg-[#fef2f2] border border-red-100 rounded-2xl h-14 flex items-center justify-center gap-3 shadow-none">
-                    <div className="bg-white rounded-full p-1.5 border border-red-200 shadow-sm">
-                        <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                    </div>
-                    <span className="text-[12px] font-black text-red-600 uppercase tracking-widest">BATAS JAM MASUK BERAKHIR</span>
+        return (
+            <div className="w-full bg-[#fef2f2] border border-red-100 rounded-2xl h-14 flex items-center justify-center gap-3 shadow-none">
+                <div className="bg-white rounded-full p-1.5 border border-red-200 shadow-sm">
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                 </div>
-            );
-        }
+                <span className="text-[12px] font-black text-red-600 uppercase tracking-widest">BATAS JAM MASUK BERAKHIR</span>
+            </div>
+        );
     } else {
         if (windowStatus === 'CHECK_OUT_OPEN') {
             return (
-                <Button asChild className="w-full h-12 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs">
+                <Button asChild className="w-full h-14 rounded-2xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
                     <Link href="/dashboard/absen">Absen pulang sekarang</Link>
                 </Button>
             );
         }
         return (
-            <div className="w-full bg-green-50 border border-green-100 rounded-xl h-12 flex items-center justify-center gap-3">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-[11px] font-black text-green-600 uppercase tracking-tight">Sudah absen masuk</span>
+            <div className="w-full bg-blue-50 border border-blue-100 rounded-xl h-14 flex items-center justify-center gap-3">
+                <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                <span className="text-[11px] font-black text-blue-600 uppercase tracking-tight">Sudah absen masuk</span>
             </div>
         );
     }
-    return null;
   };
 
   if (isUserLoading || !isClient) return <div className="w-full space-y-6 animate-pulse p-4"><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-48" /></div><div className="pt-10 space-y-4"><Skeleton className="h-64 w-full rounded-xl" /><Skeleton className="h-40 w-full rounded-xl" /></div></div>;
@@ -327,6 +324,7 @@ export default function DashboardPage() {
                 </Card>
 
                 <Card className="w-full border-none shadow-xl shadow-blue-600/10 rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px]" />
                     <div className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-0 opacity-80">
                         <svg viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
                             <path d="M0 150V100C100 50 300 150 400 100V150H0Z" fill="#eff6ff" opacity="0.4"/>
