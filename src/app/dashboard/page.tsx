@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -295,12 +295,12 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* MAIN ATTENDANCE CARD WITH MOTIF */}
-                <Card className="w-full border-none shadow-xl shadow-blue-600/5 rounded-2xl bg-card relative overflow-hidden">
-                    {/* DOT MOTIF BACKGROUND */}
-                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-                         style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '20px 20px' }}>
-                    </div>
+                {/* MAIN ATTENDANCE CARD WITH BRIGHT WHITE AND DECORATIVE WAVES */}
+                <Card className="w-full border-none shadow-xl shadow-blue-600/10 rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
+                    {/* DECORATIVE ELEMENTS (WAVES) */}
+                    <div className="absolute bottom-0 right-0 w-80 h-32 bg-blue-50/60 rounded-[100%] blur-3xl -mr-20 -mb-10 pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-64 h-24 bg-blue-100/40 rounded-[100%] blur-3xl -ml-16 -mb-10 pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-blue-50/20 to-transparent pointer-events-none" />
                     
                     <CardContent className="p-10 flex flex-col items-center gap-10 relative z-10">
                         {/* CLOCK SECTION */}
@@ -308,7 +308,7 @@ export default function DashboardPage() {
 
                         {/* STATUS GRID */}
                         <div className="grid grid-cols-2 gap-4 w-full">
-                            <div className="bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-transparent rounded-2xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-gradient-to-br from-green-50/80 to-white/60 dark:from-green-950/20 dark:to-transparent rounded-2xl p-4 border border-green-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#2ecc71] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-green-500/20">
                                     <LogIn className="h-5 w-5" />
                                 </div>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-transparent rounded-2xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-gradient-to-br from-blue-50/80 to-white/60 dark:from-blue-950/20 dark:to-transparent rounded-2xl p-4 border border-blue-100/50 flex items-center gap-3 relative overflow-hidden shadow-sm backdrop-blur-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#3498db] p-3 rounded-xl text-white shrink-0 shadow-lg shadow-blue-500/20">
                                     <LogOut className="h-5 w-5" />
                                 </div>
