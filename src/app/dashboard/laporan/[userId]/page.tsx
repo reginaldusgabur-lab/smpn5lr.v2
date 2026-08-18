@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -382,7 +382,7 @@ export default function UserReportDetailPage() {
     const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none";
 
     return (
-        <div className="flex-1 pt-2 pb-24 md:p-8">
+        <div className="flex-1 pt-2 pb-24 px-4 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
                 <div className="px-4 md:px-0">
                     <div className="flex items-center gap-2 mb-0.5">
@@ -394,7 +394,7 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl">
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
                     {/* Header Card - Biru Gradasi */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         {/* Dekorasi Background */}
@@ -433,7 +433,7 @@ export default function UserReportDetailPage() {
                                         <div className="flex items-center gap-1.5 pl-0.5 pr-2 min-w-max border-r border-muted-foreground/10 mr-1.5">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
-                                                <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                                <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-widest leading-none">Thn ajaran</span>
                                                 <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                             </div>
                                         </div>
