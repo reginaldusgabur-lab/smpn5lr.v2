@@ -201,7 +201,6 @@ export default function DashboardPage() {
     const isCheckedOut = !!record?.checkOutTime;
     const isManualFinished = record?.manualEntry && (record?.reasonForUpdate === 'Pulang cepat' || record?.reasonForUpdate === 'Dinas siang' || record?.reasonForUpdate === 'Kehadiran penuh');
 
-    // Gaya dasar untuk tombol/status yang tidak aktif (abu-abu halus)
     const disabledStyle = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none";
 
     if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) {
@@ -222,7 +221,6 @@ export default function DashboardPage() {
         );
     }
 
-    // SCENARIO: Absensi Selesai (Hadir Penuh)
     if (isCheckedOut || isManualFinished) {
         return (
             <div className="w-full bg-[#d1fae5] dark:bg-emerald-950/20 border border-[#b9f6e1] dark:border-emerald-900/30 rounded-full h-14 flex items-center justify-center gap-2.5 shadow-none transition-all">
@@ -232,10 +230,9 @@ export default function DashboardPage() {
         );
     }
 
-    // SCENARIO: Sesi Ditutup (Tapi pengguna belum menyelesaikan absensi)
     if (windowStatus === 'CLOSED') {
         return (
-            <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none">
+            <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-full h-14 flex items-center justify-center gap-3 shadow-none">
                 <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 border border-red-200 dark:border-red-900/30 shadow-sm">
                     <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                 </div>
@@ -265,7 +262,7 @@ export default function DashboardPage() {
 
     if (windowStatus === 'CHECK_OUT_OPEN') {
         return (
-            <Button asChild size="lg" className="w-full h-14 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
+            <Button asChild size="lg" className="w-full h-14 rounded-full bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
                 <Link href="/dashboard/absen">Absen pulang sekarang</Link>
             </Button>
         );
@@ -282,15 +279,14 @@ export default function DashboardPage() {
         }
         if (windowStatus === 'CHECK_IN_OPEN') {
             return (
-                <Button asChild size="lg" className="w-full h-14 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
+                <Button asChild size="lg" className="w-full h-14 rounded-full bg-[#007aff] hover:bg-[#007aff]/90 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm">
                     <Link href="/dashboard/absen">Absen masuk sekarang</Link>
                 </Button>
             );
         }
         
-        // Sesi masuk berakhir (AFTER_IN) - Jika mereka belum masuk sama sekali
         return (
-            <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none">
+            <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-full h-14 flex items-center justify-center gap-3 shadow-none">
                 <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 border border-red-200 dark:border-red-900/30 shadow-sm">
                     <AlertCircle className="h-3.5 w-3.5 text-red-500" />
                 </div>
@@ -298,7 +294,6 @@ export default function DashboardPage() {
             </div>
         );
     } else {
-        // Sudah absen masuk, menunggu jadwal pulang
         return (
             <div className={disabledStyle}>
                 <Clock className="h-4 w-4 text-slate-500" />
@@ -324,8 +319,7 @@ export default function DashboardPage() {
 
         {!isAdmin && (
             <div className="w-full space-y-6">
-                {/* Header Card */}
-                <Card className="w-full border-none shadow-sm rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
+                <Card className="w-full border-none shadow-sm rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
                     <div className="absolute right-[-5%] bottom-[-20%] opacity-10 rotate-12">
                         <User className="w-32 h-32 text-white" />
                     </div>
@@ -338,14 +332,12 @@ export default function DashboardPage() {
                     </div>
                 </Card>
 
-                {/* Main Body Card */}
-                <Card className="w-full border border-muted-foreground/10 shadow-sm rounded-2xl bg-white dark:bg-slate-900 relative overflow-hidden">
+                <Card className="w-full border border-muted-foreground/10 shadow-sm rounded-xl bg-white dark:bg-slate-900 relative overflow-hidden">
                     <CardContent className="p-8 flex flex-col items-center gap-8 relative z-10 pt-10">
                         <LiveClockUI />
 
                         <div className="grid grid-cols-2 gap-4 w-full">
-                            {/* Card Masuk */}
-                            <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50 flex flex-col items-center justify-center gap-3 relative overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-5 border border-slate-100/50 dark:border-slate-800/50 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
                                 <div className="flex items-center justify-center gap-2">
                                     <LogIn className="h-3.5 w-3.5 text-[#007aff]" />
                                     <p className="text-[11px] font-black text-[#007aff] uppercase tracking-widest">Masuk</p>
@@ -355,8 +347,7 @@ export default function DashboardPage() {
                                 </p>
                             </div>
 
-                            {/* Card Pulang */}
-                            <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50 flex flex-col items-center justify-center gap-3 relative overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-5 border border-slate-100/50 dark:border-slate-800/50 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
                                 <div className="flex items-center justify-center gap-2">
                                     <LogOut className="h-3.5 w-3.5 text-[#007aff]" />
                                     <p className="text-[11px] font-black text-[#007aff] uppercase tracking-widest">Pulang</p>
@@ -501,4 +492,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
