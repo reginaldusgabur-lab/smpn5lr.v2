@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, PieChart as PieIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, PieChart as PieIcon } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -172,14 +172,24 @@ export default function LaporanPage() {
     <div className="flex-1 pt-2 pb-24 md:p-8">
         <div className="max-w-7xl mx-auto space-y-4">
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
-              <CardHeader className="p-4 text-primary border-b border-muted-foreground/10">
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <CardTitle className="font-bold text-2xl tracking-tight">Riwayat Absensi & Izin</CardTitle>
-                        <CardDescription className="text-sm font-medium text-muted-foreground">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</CardDescription>
+              <CardHeader className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden border-none">
+                {/* Decorative background icon */}
+                <div className="absolute right-[-20px] bottom-[-20px] opacity-10 rotate-12">
+                    <FileText className="w-24 h-24 text-white" />
+                </div>
+                
+                <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/20 p-2.5 rounded-xl text-white shrink-0 backdrop-blur-sm border border-white/10">
+                            <CalendarDays className="h-5 w-5" />
+                        </div>
+                        <div className="space-y-0.5">
+                            <CardTitle className="font-bold text-xl tracking-tight leading-tight">Riwayat Absensi & Izin</CardTitle>
+                            <CardDescription className="text-[11px] font-medium text-white/80 leading-relaxed">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</CardDescription>
+                        </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleRefresh} disabled={isLoading}>
-                        <RefreshCw className={cn("h-4 w-4 text-muted-foreground", isLoading && "animate-spin")} />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-white hover:bg-white/10 shadow-none" onClick={handleRefresh} disabled={isLoading}>
+                        <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     </Button>
                 </div>
               </CardHeader>
@@ -187,7 +197,7 @@ export default function LaporanPage() {
                 <div className="p-4 flex items-center justify-center">
                     <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                         <div className="flex items-center">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={handlePrevMonth} disabled={isLoading || !canGoPrev}>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shadow-none" onClick={handlePrevMonth} disabled={isLoading || !canGoPrev}>
                                 <ChevronLeft className="h-5 w-5 text-primary" />
                             </Button>
                             
@@ -204,7 +214,7 @@ export default function LaporanPage() {
                             <span className="font-bold text-base text-primary capitalize px-2">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shadow-none" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}>
                                 <ChevronRight className="h-5 w-5 text-primary" />
                             </Button>
                         </div>
@@ -215,12 +225,12 @@ export default function LaporanPage() {
                     <Table>
                         <TableHeader className="bg-muted/30">
                             <TableRow className="border-none">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">Tanggal</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">Keterangan</TableHead>
+                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">No</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Tanggal</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -233,7 +243,7 @@ export default function LaporanPage() {
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkOut}</TableCell>
                                         <TableCell className="text-center">
                                             <span className={cn(
-                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap",
+                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none",
                                                 getStatusColorClass(record.status)
                                             )}>
                                                 {record.status}
@@ -244,7 +254,7 @@ export default function LaporanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px]">Tidak ada data.</TableCell>
+                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-xs tracking-widest">Tidak ada data.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
