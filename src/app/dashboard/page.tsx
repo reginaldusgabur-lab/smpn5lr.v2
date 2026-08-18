@@ -375,9 +375,6 @@ export default function DashboardPage() {
                         </div>
                         
                         <Link href="/dashboard/laporan" className="relative z-10 w-full flex items-center justify-center gap-3 py-4 hover:opacity-80 transition-opacity active:scale-[0.98]">
-                            <div className="bg-slate-900 dark:bg-slate-700 p-2 rounded-full shadow-lg border border-slate-700/30 shrink-0">
-                                <CalendarCheck className="h-4 w-4 text-blue-400" />
-                            </div>
                             <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 tracking-tight">
                                 Lihat riwayat lengkap
                             </span>
@@ -502,3 +499,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
