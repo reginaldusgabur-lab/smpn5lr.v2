@@ -306,18 +306,33 @@ export default function DashboardPage() {
 
         {!isAdmin && (
             <div className="w-full space-y-4">
-                <Card className="w-full border-none shadow-[0_4px_20px_-12px_rgba(0,0,0,0.1)] rounded-3xl bg-white dark:bg-slate-900 relative overflow-hidden">
-                    <CardContent className="p-4 sm:p-6 pb-6 flex flex-col items-center gap-4 relative z-10">
+                <Card className="w-full border-none shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] rounded-[2.5rem] bg-white dark:bg-slate-900 relative overflow-hidden">
+                    {/* Banner Header RESTORED */}
+                    <div className="w-full bg-gradient-to-br from-blue-600 to-blue-400 p-6 flex items-center gap-4 relative overflow-hidden">
+                        {/* Background Decoration */}
+                        <div className="absolute right-[-5%] bottom-[-20%] opacity-10 rotate-12">
+                            <User className="w-32 h-32 text-white" />
+                        </div>
+                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 backdrop-blur-sm border border-white/10">
+                            <CalendarDays className="h-6 w-6" />
+                        </div>
+                        <div className="flex flex-col relative z-10">
+                            <h2 className="text-xl font-bold text-white leading-none tracking-tight">Kehadiran hari ini</h2>
+                            <p className="text-[11px] font-medium text-white/80 mt-1.5 leading-relaxed">Kelola absensi dan pantau kehadiran Anda dengan mudah.</p>
+                        </div>
+                    </div>
+
+                    <CardContent className="p-6 sm:p-8 pb-4 flex flex-col items-center gap-6 relative z-10 pt-10">
                         <LiveClockUI />
 
-                        <div className="grid grid-cols-2 gap-4 w-full px-2">
+                        <div className="grid grid-cols-2 gap-4 w-full px-1">
                             {/* Card Masuk */}
-                            <div className="bg-green-50 dark:bg-green-950/20 rounded-2xl p-4 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-green-50 dark:bg-green-950/20 rounded-3xl p-5 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#2ecc71] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-green-500/20">
                                     <LogIn className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-[11px] font-bold text-[#2ecc71] mb-0.5">Masuk</p>
+                                    <p className="text-[11px] font-bold text-[#27ae60] dark:text-green-400 mb-0.5">Masuk</p>
                                     <p className="text-xl font-black tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
@@ -325,12 +340,12 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Card Pulang */}
-                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
+                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-3xl p-5 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
                                 <div className="bg-[#3498db] p-2.5 rounded-2xl text-white shrink-0 shadow-lg shadow-blue-500/20">
                                     <LogOut className="h-5 w-5" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <p className="text-[11px] font-bold text-[#3498db] mb-0.5">Pulang</p>
+                                    <p className="text-[11px] font-bold text-[#2980b9] dark:text-blue-400 mb-0.5">Pulang</p>
                                     <p className="text-xl font-black tabular-nums text-slate-800 dark:text-white">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
@@ -338,12 +353,12 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="w-full flex flex-col items-center gap-2 px-2 mt-2">
+                        <div className="w-full flex flex-col items-center gap-2 px-1 mt-2">
                             {renderAttendanceButton()}
                         </div>
                     </CardContent>
 
-                    <div className="w-full border-t border-muted-foreground/5 bg-primary/5 dark:bg-primary/5">
+                    <div className="w-full border-t border-muted-foreground/5 bg-slate-50/50 dark:bg-slate-800/20">
                         <Link href="/dashboard/laporan" className="w-full flex items-center justify-center gap-2 py-4 hover:opacity-80 transition-opacity active:scale-[0.98]">
                             <span className="text-[11px] font-black text-primary dark:text-blue-400 tracking-tight">
                                 Lihat riwayat lengkap
