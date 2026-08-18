@@ -44,7 +44,6 @@ export default function LaporanPage() {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthlyReportData, setMonthlyReportData] = useState<ReportItem[]>([]);
-  const [stats, setStats] = useState<any>(null);
   const [isReportLoading, setIsReportLoading] = useState(true);
   const [academicYear, setAcademicYear] = useState("");
 
@@ -218,7 +217,7 @@ export default function LaporanPage() {
                     </div>
                 </div>
 
-                {/* Table Area dengan Header Abu Kebiruan Kapital */}
+                {/* Table Area dengan Header Abu Kebiruan Kapital - IDENTIK GAMBAR */}
                 <div className="border-t border-muted-foreground/5 overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-slate-100/60 dark:bg-slate-800/40">
@@ -264,3 +263,4 @@ export default function LaporanPage() {
     </div>
   );
 }
+

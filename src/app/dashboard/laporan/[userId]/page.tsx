@@ -466,7 +466,7 @@ export default function UserReportDetailPage() {
                             </div>
                         </div>
 
-                        {/* Area Tabel dengan Header Abu Kebiruan Kapital */}
+                        {/* Area Tabel dengan Header Abu Kebiruan Kapital - IDENTIK GAMBAR */}
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-slate-100/60 dark:bg-slate-800/40">
@@ -577,3 +577,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+
