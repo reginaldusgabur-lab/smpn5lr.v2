@@ -44,6 +44,7 @@ export default function LaporanPage() {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthlyReportData, setMonthlyReportData] = useState<ReportItem[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [isReportLoading, setIsReportLoading] = useState(true);
   const [academicYear, setAcademicYear] = useState("");
 
@@ -219,17 +220,17 @@ export default function LaporanPage() {
                     </div>
                 </div>
 
-                {/* Table Area - Presisi Lurus */}
+                {/* Table Area - Presisi Lurus dengan Header Abu Kebiruan */}
                 <div className="border-t border-muted-foreground/5 overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-muted/30">
+                        <TableHeader className="bg-slate-100/60 dark:bg-slate-800/40">
                             <TableRow className="border-none">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">No</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Tanggal</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Status</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Keterangan</TableHead>
+                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">No</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Tanggal</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Status</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

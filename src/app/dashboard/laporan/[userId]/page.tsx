@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -361,6 +361,24 @@ export default function UserReportDetailPage() {
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
+    const getStatusColorClass = (status: string, desc: string, hasOut: boolean) => {
+        const s = status.toLowerCase();
+        const d = (desc || '').toLowerCase();
+
+        if (s === 'alpa') return "bg-red-500 text-white";
+        if (s === 'sakit') return "bg-orange-500 text-white";
+        if (s.includes('izin') || s.includes('dinas') || s.includes('kegiatan')) return "bg-amber-500 text-white";
+        
+        if (s === 'hadir' || s === 'terlambat') {
+            if (!hasOut && !d.includes('tugas') && !d.includes('pulang cepat')) {
+                return "bg-blue-600 text-white"; // Sedang di sekolah
+            }
+            return "bg-emerald-500 text-white"; // Sudah pulang/tuntas
+        }
+        
+        return "bg-primary text-white";
+    };
+
     const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none";
 
     return (
@@ -379,7 +397,6 @@ export default function UserReportDetailPage() {
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
                     {/* Header Card - Biru Gradasi */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                        {/* Dekorasi Background */}
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                             <FileText className="w-24 h-24 text-white" />
                         </div>
@@ -401,7 +418,7 @@ export default function UserReportDetailPage() {
                     </div>
 
                     <div className="p-0 bg-background">
-                        {/* Area Pemilihan Bulan & Aksi - Presisi Lurus */}
+                        {/* Area Pemilihan Bulan & Aksi */}
                         <div className="p-4 space-y-6 bg-slate-50/80 dark:bg-slate-900/50">
                             <div className="flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-between w-full max-w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
@@ -448,17 +465,17 @@ export default function UserReportDetailPage() {
                             </div>
                         </div>
 
-                        {/* Area Tabel - Presisi Lurus */}
+                        {/* Area Tabel dengan Header Abu Kebiruan Kapital */}
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
-                                <TableHeader className="bg-muted/30">
+                                <TableHeader className="bg-slate-100/60 dark:bg-slate-800/40">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">No</TableHead>
-                                        <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Tanggal</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Masuk</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Pulang</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Status</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Keterangan</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">No</TableHead>
+                                        <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Tanggal</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Masuk</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Status</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 border-none h-11">Keterangan</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -528,12 +545,12 @@ export default function UserReportDetailPage() {
                                                 </TableRow>
                                             );
                                         })
-                                    ) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Tidak ada data untuk periode ini.</TableCell></TableRow>}
+                                    ) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Tidak ada data untuk periode ini.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>
 
-                        {/* Statistik Footer - Presisi Lurus */}
+                        {/* Statistik Footer */}
                         {!isLoading && stats && (
                             <div className="p-6 border-t border-muted-foreground/5 bg-slate-50/50 dark:bg-slate-900/30">
                                 <div className="flex items-center justify-between">
