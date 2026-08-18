@@ -222,8 +222,18 @@ export default function DashboardPage() {
         );
     }
 
-    // LOGIKA PERBAIKAN: Jika sudah absen pulang atau sesi keseluruhan hari ini berakhir
-    if (isCheckedOut || isManualFinished || windowStatus === 'CLOSED') {
+    // SCENARIO: Absensi Selesai (Hadir Penuh)
+    if (isCheckedOut || isManualFinished) {
+        return (
+            <div className="w-full bg-[#d1fae5] dark:bg-emerald-950/20 border border-[#b9f6e1] dark:border-emerald-900/30 rounded-full h-14 flex items-center justify-center gap-2.5 shadow-none transition-all">
+                <Sparkles className="h-4 w-4 text-[#059669]" />
+                <span className="text-[14px] font-bold text-[#065f46] dark:text-emerald-400 tracking-tight">Absensi selesai</span>
+            </div>
+        );
+    }
+
+    // SCENARIO: Sesi Ditutup (Tapi pengguna belum menyelesaikan absensi)
+    if (windowStatus === 'CLOSED') {
         return (
             <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none">
                 <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 border border-red-200 dark:border-red-900/30 shadow-sm">
@@ -278,7 +288,7 @@ export default function DashboardPage() {
             );
         }
         
-        // Sesi masuk berakhir (AFTER_IN)
+        // Sesi masuk berakhir (AFTER_IN) - Jika mereka belum masuk sama sekali
         return (
             <div className="w-full bg-[#fef2f2] dark:bg-red-950/10 border border-red-100 dark:border-red-950/20 rounded-xl h-14 flex items-center justify-center gap-3 shadow-none">
                 <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 border border-red-200 dark:border-red-900/30 shadow-sm">
@@ -335,29 +345,25 @@ export default function DashboardPage() {
 
                         <div className="grid grid-cols-2 gap-4 w-full">
                             {/* Card Masuk */}
-                            <div className="bg-green-50/50 dark:bg-green-950/20 rounded-xl p-5 border border-green-100/50 dark:border-green-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#2ecc71] p-2 rounded-xl text-white shrink-0 shadow-lg shadow-green-500/20">
-                                    <LogIn className="h-5 w-5" />
+                            <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50 flex flex-col items-center justify-center gap-3 relative overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                                <div className="flex items-center justify-center gap-2">
+                                    <LogIn className="h-3.5 w-3.5 text-[#007aff]" />
+                                    <p className="text-[11px] font-black text-[#007aff] uppercase tracking-widest">Masuk</p>
                                 </div>
-                                <div className="flex flex-col">
-                                    <p className="text-[11px] font-bold text-[#27ae60] dark:text-green-400 mb-0.5">Masuk</p>
-                                    <p className="text-xl font-black tabular-nums text-slate-800 dark:text-white">
-                                        {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
-                                    </p>
-                                </div>
+                                <p className="text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+                                    {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
+                                </p>
                             </div>
 
                             {/* Card Pulang */}
-                            <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-xl p-5 border border-blue-100/50 dark:border-blue-900/30 flex items-center gap-4 relative overflow-hidden shadow-sm" style={{ transform: 'translateZ(0)' }}>
-                                <div className="bg-[#3498db] p-2 rounded-xl text-white shrink-0 shadow-lg shadow-blue-500/20">
-                                    <LogOut className="h-5 w-5" />
+                            <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50 flex flex-col items-center justify-center gap-3 relative overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+                                <div className="flex items-center justify-center gap-2">
+                                    <LogOut className="h-3.5 w-3.5 text-[#007aff]" />
+                                    <p className="text-[11px] font-black text-[#007aff] uppercase tracking-widest">Pulang</p>
                                 </div>
-                                <div className="flex flex-col">
-                                    <p className="text-[11px] font-bold text-[#2980b9] dark:text-blue-400 mb-0.5">Pulang</p>
-                                    <p className="text-xl font-black tabular-nums text-slate-800 dark:text-white">
-                                        {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
-                                    </p>
-                                </div>
+                                <p className="text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+                                    {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
+                                </p>
                             </div>
                         </div>
 
@@ -495,3 +501,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
