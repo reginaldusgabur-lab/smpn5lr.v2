@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -188,7 +189,7 @@ export default function LaporanPage() {
             theme: 'striped',
             styles: { font: 'times', fontSize: 10, cellPadding: 2 },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center' },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' } }
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center' } }
         });
 
         doc.save(`Laporan_${(user.displayName || 'User').replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
@@ -196,7 +197,7 @@ export default function LaporanPage() {
 
   if (isLoading && monthlyReportData.length === 0) {
     return (
-        <div className="flex-1 pt-4 pb-24 md:p-8">
+        <div className="flex-1 pt-0 pb-24 md:pt-0 md:px-8 md:pb-24">
             <div className="max-w-7xl mx-auto space-y-4">
                 <Skeleton className="h-32 w-full rounded-2xl" />
                 <Skeleton className="h-64 w-full rounded-2xl" />
@@ -206,7 +207,7 @@ export default function LaporanPage() {
   }
 
   return (
-    <div className="flex-1 pt-4 pb-24 md:p-8">
+    <div className="flex-1 pt-0 pb-24 md:pt-0 md:px-8 md:pb-24">
         <div className="max-w-7xl mx-auto">
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
               {/* Header Card - Biru Gradasi */}
@@ -291,7 +292,6 @@ export default function LaporanPage() {
                                 <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Masuk</TableHead>
                                 <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Pulang</TableHead>
                                 <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Status</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody className="bg-background">
@@ -310,12 +310,11 @@ export default function LaporanPage() {
                                                 {record.status}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="text-[11px] font-medium text-muted-foreground italic truncate max-w-[200px]">{record.description}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data untuk periode ini.</TableCell>
+                                    <TableCell colSpan={5} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data untuk periode ini.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

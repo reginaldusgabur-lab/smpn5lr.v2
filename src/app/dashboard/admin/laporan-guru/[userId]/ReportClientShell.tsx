@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileWarning, CalendarClock, MoreVertical, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2 } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileWarning, CalendarClock, MoreVertical, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -186,7 +187,7 @@ export default function ReportClientShell({
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
     return (
-        <div className="flex-1 pt-4 pb-24 md:p-8">
+        <div className="flex-1 pt-0 pb-24 md:pt-0 md:px-8 md:pb-24">
             <div className="max-w-7xl mx-auto space-y-4">
                 <div className="px-4 md:px-0">
                     <div className="flex items-center gap-2 mb-0.5">
