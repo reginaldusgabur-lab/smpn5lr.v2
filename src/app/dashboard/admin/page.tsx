@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -7,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff, Lock, UserX, BookUser, Clock } from 'lucide-react';
+import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff, Lock, UserX, BookUser, Clock, Calendar, UserCircle, LogIn, LogOut } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,11 +20,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useMemo, useEffect, useState } from 'react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, collection, getDocs, type DocumentData, collectionGroup, getDoc } from 'firebase/firestore';
+import { doc, collection, query, where, limit, getDocs, type DocumentData, collectionGroup, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { startOfDay, endOfDay, format } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { getDailyStaffAttendanceStats } from '@/lib/attendance';
@@ -79,6 +81,12 @@ export default function AdminDashboardPage() {
 
   const [isHoliday, setIsHoliday] = useState(false);
   const [isManualDisabled, setIsManualDisabled] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -88,6 +96,24 @@ export default function AdminDashboardPage() {
 
   const isRoleCheckLoading = isUserLoading || isUserDataLoading;
   const isAdmin = !isRoleCheckLoading && userData?.role === 'admin';
+
+  // Personal Attendance Logic for Admin
+  const personalAttendanceQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    return query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', todayStr), limit(1));
+  }, [user, firestore]);
+  const { data: personalAttendance } = useCollection(user, personalAttendanceQuery);
+
+  const personalCheckIn = useMemo(() => {
+    const rec = personalAttendance?.[0];
+    return rec?.checkInTime ? format(rec.checkInTime.toDate(), 'HH:mm') : null;
+  }, [personalAttendance]);
+
+  const personalCheckOut = useMemo(() => {
+    const rec = personalAttendance?.[0];
+    return rec?.checkOutTime ? format(rec.checkOutTime.toDate(), 'HH:mm') : null;
+  }, [personalAttendance]);
 
   const allUsersQuery = useMemoFirebase(() => (isAdmin && firestore) ? collection(firestore, 'users') : null, [firestore, isAdmin]);
   const { data: usersData, isLoading: isUsersLoading } = useCollection(user, allUsersQuery);
@@ -231,6 +257,66 @@ export default function AdminDashboardPage() {
                 <AlertDescription className="text-blue-700">Sistem absensi non-aktif hari ini berdasarkan jadwal libur.</AlertDescription>
             </Alert>
         )}
+
+        {/* Kehadiran Hari Ini Section (Added for Admin) */}
+        <div className="space-y-1">
+            <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
+                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                    <UserCircle className="w-24 h-24 text-white" />
+                </div>
+                <CardContent className="p-6 relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
+                            <Calendar className="h-6 w-6" />
+                        </div>
+                        <div className="space-y-0.5">
+                            <h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2>
+                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau kehadiran Anda dengan mudah.</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card overflow-hidden">
+                <CardContent className="p-8 space-y-6 pt-10 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                        <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
+                            {format(currentTime, 'HH:mm:ss')}
+                        </h2>
+                        <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider opacity-60">
+                            {format(currentTime, 'eeee, d MMMM yyyy', { locale: id })}
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 w-full max-w-sm mx-auto pt-4">
+                        <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
+                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
+                            <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
+                                <LogIn className="h-4 w-4" />
+                            </div>
+                            <div className="text-left relative z-10">
+                                <p className="text-[10px] font-black text-green-600 uppercase tracking-widest leading-none mb-1">Masuk</p>
+                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">
+                                    {personalCheckIn || '--:--'}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
+                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
+                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-blue-500/20 shrink-0 relative z-10">
+                                <LogOut className="h-4 w-4" />
+                            </div>
+                            <div className="text-left relative z-10">
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">Pulang</p>
+                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">
+                                    {personalCheckOut || '--:--'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
             <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
