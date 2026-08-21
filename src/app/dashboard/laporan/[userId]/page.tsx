@@ -329,12 +329,38 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
         });
 
-        const finalY = (doc as any).lastAutoTable.finalY + 15;
+        let finalY = (doc as any).lastAutoTable.finalY || currentY;
+        if (finalY > doc.internal.pageSize.getHeight() - 65) {
+            doc.addPage();
+            finalY = 20;
+        }
+
         const signatureX = pageWidth - 85;
-        doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, finalY);
-        doc.text('Kepala Sekolah', signatureX, finalY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, finalY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, finalY + 44);
+        const signatureY = finalY + 15;
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+
+        doc.setFontSize(10).setFont('times', 'normal');
+        doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, signatureY);
+        doc.text('Mengetahui,', signatureX, signatureY + 6);
+        doc.text('Kepala Sekolah', signatureX, signatureY + 12);
+        
+        doc.setFont('times', 'bold');
+        doc.text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
+        doc.setFont('times', 'normal');
+        doc.text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
+
+        const totalPages = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            const pageHeight = doc.internal.pageSize.getHeight();
+            doc.setLineWidth(0.2);
+            doc.setDrawColor(0, 0, 0);
+            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+            doc.setFontSize(8).setFont('times', 'italic');
+            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
+            doc.setFontSize(9).setFont('times', 'normal');
+            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+        }
 
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
@@ -532,3 +558,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+

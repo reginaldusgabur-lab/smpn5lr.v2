@@ -167,7 +167,7 @@ export function exportToPdf(
               valign: 'middle'
             },
             alternateRowStyles: {
-                fillColor: [225, 242, 254] // Warna biru transparan yang lebih terang/jelas
+                fillColor: [225, 242, 254] 
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
