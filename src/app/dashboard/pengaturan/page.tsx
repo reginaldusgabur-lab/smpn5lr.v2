@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button'
@@ -14,15 +13,58 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { invalidateCache } from '@/lib/cache';
+import Cropper, { Area, Point } from 'react-easy-crop';
+
+/**
+ * Helper to process image cropping and compression on a canvas.
+ */
+const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string> => {
+    const image = new Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => { image.onload = resolve; });
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return '';
+
+    // Set resolution to 800x800 for consistent quality and size
+    const targetSize = 800;
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+
+    ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        targetSize,
+        targetSize
+    );
+
+    // Export as JPEG with 0.8 quality to ensure < 500KB size
+    return canvas.toDataURL('image/jpeg', 0.8);
+};
 
 export default function PengaturanPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -30,12 +72,14 @@ export default function PengaturanPage() {
   const auth = useAuth();
   const { toast } = useToast();
   
+  // Password State
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
+  // Profile State
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [name, setName] = useState('');
   const [nip, setNip] = useState('');
@@ -44,6 +88,14 @@ export default function PengaturanPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Cropper State
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isCroppingModalOpen, setIsCroppingModalOpen] = useState(false);
+
+  // Admin Config State
   const [isReportSaving, setIsReportSaving] = useState(false);
   const [governmentAgency, setGovernmentAgency] = useState('');
   const [educationAgency, setEducationAgency] = useState('');
@@ -128,13 +180,30 @@ export default function PengaturanPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 750 * 1024) {
-          toast({ variant: 'destructive', title: 'File terlalu besar', description: 'Maksimal 750KB.' });
-          return;
-      }
       const reader = new FileReader();
-      reader.onloadend = () => setPhotoPreview(reader.result as string);
+      reader.onload = () => {
+        setImageToCrop(reader.result as string);
+        setIsCroppingModalOpen(true);
+      };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const onCropComplete = useCallback((_area: Area, pixels: Area) => {
+    setCroppedAreaPixels(pixels);
+  }, []);
+
+  const handleApplyCrop = async () => {
+    if (imageToCrop && croppedAreaPixels) {
+      try {
+        const croppedImage = await getCroppedImg(imageToCrop, croppedAreaPixels);
+        setPhotoPreview(croppedImage);
+        setIsCroppingModalOpen(false);
+        setImageToCrop(null);
+        toast({ title: 'Berhasil dipotong', description: 'Foto Anda telah disesuaikan dan siap disimpan.' });
+      } catch (e) {
+        toast({ variant: 'destructive', title: 'Gagal memotong', description: 'Terjadi kesalahan saat memproses gambar.' });
+      }
     }
   };
 
@@ -256,7 +325,7 @@ export default function PengaturanPage() {
               <div className="flex flex-col sm:flex-row items-center gap-6">
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-2 border-primary/10 shadow-xl">
-                      <AvatarImage src={currentPhoto ?? undefined} />
+                      <AvatarImage src={currentPhoto ?? undefined} className="object-cover" />
                       <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{getInitials(name)}</AvatarFallback>
                     </Avatar>
                     <Button type="button" size="icon" variant="outline" className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 bg-primary text-white border-none shadow-lg active:scale-95 transition-all" onClick={() => fileInputRef.current?.click()}>
@@ -416,6 +485,58 @@ export default function PengaturanPage() {
           </form>
         </Card>
       </div>
+
+      {/* MODAL PEMOTONG GAMBAR (1:1 Aspect Ratio) */}
+      <Dialog open={isCroppingModalOpen} onOpenChange={setIsCroppingModalOpen}>
+          <DialogContent className="max-w-2xl rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
+              <DialogHeader className="p-6 bg-primary text-white">
+                  <DialogTitle className="flex items-center gap-3 font-black tracking-tight text-xl">
+                      <Scissors className="h-5 w-5" /> Atur Tata Letak Foto
+                  </DialogTitle>
+                  <DialogDescription className="text-white/80 font-bold text-xs mt-1">
+                      Geser dan perbesar gambar untuk menyesuaikan posisi profil yang pas.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="relative h-[400px] w-full bg-slate-900">
+                  {imageToCrop && (
+                      <Cropper
+                          image={imageToCrop}
+                          crop={crop}
+                          zoom={zoom}
+                          aspect={1 / 1}
+                          onCropChange={setCrop}
+                          onCropComplete={onCropComplete}
+                          onZoomChange={setZoom}
+                          cropShape="round"
+                          showGrid={false}
+                      />
+                  )}
+              </div>
+              <div className="p-6 bg-muted/30 flex flex-col gap-4">
+                  <div className="space-y-2">
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">
+                          <span>Zoom</span>
+                          <span>{Math.round(zoom * 100)}%</span>
+                      </div>
+                      <input 
+                          type="range" 
+                          min={1} 
+                          max={3} 
+                          step={0.1} 
+                          value={zoom} 
+                          onChange={(e) => setZoom(Number(e.target.value))}
+                          className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                      />
+                  </div>
+                  <DialogFooter className="gap-2 sm:gap-0">
+                      <Button variant="ghost" className="rounded-xl font-bold uppercase text-[10px] tracking-widest" onClick={() => setIsCroppingModalOpen(false)}>Batal</Button>
+                      <Button className="rounded-xl font-black px-8 bg-primary uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-primary/20 active:scale-95 transition-all" onClick={handleApplyCrop}>
+                          <Check className="mr-2 h-4 w-4" /> Gunakan Foto Ini
+                      </Button>
+                  </DialogFooter>
+              </div>
+          </DialogContent>
+      </Dialog>
     </div>
   )
 }
