@@ -102,7 +102,7 @@ export default function SchoolReportPage() {
 
             const [attSnap, attFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackQuery), 
+                getDocs(attendanceFallbackSnap), 
                 getDocs(leaveQuery)
             ]);
 
@@ -326,18 +326,18 @@ export default function SchoolReportPage() {
                             {/* Filter Section */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Peran</Label>
+                                    <Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label>
                                     <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none shadow-2xl"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
                                 </div>
                                 <div className="space-y-1.5 md:col-span-2">
-                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari nama</Label>
+                                    <Label className="text-[10px] font-bold text-muted-foreground ml-1">Cari nama</Label>
                                     <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Nama personil..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                                 </div>
                             </div>
 
                             {/* Action Button */}
                             <div className="flex justify-center">
-                                <Button className="w-full font-bold bg-primary shadow-lg shadow-primary/20 h-12 rounded-xl text-xs uppercase tracking-widest active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
+                                <Button className="w-full font-bold bg-primary shadow-lg shadow-primary/20 h-12 rounded-xl text-xs active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
                                     {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Unduh PDF
                                 </Button>
                             </div>
@@ -348,14 +348,14 @@ export default function SchoolReportPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">No</TableHead>
-                                        <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Nama & Nip</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Hadir</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Izin</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Sakit</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Alpa</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">%</TableHead>
-                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Aksi</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] text-muted-foreground border-none h-11">No</TableHead>
+                                        <TableHead className="min-w-[200px] font-bold text-[10px] text-muted-foreground border-none h-11">Nama & Nip</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Hadir</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Izin</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Sakit</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Alpa</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">%</TableHead>
+                                        <TableHead className="w-[80px] text-center font-bold text-[10px] text-muted-foreground border-none h-11">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -453,3 +453,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+

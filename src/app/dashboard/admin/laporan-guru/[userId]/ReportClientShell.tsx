@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -264,7 +263,7 @@ export default function ReportClientShell({
 
                             <div className="flex justify-end">
                                 <Button onClick={handleDownloadPdf} className="w-full sm:w-auto font-bold bg-white text-blue-600 hover:bg-white/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
-                                    <Download className="mr-2 h-4 w-4" />UNDUH PDF
+                                    <Download className="mr-2 h-4 w-4" />Unduh PDF
                                 </Button>
                             </div>
                         </div>
@@ -273,12 +272,12 @@ export default function ReportClientShell({
                             <Table>
                                 <TableHeader className="bg-blue-600">
                                     <TableRow className="border-none h-11">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">No</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Tanggal</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Masuk</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Pulang</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Status</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Keterangan</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] text-white border-none h-11">No</TableHead>
+                                        <TableHead className="font-bold text-[10px] text-white border-none h-11">Tanggal</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-white border-none h-11">Masuk</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-white border-none h-11">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-white border-none h-11">Status</TableHead>
+                                        <TableHead className="font-bold text-[10px] text-white border-none h-11">Keterangan</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody className="bg-background">
@@ -316,3 +315,4 @@ export default function ReportClientShell({
         </div>
     );
 }
+

@@ -214,12 +214,12 @@ export default function LaporanPage() {
                     <Table>
                         <TableHeader className="bg-muted/30">
                             <TableRow className="border-none">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">Tanggal</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">Keterangan</TableHead>
+                                <TableHead className="w-[60px] text-center font-bold text-[10px]">No</TableHead>
+                                <TableHead className="font-bold text-[10px]">Tanggal</TableHead>
+                                <TableHead className="text-center font-bold text-[10px]">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px]">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-[10px]">Status</TableHead>
+                                <TableHead className="font-bold text-[10px]">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -255,3 +255,4 @@ export default function LaporanPage() {
     </div>
   );
 }
+
