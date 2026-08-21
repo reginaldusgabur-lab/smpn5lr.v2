@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, MessageSquare, AlertCircle, Sparkles, CalendarDays, Clock } from 'lucide-react';
+import { Loader2, Trash2, MessageSquare, AlertCircle, Sparkles, CalendarDays, Clock, MailCheck, FileText, Calendar, CheckCircle2 } from 'lucide-react';
 import { startOfDay, endOfDay, addDays, format } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -154,12 +154,26 @@ export default function IzinPage() {
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
-                <div className="px-4 md:px-0">
-                    <h1 className="text-2xl font-normal tracking-tight text-foreground">Formulir pengajuan izin</h1>
-                    <p className="text-sm font-bold text-muted-foreground mt-0.5">Isi detail untuk permohonan ketidakhadiran.</p>
-                </div>
+                {/* Header Card - Biru Gradasi */}
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
+                    <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
+                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                            <MailCheck className="w-24 h-24 text-white" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
+                                    <MailCheck className="h-6 w-6" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <h2 className="font-bold text-2xl tracking-tight leading-tight">Formulir pengajuan izin</h2>
+                                    <p className="text-[11px] font-medium text-white/80 leading-relaxed">Isi detail untuk permohonan ketidakhadiran.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)}>
                             <CardHeader className="p-6 border-b border-muted-foreground/5 bg-white dark:bg-slate-900/20">
@@ -183,7 +197,7 @@ export default function IzinPage() {
                                         name="leaveDate"
                                         render={({ field }) => (
                                             <FormItem className="space-y-3">
-                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pilih Tanggal</FormLabel>
+                                                <FormLabel className="text-[10px] font-bold text-muted-foreground">Pilih tanggal</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-900/50 border-muted-foreground/10 shadow-none font-bold text-sm">
@@ -204,7 +218,7 @@ export default function IzinPage() {
                                         name="type"
                                         render={({ field }) => (
                                             <FormItem className="space-y-3">
-                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Jenis Pengajuan</FormLabel>
+                                                <FormLabel className="text-[10px] font-bold text-muted-foreground">Jenis pengajuan</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-900/50 border-muted-foreground/10 shadow-none font-bold text-sm">
@@ -230,7 +244,7 @@ export default function IzinPage() {
                                     name="reason"
                                     render={({ field }) => (
                                         <FormItem className="space-y-3">
-                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Alasan</FormLabel>
+                                            <FormLabel className="text-[10px] font-bold text-muted-foreground">Alasan</FormLabel>
                                             <FormControl>
                                                 <Textarea 
                                                     placeholder="Pilih jenis izin terlebih dahulu..." 
