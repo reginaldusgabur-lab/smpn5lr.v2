@@ -6,6 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { UserCheck, Users, FileWarning, ShieldAlert, FileText, CalendarOff, Lock, UserX, BookUser, Clock, Calendar, UserCircle, LogIn, LogOut } from 'lucide-react';
 import {
@@ -258,7 +259,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Kehadiran Hari Ini Section */}
-        <div className="space-y-1">
+        <div className="w-full space-y-1">
             <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
                 <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                     <UserCircle className="w-24 h-24 text-white" />
@@ -270,7 +271,7 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className="space-y-0.5">
                             <h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2>
-                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau kehadiran Anda dengan mudah.</p>
+                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau kehadiran pribadi Anda.</p>
                         </div>
                     </div>
                 </CardContent>
@@ -282,7 +283,7 @@ export default function AdminDashboardPage() {
                         <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
                             {format(currentTime, 'HH:mm:ss')}
                         </h2>
-                        <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider opacity-60">
+                        <p className="text-xs font-bold text-muted-foreground mt-3 opacity-60">
                             {format(currentTime, 'eeee, d MMMM yyyy', { locale: id })}
                         </p>
                     </div>
@@ -294,7 +295,7 @@ export default function AdminDashboardPage() {
                                 <LogIn className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
-                                <p className="text-[10px] font-black text-green-600 uppercase tracking-widest leading-none mb-1">Masuk</p>
+                                <p className="text-[10px] font-semibold text-green-600 leading-none mb-1">Masuk</p>
                                 <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                     {personalCheckIn || '--:--'}
                                 </p>
@@ -306,7 +307,7 @@ export default function AdminDashboardPage() {
                                 <LogOut className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
-                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">Pulang</p>
+                                <p className="text-[10px] font-semibold text-blue-600 leading-none mb-1">Pulang</p>
                                 <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                     {personalCheckOut || '--:--'}
                                 </p>

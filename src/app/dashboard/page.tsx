@@ -59,7 +59,7 @@ const LiveClockUI = memo(() => {
             <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider opacity-60">
+            <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -307,7 +307,7 @@ export default function DashboardPage() {
                                     <LogIn className="h-4 w-4" />
                                 </div>
                                 <div className="text-left relative z-10">
-                                    <p className="text-[10px] font-black text-green-600 uppercase tracking-widest leading-none mb-1">Masuk</p>
+                                    <p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p>
                                     <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
                                     <LogOut className="h-4 w-4" />
                                 </div>
                                 <div className="text-left relative z-10">
-                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">Pulang</p>
+                                    <p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p>
                                     <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                         {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
                                     </p>

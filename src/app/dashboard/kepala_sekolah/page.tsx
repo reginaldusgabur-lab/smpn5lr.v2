@@ -171,7 +171,7 @@ export default function KepalaSekolahDashboardPage() {
 
             const [attendanceSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery),
-                getDocs(leaveQuery),
+                getDocs(leaveSnap),
             ]);
             
             const userMap = new Map(usersData.map(u => [u.id, u.role]));
@@ -330,6 +330,12 @@ export default function KepalaSekolahDashboardPage() {
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
                 <CardContent className="p-8 space-y-6 pt-10 text-center">
                     <LiveClock />
+                    <div className="flex flex-col items-center justify-center">
+                        <p className="text-xs font-bold text-muted-foreground mt-3 opacity-60">
+                            {format(new Date(), 'eeee, d MMMM yyyy', { locale: id })}
+                        </p>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4 w-full max-w-sm mx-auto pt-4">
                         <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
                             <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
@@ -337,7 +343,7 @@ export default function KepalaSekolahDashboardPage() {
                                 <LogIn className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
-                                <p className="text-[10px] font-black text-green-600 uppercase tracking-widest leading-none mb-1">Masuk</p>
+                                <p className="text-[10px] font-semibold text-green-600 leading-none mb-1">Masuk</p>
                                 <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                     {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
                                 </p>
@@ -349,7 +355,7 @@ export default function KepalaSekolahDashboardPage() {
                                 <LogOut className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
-                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">Pulang</p>
+                                <p className="text-[10px] font-semibold text-blue-600 leading-none mb-1">Pulang</p>
                                 <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                     {todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}
                                 </p>
