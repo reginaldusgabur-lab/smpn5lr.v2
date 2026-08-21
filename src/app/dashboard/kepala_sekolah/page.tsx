@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -65,7 +64,7 @@ const KepalaSekolahDashboardSkeleton = () => (
             <Skeleton className="h-4 w-3/4 !mt-2" />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="w-full lg:col-span-2 rounded-2xl">
+            <Card className="w-full lg:col-span-2 rounded-xl">
                 <CardHeader>
                     <Skeleton className="h-6 w-1/2" />
                     <Skeleton className="h-4 w-3/4" />
@@ -83,7 +82,7 @@ const KepalaSekolahDashboardSkeleton = () => (
             </Card>
             <div className="space-y-6">
                 {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="rounded-2xl">
+                    <Card key={i} className="rounded-xl">
                         <CardHeader className="pb-2">
                             <Skeleton className="h-4 w-1/2" />
                         </CardHeader>
@@ -96,7 +95,7 @@ const KepalaSekolahDashboardSkeleton = () => (
                 ))}
             </div>
         </div>
-        <Card className="rounded-2xl">
+        <Card className="rounded-xl">
             <CardHeader>
                 <Skeleton className="h-6 w-1/2" />
                 <Skeleton className="h-4 w-3/4" />
@@ -309,7 +308,7 @@ export default function KepalaSekolahDashboardPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="w-full lg:col-span-2 shadow-none border-muted-foreground/10 bg-primary/5 rounded-2xl overflow-hidden">
+        <Card className="w-full lg:col-span-2 shadow-none border-muted-foreground/10 bg-primary/5 rounded-xl overflow-hidden">
           <CardHeader>
             <CardTitle>Kehadiran Anda Hari Ini</CardTitle>
             <CardDescription>Status kehadiran dan jam absensi pribadi Anda.</CardDescription>
@@ -349,7 +348,7 @@ export default function KepalaSekolahDashboardPage() {
         <div className="space-y-4">
           <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
             <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Hadir</span>
+                <span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span>
                 <UserCheck className="h-3.5 w-3.5 opacity-60" />
             </div>
             <div className="text-3xl font-normal tracking-tight">
@@ -359,7 +358,7 @@ export default function KepalaSekolahDashboardPage() {
           
           <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Persetujuan Izin</span>
+              <span className="text-[10px] font-normal opacity-80 tracking-widest">Persetujuan Izin</span>
               <ClipboardCheck className="h-3.5 w-3.5 opacity-60" />
             </div>
             <div className="flex items-center justify-between">
@@ -372,7 +371,7 @@ export default function KepalaSekolahDashboardPage() {
           
            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Laporan Sekolah</span>
+              <span className="text-[10px] font-normal opacity-80 tracking-widest">Laporan Sekolah</span>
               <FileText className="h-3.5 w-3.5 opacity-60" />
             </div>
             <div className="flex items-center justify-between mt-1">
@@ -385,7 +384,7 @@ export default function KepalaSekolahDashboardPage() {
         </div>
       </div>
 
-      <Card className="shadow-none border-muted-foreground/10 overflow-hidden rounded-2xl bg-primary/5">
+      <Card className="shadow-none border-muted-foreground/10 overflow-hidden rounded-xl bg-primary/5">
         <CardHeader className="bg-muted/20 border-b border-muted-foreground/5">
             <CardTitle className="text-lg font-bold">Riwayat Kehadiran Staf Terbaru</CardTitle>
             <CardDescription>Aktivitas kehadiran guru & pegawai yang tercatat hari ini.</CardDescription>
@@ -432,3 +431,4 @@ export default function KepalaSekolahDashboardPage() {
     </div>
   );
 }
+

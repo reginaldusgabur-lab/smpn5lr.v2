@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -329,7 +328,7 @@ export default function DashboardPage() {
                         onClick={() => scrollToId('recent-attendance')}
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Hadir</span>
+                            <span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span>
                             <UserCheck className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" />
                         </div>
                         <div className="text-3xl font-normal tracking-tight">
@@ -341,7 +340,7 @@ export default function DashboardPage() {
                         onClick={() => scrollToId('absent-users')}
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Izin/Sakit</span>
+                            <span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit</span>
                             <BookUser className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" />
                         </div>
                         <div className="text-3xl font-normal tracking-tight">
@@ -353,7 +352,7 @@ export default function DashboardPage() {
                         onClick={navigateToApproval}
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Menunggu</span>
+                            <span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span>
                             <MailWarning className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" />
                         </div>
                         <div className="text-3xl font-normal tracking-tight">
@@ -365,7 +364,7 @@ export default function DashboardPage() {
                         onClick={() => scrollToId('absent-users')}
                     >
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Alpa</span>
+                            <span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span>
                             <UserX className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" />
                         </div>
                         <div className="text-3xl font-normal tracking-tight">
