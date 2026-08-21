@@ -8,7 +8,7 @@ import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, st
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer, FileText, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Label } from '@/components/ui/label';
 import {
@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { cn } from '@/lib/utils';
 
 interface ReportRowData {
     no: number;
@@ -279,17 +280,32 @@ export default function SchoolReportPage() {
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
-                <div className="px-4 md:px-0 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-normal tracking-tight">Laporan sekolah</h1>
-                        <p className="text-sm text-muted-foreground">Rekapitulasi kehadiran seluruh personil.</p>
-                    </div>
-                </div>
-
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
+                    {/* Header Card - Biru Gradasi */}
+                    <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
+                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                            <FileText className="w-24 h-24 text-white" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
+                                    <FileText className="h-6 w-6" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <h2 className="font-bold text-2xl tracking-tight leading-tight">Laporan sekolah</h2>
+                                    <p className="text-[11px] font-medium text-white/80 leading-relaxed">Rekapitulasi kehadiran seluruh personil.</p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={loadData} disabled={isReportLoading}>
+                                <RefreshCw className={cn("h-4 w-4", isReportLoading && "animate-spin")} />
+                            </Button>
+                        </div>
+                    </div>
+
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
-                            <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
+                            <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                                     <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
@@ -318,7 +334,7 @@ export default function SchoolReportPage() {
                             </div>
 
                             <div className="flex justify-end">
-                                <Button className="w-full sm:w-auto h-11 px-8 rounded-xl font-bold bg-primary" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
+                                <Button className="w-full sm:w-auto h-11 px-8 rounded-xl font-bold bg-primary shadow-lg shadow-primary/20 active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
                                     {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
                                 </Button>
                             </div>
@@ -368,7 +384,7 @@ export default function SchoolReportPage() {
                                                     {item.totalAlpa}
                                                 </TableCell>
                                                 <TableCell className="text-center font-black text-primary">
-                                                    {item.persentase}
+                                                    {item.presentasi}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>
@@ -381,7 +397,7 @@ export default function SchoolReportPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="h-48 text-center text-muted-foreground font-bold uppercase text-xs tracking-widest opacity-40">
+                                            <TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-xs tracking-widest">
                                                 Data tidak ditemukan
                                             </TableCell>
                                         </TableRow>
