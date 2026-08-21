@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, runTour]);
 
   const handleTourComplete = async () => {
-    setRunTour(false);
+    runTour && setRunTour(false);
     if (!user || !firestore) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     try {
@@ -55,11 +55,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  // Menampilkan indikator pemuatan yang konsisten saat memeriksa autentikasi
-  // untuk menghilangkan kesan layar kosong saat masuk ke dashboard.
+  // Menampilkan indikator pemuatan yang konsisten tanpa fixed position untuk menghindari scroll warning Next.js.
   if (isUserLoading || !user) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background z-[9999]">
+      <div className="flex h-svh w-full items-center justify-center bg-background">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
           <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />

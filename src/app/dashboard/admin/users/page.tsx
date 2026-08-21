@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 
@@ -81,7 +80,7 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { Skeleton } from '@/components/ui/skeleton';
 import { resetUserPassword } from '@/app/actions/admin-actions';
-import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
@@ -99,6 +98,7 @@ const addUserSchema = z.object({
 export default function AdminUsersPage() {
     const { user, isUserLoading: isAuthLoading } = useUser();
     const firestore = useFirestore();
+    const router = useRouter();
     const { toast } = useToast();
     const [userFilter, setUserFilter] = useState('all');
     const [userSearch, setUserSearch] = useState('');
