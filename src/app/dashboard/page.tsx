@@ -297,7 +297,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card overflow-hidden">
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
                     <CardContent className="p-8 space-y-6 pt-10 text-center">
                         <LiveClockUI />
                         <div className="grid grid-cols-2 gap-4 w-full max-w-sm mx-auto pt-4">

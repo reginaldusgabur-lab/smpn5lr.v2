@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -258,7 +257,7 @@ export default function AdminDashboardPage() {
             </Alert>
         )}
 
-        {/* Kehadiran Hari Ini Section (Added for Admin) */}
+        {/* Kehadiran Hari Ini Section */}
         <div className="space-y-1">
             <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
                 <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
@@ -277,7 +276,7 @@ export default function AdminDashboardPage() {
                 </CardContent>
             </Card>
 
-            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card overflow-hidden">
+            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
                 <CardContent className="p-8 space-y-6 pt-10 text-center">
                     <div className="flex flex-col items-center justify-center">
                         <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, CalendarOff, LogIn, LogOut, ClipboardCheck, ArrowRight, FileText, UserCheck, AlertCircle, UserX, BookUser, MailWarning, Clock } from 'lucide-react';
+import { Loader2, CalendarOff, LogIn, LogOut, ClipboardCheck, ArrowRight, FileText, UserCheck, AlertCircle, UserX, BookUser, MailWarning, Clock, Calendar, UserCircle } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, Timestamp, getDocs, type DocumentData, collectionGroup, getDoc } from 'firebase/firestore';
 import { format, startOfDay, endOfDay } from 'date-fns';
@@ -308,42 +308,64 @@ export default function KepalaSekolahDashboardPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="w-full lg:col-span-2 shadow-none border-muted-foreground/10 bg-primary/5 rounded-xl overflow-hidden">
-          <CardHeader>
-            <CardTitle>Kehadiran Anda Hari Ini</CardTitle>
-            <CardDescription>Status kehadiran dan jam absensi pribadi Anda.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
-            <LiveClock />
-            <div className="grid grid-cols-2 gap-4 text-center w-full max-w-sm pt-4">
-              <div className="rounded-xl border bg-card p-4">
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                      <LogIn className="w-4 h-4 text-muted-foreground" />
-                      <p className="text-sm font-medium text-muted-foreground">Absen Masuk</p>
-                  </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
-                </p>
-              </div>
-              <div className="rounded-xl border bg-card p-4">
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                      <LogOut className="w-4 h-4 text-muted-foreground" />
-                      <p className="text-sm font-medium text-muted-foreground">Absen Pulang</p>
-                  </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-2">
-            {!isHoliday ? personalButtonAction() : (
-               <div className="w-full p-4 bg-muted/30 rounded-xl text-center">
-                  <p className="text-xs font-bold text-muted-foreground">Absensi pribadi dinonaktifkan hari ini</p>
-               </div>
-            )}
-          </CardFooter>
-        </Card>
+        {/* Personal Attendance Card */}
+        <div className="w-full lg:col-span-2 space-y-1">
+            <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
+                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                    <UserCircle className="w-24 h-24 text-white" />
+                </div>
+                <CardContent className="p-6 relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
+                            <Calendar className="h-6 w-6" />
+                        </div>
+                        <div className="space-y-0.5">
+                            <h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2>
+                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau kehadiran pribadi Anda.</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
+                <CardContent className="p-8 space-y-6 pt-10 text-center">
+                    <LiveClock />
+                    <div className="grid grid-cols-2 gap-4 w-full max-w-sm mx-auto pt-4">
+                        <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
+                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
+                            <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
+                                <LogIn className="h-4 w-4" />
+                            </div>
+                            <div className="text-left relative z-10">
+                                <p className="text-[10px] font-black text-green-600 uppercase tracking-widest leading-none mb-1">Masuk</p>
+                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">
+                                    {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
+                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
+                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-blue-500/20 shrink-0 relative z-10">
+                                <LogOut className="h-4 w-4" />
+                            </div>
+                            <div className="text-left relative z-10">
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">Pulang</p>
+                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">
+                                    {todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-2 p-6 pt-0">
+                    {!isHoliday ? personalButtonAction() : (
+                       <div className="w-full p-4 bg-muted/30 rounded-xl text-center">
+                          <p className="text-xs font-bold text-muted-foreground">Absensi pribadi dinonaktifkan hari ini</p>
+                       </div>
+                    )}
+                </CardFooter>
+            </Card>
+        </div>
 
         <div className="space-y-4">
           <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
@@ -431,4 +453,3 @@ export default function KepalaSekolahDashboardPage() {
     </div>
   );
 }
-
