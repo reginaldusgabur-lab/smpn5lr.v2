@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -361,7 +360,7 @@ export default function UserReportDetailPage() {
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
-                                    <Calendar className="h-6 w-6" />
+                                    <FileText className="h-6 w-6" />
                                 </div>
                                 <div className="space-y-0.5">
                                     <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
@@ -391,7 +390,7 @@ export default function UserReportDetailPage() {
                                         <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
                                             <CalendarDays className="h-4 w-4 text-white/70" />
                                             <div className="flex flex-col min-w-max">
-                                                <span className="text-[7px] font-bold uppercase text-white/50 tracking-[0.1em] leading-none">Thn ajaran</span>
+                                                <span className="text-[7px] font-bold text-white/50 leading-none">Tahun ajaran</span>
                                                 <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                             </div>
                                         </div>
@@ -416,7 +415,7 @@ export default function UserReportDetailPage() {
 
                             <div className="flex justify-end">
                                 <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-white text-blue-600 hover:bg-white/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
-                                    {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
+                                    {isLoading || isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Unduh PDF
                                 </Button>
                             </div>
                         </div>
@@ -425,12 +424,12 @@ export default function UserReportDetailPage() {
                             <Table>
                                 <TableHeader className="bg-blue-600">
                                     <TableRow className="border-none h-11">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">No</TableHead>
-                                        <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Tanggal</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Masuk</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Pulang</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Status</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none h-11">Keterangan</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-xs text-white border-none h-11">No</TableHead>
+                                        <TableHead className="w-[200px] font-bold text-xs text-white border-none h-11">Tanggal</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-white border-none h-11">Masuk</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-white border-none h-11">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-white border-none h-11">Status</TableHead>
+                                        <TableHead className="font-bold text-xs text-white border-none h-11">Keterangan</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody className="bg-background">
@@ -500,7 +499,7 @@ export default function UserReportDetailPage() {
                                                 </TableRow>
                                             );
                                         })
-                                    ) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Tidak ada data untuk periode ini.</TableCell></TableRow>}
+                                    ) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data untuk periode ini.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>

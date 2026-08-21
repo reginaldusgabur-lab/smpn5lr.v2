@@ -193,7 +193,7 @@ export default function LaporanPage() {
                             <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
                                 <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-bold uppercase text-muted-foreground/60 leading-none">Tahun ajaran</span>
+                                    <span className="text-[7px] font-bold text-muted-foreground/60 leading-none">Tahun ajaran</span>
                                     <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "-"}</span>
                                 </div>
                             </div>
@@ -214,12 +214,12 @@ export default function LaporanPage() {
                     <Table>
                         <TableHeader className="bg-muted/30">
                             <TableRow className="border-none">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px]">No</TableHead>
-                                <TableHead className="font-bold text-[10px]">Tanggal</TableHead>
-                                <TableHead className="text-center font-bold text-[10px]">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px]">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px]">Status</TableHead>
-                                <TableHead className="font-bold text-[10px]">Keterangan</TableHead>
+                                <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none h-11">No</TableHead>
+                                <TableHead className="font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
+                                <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Status</TableHead>
+                                <TableHead className="font-bold text-xs text-muted-foreground border-none h-11">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -243,7 +243,7 @@ export default function LaporanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px]">Tidak ada data.</TableCell>
+                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -255,4 +255,3 @@ export default function LaporanPage() {
     </div>
   );
 }
-

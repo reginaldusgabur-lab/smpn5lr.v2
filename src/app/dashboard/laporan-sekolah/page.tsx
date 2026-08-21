@@ -102,7 +102,7 @@ export default function SchoolReportPage() {
 
             const [attSnap, attFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackSnap), 
+                getDocs(attendanceFallbackQuery), 
                 getDocs(leaveQuery)
             ]);
 
@@ -212,7 +212,7 @@ export default function SchoolReportPage() {
             acc.sakit += curr.totalSakit;
             acc.alpa += curr.totalAlpa;
             return acc;
-        }, { hadir: 0, izin: 0, sakit: 0, alpa: 0 });
+        }, { hadir: 0, hadirPoin: 0, izin: 0, sakit: 0, alpa: 0 });
 
         const pie = [
             { name: 'Hadir', value: Math.round(totals.hadir), color: '#22c55e' },
@@ -312,7 +312,7 @@ export default function SchoolReportPage() {
                                     <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
                                         <CalendarDays className="h-4 w-4 text-primary/70" />
                                         <div className="flex flex-col">
-                                            <span className="text-[7px] font-bold uppercase text-muted-foreground/60 leading-none">Tahun ajaran</span>
+                                            <span className="text-[7px] font-bold text-muted-foreground/60 leading-none">Tahun ajaran</span>
                                             <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                         </div>
                                     </div>
@@ -348,14 +348,14 @@ export default function SchoolReportPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] text-muted-foreground border-none h-11">No</TableHead>
-                                        <TableHead className="min-w-[200px] font-bold text-[10px] text-muted-foreground border-none h-11">Nama & Nip</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Hadir</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Izin</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Sakit</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Alpa</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">%</TableHead>
-                                        <TableHead className="w-[80px] text-center font-bold text-[10px] text-muted-foreground border-none h-11">Aksi</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none h-11">No</TableHead>
+                                        <TableHead className="min-w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Nama & Nip</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Hadir</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Izin</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Sakit</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Alpa</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">%</TableHead>
+                                        <TableHead className="w-[80px] text-center font-bold text-xs text-muted-foreground border-none h-11">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -401,7 +401,7 @@ export default function SchoolReportPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">
+                                            <TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">
                                                 Data tidak ditemukan
                                             </TableCell>
                                         </TableRow>
@@ -453,4 +453,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-
