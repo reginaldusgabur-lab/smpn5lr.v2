@@ -264,7 +264,7 @@ export default function SchoolReportPage() {
                 margin: { bottom: 35 },
                 styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
-                alternateRowStyles: { fillColor: [235, 245, 255] },
+                alternateRowStyles: { fillColor: [225, 242, 254] },
                 columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 40 }, 3: { halign: 'center', cellWidth: 18 }, 4: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 12 }, 6: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 12 }, 8: { halign: 'right', cellWidth: 13 } }
             });
 
@@ -282,6 +282,13 @@ export default function SchoolReportPage() {
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
+                <div className="px-4 md:px-0 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-normal tracking-tight">Laporan sekolah</h1>
+                        <p className="text-sm text-muted-foreground">Rekapitulasi kehadiran seluruh personil.</p>
+                    </div>
+                </div>
+
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
                     {/* Header Card - Biru Gradasi */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
