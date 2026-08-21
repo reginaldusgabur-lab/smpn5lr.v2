@@ -7,11 +7,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, MessageSquare, AlertCircle, Sparkles, CalendarDays, Clock, MailCheck, FileText, Calendar, CheckCircle2 } from 'lucide-react';
-import { startOfDay, endOfDay, addDays, format } from 'date-fns';
+import { Loader2, Trash2, MessageSquare, AlertCircle, MailCheck, Clock, CheckCircle2, Calendar } from 'lucide-react';
+import { startOfDay, endOfDay, addDays, format, setHours, setMinutes } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useAttendanceWindow } from '@/hooks/use-attendance-window';
 import {
   Card,
   CardContent,
@@ -55,6 +56,16 @@ const leaveRequestSchema = z.object({
 });
 
 export default function IzinPage() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const router = useRouter();
+    const { status: windowStatus, config: schoolConfig } = useAttendanceWindow();
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [currentTime, setCurrentTime] = useState(new Date());
+
     const form = useForm<z.infer<typeof leaveRequestSchema>>({
         resolver: zodResolver(leaveRequestSchema),
         defaultValues: {
@@ -64,31 +75,29 @@ export default function IzinPage() {
             proofUrl: '',
         }
     });
-    const { user } = useUser();
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const router = useRouter();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isCancelling, setIsCancelling] = useState(false);
-    const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
         const timerId = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timerId);
     }, []);
 
-    const { today, tomorrow, currentMonthId } = useMemo(() => {
+    const { today, tomorrow } = useMemo(() => {
         const t = startOfDay(currentTime);
         const tom = addDays(t, 1);
-        return {
-            today: t,
-            tomorrow: tom,
-            currentMonthId: format(t, 'yyyy-MM'),
-        };
+        return { today: t, tomorrow: tom };
     }, [currentTime]);
 
-    const schoolConfigRef = useMemoFirebase(() => user ? doc(firestore, 'schoolConfig', 'default') : null, [firestore, user]);
-    const { data: schoolConfig } = useDoc(user, schoolConfigRef);
+    // Logika Penguncian Tanggal: Jika absen sudah tutup atau hari libur, kunci pilihan "Hari Ini"
+    const isTodayLocked = useMemo(() => {
+        return windowStatus === 'CLOSED' || windowStatus === 'SESSION_INACTIVE' || windowStatus === 'DISABLED';
+    }, [windowStatus]);
+
+    // Efek untuk mengalihkan ke "Besok" secara otomatis jika "Hari Ini" terkunci
+    useEffect(() => {
+        if (isTodayLocked && form.getValues('leaveDate') === 'today') {
+            form.setValue('leaveDate', 'tomorrow');
+        }
+    }, [isTodayLocked, form]);
 
     const selectedDateValue = form.watch('leaveDate');
     const targetDate = useMemo(() => selectedDateValue === 'tomorrow' ? tomorrow : today, [selectedDateValue, today, tomorrow]);
@@ -112,6 +121,22 @@ export default function IzinPage() {
     }, [user, firestore, targetDateStart]);
     const { data: existingLeaves } = useCollection(user, existingLeaveQuery);
     const currentDayLeave = existingLeaves?.[0];
+
+    const hasCheckedIn = !!(targetDateAttendance && targetDateAttendance[0]?.checkInTime);
+    const hasCheckedOut = !!(targetDateAttendance && targetDateAttendance[0]?.checkOutTime);
+
+    // Contoh alasan dinamis berdasarkan jenis yang dipilih
+    const selectedType = form.watch('type');
+    const dynamicPlaceholder = useMemo(() => {
+        switch (selectedType) {
+            case 'Sakit': return 'Contoh: Demam tinggi, Sakit gigi, Perlu istirahat medis...';
+            case 'Izin Pribadi': return 'Contoh: Urusan keluarga mendesak, Menghadiri pernikahan saudara...';
+            case 'Dinas': return 'Contoh: Menghadiri rapat MKKS di Dinas Pendidikan...';
+            case 'Terlambat': return 'Contoh: Ban kendaraan bocor, Ada kendala tak terduga di jalan...';
+            case 'Pulang Cepat': return 'Contoh: Ada keperluan darurat di rumah yang tidak bisa ditunda...';
+            default: return 'Tuliskan alasan pengajuan Anda di sini...';
+        }
+    }, [selectedType]);
 
     const onSubmit = async (values: z.infer<typeof leaveRequestSchema>) => {
         if (!user || !firestore) return;
@@ -154,13 +179,12 @@ export default function IzinPage() {
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
-                {/* Header Card - Biru Gradasi */}
+                {/* Header Utama */}
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                             <MailCheck className="w-24 h-24 text-white" />
                         </div>
-                        
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
@@ -179,12 +203,12 @@ export default function IzinPage() {
                             <CardHeader className="p-6 border-b border-muted-foreground/5 bg-white dark:bg-slate-900/20">
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1">
-                                        <CardTitle className="text-blue-600 dark:text-blue-400 font-bold text-base tracking-tight">Data Permohonan</CardTitle>
+                                        <CardTitle className="text-blue-600 dark:text-blue-400 font-bold text-base tracking-tight">Data permohonan</CardTitle>
                                         <CardDescription className="text-muted-foreground font-medium text-xs">Pastikan informasi yang diberikan sudah benar.</CardDescription>
                                     </div>
                                     {currentDayLeave && (
                                         <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 font-bold px-3 py-1">
-                                            {currentDayLeave.status === 'pending' ? 'Menunggu' : currentDayLeave.status}
+                                            {currentDayLeave.status === 'pending' ? 'Menunggu' : 'Selesai'}
                                         </Badge>
                                     )}
                                 </div>
@@ -198,14 +222,16 @@ export default function IzinPage() {
                                         render={({ field }) => (
                                             <FormItem className="space-y-3">
                                                 <FormLabel className="text-[10px] font-bold text-muted-foreground">Pilih tanggal</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-900/50 border-muted-foreground/10 shadow-none font-bold text-sm">
                                                             <SelectValue placeholder="Pilih tanggal" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent className="rounded-xl border-none shadow-2xl">
-                                                        <SelectItem value="today" className="rounded-lg font-bold">Hari Ini</SelectItem>
+                                                        <SelectItem value="today" disabled={isTodayLocked} className="rounded-lg font-bold">
+                                                            Hari Ini {isTodayLocked && '(Tutup)'}
+                                                        </SelectItem>
                                                         <SelectItem value="tomorrow" className="rounded-lg font-bold">Besok</SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -229,8 +255,8 @@ export default function IzinPage() {
                                                         <SelectItem value="Sakit" className="rounded-lg font-bold">Sakit</SelectItem>
                                                         <SelectItem value="Izin Pribadi" className="rounded-lg font-bold">Izin Pribadi</SelectItem>
                                                         <SelectItem value="Dinas" className="rounded-lg font-bold">Perjalanan Dinas</SelectItem>
-                                                        <SelectItem value="Terlambat" className="rounded-lg font-bold">Izin Terlambat</SelectItem>
-                                                        <SelectItem value="Pulang Cepat" className="rounded-lg font-bold">Izin Pulang Cepat</SelectItem>
+                                                        <SelectItem value="Terlambat" className="rounded-lg font-bold" disabled={hasCheckedIn}>Izin Terlambat</SelectItem>
+                                                        <SelectItem value="Pulang Cepat" className="rounded-lg font-bold" disabled={!hasCheckedIn || hasCheckedOut}>Izin Pulang Cepat</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage className="text-[10px] font-bold" />
@@ -247,7 +273,7 @@ export default function IzinPage() {
                                             <FormLabel className="text-[10px] font-bold text-muted-foreground">Alasan</FormLabel>
                                             <FormControl>
                                                 <Textarea 
-                                                    placeholder="Pilih jenis izin terlebih dahulu..." 
+                                                    placeholder={dynamicPlaceholder} 
                                                     {...field} 
                                                     className="min-h-[140px] rounded-xl bg-slate-50 dark:bg-slate-900/50 border-muted-foreground/10 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold text-sm shadow-none" 
                                                 />
@@ -261,7 +287,7 @@ export default function IzinPage() {
                                     <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                                     <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
                                         <span className="text-blue-600 dark:text-blue-400 uppercase tracking-widest mr-1">Petunjuk:</span>
-                                        Isi dengan alasan singkat saja (misal: Sakit demam). Kalimat sapaan atau permohonan izin lengkap harap dikirim langsung kepada <span className="text-slate-900 dark:text-slate-200">Kepala Sekolah melalui WhatsApp atau menyesuaikan aturan sekolah.</span>
+                                        Isi dengan alasan singkat saja. Kalimat sapaan lengkap harap dikirim langsung kepada <span className="text-slate-900 dark:text-slate-200">Kepala Sekolah melalui WhatsApp atau menyesuaikan aturan sekolah.</span>
                                     </p>
                                 </div>
                             </CardContent>
@@ -273,7 +299,7 @@ export default function IzinPage() {
                                         disabled={isSubmitting || !!currentDayLeave}
                                         className="bg-blue-600 hover:bg-blue-700 text-white font-black tracking-widest text-[11px] h-12 px-8 rounded-xl shadow-lg shadow-blue-600/20 uppercase"
                                     >
-                                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kirim Pengajuan"}
+                                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (currentDayLeave ? "Sudah Ada Pengajuan" : "Kirim Pengajuan")}
                                     </Button>
 
                                     {currentDayLeave && currentDayLeave.status === 'pending' && (
