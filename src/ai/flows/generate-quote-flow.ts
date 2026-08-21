@@ -1,8 +1,7 @@
 'use server';
 /**
- * @fileOverview AI Flow Modular Fragment-Based.
- * Menggunakan independent hashing untuk memastikan Hook, Context, dan Punchline selalu acak secara independen.
- * AI bertugas merangkai fragmen dan menambahkan satu bait pantun jenaka sekolah yang unik.
+ * @fileOverview AI Flow Modular Fragment-Based (Compact Version).
+ * Menghasilkan satu kalimat humor singkat seputar sekolah tanpa pantun.
  */
 
 import { ai } from '../genkit';
@@ -37,17 +36,12 @@ function getHash(str: string): number {
 }
 
 const hooks = [
-  "Laporan dari meja piket:", "Investigasi ruang guru menemukan:", "Fakta unik hari ini:", 
-  "Misteri terungkap:", "Breaking news internal:", "Satu rahasia kecil:", 
-  "Analisis teknis menunjukkan:", "Catatan di balik buku nilai:", "Bisikan di koridor:", 
-  "Observasi pagi ini:", "Kabar burung dari kantin:", "Hasil sinkronisasi batin:", 
-  "Filosofi spidol habis:", "Drama administrasi hari ini:", "Instruksi dari alam bawah sadar:",
-  "Menurut pakar kursi plastik:", "Teori konspirasi printer:", "Hikmah di balik RPP:",
-  "Pesan dari proyektor:", "Ramalan cuaca sekolah:", "Berita singkat:", 
-  "Logika komputer sekolah:", "Saran dari server:", "Memo tidak resmi:",
-  "Dialog batin hari ini:", "Suasana di tata usaha:", "Peringatan dini:",
-  "Informasi dari grup WA:", "Review jujur:", "Kutipan tersembunyi:",
-  "Temuan di balik tirai:", "Status terkini:", "Analisis mendalam:", "Catatan pinggir:"
+  "Laporan dari meja piket:", "Investigasi ruang guru:", "Fakta unik hari ini:", 
+  "Misteri terungkap:", "Satu rahasia kecil:", "Analisis teknis:", 
+  "Bisikan di koridor:", "Observasi pagi:", "Kabar burung kantin:", 
+  "Filosofi spidol:", "Drama administrasi:", "Logika sekolah:",
+  "Teori konspirasi printer:", "Hikmah RPP:", "Pesan proyektor:", 
+  "Review jujur:", "Status terkini:", "Catatan pinggir:"
 ];
 
 const contexts = [
@@ -56,17 +50,11 @@ const contexts = [
   "printer yang mendadak mogok pas jam kritis", "Dapodik yang belum sinkron sejak fajar",
   "bel sekolah yang bunyinya terlalu puitis", "pulpen pilot yang sering berkelana sendiri",
   "laptop yang mendadak update Windows", "antrean fotokopi soal yang mengular",
-  "kapur tulis yang patah hati", "kursi plastik yang retak seribu",
-  "tinta merah yang meluap di buku nilai", "kunci lemari arsip yang main petak umpet",
   "siswa yang lupa bawa PR tapi ingat menu kantin", "hujan gerimis yang bikin ngantuk di kelas",
   "rapat dinas yang sebenarnya bisa jadi email", "kuota internet yang habis pas zoom meeting",
   "baterai laptop yang drop tanpa permisi", "meja guru yang penuh tumpukan harta karun",
-  "ritual minum teh yang tertunda", "sertifikasi yang masih berupa mitos",
-  "piket pagi yang berujung sarapan", "seragam batik yang motifnya penuh filosofi",
   "spidol yang tintanya memudar perlahan", "air galon yang habis di saat haus",
-  "stapler yang dipinjam tapi lupa jalan pulang", "proyektor yang menyala sekali klik",
-  "ruangan yang baru dipel wanginya menenangkan", "suasana tenang sebelum siswa datang",
-  "suara gesekan kursi di kelas sebelah", "antrean air minum di dispenser"
+  "stapler yang dipinjam tapi lupa jalan pulang", "suara gesekan kursi di kelas sebelah"
 ];
 
 const punchlines = [
@@ -79,20 +67,14 @@ const punchlines = [
   "adalah bagian dari petualangan mengajar.", "mari kita hadapi dengan senyum tipis.",
   "setidaknya kita sudah berusaha maksimal.", "lebih seru daripada nonton sinetron.",
   "memang tidak ada di dalam kurikulum.", "segera tarik napas panjang.",
-  "pastikan jiwa tetap sinkron.", "lebih penting daripada absen manual.",
-  "adalah hukum alam di sekolah ini.", "tetap tenang dan teruskan berkarya.",
-  "memang misteri yang belum terpecahkan.", "hanya terjadi di SMPN 5.",
-  "mari kita rayakan dengan makan siang.", "setidaknya printer tidak meledak.",
-  "masih lebih baik daripada ban bocor.", "untung sarapan tadi pagi cukup.",
-  "mari kita buat jadi cerita lucu besok.", "inilah dinamika dunia pendidikan kita.",
-  "sangat berkesan untuk diceritakan.", "mari kita mulai dengan bismillah."
+  "pastikan jiwa tetap sinkron.", "hanya terjadi di SMPN 5."
 ];
 
-const fallbackPoems = [
-  "Pergi ke pasar beli kuaci,\nBeli juga satu tangkai bunga.\nMari kerja dengan hati,\nAgar lelah jadi bahagia.",
-  "Beli bensin di pom bensin,\nJalan-jalan ke kota Malang.\nKalau absen sudah berhasil,\nHati senang bukan kepalang.",
-  "Makan siang lauknya ikan,\nMinumnya segelas air kelapa.\nKalau tugas sudah diselesaikan,\nJangan lupa untuk menyapa.",
-  "Beli baju di pasar pagi,\nWarnanya biru sangat serasi.\nMari kita berkarya lagi,\nDengan semangat dan dedikasi."
+const fallbackQuotes = [
+  "Tetap tenang, printer mogok adalah cara alam menyuruh kita istirahat sejenak.",
+  "WiFi sekolah mungkin lambat, tapi semangat mengajar kita harus tetap 4G.",
+  "Absen sudah sukses, sisa hari ini tinggal menghadapi kenyataan dan tumpukan koreksian.",
+  "Ingat, bel pulang adalah musik paling merdu yang pernah diciptakan manusia."
 ];
 
 export async function generateQuote(input: QuoteInput): Promise<QuoteOutput> {
@@ -111,39 +93,35 @@ const generateQuoteFlow = ai.defineFlow(
     const hookHash = getHash(fullSeed + "|hook-salt");
     const contextHash = getHash(fullSeed + "|context-salt");
     const punchHash = getHash(fullSeed + "|punch-salt");
-    const poemHash = getHash(fullSeed + "|poem-salt");
     
     const selectedHook = hooks[hookHash % hooks.length];
     const selectedContext = contexts[contextHash % contexts.length];
     const selectedPunchline = punchlines[punchHash % punchlines.length];
-    const selectedFallbackPoem = fallbackPoems[poemHash % fallbackPoems.length];
+    const selectedFallback = fallbackQuotes[hookHash % fallbackQuotes.length];
 
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-1.5-flash',
         config: {
-          temperature: 1.2,
-          topP: 0.95,
-          maxOutputTokens: 500,
+          temperature: 1.1,
+          maxOutputTokens: 100,
         },
         system: `Anda adalah perangkai kata yang humoris di SMPN 5 Langke Rembong.
 TUGAS: 
-1. Sambungkan tiga fragmen narasi berikut menjadi SATU paragraf pembuka yang mengalir alami.
-2. Di bawah paragraf tersebut, buatlah SATU bait Pantun Jenaka yang unik (4 baris, rima a-b-a-b) yang lucu bertema pendidikan atau aktivitas guru/staf di sekolah.
+Gabungkan tiga fragmen narasi berikut menjadi SATU kalimat pendek yang lucu, mengalir alami, dan santai. 
+JANGAN membuat pantun. JANGAN menggunakan baris baru (newline). Cukup satu baris kalimat saja.
 
-FRAGMEN WAJIB (URUTAN TETAP):
+FRAGMEN WAJIB:
 1. Hook: "${selectedHook}"
 2. Context: "${selectedContext}"
 3. Punchline: "${selectedPunchline}"
 
 ATURAN:
-1. JANGAN MENGUBAH isi fragmen asli. Gabungkan mereka secara kreatif.
-2. Buat PANTUN baru yang belum pernah ada setiap saat. Hindari pantun klise.
-3. JANGAN gunakan emoji.
-4. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
-5. Masukkan nama "AI E-SPENLI" pada kolom author.`,
-        prompt: `Rangkai fragmen ini: [${selectedHook}] [${selectedContext}] [${selectedPunchline}]. 
-        Lalu buatkan pantun lucu yang segar untuk ${input.userName} (${input.role}) saat absen ${input.attendanceType === 'in' ? 'masuk' : 'pulang'}.`,
+1. Maksimal 20 kata.
+2. JANGAN gunakan emoji.
+3. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
+4. Masukkan nama "AI E-SPENLI" pada kolom author.`,
+        prompt: `Rangkai fragmen ini menjadi satu kalimat lucu untuk ${input.userName} (${input.role}): [${selectedHook}] [${selectedContext}] [${selectedPunchline}].`,
         output: { schema: QuoteOutputSchema },
       });
 
@@ -152,7 +130,7 @@ ATURAN:
     } catch (err: any) {
       console.error('[AI_FLOW_ERROR]:', err.message);
       return {
-        quote: `${selectedHook} ${selectedContext} ${selectedPunchline}\n\n${selectedFallbackPoem}`,
+        quote: selectedFallback,
         author: "AI E-SPENLI"
       };
     }
