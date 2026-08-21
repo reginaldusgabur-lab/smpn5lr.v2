@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -212,7 +213,7 @@ export default function SchoolReportPage() {
             acc.sakit += curr.totalSakit;
             acc.alpa += curr.totalAlpa;
             return acc;
-        }, { hadir: 0, hadirPoin: 0, izin: 0, sakit: 0, alpa: 0 });
+        }, { hadir: 0, izin: 0, sakit: 0, alpa: 0 });
 
         const pie = [
             { name: 'Hadir', value: Math.round(totals.hadir), color: '#22c55e' },
@@ -261,8 +262,9 @@ export default function SchoolReportPage() {
                 body: tableRows,
                 theme: 'striped',
                 margin: { bottom: 35 },
-                styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 },
+                styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
+                alternateRowStyles: { fillColor: [235, 245, 255] },
                 columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 40 }, 3: { halign: 'center', cellWidth: 18 }, 4: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 12 }, 6: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 12 }, 8: { halign: 'right', cellWidth: 13 } }
             });
 

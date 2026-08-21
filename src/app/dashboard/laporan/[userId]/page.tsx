@@ -323,8 +323,9 @@ export default function UserReportDetailPage() {
             body: tableRows,
             theme: 'striped',
             margin: { bottom: 35 },
-            styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 },
+            styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
+            alternateRowStyles: { fillColor: [235, 245, 255] },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
         });
 
@@ -351,7 +352,7 @@ export default function UserReportDetailPage() {
                     </div>
                 </div>
 
-                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl p-0">
                     {/* Header Card - Biru Gradasi */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">

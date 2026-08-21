@@ -163,8 +163,11 @@ export function exportToPdf(
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0.1,
+              lineWidth: 0, // MENGHAPUS GARIS TABEL
               valign: 'middle'
+            },
+            alternateRowStyles: {
+                fillColor: [235, 245, 255] // WARNA BIRU TRANSPARAN PADA BARIS
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
