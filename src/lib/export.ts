@@ -159,7 +159,7 @@ export function exportToPdf(
                 lineWidth: 0
             },
             alternateRowStyles: {
-                fillColor: [235, 245, 255] // Biru transparan selang-seling
+                fillColor: [225, 242, 254] // Biru transparan cerah
             },
             styles: { 
               cellPadding: 1.5,
@@ -167,8 +167,9 @@ export function exportToPdf(
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0, // HILANGKAN TABEL (GARIS)
-              valign: 'middle'
+              lineWidth: 0, // HILANGKAN SELURUH GARIS
+              valign: 'middle',
+              fillColor: [248, 250, 252] // Warna abu-abu kebiruan sangat muda (tidak putih polos)
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },

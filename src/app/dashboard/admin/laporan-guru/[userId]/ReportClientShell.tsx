@@ -167,7 +167,16 @@ export default function ReportClientShell({
             body: tableRows,
             theme: 'striped',
             margin: { bottom: 35 },
-            styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
+            styles: { 
+                font: 'times', 
+                fontSize: 10, 
+                cellPadding: 1.5, 
+                valign: 'middle', 
+                textColor: [0, 0, 0], 
+                lineColor: [200, 200, 200], 
+                lineWidth: 0,
+                fillColor: [248, 250, 252] // Warna abu-abu kebiruan sangat muda
+            },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
             alternateRowStyles: { fillColor: [225, 242, 254] },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
@@ -348,3 +357,4 @@ export default function ReportClientShell({
         </div>
     );
 }
+

@@ -231,7 +231,7 @@ export default function UserReportDetailPage() {
             };
 
             const randomSeconds = Math.floor(Math.random() * 299) + 1;
-            data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+            data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
             data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
 
             const q = query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '==', format(targetDate, 'yyyy-MM-dd')));
@@ -325,7 +325,8 @@ export default function UserReportDetailPage() {
               valign: 'middle',
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0 // HILANGKAN TABEL (GARIS)
+              lineWidth: 0, // HILANGKAN TABEL (GARIS)
+              fillColor: [248, 250, 252] // Warna abu-abu kebiruan sangat muda
             },
             headStyles: { 
                 fillColor: [52, 152, 219], 
@@ -337,7 +338,7 @@ export default function UserReportDetailPage() {
                 lineWidth: 0
             },
             alternateRowStyles: {
-                fillColor: [235, 245, 255] // Biru transparan selang-seling
+                fillColor: [225, 242, 254] // Biru transparan selang-seling
             },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
         });
@@ -577,3 +578,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+
