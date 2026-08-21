@@ -32,6 +32,7 @@ import {
   AlertCircle,
   KeyRound,
   Users as UsersIcon,
+  RefreshCw,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -80,6 +81,7 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { Skeleton } from '@/components/ui/skeleton';
 import { resetUserPassword } from '@/app/actions/admin-actions';
+import { cn } from '@/lib/utils';
 
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
@@ -253,44 +255,63 @@ export default function AdminUsersPage() {
 
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-8">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 md:px-0">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Manajemen pengguna</h1>
-                        <p className="text-muted-foreground mt-1 font-bold">Kelola data personil sekolah dengan mudah.</p>
+            <div className="max-w-7xl mx-auto space-y-4">
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
+                    <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
+                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                            <UsersIcon className="w-24 h-24 text-white" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
+                                    <UsersIcon className="h-6 w-6" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <h1 className="font-bold text-2xl tracking-tight leading-tight">Manajemen pengguna</h1>
+                                    <p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola data personil sekolah dengan mudah.</p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}>
+                                <RefreshCw className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
-                    <Button size="lg" className="font-bold rounded-xl h-12 shadow-none active:scale-95 transition-all bg-primary hover:bg-primary/90" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
+                </Card>
+
+                <div className="flex justify-center px-4 md:px-0">
+                    <Button size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg shadow-primary/20 active:scale-95 transition-all bg-primary hover:bg-primary/90 uppercase text-[11px] tracking-widest" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
                         <PlusCircle className="mr-2 h-5 w-5" />
                         Tambah personil
                     </Button>
                 </div>
 
-                <Card className="w-full border shadow-none rounded-xl overflow-hidden bg-card">
-                    <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
-                        <CardTitle className="font-bold text-sm tracking-tight">Daftar pengguna sistem</CardTitle>
-                        <CardDescription className="text-muted-foreground font-bold">Informasi akun dan hak akses pengguna aktif.</CardDescription>
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
+                    <CardHeader className="p-6 border-b border-muted-foreground/5">
+                        <CardTitle className="font-bold text-blue-600 dark:text-blue-400 text-sm tracking-tight">Daftar pengguna sistem</CardTitle>
+                        <CardDescription className="text-muted-foreground font-medium text-xs">Informasi akun dan hak akses pengguna aktif.</CardDescription>
                     </CardHeader>
                     <CardContent className="py-6 min-h-[400px]">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 px-2 sm:px-0">
                             <Select value={userFilter} onValueChange={setUserFilter}>
-                                <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
+                                <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold text-xs">
                                     <div className="flex items-center gap-2">
                                         <Filter className="h-4 w-4 text-primary" />
                                         <SelectValue placeholder="Saring peran" />
                                     </div>
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl border-none">
-                                    <SelectItem value="all" className='rounded-lg'>Semua staf</SelectItem>
-                                    <SelectItem value="guru" className='rounded-lg'>Guru</SelectItem>
-                                    <SelectItem value="pegawai" className='rounded-lg'>Pegawai</SelectItem>
-                                    <SelectItem value="kepala_sekolah" className='rounded-lg'>Kepala Sekolah</SelectItem>
+                                    <SelectItem value="all" className='rounded-lg font-bold'>Semua staf</SelectItem>
+                                    <SelectItem value="guru" className='rounded-lg font-bold'>Guru</SelectItem>
+                                    <SelectItem value="pegawai" className='rounded-lg font-bold'>Pegawai</SelectItem>
+                                    <SelectItem value="kepala_sekolah" className='rounded-lg font-bold'>Kepala Sekolah</SelectItem>
                                 </SelectContent>
                             </Select>
                             <div className="relative w-full sm:w-[320px]">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                                 <Input 
                                     placeholder="Cari nama personil..." 
-                                    className="pl-10 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold shadow-none" 
+                                    className="pl-10 h-11 rounded-xl bg-muted/30 border-muted-foreground/10 font-bold text-xs shadow-none" 
                                     value={userSearch} 
                                     onChange={e => setUserSearch(e.target.value)} 
                                 />
@@ -301,13 +322,13 @@ export default function AdminUsersPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground">No</TableHead>
-                                        <TableHead className="font-bold text-xs text-primary/80">Nama & email</TableHead>
-                                        <TableHead className="font-bold text-xs text-primary/80">Peran</TableHead>
-                                        <TableHead className="font-bold text-xs text-primary/80">Jenis kelamin</TableHead>
-                                        <TableHead className="font-bold text-xs text-primary/80">Identitas</TableHead>
-                                        <TableHead className="text-center font-bold text-xs text-primary/80">Status</TableHead>
-                                        <TableHead className="text-right font-bold text-xs text-primary/80 pr-6">Aksi</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] text-muted-foreground border-none h-11">No</TableHead>
+                                        <TableHead className="font-bold text-[10px] text-muted-foreground border-none h-11">Nama & email</TableHead>
+                                        <TableHead className="font-bold text-[10px] text-muted-foreground border-none h-11">Peran</TableHead>
+                                        <TableHead className="font-bold text-[10px] text-muted-foreground border-none h-11">Jenis kelamin</TableHead>
+                                        <TableHead className="font-bold text-[10px] text-muted-foreground border-none h-11">Identitas</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground border-none h-11">Status</TableHead>
+                                        <TableHead className="text-right font-bold text-[10px] text-muted-foreground border-none h-11 pr-6">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -325,7 +346,7 @@ export default function AdminUsersPage() {
                                         ))
                                     ) : filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
                                         <TableRow key={u.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
-                                            <TableCell className="text-center font-bold text-muted-foreground/60">{u.sequenceNumber ?? i + 1}</TableCell>
+                                            <TableCell className="text-center font-bold text-muted-foreground/60 text-sm">{u.sequenceNumber ?? i + 1}</TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-sm text-foreground">{u.name}</span>
@@ -358,7 +379,7 @@ export default function AdminUsersPage() {
                                                             <MoreHorizontal className="h-5 w-5" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 shadow-none border border-muted-foreground/10">
+                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 shadow-2xl border-none">
                                                         <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 mb-1">Aksi pengguna</DropdownMenuLabel>
                                                         <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 focus:bg-primary/5" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}>
                                                             <Edit2 className="mr-3 h-4 w-4 text-primary" />
@@ -383,8 +404,8 @@ export default function AdminUsersPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold">
-                                                Tidak ada data personil ditemukan.
+                                            <TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">
+                                                Data tidak ditemukan
                                             </TableCell>
                                         </TableRow>
                                     )}
@@ -397,17 +418,17 @@ export default function AdminUsersPage() {
                             <div className="mt-8 pt-6 border-t border-muted-foreground/10 flex flex-wrap gap-6 items-center px-2">
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Laki-laki:</span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Laki-laki:</span>
                                     <Badge variant="secondary" className="rounded-lg px-3 py-1 font-black text-xs bg-primary/10 text-primary border-none shadow-none">{genderStats.male}</Badge>
                                 </div>
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-1.5 h-1.5 rounded-full bg-pink-500" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Perempuan:</span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Perempuan:</span>
                                     <Badge variant="secondary" className="rounded-lg px-3 py-1 font-black text-xs bg-pink-500/10 text-pink-600 border-none shadow-none">{genderStats.female}</Badge>
                                 </div>
                                 <div className="flex items-center gap-2.5 ml-auto">
                                     <UsersIcon className="h-3.5 w-3.5 text-muted-foreground/50" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Total:</span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total:</span>
                                     <Badge variant="outline" className="rounded-lg px-3 py-1 font-black text-xs border-muted-foreground/20 text-foreground/80 shadow-none">{filteredUsers.length}</Badge>
                                 </div>
                             </div>
@@ -418,16 +439,16 @@ export default function AdminUsersPage() {
 
             {/* Dialog Reset Password */}
             <Dialog open={isResetPassDialogOpen} onOpenChange={setIsResetPassDialogOpen}>
-                <DialogContent className="rounded-xl border-none max-w-sm shadow-none">
+                <DialogContent className="rounded-xl border-none max-w-sm shadow-2xl">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold text-primary">Reset kata sandi</DialogTitle>
-                        <DialogDescription className="text-xs font-bold">
+                        <DialogDescription className="text-xs font-medium">
                             Setel kata sandi baru untuk <strong>{userForReset?.name}</strong>. Berikan info ini kepada pengguna setelah berhasil.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="new-pass" className="text-xs font-bold ml-1">Kata sandi baru</Label>
+                            <Label htmlFor="new-pass" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Kata sandi baru</Label>
                             <Input 
                                 id="new-pass" 
                                 type="text" 
@@ -452,12 +473,12 @@ export default function AdminUsersPage() {
 
             {/* Dialog Tambah/Edit User */}
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
-                <DialogContent className="rounded-xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-none">
+                <DialogContent className="rounded-xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
                     <DialogHeader className="p-6 pb-2 border-b border-muted-foreground/5">
                         <DialogTitle className="text-xl font-bold text-primary">
                             {editingUser ? 'Perbarui data' : 'Tambah personil'}
                         </DialogTitle>
-                        <DialogDescription className="text-xs font-bold text-muted-foreground">
+                        <DialogDescription className="text-xs font-medium text-muted-foreground">
                             {editingUser ? `Mengubah informasi data untuk ${editingUser.name}.` : 'Masukkan detail akun untuk personil baru sekolah.'}
                         </DialogDescription>
                     </DialogHeader>
@@ -468,15 +489,15 @@ export default function AdminUsersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="name" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Nama lengkap</FormLabel>
-                                            <FormControl><Input placeholder="John Doe, S.Pd" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
+                                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nama lengkap</FormLabel>
+                                            <FormControl><Input placeholder="John Doe, S.Pd" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
                                     <FormField control={userForm.control} name="email" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Email</FormLabel>
-                                            <FormControl><Input type="email" placeholder="nama@email.com" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
+                                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email</FormLabel>
+                                            <FormControl><Input type="email" placeholder="nama@email.com" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
@@ -485,18 +506,18 @@ export default function AdminUsersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="role" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Peran</FormLabel>
+                                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Peran</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold">
                                                         <SelectValue placeholder="Pilih peran" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-none shadow-none">
-                                                    <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
-                                                    <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
-                                                    <SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem>
-                                                    <SelectItem value="admin" className="rounded-lg">Admin</SelectItem>
+                                                <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                    <SelectItem value="guru" className="rounded-lg font-bold">Guru</SelectItem>
+                                                    <SelectItem value="pegawai" className="rounded-lg font-bold">Pegawai</SelectItem>
+                                                    <SelectItem value="kepala_sekolah" className="rounded-lg font-bold">Kepala Sekolah</SelectItem>
+                                                    <SelectItem value="admin" className="rounded-lg font-bold">Admin</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage className="text-[10px] font-bold" />
@@ -504,16 +525,16 @@ export default function AdminUsersPage() {
                                     )} />
                                     <FormField control={userForm.control} name="gender" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Jenis kelamin</FormLabel>
+                                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Jenis kelamin</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none">
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold">
                                                         <SelectValue placeholder="Pilih jenis kelamin" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-none shadow-none">
-                                                    <SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem>
-                                                    <SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem>
+                                                <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                    <SelectItem value="Laki-laki" className="rounded-lg font-bold">Laki-laki</SelectItem>
+                                                    <SelectItem value="Perempuan" className="rounded-lg font-bold">Perempuan</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage className="text-[10px] font-bold" />
@@ -524,15 +545,15 @@ export default function AdminUsersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="nip" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">NIP (Opsional)</FormLabel>
-                                            <FormControl><Input placeholder="19XXXXXXXXXXXX" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
+                                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nip (opsional)</FormLabel>
+                                            <FormControl><Input placeholder="19XXXXXXXXXXXX" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
                                     <FormField control={userForm.control} name="position" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Status kepegawaian</FormLabel>
-                                            <FormControl><Input placeholder="PNS / Honorer" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
+                                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Status kepegawaian</FormLabel>
+                                            <FormControl><Input placeholder="PNS / Honorer" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
@@ -541,8 +562,8 @@ export default function AdminUsersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">No. urut laporan</FormLabel>
-                                            <FormControl><Input type="number" placeholder="1" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
+                                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">No. urut laporan</FormLabel>
+                                            <FormControl><Input type="number" placeholder="1" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
@@ -551,15 +572,15 @@ export default function AdminUsersPage() {
                                 {!editingUser && (
                                     <FormField control={userForm.control} name="password" render={({field}) => (
                                         <FormItem className="space-y-1.5">
-                                            <FormLabel className="text-xs font-bold ml-1">Kata sandi</FormLabel>
-                                            <FormControl><Input type="password" placeholder="Minimal 6 karakter" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none" /></FormControl>
+                                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Kata sandi</FormLabel>
+                                            <FormControl><Input type="password" placeholder="Minimal 6 karakter" {...field} className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold" /></FormControl>
                                             <FormMessage className="text-[10px] font-bold" />
                                         </FormItem>
                                     )} />
                                 )}
 
                                 <div className="pt-4 sticky bottom-0 bg-card/80 backdrop-blur-sm">
-                                    <Button type="submit" className="w-full h-12 rounded-xl font-bold shadow-none active:scale-95 transition-all" disabled={isSaving}>
+                                    <Button type="submit" className="w-full h-12 rounded-xl font-bold shadow-none active:scale-95 transition-all bg-primary" disabled={isSaving}>
                                         {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : (editingUser ? 'Perbarui data' : 'Buat akun sekarang')}
                                     </Button>
                                 </div>
@@ -577,7 +598,7 @@ export default function AdminUsersPage() {
                             <AlertCircle className="h-6 w-6" />
                             <AlertDialogTitle className="text-xl font-bold">Hapus pengguna?</AlertDialogTitle>
                         </div>
-                        <AlertDialogDescription className="text-sm font-bold">
+                        <AlertDialogDescription className="text-sm font-medium">
                             Tindakan ini akan menghapus data <span className="font-bold text-foreground">{userToDelete?.name}</span> secara permanen dari database.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
