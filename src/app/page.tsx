@@ -110,7 +110,7 @@ export default function LoginPage() {
   };
   
   if (isUserLoading || user) {
-      return <div className="fixed inset-0 bg-background" />;
+      return <div className="fixed inset-0 bg-transparent" />;
   }
 
   return (
