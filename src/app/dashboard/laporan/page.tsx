@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, PieChart as PieIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, PieChart as PieIcon, FileText, Calendar } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -171,17 +172,28 @@ export default function LaporanPage() {
     <div className="flex-1 pt-2 pb-24 md:p-8">
         <div className="max-w-7xl mx-auto space-y-4">
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
-              <CardHeader className="p-4 text-primary border-b border-muted-foreground/10">
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <CardTitle className="font-bold text-2xl tracking-tight">Riwayat Absensi & Izin</CardTitle>
-                        <CardDescription className="text-sm font-medium text-muted-foreground">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</CardDescription>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleRefresh} disabled={isLoading}>
-                        <RefreshCw className={cn("h-4 w-4 text-muted-foreground", isLoading && "animate-spin")} />
-                    </Button>
+              {/* Header Card - Biru Gradasi */}
+              <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
+                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                  <FileText className="w-24 h-24 text-white" />
                 </div>
-              </CardHeader>
+                
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
+                      <Calendar className="h-6 w-6" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
+                      <p className="text-[11px] font-medium text-white/80 leading-relaxed">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={handleRefresh} disabled={isLoading}>
+                    <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+                  </Button>
+                </div>
+              </div>
+
               <CardContent className="p-0">
                 <div className="p-4 flex items-center justify-center">
                     <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
@@ -193,7 +205,7 @@ export default function LaporanPage() {
                             <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
                                 <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-bold text-muted-foreground/60 leading-none">Tahun ajaran</span>
+                                    <span className="text-[7px] font-black uppercase text-muted-foreground/60 leading-none">Tahun ajaran</span>
                                     <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "-"}</span>
                                 </div>
                             </div>
