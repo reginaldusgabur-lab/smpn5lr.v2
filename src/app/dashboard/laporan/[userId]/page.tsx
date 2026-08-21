@@ -9,7 +9,7 @@ import { format, isValid, parseISO, startOfDay, endOfDay, isSameMonth, startOfMo
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -266,12 +266,6 @@ export default function UserReportDetailPage() {
         return "bg-primary text-white";
     };
 
-    const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none";
-
-    const isAdmin = currentUser?.role === 'admin';
-    const canGoPrev = currentMonth > new Date(2026, 0, 1);
-    const canGoNext = !isSameMonth(currentMonth, new Date());
-
     const handleDownloadPdf = async () => {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
@@ -365,6 +359,8 @@ export default function UserReportDetailPage() {
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
 
+    const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none";
+
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
@@ -379,7 +375,6 @@ export default function UserReportDetailPage() {
                 </div>
 
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl p-0">
-                    {/* Header Card - Biru Gradasi */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                             <FileText className="w-24 h-24 text-white" />
@@ -388,7 +383,7 @@ export default function UserReportDetailPage() {
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
-                                    <FileText className="h-6 w-6" />
+                                    <Calendar className="h-6 w-6" />
                                 </div>
                                 <div className="space-y-0.5">
                                     <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
