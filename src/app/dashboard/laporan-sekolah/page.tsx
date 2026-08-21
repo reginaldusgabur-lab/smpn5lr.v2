@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -23,7 +24,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
 
 interface ReportRowData {
@@ -349,7 +350,7 @@ export default function SchoolReportPage() {
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
                                         <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">No</TableHead>
-                                        <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">NAMA & IDENTITAS</TableHead>
+                                        <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">NAMA & NIP</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Hadir</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Izin</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Sakit</TableHead>
@@ -426,7 +427,7 @@ export default function SchoolReportPage() {
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie data={statsData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">{statsData.pie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Pie>
-                                            <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
                                             <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-[11px] font-medium text-muted-foreground">{v}</span>} />
                                         </PieChart>
                                     </ResponsiveContainer>
