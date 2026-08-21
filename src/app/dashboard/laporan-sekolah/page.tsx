@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
 import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, isBefore, isSameDay, eachDayOfInterval, setHours, setMinutes } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer, FileText, RefreshCw } from 'lucide-react';
@@ -250,7 +250,7 @@ export default function SchoolReportPage() {
 
             doc.setFont('times', 'bold').setFontSize(12);
             doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
-            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
+            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}`, centerX, 54, { align: 'center' });
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
@@ -268,12 +268,12 @@ export default function SchoolReportPage() {
 
             const finalY = (doc as any).lastAutoTable.finalY + 15;
             const sigX = pageWidth - 85;
-            doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, sigX, finalY);
+            doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale })}`, sigX, finalY);
             doc.text('Kepala Sekolah', sigX, finalY + 12);
             doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, finalY + 38);
             doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, finalY + 44);
 
-            doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
+            doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: indonesiaLocale })}.pdf`);
         } finally { setIsExporting(false); }
     };
 
@@ -305,6 +305,7 @@ export default function SchoolReportPage() {
 
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
+                            {/* Navigasi Bulan */}
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
@@ -317,11 +318,12 @@ export default function SchoolReportPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-sm text-primary capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                    <span className="font-bold text-sm text-primary capitalize">{format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}</span>
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
                             
+                            {/* Filter Section */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Peran</Label>
@@ -333,25 +335,27 @@ export default function SchoolReportPage() {
                                 </div>
                             </div>
 
-                            <div className="flex justify-end">
-                                <Button className="w-full sm:w-auto h-11 px-8 rounded-xl font-bold bg-primary shadow-lg shadow-primary/20 active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
+                            {/* Action Button */}
+                            <div className="flex justify-center">
+                                <Button className="w-full font-bold bg-primary shadow-lg shadow-primary/20 h-12 rounded-xl text-xs uppercase tracking-widest active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
                                     {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
                                 </Button>
                             </div>
                         </div>
 
+                        {/* Table Section */}
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">No</TableHead>
-                                        <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Nama & Identitas</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Hadir</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Izin</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Sakit</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Alpa</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">%</TableHead>
-                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Aksi</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">No</TableHead>
+                                        <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">NAMA & IDENTITAS</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Hadir</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Izin</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Sakit</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Alpa</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">%</TableHead>
+                                        <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -364,7 +368,7 @@ export default function SchoolReportPage() {
                                     ) : filteredReports.length > 0 ? (
                                         filteredReports.map((item, index) => (
                                             <TableRow key={item.uid} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
-                                                <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.sequenceNumber || index + 1}</TableCell>
+                                                <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.no}</TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col">
                                                         <span className="font-bold text-sm text-foreground">{item.name}</span>
@@ -384,7 +388,7 @@ export default function SchoolReportPage() {
                                                     {item.totalAlpa}
                                                 </TableCell>
                                                 <TableCell className="text-center font-black text-primary">
-                                                    {item.presentasi}
+                                                    {item.persentase}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>
@@ -422,7 +426,7 @@ export default function SchoolReportPage() {
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie data={statsData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">{statsData.pie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Pie>
-                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
+                                            <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
                                             <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-[11px] font-medium text-muted-foreground">{v}</span>} />
                                         </PieChart>
                                     </ResponsiveContainer>
