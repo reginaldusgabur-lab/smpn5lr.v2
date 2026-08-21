@@ -5,7 +5,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle, ChevronLeft, ChevronRight, UserX } from 'lucide-react';
+import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle, ChevronLeft, ChevronRight, UserX, Calendar, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -56,10 +56,10 @@ const LiveClockUI = memo(() => {
 
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full min-h-[80px]" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <h2 className="text-4xl font-bold tracking-tight tabular-nums text-foreground leading-none">
+            <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
                 {format(time, 'HH:mm:ss')}
             </h2>
-            <p className="text-[10px] font-medium text-muted-foreground mt-2 uppercase tracking-wider opacity-60">
+            <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider opacity-60">
                 {format(time, 'eeee, d MMMM yyyy', { locale: id })}
             </p>
         </div>
@@ -189,7 +189,7 @@ export default function DashboardPage() {
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
         window.scrollTo({
-            top: offsetPosition,
+            top: elementPosition,
             behavior: 'smooth'
         });
     }
@@ -280,33 +280,50 @@ export default function DashboardPage() {
 
         {!isAdmin && (
             <div className="w-full space-y-1">
-                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
-                    <CardContent className="p-4 text-center">
-                        <CardTitle className="text-2xl font-bold tracking-tight text-primary drop-shadow-sm">Kehadiran hari ini</CardTitle>
+                <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
+                    <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
+                        <UserCircle className="w-24 h-24 text-white" />
+                    </div>
+                    <CardContent className="p-6 relative z-10">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
+                                <Calendar className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-0.5">
+                                <h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2>
+                                <p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau kehadiran Anda dengan mudah.</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
-                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 isolate overflow-hidden" style={{ transform: 'translateZ(0)' }}>
-                    <CardContent className="p-6 space-y-4 pt-6 text-center">
+                <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card overflow-hidden">
+                    <CardContent className="p-8 space-y-6 pt-10 text-center">
                         <LiveClockUI />
-                        <div className="grid grid-cols-2 gap-4 w-full">
-                            <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
-                                <div className="flex items-center justify-center gap-2 mb-1.5">
-                                    <LogIn className="w-3.5 h-3.5 text-primary" />
-                                    <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Masuk</p>
+                        <div className="grid grid-cols-2 gap-4 w-full max-w-sm mx-auto pt-4">
+                            <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
+                                <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
+                                <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
+                                    <LogIn className="h-4 w-4" />
                                 </div>
-                                <p className="text-xl font-bold tabular-nums text-foreground">
-                                    {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
-                                </p>
+                                <div className="text-left relative z-10">
+                                    <p className="text-[10px] font-black text-green-600 uppercase tracking-widest leading-none mb-1">Masuk</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground leading-none">
+                                        {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="bg-muted/30 rounded-xl p-3 text-center border border-border/40 flex flex-col items-center justify-center" style={{ transform: 'translateZ(0)' }}>
-                                <div className="flex items-center justify-center gap-2 mb-1.5">
-                                    <LogOut className="w-3.5 h-3.5 text-primary" />
-                                    <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Pulang</p>
+                            <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
+                                <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
+                                <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-blue-500/20 shrink-0 relative z-10">
+                                    <LogOut className="h-4 w-4" />
                                 </div>
-                                <p className="text-xl font-bold tabular-nums text-foreground">
-                                    {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
-                                </p>
+                                <div className="text-left relative z-10">
+                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">Pulang</p>
+                                    <p className="text-xl font-bold tabular-nums text-foreground leading-none">
+                                        {isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         <div className="flex flex-col items-stretch gap-3">
