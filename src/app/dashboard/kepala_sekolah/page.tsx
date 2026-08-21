@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -348,7 +349,7 @@ export default function KepalaSekolahDashboardPage() {
         <div className="space-y-4">
           <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
             <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-normal opacity-80">Hadir</span>
+                <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Hadir</span>
                 <UserCheck className="h-3.5 w-3.5 opacity-60" />
             </div>
             <div className="text-3xl font-normal tracking-tight">
@@ -358,11 +359,11 @@ export default function KepalaSekolahDashboardPage() {
           
           <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-normal opacity-80">Persetujuan Izin</span>
+              <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Persetujuan Izin</span>
               <ClipboardCheck className="h-3.5 w-3.5 opacity-60" />
             </div>
             <div className="flex items-center justify-between">
-                <div className="text-3xl font-normal tracking-tight">{dashboardData.pendingLeaveRequests?.length || 0}</div>
+                <div className="text-3xl font-normal tracking-tight">{dashboardData.stats.pending}</div>
                 <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
                     <Link href="/dashboard/izin-kepala-sekolah">DETAIL</Link>
                 </Button>
@@ -371,11 +372,11 @@ export default function KepalaSekolahDashboardPage() {
           
            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-normal opacity-80">Laporan Sekolah</span>
+              <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Laporan Sekolah</span>
               <FileText className="h-3.5 w-3.5 opacity-60" />
             </div>
             <div className="flex items-center justify-between mt-1">
-                <p className="text-[10px] opacity-70">Akses data</p>
+                <p className="text-[10px] opacity-70 uppercase tracking-widest">Akses data</p>
                 <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
                     <Link href="/dashboard/laporan-sekolah">BUKA</Link>
                 </Button>
@@ -431,4 +432,3 @@ export default function KepalaSekolahDashboardPage() {
     </div>
   );
 }
-

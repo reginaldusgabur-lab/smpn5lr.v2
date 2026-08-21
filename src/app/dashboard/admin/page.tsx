@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -235,7 +236,7 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
             <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80">Hadir</span>
+                    <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Hadir</span>
                     <UserCheck className="h-3.5 w-3.5 opacity-60" />
                 </div>
                 <div className="text-3xl font-normal tracking-tight">
@@ -245,7 +246,7 @@ export default function AdminDashboardPage() {
 
             <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80">Izin/Sakit</span>
+                    <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Izin/Sakit</span>
                     <BookUser className="h-3.5 w-3.5 opacity-60" />
                 </div>
                 <div className="text-3xl font-normal tracking-tight">
@@ -255,7 +256,7 @@ export default function AdminDashboardPage() {
 
             <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80">Menunggu</span>
+                    <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Menunggu</span>
                     <Clock className="h-3.5 w-3.5 opacity-60" />
                 </div>
                 <div className="text-3xl font-normal tracking-tight">
@@ -265,7 +266,7 @@ export default function AdminDashboardPage() {
 
             <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80">Alpa</span>
+                    <span className="text-[10px] font-normal opacity-80 uppercase tracking-widest">Alpa</span>
                     <UserX className="h-3.5 w-3.5 opacity-60" />
                 </div>
                 <div className="text-3xl font-normal tracking-tight">
@@ -321,4 +322,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
