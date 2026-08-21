@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -7,6 +6,7 @@ import { Firestore, doc, getDoc } from 'firebase/firestore';
 import { Auth, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { User, UserProfile } from '@/types';
+import Image from 'next/image';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -124,12 +124,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background z-[9999] h-full w-full overflow-hidden">
-        <div className="relative flex items-center justify-center">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-[9999] h-full w-full overflow-hidden">
+        <div className="relative flex flex-col items-center justify-center gap-8">
+            <div className="relative w-32 h-32 animate-logo-pulse">
+                <Image
+                  src="/logo-3d.png"
+                  alt="Logo E-SPENLI"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+            </div>
             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
+                <div className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-duration:0.8s]" />
+                <div className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
+                <div className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
             </div>
         </div>
       </div>

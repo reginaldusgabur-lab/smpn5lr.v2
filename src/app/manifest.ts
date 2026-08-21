@@ -17,7 +17,7 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/logo-3d.png',
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'maskable',
+        purpose: 'any',
       },
       {
         src: '/logo-3d.png',

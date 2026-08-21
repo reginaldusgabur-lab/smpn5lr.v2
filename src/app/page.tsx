@@ -110,11 +110,11 @@ export default function LoginPage() {
   };
   
   if (isUserLoading || user) {
-      return <div className="fixed inset-0 bg-background" />;
+      return <div className="fixed inset-0 bg-white" />;
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-background text-foreground">
+    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-white text-foreground">
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-xl bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden transition-all duration-300">
           <CardHeader className="text-center space-y-2 pt-6 pb-4">
