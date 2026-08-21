@@ -26,6 +26,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
+import { invalidateCache } from '@/lib/cache';
 
 interface ReportRowData {
     no: number;
@@ -262,7 +263,7 @@ export default function SchoolReportPage() {
                 body: tableRows,
                 theme: 'striped',
                 margin: { bottom: 35 },
-                styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
+                styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0.1 },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
                 alternateRowStyles: { fillColor: [225, 242, 254] },
                 columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 40 }, 3: { halign: 'center', cellWidth: 18 }, 4: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 12 }, 6: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 12 }, 8: { halign: 'right', cellWidth: 13 } }
@@ -276,6 +277,8 @@ export default function SchoolReportPage() {
 
             const sigX = pageWidth - 85;
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
+            const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
+
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalY);
             doc.text('Mengetahui,', sigX, finalY + 6);
@@ -291,7 +294,7 @@ export default function SchoolReportPage() {
                 doc.setDrawColor(0, 0, 0);
                 doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
                 doc.setFontSize(8).setFont('times', 'italic');
-                doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
+                doc.text(footerNote, margin, pageHeight - 10);
                 doc.setFontSize(9).setFont('times', 'normal');
                 doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
             }
@@ -327,7 +330,7 @@ export default function SchoolReportPage() {
                                     <p className="text-[11px] font-medium text-white/80 leading-relaxed">Rekapitulasi kehadiran seluruh personil.</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={loadData} disabled={isReportLoading}>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => { invalidateCache(); loadData(); }} disabled={isReportLoading}>
                                 <RefreshCw className={cn("h-4 w-4", isReportLoading && "animate-spin")} />
                             </Button>
                         </div>
@@ -335,11 +338,10 @@ export default function SchoolReportPage() {
 
                     <CardContent className="p-0 min-h-[500px]">
                         <div className="p-4 space-y-6">
-                            {/* Navigasi Bulan */}
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                                    <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
+                                    <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
                                         <CalendarDays className="h-4 w-4 text-primary/70" />
                                         <div className="flex flex-col">
                                             <span className="text-[7px] font-bold text-muted-foreground/60 leading-none">Tahun ajaran</span>
@@ -353,7 +355,6 @@ export default function SchoolReportPage() {
                                 </div>
                             </div>
                             
-                            {/* Filter Section */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label>
@@ -365,7 +366,6 @@ export default function SchoolReportPage() {
                                 </div>
                             </div>
 
-                            {/* Action Button */}
                             <div className="flex justify-center">
                                 <Button className="w-full font-bold bg-primary shadow-lg shadow-primary/20 h-12 rounded-xl text-xs active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
                                     {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Unduh PDF
@@ -373,7 +373,6 @@ export default function SchoolReportPage() {
                             </div>
                         </div>
 
-                        {/* Table Section */}
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">

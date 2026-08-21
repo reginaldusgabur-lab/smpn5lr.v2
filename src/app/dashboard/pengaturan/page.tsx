@@ -53,6 +53,7 @@ export default function PengaturanPage() {
   const [headmasterNip, setHeadmasterNip] = useState('');
   const [reportCity, setReportCity] = useState('');
   const [academicYear, setAcademicYear] = useState('');
+  const [reportFooterNote, setReportFooterNote] = useState('');
 
   const [isNotificationSaving, setIsNotificationSaving] = useState(false);
   const [notificationTitle, setNotificationTitle] = useState('');
@@ -89,6 +90,7 @@ export default function PengaturanPage() {
       headmasterNip: string;
       reportCity: string;
       academicYear: string;
+      reportFooterNote?: string;
       notificationTitle?: string;
       notificationContent?: string;
       isNotificationActive?: boolean;
@@ -114,6 +116,7 @@ export default function PengaturanPage() {
       setHeadmasterNip(schoolConfigData.headmasterNip ?? '');
       setReportCity(schoolConfigData.reportCity ?? '');
       setAcademicYear(schoolConfigData.academicYear ?? '');
+      setReportFooterNote(schoolConfigData.reportFooterNote ?? 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.');
       
       setNotificationTitle(schoolConfigData.notificationTitle ?? '');
       setNotificationContent(schoolConfigData.notificationContent ?? '');
@@ -209,7 +212,7 @@ export default function PengaturanPage() {
     if (!schoolConfigRef) return;
     setIsReportSaving(true);
     setDocumentNonBlocking(schoolConfigRef, {
-      governmentAgency, educationAgency, schoolName, address, headmasterName, headmasterNip, reportCity, academicYear,
+      governmentAgency, educationAgency, schoolName, address, headmasterName, headmasterNip, reportCity, academicYear, reportFooterNote
     }, { merge: true });
     toast({ title: 'Disimpan', description: 'Data laporan diperbarui.' });
     setIsReportSaving(false);
@@ -351,6 +354,10 @@ export default function PengaturanPage() {
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran Aktif</Label>
                         <Input placeholder="Contoh: 2025/2026" value={academicYear} onChange={e => setAcademicYear(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Catatan Footer PDF (Keterangan Bawah)</Label>
+                        <Textarea placeholder="Teks yang muncul di bagian paling bawah PDF..." value={reportFooterNote} onChange={e => setReportFooterNote(e.target.value)} className="rounded-xl bg-muted/30 shadow-none min-h-[80px] font-medium" />
                       </div>
                   </div>
                   

@@ -106,6 +106,7 @@ export function exportToPdf(
         const namaKepsek = config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr';
         const nipKepsek = config.headmasterNip || '198507272011011020';
         const tahunAjaran = academicYearOverride || config.academicYear || '-';
+        const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
         // Header (Kop Surat)
         doc.setFont('times', 'bold').setFontSize(14);
@@ -163,11 +164,8 @@ export function exportToPdf(
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0,
+              lineWidth: 0.1,
               valign: 'middle'
-            },
-            alternateRowStyles: {
-                fillColor: [225, 242, 254] 
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
@@ -190,11 +188,11 @@ export function exportToPdf(
 
         const signatureY = finalTableY + 15;
         const signatureX = pageWidth - 85;
-        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+        const today = format(new Date(), 'd MMMM yyyy', { locale: id });
 
         doc.setFontSize(10);
         doc.setFont('times', 'normal');
-        doc.text(`${kotaLaporan}, ${todayStr}`, signatureX, signatureY);
+        doc.text(`${kotaLaporan}, ${today}`, signatureX, signatureY);
         doc.text('Mengetahui,', signatureX, signatureY + 6);
         doc.text('Kepala Sekolah', signatureX, signatureY + 12);
         doc.setFont('times', 'bold');
@@ -210,7 +208,7 @@ export function exportToPdf(
             doc.setDrawColor(0, 0, 0);
             doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
-            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
+            doc.text(footerNote, margin, pageHeight - 10);
             doc.setFontSize(9).setFont('times', 'normal');
             doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
         }

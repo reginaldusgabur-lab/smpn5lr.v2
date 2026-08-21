@@ -181,6 +181,8 @@ export default function ReportClientShell({
 
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
+        const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
+
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalY);
         doc.text('Mengetahui,', sigX, finalY + 6);
@@ -196,7 +198,7 @@ export default function ReportClientShell({
             doc.setDrawColor(0, 0, 0);
             doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
-            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
+            doc.text(footerNote, margin, pageHeight - 10);
             doc.setFontSize(9).setFont('times', 'normal');
             doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
         }
@@ -252,63 +254,63 @@ export default function ReportClientShell({
                         </div>
                     </div>
 
-                    <div className="p-0 bg-blue-600">
-                        <div className="p-4 space-y-6 bg-blue-600">
+                    <div className="p-0">
+                        <div className="p-4 space-y-6">
                             <div className="flex flex-col items-center justify-center">
-                                <div className="flex items-center justify-between w-full bg-white/10 rounded-2xl border border-white/10 p-1">
+                                <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <div className="flex items-center">
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none text-white hover:bg-white/10" 
+                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none text-primary hover:bg-white/10" 
                                             onClick={() => handleMonthChange(-1)} 
                                             disabled={!canGoPrev}
                                         >
-                                            <ChevronLeft className="h-5 w-5 text-white" />
+                                            <ChevronLeft className="h-5 w-5 text-primary" />
                                         </Button>
-                                        <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
-                                            <CalendarDays className="h-4 w-4 text-white/70" />
+                                        <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1.5 min-w-max">
+                                            <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
-                                                <span className="text-[7px] font-bold uppercase text-white/50 tracking-[0.1em] leading-none">Thn ajaran</span>
-                                                <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">{initialSchoolConfig?.academicYear || "-"}</span>
+                                                <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-[0.1em] leading-none">Thn ajaran</span>
+                                                <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{initialSchoolConfig?.academicYear || "-"}</span>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <div className="flex items-center gap-2">
-                                        <span className="font-bold text-sm text-white tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
+                                        <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
                                             {format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}
                                         </span>
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-10 w-10 rounded-xl shadow-none text-white hover:bg-white/10" 
+                                            className="h-10 w-10 rounded-xl shadow-none text-primary hover:bg-white/10" 
                                             onClick={() => handleMonthChange(1)} 
                                             disabled={!canGoNext}
                                         >
-                                            <ChevronRight className="h-5 w-5 text-white" />
+                                            <ChevronRight className="h-5 w-5 text-primary" />
                                         </Button>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex justify-end">
-                                <Button onClick={handleDownloadPdf} className="w-full sm:w-auto font-bold bg-white text-blue-600 hover:bg-white/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
+                                <Button onClick={handleDownloadPdf} className="w-full sm:w-auto font-bold bg-primary text-white hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
                                     <Download className="mr-2 h-4 w-4" />Unduh PDF
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto border-t border-muted-foreground/5">
                             <Table>
-                                <TableHeader className="bg-blue-600">
+                                <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none h-11">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px] text-white border-none h-11">No</TableHead>
-                                        <TableHead className="font-bold text-[10px] text-white border-none h-11">Tanggal</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-white border-none h-11">Masuk</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-white border-none h-11">Pulang</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-white border-none h-11">Status</TableHead>
-                                        <TableHead className="font-bold text-[10px] text-white border-none h-11">Keterangan</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">No</TableHead>
+                                        <TableHead className="font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Tanggal</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Masuk</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Status</TableHead>
+                                        <TableHead className="font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Keterangan</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody className="bg-background">

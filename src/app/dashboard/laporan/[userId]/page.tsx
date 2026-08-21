@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -332,6 +332,7 @@ export default function UserReportDetailPage() {
         const signatureX = pageWidth - 85;
         const signatureY = finalY + 15;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+        const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, signatureY);
@@ -351,7 +352,7 @@ export default function UserReportDetailPage() {
             doc.setDrawColor(0, 0, 0);
             doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
-            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
+            doc.text(footerNote, margin, pageHeight - 10);
             doc.setFontSize(9).setFont('times', 'normal');
             doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
         }

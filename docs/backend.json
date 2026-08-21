@@ -265,6 +265,10 @@
           "type": "string",
           "description": "Tahun ajaran aktif, misal: 2025/2026."
         },
+        "reportFooterNote": {
+          "type": "string",
+          "description": "Catatan kaki kustom yang muncul di bagian bawah setiap halaman laporan PDF."
+        },
         "qrCodeValue": {
           "type": "string",
           "description": "The secret value embedded in the QR code for attendance validation."
