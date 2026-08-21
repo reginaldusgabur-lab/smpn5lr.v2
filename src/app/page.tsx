@@ -110,7 +110,15 @@ export default function LoginPage() {
   };
   
   if (isUserLoading || user) {
-      return <div className="fixed inset-0 bg-transparent" />;
+      return (
+        <div className="fixed inset-0 flex items-center justify-center bg-background z-[9999]">
+             <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
+            </div>
+        </div>
+      );
   }
 
   return (
