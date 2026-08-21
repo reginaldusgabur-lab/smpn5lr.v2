@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -231,7 +231,7 @@ export default function UserReportDetailPage() {
             };
 
             const randomSeconds = Math.floor(Math.random() * 299) + 1;
-            data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
+            data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
             data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
 
             const q = query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '==', format(targetDate, 'yyyy-MM-dd')));
@@ -296,6 +296,7 @@ export default function UserReportDetailPage() {
         doc.setFontSize(11).setFont('times', 'normal');
         doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
         doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 6;
+        
         const posLabel = (userData.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
         const displayRole = (userData.role || 'user').replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         doc.text(`Jabatan/Status : ${displayRole} / ${posLabel}`, margin, currentY);
@@ -317,9 +318,27 @@ export default function UserReportDetailPage() {
             body: tableRows,
             theme: 'striped',
             margin: { bottom: 35 },
-            styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
-            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
-            alternateRowStyles: { fillColor: [225, 242, 254] },
+            styles: { 
+              font: 'times', 
+              fontSize: 10, 
+              cellPadding: 1.5,
+              valign: 'middle',
+              textColor: [0, 0, 0],
+              lineColor: [200, 200, 200], 
+              lineWidth: 0 // HILANGKAN TABEL (GARIS)
+            },
+            headStyles: { 
+                fillColor: [52, 152, 219], 
+                textColor: 255, 
+                halign: 'center', 
+                valign: 'middle',
+                fontStyle: 'bold',
+                minCellHeight: 12,
+                lineWidth: 0
+            },
+            alternateRowStyles: {
+                fillColor: [235, 245, 255] // Biru transparan selang-seling
+            },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
         });
 
@@ -359,6 +378,10 @@ export default function UserReportDetailPage() {
 
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
+
+    const isAdmin = currentUser?.role === 'admin';
+    const canGoPrev = currentMonth > new Date(2026, 0, 1);
+    const canGoNext = !isSameMonth(currentMonth, new Date());
 
     const statusBadgeBaseClass = "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none";
 
@@ -498,7 +521,7 @@ export default function UserReportDetailPage() {
                                                                 <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleSetHadir(item)}>{hasIn ? 'Lengkapi absen pulang' : 'Jadikan Hadir'}</DropdownMenuItem>
-                                                                    {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'Terlambat', 'Terlambat')}>Jadikan Terlambat</DropdownMenuItem>}
+                                                                    {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(day, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>}
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Ubah Status</DropdownMenuLabel>
                                                                     {!hasIn && (

@@ -158,13 +158,16 @@ export function exportToPdf(
                 minCellHeight: 12,
                 lineWidth: 0
             },
+            alternateRowStyles: {
+                fillColor: [235, 245, 255] // Biru transparan selang-seling
+            },
             styles: { 
               cellPadding: 1.5,
               fontSize: 10,
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0.1,
+              lineWidth: 0, // HILANGKAN TABEL (GARIS)
               valign: 'middle'
             },
             columnStyles: {
