@@ -90,14 +90,13 @@ export default function AbsenPage() {
       if (hasCompletedAttendance) return 'info_checked_out';
       if (isManualDisabled) return 'info_disabled';
       if (isHoliday) return 'info_holiday';
-      if (windowStatus === 'CHECK_OUT_OPEN') return 'idle'; // Tetap boleh buka scanner untuk pulang meski belum masuk
       if (windowStatus === 'AFTER_IN') return 'error_checkin_closed';
       if (windowStatus === 'BEFORE_IN' || windowStatus === 'CLOSED') return 'error_time';
       if (hasCameraPermission === false) return 'info_no_camera';
       return 'idle';
   }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
 
-  const showScanner = isClient && !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN' || windowStatus === 'AFTER_IN');
+  const showScanner = isClient && !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
   const showLoader = isDataLoading || (isClient && isCameraInitializing) || (showScanner && !isScannerReady);
 
   const handleAttendance = useCallback(async () => {
@@ -106,13 +105,10 @@ export default function AbsenPage() {
         setStatus('error_generic');
         return;
     }
-    
-    // Perbolehkan Absen Masuk atau Absen Pulang
     if (windowStatus !== 'CHECK_IN_OPEN' && windowStatus !== 'CHECK_OUT_OPEN') {
         setStatus(windowStatus === 'AFTER_IN' ? 'error_checkin_closed' : 'error_time');
         return;
     }
-
     setStatus('processing');
     try {
         let latitude: number | null = null, longitude: number | null = null;
@@ -132,31 +128,19 @@ export default function AbsenPage() {
         }
         const now = new Date();
         const todayStr = format(now, 'yyyy-MM-dd');
-        
         if (windowStatus === 'CHECK_IN_OPEN') {
             if (todaysRecord?.checkInTime) return setStatus('error_already_in');
             if (todaysRecord) {
                 await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude });
             } else {
-                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null, checkOutLatitude: null, checkOutLongitude: null });
+                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
             }
             invalidateCache();
             setStatus('success_in');
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
             if (!todaysRecord) {
-                 // Kasus: Lupa absen masuk, langsung absen pulang
-                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { 
-                     userId: user.uid, 
-                     date: todayStr, 
-                     checkInTime: null, 
-                     checkInLatitude: null, 
-                     checkInLongitude: null,
-                     checkOutTime: now, 
-                     checkOutLatitude: latitude, 
-                     checkOutLongitude: longitude, 
-                     reasonForUpdate: 'Absen pulang (Tanpa masuk)' 
-                 });
+                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude, reasonForUpdate: 'Absen pulang (Tanpa masuk)' });
             } else {
                 await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
             }

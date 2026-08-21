@@ -1,10 +1,12 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import {
   Table,
@@ -16,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Download, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, PieChart as PieIcon } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -26,8 +28,7 @@ import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/atte
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface ReportItem {
   id: string;
@@ -102,7 +103,7 @@ export default function LaporanPage() {
 
     } catch (error) {
         console.error("Failed to fetch monthly report:", error);
-        toast({ title: "Gagal memuat laporan", description: "Terjadi kesalahan saat mengambil data.", variant: "destructive" });
+        toast({ title: "Gagal Memuat Laporan", description: "Terjadi kesalahan saat mengambil data.", variant: "destructive" });
     } finally {
         setIsReportLoading(false);
     }
@@ -113,6 +114,18 @@ export default function LaporanPage() {
         fetchReport();
     }
   }, [fetchReport, isConfigLoading, schoolConfig]);
+
+  useEffect(() => {
+    if (user?.uid && firestore && !isConfigLoading) {
+        const fetchStats = async () => {
+            const start = startOfMonth(currentMonth);
+            const end = endOfMonth(currentMonth);
+            const res = await calculateAttendanceStats(firestore, user.uid, { start, end });
+            setStats(res);
+        };
+        fetchStats();
+    }
+  }, [user?.uid, firestore, currentMonth, isConfigLoading]);
 
   const handleRefresh = () => {
       if (cacheKey) invalidateCache(cacheKey);
@@ -143,158 +156,73 @@ export default function LaporanPage() {
   const isLoading = isAuthLoading || isConfigLoading || isReportLoading;
   const canGoPrev = currentMonth > new Date(2026, 0, 1);
 
-  const handleDownloadPdf = async () => {
-        if (!user || monthlyReportData.length === 0) return;
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const centerX = pageWidth / 2;
-        const margin = 14;
-        const config = schoolConfig || ({} as any);
-
-        doc.setFont('times', 'bold').setFontSize(14);
-        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
-        doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
-        doc.setFontSize(12);
-        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
-        doc.setFont('times', 'normal').setFontSize(9);
-        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
-        doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
-        doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
-
-        doc.setFont('times', 'bold').setFontSize(12);
-        doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
-        doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
-        doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
-
-        let currentY = 70;
-        doc.setFontSize(11).setFont('times', 'normal');
-        doc.text(`Nama : ${user.displayName || user.name}`, margin, currentY); currentY += 6;
-        doc.text(`NIP : ${user.nip || '-'}`, margin, currentY); currentY += 10;
-
-        const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
-        const tableRows = monthlyReportData.map((item, index) => [
-            index + 1,
-            item.dateString,
-            item.checkIn,
-            item.checkOut,
-            item.status,
-            item.description || '-'
-        ]);
-
-        autoTable(doc, {
-            startY: currentY,
-            head: tableHead,
-            body: tableRows,
-            theme: 'striped',
-            styles: { font: 'times', fontSize: 10, cellPadding: 2 },
-            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center' },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center' } }
-        });
-
-        doc.save(`Laporan_${(user.displayName || 'User').replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
-  };
-
   if (isLoading && monthlyReportData.length === 0) {
     return (
-        <div className="flex-1 pt-0 pb-24 md:pt-0 md:px-8 md:pb-24">
-            <div className="max-w-7xl mx-auto space-y-4">
-                <Skeleton className="h-32 w-full rounded-2xl" />
-                <Skeleton className="h-64 w-full rounded-2xl" />
+        <div className="flex-1 pt-2 pb-24 md:p-8">
+            <div className="max-w-7xl auto space-y-4">
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-64 w-full rounded-xl" />
             </div>
         </div>
     );
   }
 
   return (
-    <div className="flex-1 pt-0 pb-24 md:pt-0 md:px-8 md:pb-24">
-        <div className="max-w-7xl mx-auto">
-            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
-              {/* Header Card - Biru Gradasi */}
-              <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
-                    <FileText className="w-24 h-24 text-white" />
-                </div>
-
-                <div className="flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
-                            <Calendar className="h-6 w-6" />
-                        </div>
-                        <div className="space-y-0.5">
-                            <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
-                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</p>
-                        </div>
+    <div className="flex-1 pt-2 pb-24 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-4">
+            <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
+              <CardHeader className="p-4 text-primary border-b border-muted-foreground/10">
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <CardTitle className="font-bold text-2xl tracking-tight">Riwayat Absensi & Izin</CardTitle>
+                        <CardDescription className="text-sm font-medium text-muted-foreground">Berikut adalah catatan kehadiran dan pengajuan izin Anda.</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={handleRefresh} disabled={isLoading}>
-                            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-                        </Button>
-                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleRefresh} disabled={isLoading}>
+                        <RefreshCw className={cn("h-4 w-4 text-muted-foreground", isLoading && "animate-spin")} />
+                    </Button>
                 </div>
-              </div>
-
-              {/* Area Gabungan Navigasi & Header Tabel - SATU KESATUAN BIRU */}
-              <div className="p-0 bg-blue-600">
-                {/* Month Selection Area (Pill Design) */}
-                <div className="p-4 flex items-center justify-center bg-blue-600">
-                    <div className="flex items-center justify-between w-full bg-white/10 rounded-2xl border border-white/10 p-1">
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="p-4 flex items-center justify-center">
+                    <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                         <div className="flex items-center">
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-10 w-10 rounded-xl shadow-none text-white hover:bg-white/10" 
-                                onClick={handlePrevMonth} 
-                                disabled={isLoading || !canGoPrev}
-                            >
-                                <ChevronLeft className="h-5 w-5 text-white" />
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={handlePrevMonth} disabled={isLoading || !canGoPrev}>
+                                <ChevronLeft className="h-5 w-5 text-primary" />
                             </Button>
                             
-                            <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-white/20 mr-1.5 min-w-max">
-                                <CalendarDays className="h-4 w-4 text-white/70" />
+                            <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
+                                <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-bold uppercase text-white/50 tracking-[0.1em] leading-none">Thn ajaran</span>
-                                    <span className="text-[10px] font-black text-white leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
+                                    <span className="text-[7px] font-black uppercase text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                    <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "-"}</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-base text-white tracking-tight capitalize px-2 min-w-[120px] text-center">
+                            <span className="font-bold text-base text-primary capitalize px-2">
                                 {format(currentMonth, 'MMMM yyyy', { locale: id })}
                             </span>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-10 w-10 rounded-xl shadow-none text-white hover:bg-white/10" 
-                                onClick={handleNextMonth} 
-                                disabled={isSameMonth(currentMonth, new Date())}
-                            >
-                                <ChevronRight className="h-5 w-5 text-white" />
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={handleNextMonth} disabled={isSameMonth(currentMonth, new Date())}>
+                                <ChevronRight className="h-5 w-5 text-primary" />
                             </Button>
                         </div>
                     </div>
                 </div>
 
-                <div className="px-4 pb-4 flex justify-end bg-blue-600">
-                    <Button onClick={handleDownloadPdf} variant="secondary" size="sm" className="h-9 px-4 rounded-xl font-bold bg-white text-blue-600 hover:bg-white/90">
-                        <Download className="mr-2 h-4 w-4" /> UNDUH PDF
-                    </Button>
-                </div>
-
-                {/* Table Header Area - Menyatu dengan blok biru */}
-                <div className="overflow-x-auto">
+                <div className="border-t border-muted-foreground/5 overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-blue-600">
-                            <TableRow className="border-none h-11">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">No</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Tanggal</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase tracking-[0.15em] text-white border-none">Status</TableHead>
+                        <TableHeader className="bg-muted/30">
+                            <TableRow className="border-none">
+                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Tanggal</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Keterangan</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody className="bg-background">
+                        <TableBody>
                             {monthlyReportData.length > 0 ? (
                                 monthlyReportData.map((record, index) => (
                                     <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
@@ -304,23 +232,24 @@ export default function LaporanPage() {
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkOut}</TableCell>
                                         <TableCell className="text-center">
                                             <span className={cn(
-                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-none",
+                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap",
                                                 getStatusColorClass(record.status)
                                             )}>
                                                 {record.status}
                                             </span>
                                         </TableCell>
+                                        <TableCell className="text-[11px] font-medium text-muted-foreground italic truncate max-w-[200px]">{record.description}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data untuk periode ini.</TableCell>
+                                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px]">Tidak ada data.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
                     </Table>
                 </div>
-              </div>
+              </CardContent>
             </Card>
         </div>
     </div>
