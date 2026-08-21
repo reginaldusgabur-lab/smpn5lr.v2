@@ -190,11 +190,11 @@ export function exportToPdf(
 
         const signatureY = finalTableY + 15;
         const signatureX = pageWidth - 85;
-        const today = format(new Date(), 'd MMMM yyyy', { locale: id });
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
 
         doc.setFontSize(10);
         doc.setFont('times', 'normal');
-        doc.text(`${kotaLaporan}, ${today}`, signatureX, signatureY);
+        doc.text(`${kotaLaporan}, ${todayStr}`, signatureX, signatureY);
         doc.text('Mengetahui,', signatureX, signatureY + 6);
         doc.text('Kepala Sekolah', signatureX, signatureY + 12);
         doc.setFont('times', 'bold');

@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -313,41 +313,47 @@ export default function PengaturanPage() {
           <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
               <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
                   <div className="flex items-center gap-3">
-                    <Settings2 className="h-5 w-5 text-primary" />
-                    <CardTitle className="font-bold text-sm uppercase tracking-tight">Kop Laporan & Pengumuman</CardTitle>
+                    <FileText className="h-5 w-5 text-primary" />
+                    <CardTitle className="font-bold text-sm uppercase tracking-tight">Kop Laporan & Tanda Tangan PDF</CardTitle>
                   </div>
+                  <CardDescription className="text-[10px] font-bold text-muted-foreground">Sesuaikan detail yang muncul pada header dan blok tanda tangan hasil unduh PDF.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 pt-8">
                   <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Instansi Pemerintah</Label>
-                        <Input placeholder="Contoh: PEMERINTAH KABUPATEN..." value={governmentAgency} onChange={e => setGovernmentAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                        <Input placeholder="Contoh: PEMERINTAH KABUPATEN..." value={governmentAgency} onChange={e => setGovernmentAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Dinas Terkait</Label>
-                        <Input placeholder="Contoh: DINAS PENDIDIKAN..." value={educationAgency} onChange={e => setEducationAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                        <Input placeholder="Contoh: DINAS PENDIDIKAN..." value={educationAgency} onChange={e => setEducationAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nama Lengkap Sekolah</Label>
-                        <Input placeholder="Nama Sekolah" value={schoolName} onChange={e => setSchoolName(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nama Lengkap Sekolah (Huruf Besar)</Label>
+                        <Input placeholder="Nama Sekolah" value={schoolName} onChange={e => setSchoolName(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Alamat Sekolah Lengkap</Label>
+                        <Input placeholder="Alamat Lengkap" value={address} onChange={e => setAddress(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nama Kepala Sekolah</Label>
-                        <Input placeholder="Nama Kepsek" value={headmasterName} onChange={e => setHeadmasterName(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Nama Kepala Sekolah & Gelar</Label>
+                        <Input placeholder="Nama Kepsek" value={headmasterName} onChange={e => setHeadmasterName(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP Kepala Sekolah</Label>
-                        <Input placeholder="NIP Kepsek" value={headmasterNip} onChange={e => setHeadmasterNip(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                        <Input placeholder="NIP Kepsek" value={headmasterNip} onChange={e => setHeadmasterNip(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Kota Laporan</Label>
-                        <Input placeholder="Contoh: Mando" value={reportCity} onChange={e => setReportCity(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Kota Laporan (Lokasi TTD)</Label>
+                        <Input placeholder="Contoh: Mando" value={reportCity} onChange={e => setReportCity(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran</Label>
-                        <Input placeholder="Contoh: 2025/2026" value={academicYear} onChange={e => setAcademicYear(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none" />
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tahun Ajaran Aktif</Label>
+                        <Input placeholder="Contoh: 2025/2026" value={academicYear} onChange={e => setAcademicYear(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
                       </div>
                   </div>
+                  
                   <div className="pt-8 border-t mt-6">
                       <div className="flex items-center justify-between mb-6">
                           <div className="flex items-center gap-3">
@@ -366,8 +372,8 @@ export default function PengaturanPage() {
                   </div>
               </CardContent>
               <CardFooter className="border-t px-6 py-5 bg-muted/5 gap-3">
-                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-6 shadow-none">Simpan Kop Laporan</Button>
-                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">Update Pengumuman</Button>
+                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-6 shadow-none">SIMPAN DATA PDF</Button>
+                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN</Button>
               </CardFooter>
           </Card>
         )}

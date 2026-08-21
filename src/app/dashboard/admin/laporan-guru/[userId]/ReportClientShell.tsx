@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -165,10 +166,40 @@ export default function ReportClientShell({
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            styles: { font: 'times', fontSize: 10, cellPadding: 2 },
-            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center' },
+            margin: { bottom: 35 },
+            styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
+            alternateRowStyles: { fillColor: [225, 242, 254] },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
         });
+
+        let finalY = (doc as any).lastAutoTable.finalY + 15;
+        if (finalY > doc.internal.pageSize.getHeight() - 65) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        const sigX = pageWidth - 85;
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
+        doc.setFontSize(10).setFont('times', 'normal');
+        doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalY);
+        doc.text('Mengetahui,', sigX, finalY + 6);
+        doc.text('Kepala Sekolah', sigX, finalY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, finalY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, finalY + 44);
+
+        const totalPages = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            const pageHeight = doc.internal.pageSize.getHeight();
+            doc.setLineWidth(0.2);
+            doc.setDrawColor(0, 0, 0);
+            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+            doc.setFontSize(8).setFont('times', 'italic');
+            doc.text('Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.', margin, pageHeight - 10);
+            doc.setFontSize(9).setFont('times', 'normal');
+            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+        }
 
         doc.save(`Laporan_${userData.name?.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
     };
@@ -315,4 +346,3 @@ export default function ReportClientShell({
         </div>
     );
 }
-
