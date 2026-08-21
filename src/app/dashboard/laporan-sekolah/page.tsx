@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -313,7 +312,7 @@ export default function SchoolReportPage() {
                                     <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
                                         <CalendarDays className="h-4 w-4 text-primary/70" />
                                         <div className="flex flex-col">
-                                            <span className="text-[7px] font-black uppercase text-muted-foreground/60 leading-none">THN AJARAN</span>
+                                            <span className="text-[7px] font-bold uppercase text-muted-foreground/60 leading-none">Tahun ajaran</span>
                                             <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
                                         </div>
                                     </div>
@@ -331,7 +330,7 @@ export default function SchoolReportPage() {
                                     <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none shadow-2xl"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
                                 </div>
                                 <div className="space-y-1.5 md:col-span-2">
-                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari Nama</Label>
+                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari nama</Label>
                                     <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Nama personil..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                                 </div>
                             </div>
@@ -339,7 +338,7 @@ export default function SchoolReportPage() {
                             {/* Action Button */}
                             <div className="flex justify-center">
                                 <Button className="w-full font-bold bg-primary shadow-lg shadow-primary/20 h-12 rounded-xl text-xs uppercase tracking-widest active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>
-                                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF
+                                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Unduh PDF
                                 </Button>
                             </div>
                         </div>
@@ -350,7 +349,7 @@ export default function SchoolReportPage() {
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
                                         <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">No</TableHead>
-                                        <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">NAMA & NIP</TableHead>
+                                        <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Nama & Nip</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Hadir</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Izin</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none h-11">Sakit</TableHead>
@@ -402,7 +401,7 @@ export default function SchoolReportPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-xs tracking-widest">
+                                            <TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">
                                                 Data tidak ditemukan
                                             </TableCell>
                                         </TableRow>
