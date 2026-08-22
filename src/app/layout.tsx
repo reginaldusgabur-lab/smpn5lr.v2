@@ -11,11 +11,15 @@ export const metadata: Metadata = {
   description: 'Aplikasi Absensi Digital untuk SMPN 5 Langke Rembong',
   manifest: '/manifest.json',
   applicationName: 'E-SPENLI',
-  icons: [], // Diagnostic: clear all icons to trace double splash
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-capable': 'yes',
-  }
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'E-SPENLI',
+  },
+  icons: {
+    icon: '/logo-3d.png',
+    apple: '/logo-3d.png',
+  },
 };
 
 export const viewport: Viewport = {
@@ -24,7 +28,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#FFFFFF', // Ice White Force
+  themeColor: '#FFFFFF',
 }
 
 export default function RootLayout({
