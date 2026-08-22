@@ -1,63 +1,30 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { CacheProvider } from '@/context/CacheContext';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { useMediaQuery } from '@/hooks/use-media-query';
-import { DesktopLayout } from '@/components/layout/DesktopLayout';
-import { MobileLayout } from '@/components/layout/MobileLayout';
-import { OnboardingTour } from '@/components/OnboardingTour';
-import { SystemNotification } from '@/components/layout/SystemNotification';
+import { useEffect } from 'react';
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { CacheProvider } from "@/context/CacheContext";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
-  const isMobile = useMediaQuery('(max-width: 640px)');
-  const redirectChecked = useRef(false);
-
-  const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
-    if (!isUserLoading && !user && !redirectChecked.current) {
-        redirectChecked.current = true;
-        router.replace('/');
+    if (!isUserLoading && !user) {
+      router.push('/');
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (user && !user.onboardingSelesai && !runTour) {
-      if (sessionStorage.getItem('onboardingInProgress') !== 'true') {
-        sessionStorage.setItem('onboardingInProgress', 'true');
-        setRunTour(true);
-      }
-    }
-  }, [user, runTour]);
-
-  const handleTourComplete = async () => {
-    runTour && setRunTour(false);
-    if (!user || !firestore) return;
-    const userDocRef = doc(firestore, 'users', user.uid);
-    try {
-      const updates = { onboardingSelesai: true };
-      await setDoc(userDocRef, updates, { merge: true });
-      
-      const cached = sessionStorage.getItem('espenli_user_profile');
-      if (cached) {
-          const profile = JSON.parse(cached);
-          sessionStorage.setItem('espenli_user_profile', JSON.stringify({ ...profile, ...updates }));
-      }
-    } catch (error) {
-      console.error("Gagal menyimpan status onboarding:", error);
-    }
-  };
-
   if (isUserLoading || !user) {
     return (
-      <div className="flex h-svh w-full items-center justify-center bg-white">
+      <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
           <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
@@ -70,14 +37,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <CacheProvider>
       <SidebarProvider>
-        <SystemNotification />
-        {isMobile ? (
-          <MobileLayout>{children}</MobileLayout>
-        ) : (
-          <DesktopLayout>{children}</DesktopLayout>
-        )}
-
-        {!isMobile && <OnboardingTour run={runTour} onTourComplete={handleTourComplete} />}
+        <div className="flex min-h-screen w-full bg-white">
+          <AppSidebar />
+          <main className="flex-1 w-full">
+            {children}
+          </main>
+        </div>
       </SidebarProvider>
     </CacheProvider>
   );

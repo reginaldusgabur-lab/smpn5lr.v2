@@ -1,15 +1,15 @@
 
-import { MetadataRoute } from 'next';
+import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'E-SPENLI',
     short_name: 'E-SPENLI',
-    description: 'Aplikasi Absensi SMPN 5 Langke Rembong',
+    description: 'Sistem Informasi Absensi SMPN 5 Langke Rembong',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#ffffff',
-    icons: [], // Dikosongkan sementara untuk diagnosa sistem splash screen
-  };
+    icons: [], // Dikosongkan sementara untuk diagnosa pendobelan logo
+  }
 }
