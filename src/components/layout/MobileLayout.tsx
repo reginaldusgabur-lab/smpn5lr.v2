@@ -7,7 +7,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col min-h-screen bg-background w-full overflow-x-hidden">
       <Header />
       <main className="flex-1 pb-20 w-full flex flex-col items-stretch bg-background">
-        <div className="w-full p-4 sm:p-6 flex flex-col items-stretch bg-background">
+        <div className="w-full px-4 pt-1 flex flex-col items-stretch bg-background">
             {children}
         </div>
       </main>
