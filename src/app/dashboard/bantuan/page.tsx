@@ -35,7 +35,7 @@ export default function BantuanPage() {
                 <span className="font-bold text-sm text-left">Fungsi Indikator Sinyal?</span>
               </AccordionTrigger>
               <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl space-y-2 text-xs font-medium leading-relaxed text-muted-foreground">
-                <p>Titik kecil di pojok kanan atas adalah pemantau stabilitas internet Anda:</p>
+                <p>Titik kecil di samping informasi peran (role) Anda adalah pemantau stabilitas internet Anda:</p>
                 <ul className="list-disc pl-4 space-y-1 font-bold text-[11px]">
                   <li><span className="text-green-600">Hijau</span>: Sinyal kuat, aman untuk absen.</li>
                   <li><span className="text-amber-500">Kuning</span>: Sinyal lemah, mungkin sedikit lambat.</li>
@@ -50,7 +50,7 @@ export default function BantuanPage() {
                 <span className="font-bold text-sm text-left">Fungsi Ikon Tema (Matahari/Bulan)?</span>
               </AccordionTrigger>
               <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
-                Tombol ini digunakan untuk mengubah tampilan aplikasi. Ikon Matahari mengaktifkan <strong>Mode Terang</strong> (latar putih), sementara ikon Bulan mengaktifkan <strong>Mode Gelap</strong> (latar hitam) yang lebih nyaman di mata saat kondisi minim cahaya.
+                Tombol di pojok kanan atas ini digunakan untuk mengubah tampilan aplikasi. Ikon Matahari mengaktifkan <strong>Mode Terang</strong> (latar putih), sementara ikon Bulan mengaktifkan <strong>Mode Gelap</strong> (latar hitam) yang lebih nyaman di mata saat kondisi minim cahaya.
               </AccordionContent>
             </AccordionItem>
 
