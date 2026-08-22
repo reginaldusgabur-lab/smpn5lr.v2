@@ -2,6 +2,10 @@
 
 import React from 'react';
 
+/**
+ * Global Loading UI.
+ * Memaksa latar belakang putih bersih untuk menghilangkan kilatan hitam.
+ */
 export default function Loading() {
   return (
     <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">

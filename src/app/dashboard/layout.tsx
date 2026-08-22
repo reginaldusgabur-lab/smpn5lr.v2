@@ -1,25 +1,57 @@
 'use client';
 
-import { useUser } from '@/firebase';
+import { useState, useEffect } from 'react';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { CacheProvider } from "@/context/CacheContext";
+import { CacheProvider } from '@/context/CacheContext';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { DesktopLayout } from '@/components/layout/DesktopLayout';
+import { MobileLayout } from '@/components/layout/MobileLayout';
+import { OnboardingTour } from '@/components/OnboardingTour';
+import { SystemNotification } from '@/components/layout/SystemNotification';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
+  const isMobile = useMediaQuery('(max-width: 640px)');
+
+  const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      router.replace('/');
+        router.replace('/');
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    if (user && !user.onboardingSelesai && !runTour) {
+      if (sessionStorage.getItem('onboardingInProgress') !== 'true') {
+        sessionStorage.setItem('onboardingInProgress', 'true');
+        setRunTour(true);
+      }
+    }
+  }, [user, runTour]);
+
+  const handleTourComplete = async () => {
+    setRunTour(false);
+    if (!user || !firestore) return;
+    const userDocRef = doc(firestore, 'users', user.uid);
+    try {
+      const updates = { onboardingSelesai: true };
+      await setDoc(userDocRef, updates, { merge: true });
+      
+      const cached = sessionStorage.getItem('espenli_user_profile');
+      if (cached) {
+          const profile = JSON.parse(cached);
+          sessionStorage.setItem('espenli_user_profile', JSON.stringify({ ...profile, ...updates }));
+      }
+    } catch (error) {
+      console.error("Gagal menyimpan status onboarding:", error);
+    }
+  };
 
   if (isUserLoading || !user) {
     return (
@@ -36,12 +68,15 @@ export default function DashboardLayout({
   return (
     <CacheProvider>
       <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-white">
-          <AppSidebar />
-          <main className="flex-1 w-full overflow-x-hidden">
-            {children}
-          </main>
+        <SystemNotification />
+        <div className="bg-white min-h-screen w-full">
+          {isMobile ? (
+            <MobileLayout>{children}</MobileLayout>
+          ) : (
+            <DesktopLayout>{children}</DesktopLayout>
+          )}
         </div>
+        {!isMobile && <OnboardingTour run={runTour} onTourComplete={handleTourComplete} />}
       </SidebarProvider>
     </CacheProvider>
   );

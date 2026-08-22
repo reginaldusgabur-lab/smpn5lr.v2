@@ -71,7 +71,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         const user = JSON.parse(cached);
         setUserAuthState({ user, isUserLoading: false, userError: null });
       } catch (e) {
-        // Ignore malformed cache
+        // Ignore
       }
     }
 
@@ -148,13 +148,10 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   if (context === undefined) {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
-  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
-    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
-  }
   return {
-    firebaseApp: context.firebaseApp,
-    firestore: context.firestore,
-    auth: context.auth,
+    firebaseApp: context.firebaseApp!,
+    firestore: context.firestore!,
+    auth: context.auth!,
     user: context.user,
     isUserLoading: context.isUserLoading,
     userError: context.userError,

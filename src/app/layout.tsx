@@ -11,10 +11,7 @@ export const metadata: Metadata = {
   description: 'Aplikasi Absensi Digital untuk SMPN 5 Langke Rembong',
   manifest: '/manifest.json',
   applicationName: 'E-SPENLI',
-  icons: {
-    icon: [],
-    apple: [],
-  },
+  icons: [], // Diagnostic: clear all icons to trace double splash
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
@@ -27,7 +24,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#FFFFFF',
+  themeColor: '#FFFFFF', // Ice White Force
 }
 
 export default function RootLayout({
@@ -42,7 +39,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased bg-white text-foreground" style={{ colorScheme: 'light', backgroundColor: 'white' }} suppressHydrationWarning>
+      <body className="font-body antialiased bg-white text-foreground" suppressHydrationWarning style={{ colorScheme: 'light', backgroundColor: 'white' }}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <FirebaseClientProvider>
             {children}

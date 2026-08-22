@@ -2,7 +2,7 @@ import { type MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    id: 'espenli-absensi-v2-diag',
+    id: 'espenli-absensi-v2-diag', // Change ID to force refresh PWA identity
     name: 'E-SPENLI',
     short_name: 'E-SPENLI',
     description: 'Aplikasi Absensi Digital Modern SMPN 5 Langke Rembong',
