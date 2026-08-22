@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
 import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth } from 'date-fns';
-import { id as indonesiaLocale } from 'date-fns/locale';
+import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer, FileText, RefreshCw } from 'lucide-react';
@@ -45,6 +45,15 @@ interface ReportRowData {
 }
 
 const minDate = new Date(2026, 0, 1);
+
+const safeFormat = (dateInput: any, formatString: string): string => {
+    if (!dateInput) return '-';
+    let date: Date;
+    if (typeof dateInput === 'string') date = parseISO(dateInput);
+    else if (dateInput.toDate) date = dateInput.toDate();
+    else date = new Date(dateInput);
+    return isValid(date) ? format(date, formatString, { locale: id }) : '-';
+};
 
 export default function SchoolReportPage() {
     const { user, isUserLoading } = useUser();
@@ -252,7 +261,7 @@ export default function SchoolReportPage() {
 
             doc.setFont('times', 'bold').setFontSize(12);
             doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
-            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}`, centerX, 54, { align: 'center' });
+            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
             doc.setFontSize(10).setFont('times', 'normal');
             doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
@@ -276,7 +285,7 @@ export default function SchoolReportPage() {
             }
 
             const sigX = pageWidth - 85;
-            const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
+            const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
             const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
             doc.setFontSize(10).setFont('times', 'normal');
@@ -299,20 +308,13 @@ export default function SchoolReportPage() {
                 doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
             }
 
-            doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: indonesiaLocale })}.pdf`);
+            doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
         } finally { setIsExporting(false); }
     };
 
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
-                <div className="px-4 md:px-0 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-normal tracking-tight">Laporan sekolah</h1>
-                        <p className="text-sm text-muted-foreground">Rekapitulasi kehadiran seluruh personil.</p>
-                    </div>
-                </div>
-
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-md rounded-xl bg-card">
                     {/* Header Card - Biru Gradasi */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
@@ -350,7 +352,7 @@ export default function SchoolReportPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-sm text-primary capitalize">{format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}</span>
+                                    <span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
@@ -417,7 +419,7 @@ export default function SchoolReportPage() {
                                                     {item.totalAlpa}
                                                 </TableCell>
                                                 <TableCell className="text-center font-black text-primary">
-                                                    {item.presentasi}
+                                                    {item.persentase}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>

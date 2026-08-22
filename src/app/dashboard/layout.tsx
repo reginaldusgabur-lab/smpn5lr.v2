@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -17,13 +17,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const firestore = useFirestore();
   const router = useRouter();
   const isMobile = useMediaQuery('(max-width: 640px)');
-  const redirectChecked = useRef(false);
 
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
-    if (!isUserLoading && !user && !redirectChecked.current) {
-        redirectChecked.current = true;
+    if (!isUserLoading && !user) {
         router.replace('/');
     }
   }, [user, isUserLoading, router]);
@@ -38,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, runTour]);
 
   const handleTourComplete = async () => {
-    runTour && setRunTour(false);
+    setRunTour(false);
     if (!user || !firestore) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     try {
@@ -57,7 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (isUserLoading || !user) {
     return (
-      <div className="flex h-svh w-full items-center justify-center bg-white">
+      <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
           <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
@@ -71,12 +69,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <CacheProvider>
       <SidebarProvider>
         <SystemNotification />
-        {isMobile ? (
-          <MobileLayout>{children}</MobileLayout>
-        ) : (
-          <DesktopLayout>{children}</DesktopLayout>
-        )}
-
+        <div className="bg-white min-h-screen w-full">
+          {isMobile ? (
+            <MobileLayout>{children}</MobileLayout>
+          ) : (
+            <DesktopLayout>{children}</DesktopLayout>
+          )}
+        </div>
         {!isMobile && <OnboardingTour run={runTour} onTourComplete={handleTourComplete} />}
       </SidebarProvider>
     </CacheProvider>
