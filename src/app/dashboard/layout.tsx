@@ -1,13 +1,16 @@
-
 'use client';
 
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
 import { CacheProvider } from "@/context/CacheContext";
 
+/**
+ * Dashboard Layout dengan perbaikan jalur impor AppSidebar.
+ * Tetap menggunakan indikator pemuatan Ice White (Tanpa Logo) untuk diagnosa.
+ */
 export default function DashboardLayout({
   children,
 }: {
@@ -22,6 +25,7 @@ export default function DashboardLayout({
     }
   }, [user, isUserLoading, router]);
 
+  // Loading Guard: Menggunakan latar belakang putih solid dan tiga titik membal
   if (isUserLoading || !user) {
     return (
       <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">

@@ -111,7 +111,7 @@ export default function LoginPage() {
   
   if (isUserLoading || user) {
       return (
-        <div className="flex h-svh w-full items-center justify-center bg-white">
+        <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">
              <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
                 <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
@@ -124,7 +124,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-white text-foreground">
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-xl bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden transition-all duration-300">
+        <Card className="w-full max-w-xl bg-white border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden transition-all duration-300">
           <CardHeader className="text-center space-y-2 pt-6 pb-4">
             <div className="flex justify-center mb-2">
               <div className="relative w-24 h-24 transition-all duration-500 hover:scale-105">
@@ -156,7 +156,7 @@ export default function LoginPage() {
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-normal shadow-none"
+                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-white transition-all font-normal shadow-none"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -183,7 +183,7 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-normal shadow-none"
+                              className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-white transition-all font-normal shadow-none"
                             />
                           </FormControl>
                           <Button
@@ -214,7 +214,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <DialogContent className="rounded-xl border-none p-10 shadow-md max-w-xl">
+        <DialogContent className="rounded-xl border-none p-10 shadow-md max-w-xl bg-white">
           <DialogHeader>
             <DialogTitle className="font-bold text-2xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
             <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">
@@ -235,7 +235,7 @@ export default function LoginPage() {
                           id="reset-email" 
                           placeholder="email@anda.com" 
                           {...field} 
-                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background shadow-none font-normal"
+                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-white shadow-none font-normal"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />

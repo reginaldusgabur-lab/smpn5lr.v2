@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -122,15 +121,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
+  // Auth Guard Loading UI: Menggunakan bg-white solid untuk diagnosa total
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
-      <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">
-        <div className="relative flex items-center justify-center">
-            <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
-            </div>
+      <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
         </div>
       </div>
     );
