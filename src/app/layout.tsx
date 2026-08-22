@@ -11,11 +11,7 @@ export const metadata: Metadata = {
   description: 'Aplikasi Absensi Digital untuk SMPN 5 Langke Rembong',
   manifest: '/manifest.json',
   applicationName: 'E-SPENLI',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'E-SPENLI',
-  },
+  // Menghapus appleWebApp icons untuk diagnosa pendobelan logo
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',

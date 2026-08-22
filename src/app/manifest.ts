@@ -12,6 +12,6 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     background_color: '#ffffff',
     theme_color: '#ffffff',
-    icons: [], // Dihapus sepenuhnya untuk diagnosa
+    icons: [], // Dihapus sepenuhnya untuk diagnosa pembersihan logo
   }
 }
