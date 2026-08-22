@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -230,7 +229,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang</p>
-          <h1 className="text-3xl font-black tracking-tighter text-foreground mt-1 leading-tight">E-SPENLI Cloud System</h1>
+          <h1 className="text-2xl font-black tracking-tighter text-foreground mt-1 leading-tight">E-SPENLI Cloud System</h1>
           <p className="text-xs font-bold text-muted-foreground mt-2">Pusat kendali operasional dan monitoring statistik sekolah.</p>
       </div>
       
