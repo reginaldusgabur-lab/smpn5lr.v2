@@ -12,6 +12,6 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     background_color: '#ffffff',
     theme_color: '#ffffff',
-    icons: [], // Dikosongkan total untuk diagnosa sumber logo ganda
+    icons: [], // Dikosongkan total untuk diagnosa sumber logo latar hitam
   }
 }

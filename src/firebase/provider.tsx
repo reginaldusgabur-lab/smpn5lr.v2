@@ -121,7 +121,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // Auth Guard Loading UI: Menggunakan bg-white solid untuk diagnosa total
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
       <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">

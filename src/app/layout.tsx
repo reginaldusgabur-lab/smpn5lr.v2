@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   description: 'Aplikasi Absensi Digital untuk SMPN 5 Langke Rembong',
   manifest: '/manifest.json',
   applicationName: 'E-SPENLI',
-  // Memaksa browser untuk tidak menggunakan ikon otomatis agar diagnosa bersih
   icons: {
     icon: [],
     apple: [],
@@ -28,7 +27,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#FFFFFF', // Tetap putih solid
+  themeColor: '#FFFFFF',
 }
 
 export default function RootLayout({

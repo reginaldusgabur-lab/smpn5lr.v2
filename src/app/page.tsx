@@ -111,7 +111,7 @@ export default function LoginPage() {
   
   if (isUserLoading || user) {
       return (
-        <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">
+        <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
              <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
                 <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
@@ -124,10 +124,10 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-white text-foreground">
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-xl bg-white border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden transition-all duration-300">
+        <Card className="w-full max-w-xl bg-white border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden">
           <CardHeader className="text-center space-y-2 pt-6 pb-4">
             <div className="flex justify-center mb-2">
-              <div className="relative w-24 h-24 transition-all duration-500 hover:scale-105">
+              <div className="relative w-24 h-24">
                 <Image
                   src="/logo-3d.png"
                   alt="Logo E-SPENLI"
@@ -194,7 +194,6 @@ export default function LoginPage() {
                             onClick={() => setShowLoginPass(!showLoginPass)}
                           >
                             {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            <span className="sr-only">Tampilkan kata sandi</span>
                           </Button>
                         </div>
                         <FormMessage className="text-[10px] font-bold" />
