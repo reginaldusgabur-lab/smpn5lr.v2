@@ -350,7 +350,7 @@ export default function KepalaSekolahDashboardPage() {
                             </div>
                         </div>
                         <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
-                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
+                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
                             <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
                                 <LogOut className="h-4 w-4" />
                             </div>
