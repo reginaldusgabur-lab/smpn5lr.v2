@@ -18,13 +18,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const isMobile = useMediaQuery('(max-width: 640px)');
 
-  const [runTour, setRunTour] = useState(false);
-
   useEffect(() => {
     if (!isUserLoading && !user) {
         router.replace('/');
     }
   }, [user, isUserLoading, router]);
+
+  const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
     if (user && !user.onboardingSelesai && !runTour) {
