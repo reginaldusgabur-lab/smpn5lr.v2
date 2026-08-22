@@ -64,9 +64,9 @@ const ActivityItem = ({ icon: Icon, title, date, details, status, statusVariant 
 const DashboardSkeleton = () => (
     <div className="space-y-6 animate-pulse">
       <div className="space-y-1">
-        <Skeleton className="h-8 w-1/2" />
-        <Skeleton className="h-6 w-1/3" />
-        <Skeleton className="h-4 w-3/4 !mt-2" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-8 w-48 mt-2" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="w-full lg:col-span-2">
