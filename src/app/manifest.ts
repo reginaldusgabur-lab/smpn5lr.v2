@@ -1,4 +1,5 @@
-import type { MetadataRoute } from 'next'
+
+import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -9,6 +10,6 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#ffffff',
-    icons: [], // Dikosongkan total untuk mematikan splash screen sistem
-  }
+    icons: [], // Dikosongkan sementara untuk diagnosa sistem splash screen
+  };
 }

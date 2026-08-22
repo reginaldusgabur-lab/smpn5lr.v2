@@ -1,54 +1,91 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from './config';
-import { useRouter, usePathname } from 'next/navigation';
+import { 
+  type User, 
+  onAuthStateChanged, 
+  type Auth 
+} from 'firebase/auth';
+import { 
+  type Firestore, 
+  doc, 
+  getDoc 
+} from 'firebase/firestore';
+import type { UserProfile } from '@/types';
 
-interface AuthContextType {
+interface FirebaseContextType {
   user: User | null;
-  loading: boolean;
+  userProfile: UserProfile | null;
+  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const FirebaseContext = createContext<FirebaseContextType>({
+  user: null,
+  userProfile: null,
+  isLoading: true,
+});
 
-export const useAuth = () => useContext(AuthContext);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function FirebaseProvider({ 
+  children, 
+  auth, 
+  firestore 
+}: { 
+  children: React.ReactNode; 
+  auth: Auth; 
+  firestore: Firestore;
+}) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
       
-      if (!user && pathname.startsWith('/dashboard')) {
-        router.push('/');
+      if (firebaseUser) {
+        try {
+          const userDoc = await getDoc(doc(firestore, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+        }
+      } else {
+        setUserProfile(null);
       }
+      
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router, pathname]);
+  }, [auth, firestore]);
 
-  // Layar pemuatan dibuat putih bersih tanpa logo untuk diagnosa
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+      <div className="flex h-svh w-full items-center justify-center bg-white">
         <div className="flex space-x-2">
-          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-500 [animation-delay:-0.3s]"></div>
-          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-500 [animation-delay:-0.15s]"></div>
-          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-500"></div>
+          <div className="h-3 w-3 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]"></div>
+          <div className="h-3 w-3 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]"></div>
+          <div className="h-3 w-3 animate-bounce rounded-full bg-primary"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <FirebaseContext.Provider value={{ user, userProfile, isLoading }}>
       {children}
-    </AuthContext.Provider>
+    </FirebaseContext.Provider>
   );
 }
+
+export const useUser = () => useContext(FirebaseContext);
+export const useFirestore = () => {
+  // In a real app, you'd get this from another context or a global
+  // For this prototype, we'll assume it's available via a custom hook if needed
+  // or just import the singleton.
+  const { firestore } = require('@/firebase');
+  return firestore as Firestore;
+};
