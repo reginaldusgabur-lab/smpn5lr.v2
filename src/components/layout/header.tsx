@@ -56,6 +56,13 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
 
   const displayName = user?.displayName || userData?.name;
   
+  const getDisplayRole = () => {
+    if (userData?.role) {
+      return userData.role.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+    return "";
+  }
+  const displayRole = getDisplayRole();
   const currentPhoto = userData?.photoURL || user?.photoURL;
   const isProfileLoading = isUserLoading || isUserDataLoading;
 
@@ -87,7 +94,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                         <div className="flex flex-col justify-center text-left min-w-0 overflow-hidden pr-2">
                             <p className="text-sm font-bold leading-none tracking-tight truncate pr-1">{displayName || 'Pengguna'}</p>
                             <div className="flex items-center gap-2 mt-1.5">
-                                <p className="text-[10px] tracking-widest leading-none text-muted-foreground font-bold uppercase opacity-60 truncate">E-SPENLI Cloud System</p>
+                                <p className="text-[10px] tracking-widest leading-none text-muted-foreground font-bold uppercase opacity-60 truncate">{displayRole || 'User'}</p>
                                 <NetworkStatusDot />
                             </div>
                         </div>
@@ -100,7 +107,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                             <div className="flex flex-col space-y-1 min-w-0">
                                 <p className="text-sm font-bold leading-none text-primary truncate">{displayName || 'Pengguna'}</p>
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground truncate">
-                                    E-SPENLI Cloud System
+                                    {displayRole || 'User'}
                                 </p>
                             </div>
                         </div>
