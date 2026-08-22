@@ -16,10 +16,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'E-SPENLI',
   },
-  icons: {
-    icon: '/logo-3d.png',
-    apple: '/logo-3d.png',
-  },
+  // Ikon dihapus sementara dari metadata untuk pengecekan splash screen
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
@@ -32,7 +29,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#FFFFFF', // Kunci warna putih untuk status bar & splash PWA
+  themeColor: '#FFFFFF',
 }
 
 export default function RootLayout({
