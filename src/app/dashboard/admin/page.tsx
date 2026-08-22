@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -230,7 +231,7 @@ export default function AdminDashboardPage() {
       <div className="space-y-1">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">E-SPENLI Cloud System</p>
           <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang</p>
-          <h1 className="text-3xl font-black tracking-tighter text-foreground mt-1 leading-tight">{userData?.name || 'Admin'}</h1>
+          <h1 className="text-3xl font-black tracking-tighter text-foreground mt-1 leading-tight">Panel Administrator</h1>
           <p className="text-xs font-bold text-muted-foreground mt-2">Pusat kendali operasional dan ringkasan statistik sekolah.</p>
       </div>
       
@@ -284,7 +285,7 @@ export default function AdminDashboardPage() {
                         <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
                             {format(currentTime, 'HH:mm:ss')}
                         </h2>
-                        <p className="text-xs font-medium text-muted-foreground mt-3 opacity-60">
+                        <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">
                             {format(currentTime, 'eeee, d MMMM yyyy', { locale: id })}
                         </p>
                     </div>
@@ -303,8 +304,8 @@ export default function AdminDashboardPage() {
                             </div>
                         </div>
                         <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
-                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
-                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-blue-500/20 shrink-0 relative z-10">
+                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
+                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
                                 <LogOut className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
@@ -408,3 +409,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

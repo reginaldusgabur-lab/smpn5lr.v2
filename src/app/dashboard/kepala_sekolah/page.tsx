@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -59,9 +60,9 @@ function LiveClock() {
 const KepalaSekolahDashboardSkeleton = () => (
     <div className="space-y-6 animate-pulse">
         <div className="space-y-1">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-8 w-48 mt-2" />
+            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-4 w-3/4 !mt-2" />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
             <Card className="w-full lg:col-span-2 rounded-xl">
@@ -296,7 +297,7 @@ export default function KepalaSekolahDashboardPage() {
       <div className="space-y-1">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">E-SPENLI Cloud System</p>
         <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang</p>
-        <h1 className="text-3xl font-black tracking-tighter text-foreground leading-tight">{userData?.name || 'Kepala Sekolah'}</h1>
+        <h1 className="text-3xl font-black tracking-tighter text-foreground leading-tight">Layanan Pemantauan Sekolah</h1>
         <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">Akses pemantauan kinerja dan kehadiran personil satuan pendidikan.</p>
       </div>
 
@@ -460,3 +461,4 @@ export default function KepalaSekolahDashboardPage() {
     </div>
   );
 }
+

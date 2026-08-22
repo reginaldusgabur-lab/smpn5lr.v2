@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -273,9 +274,9 @@ export default function DashboardPage() {
         <div className="w-full px-0 space-y-1 mb-2">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">E-SPENLI Cloud System</p>
             <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang</p>
-            <h1 className="text-3xl font-black tracking-tighter text-foreground leading-tight">{user?.name || 'Pengguna'}</h1>
+            <h1 className="text-3xl font-black tracking-tighter text-foreground mt-1 leading-tight">Aplikasi Absensi Online</h1>
             <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">
-                Lakukan absensi dan lihat riwayat kehadiran Anda.
+                Lakukan absensi harian dan pantau riwayat kehadiran Anda.
             </p>
         </div>
 
@@ -452,3 +453,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
