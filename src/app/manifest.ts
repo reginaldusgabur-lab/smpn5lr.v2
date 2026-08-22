@@ -12,6 +12,6 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     background_color: '#ffffff',
     theme_color: '#ffffff',
-    icons: [], // Dihapus sementara untuk pengecekan bug background hitam
+    icons: [], // Dihapus sepenuhnya untuk diagnosa
   }
 }
