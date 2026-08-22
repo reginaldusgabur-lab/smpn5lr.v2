@@ -46,7 +46,7 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
-export default function HomePage() {
+export default function LoginPage() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [showLoginPass, setShowLoginPass] = useState(false);
@@ -122,7 +122,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-white text-foreground" style={{ colorScheme: 'light' }}>
+    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-white text-foreground">
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-xl bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden transition-all duration-300">
           <CardHeader className="text-center space-y-2 pt-6 pb-4">
@@ -214,7 +214,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <DialogContent className="rounded-xl border-none p-10 shadow-md max-w-xl bg-white">
+        <DialogContent className="rounded-xl border-none p-10 shadow-md max-w-xl">
           <DialogHeader>
             <DialogTitle className="font-bold text-2xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
             <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">
