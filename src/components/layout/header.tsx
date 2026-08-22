@@ -91,7 +91,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                             <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" className="object-cover" />
                             <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{getInitials(displayName)}</AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col justify-center text-left min-w-0 overflow-hidden">
+                        <div className="flex flex-col justify-center text-left min-w-0 overflow-hidden pr-2">
                             <p className="text-sm font-bold leading-none tracking-tight truncate">{displayName || 'Pengguna'}</p>
                             <p className="text-[10px] tracking-widest leading-none text-muted-foreground mt-1.5 font-bold uppercase opacity-60 truncate">{displayRole || 'User'}</p>
                         </div>
