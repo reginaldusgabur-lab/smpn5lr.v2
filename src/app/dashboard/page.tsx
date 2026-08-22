@@ -270,11 +270,12 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-4 pb-10 flex flex-col items-stretch">
-        <div className="w-full px-0 space-y-0.5 mb-2">
+        <div className="w-full px-0 space-y-1 mb-2">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">E-SPENLI Cloud System</p>
-            <h1 className="text-2xl font-black tracking-tighter text-foreground mt-1 leading-tight">Selamat Datang</h1>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang</p>
+            <h1 className="text-3xl font-black tracking-tighter text-foreground leading-tight">{user?.name || 'Pengguna'}</h1>
             <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">
-                {isAdmin ? 'Sistem monitoring kehadiran personil secara real-time.' : 'Portal layanan absensi digital mandiri SMPN 5 Langke Rembong.'}
+                Lakukan absensi dan lihat riwayat kehadiran Anda.
             </p>
         </div>
 

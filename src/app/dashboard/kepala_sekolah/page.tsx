@@ -59,9 +59,9 @@ function LiveClock() {
 const KepalaSekolahDashboardSkeleton = () => (
     <div className="space-y-6 animate-pulse">
         <div className="space-y-1">
-            <Skeleton className="h-8 w-1/2" />
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-3/4 !mt-2" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-8 w-48 mt-2" />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
             <Card className="w-full lg:col-span-2 rounded-xl">
@@ -293,10 +293,11 @@ export default function KepalaSekolahDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-0.5">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Executive Dashboard</p>
-        <h1 className="text-3xl font-black tracking-tighter text-foreground mt-1 leading-tight">Selamat Datang</h1>
-        <p className="text-xs font-bold text-muted-foreground mt-2">Akses pemantauan kinerja dan kehadiran personil satuan pendidikan.</p>
+      <div className="space-y-1">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">E-SPENLI Cloud System</p>
+        <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang</p>
+        <h1 className="text-3xl font-black tracking-tighter text-foreground leading-tight">{userData?.name || 'Kepala Sekolah'}</h1>
+        <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">Akses pemantauan kinerja dan kehadiran personil satuan pendidikan.</p>
       </div>
 
       {isHoliday && (
@@ -331,7 +332,7 @@ export default function KepalaSekolahDashboardPage() {
                 <CardContent className="p-8 space-y-6 pt-10 text-center">
                     <LiveClock />
                     <div className="flex flex-col items-center justify-center">
-                        <p className="text-xs font-bold text-muted-foreground mt-3 opacity-60">
+                        <p className="text-xs font-medium text-muted-foreground mt-3 opacity-60">
                             {format(new Date(), 'eeee, d MMMM yyyy', { locale: id })}
                         </p>
                     </div>
@@ -343,7 +344,7 @@ export default function KepalaSekolahDashboardPage() {
                                 <LogIn className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
-                                <p className="text-[10px] font-semibold text-green-600 leading-none mb-1">Masuk</p>
+                                <p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p>
                                 <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                     {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
                                 </p>
@@ -351,11 +352,11 @@ export default function KepalaSekolahDashboardPage() {
                         </div>
                         <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
                             <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
-                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-blue-500/20 shrink-0 relative z-10">
+                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
                                 <LogOut className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
-                                <p className="text-[10px] font-semibold text-blue-600 leading-none mb-1">Pulang</p>
+                                <p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p>
                                 <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                     {todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}
                                 </p>
