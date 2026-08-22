@@ -23,6 +23,7 @@ import {
 import { signOut } from 'firebase/auth';
 import { ModeToggle } from '@/components/theme-toggle';
 import { NetworkStatusDot } from './NetworkStatusDot';
+import { cn } from '@/lib/utils';
 
 export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const firestore = useFirestore();
@@ -64,19 +65,19 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const currentPhoto = userData?.photoURL || user?.photoURL;
   const isProfileLoading = isUserLoading || isUserDataLoading;
 
-  const headerClasses = `
-    fixed top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background px-4 sm:px-6
-    transition-opacity duration-300
-    sm:left-[16rem] sm:w-[calc(100%-16rem)]
-    ${isTransparent ? 'opacity-0 pointer-events-none' : 'opacity-100'}
-  `;
+  // REFACTORED: Use sticky instead of fixed to align naturally with parent content area
+  const headerClasses = cn(
+    "sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b bg-background/95 backdrop-blur-md px-4 sm:px-6 transition-all duration-300",
+    isTransparent ? "opacity-0 pointer-events-none" : "opacity-100"
+  );
 
   return (
     <header className={headerClasses}>
-      <div className="flex items-center gap-3">
+      {/* Left: User Profile Dropdown */}
+      <div className="flex items-center gap-3 min-w-0 max-w-[65%]">
         {isProfileLoading && !displayName ? (
             <div className="flex items-center gap-3">
-                <Skeleton className="h-9 w-9 rounded-full" />
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
                 <div className="hidden sm:flex flex-col gap-1">
                     <Skeleton className="h-4 w-24" />
                     <Skeleton className="h-3 w-16" />
@@ -85,14 +86,14 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
         ) : (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-3 focus:outline-none rounded-full p-1 -ml-1 sm:p-0 sm:ml-0 group">
-                        <Avatar className="h-9 w-9 border border-primary/10 shadow-sm transition-transform group-active:scale-95">
-                            <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" />
+                    <button className="flex items-center gap-3 focus:outline-none rounded-full p-0.5 group min-w-0 overflow-hidden">
+                        <Avatar className="h-9 w-9 border border-primary/10 shadow-sm shrink-0 transition-transform group-active:scale-95">
+                            <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" className="object-cover" />
                             <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{getInitials(displayName)}</AvatarFallback>
                         </Avatar>
-                        <div className="hidden sm:flex flex-col justify-center text-left">
-                            <p className="text-sm font-bold leading-none tracking-tight">{displayName || 'Pengguna'}</p>
-                            <p className="text-[10px] tracking-widest leading-none text-muted-foreground mt-1.5 font-bold uppercase opacity-60">{displayRole || 'User'}</p>
+                        <div className="flex flex-col justify-center text-left min-w-0 overflow-hidden pr-2">
+                            <p className="text-sm font-bold leading-none tracking-tight truncate">{displayName || 'Pengguna'}</p>
+                            <p className="text-[10px] tracking-widest leading-none text-muted-foreground mt-1.5 font-bold uppercase opacity-60 truncate">{displayRole || 'User'}</p>
                         </div>
                     </button>
                 </DropdownMenuTrigger>
@@ -100,9 +101,9 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                     <DropdownMenuLabel className="font-normal px-4 py-4">
                         <div className="flex items-center gap-3">
                             <UserCircle className="h-5 w-5 text-primary opacity-40" />
-                            <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-bold leading-none text-primary">{displayName || 'Pengguna'}</p>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                            <div className="flex flex-col space-y-1 min-w-0">
+                                <p className="text-sm font-bold leading-none text-primary truncate">{displayName || 'Pengguna'}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground truncate">
                                     {displayRole || 'User'}
                                 </p>
                             </div>
@@ -137,17 +138,19 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                 </DropdownMenuContent>
             </DropdownMenu>
         )}
-        <ModeToggle />
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* Right: Actions & Logo */}
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        <ModeToggle />
         <NetworkStatusDot />
         <button onClick={() => router.push('/dashboard/bantuan')} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full transition-transform active:scale-95">
           <Image
             src="/logo-3d.png"
             alt="App Logo"
-            width={36}
-            height={36}
+            width={32}
+            height={32}
+            className="sm:w-9 sm:h-9"
             priority
           />
         </button>
