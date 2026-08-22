@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -159,7 +158,7 @@ export default function LaporanPage() {
 
   if (isLoading && monthlyReportData.length === 0) {
     return (
-        <div className="flex-1 pt-2 pb-24 md:p-8">
+        <div className="flex-1 pt-0 pb-24 md:p-8">
             <div className="max-w-7xl auto space-y-4">
                 <Skeleton className="h-12 w-full rounded-xl" />
                 <Skeleton className="h-64 w-full rounded-xl" />
@@ -169,10 +168,9 @@ export default function LaporanPage() {
   }
 
   return (
-    <div className="flex-1 pt-2 pb-24 md:p-8">
+    <div className="flex-1 pt-0 pb-24 md:p-8">
         <div className="max-w-7xl mx-auto space-y-4">
             <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl">
-              {/* Header Card - Biru Gradasi */}
               <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                 <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                   <FileText className="w-24 h-24 text-white" />
