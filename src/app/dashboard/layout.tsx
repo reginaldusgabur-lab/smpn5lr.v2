@@ -21,12 +21,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
-        router.replace('/');
-    }
-  }, [user, isUserLoading, router]);
-
-  useEffect(() => {
     if (user && !user.onboardingSelesai && !runTour) {
       if (sessionStorage.getItem('onboardingInProgress') !== 'true') {
         sessionStorage.setItem('onboardingInProgress', 'true');
@@ -53,6 +47,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+        router.replace('/');
+    }
+  }, [user, isUserLoading, router]);
+
   if (isUserLoading || !user) {
     return (
       <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <CacheProvider>
       <SidebarProvider>
         <SystemNotification />
-        <div className="bg-white min-h-screen w-full">
+        <div className="bg-background min-h-screen w-full">
           {isMobile ? (
             <MobileLayout>{children}</MobileLayout>
           ) : (
