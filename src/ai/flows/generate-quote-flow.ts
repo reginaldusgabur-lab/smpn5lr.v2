@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview AI Flow Modular Fragment-Based (Compact Version).
- * Menghasilkan satu kalimat humor singkat seputar sekolah tanpa pantun.
+ * @fileOverview AI Flow Modular Fragment-Based (Enhanced Context Version).
+ * Menghasilkan satu kalimat humor singkat yang mendeteksi jenis absen (Masuk/Pulang).
  */
 
 import { ai } from '../genkit';
@@ -35,46 +35,51 @@ function getHash(str: string): number {
   return Math.abs(hash);
 }
 
-const hooks = [
-  "Laporan dari meja piket:", "Investigasi ruang guru:", "Fakta unik hari ini:", 
-  "Misteri terungkap:", "Satu rahasia kecil:", "Analisis teknis:", 
-  "Bisikan di koridor:", "Observasi pagi:", "Kabar burung kantin:", 
-  "Filosofi spidol:", "Drama administrasi:", "Logika sekolah:",
-  "Teori konspirasi printer:", "Hikmah RPP:", "Pesan proyektor:", 
-  "Review jujur:", "Status terkini:", "Catatan pinggir:"
+// FRAGMEN KHUSUS ABSEN MASUK (IN)
+const inHooks = [
+  "Misi pagi hari:", "Briefing fajar:", "Update status pagi:", "Energi fajar:", 
+  "Visi hari ini:", "Observasi pagi:", "Laporan meja piket:", "Investigasi ruang guru:"
 ];
 
-const contexts = [
-  "kabel proyektor yang melilit seperti perasaan", "sinyal WiFi yang segan hidup mati tak mau",
-  "aroma nasi kuning yang menggoda iman", "tumpukan kertas ujian yang minta dielus",
-  "printer yang mendadak mogok pas jam kritis", "Dapodik yang belum sinkron sejak fajar",
-  "bel sekolah yang bunyinya terlalu puitis", "pulpen pilot yang sering berkelana sendiri",
-  "laptop yang mendadak update Windows", "antrean fotokopi soal yang mengular",
-  "siswa yang lupa bawa PR tapi ingat menu kantin", "hujan gerimis yang bikin ngantuk di kelas",
-  "rapat dinas yang sebenarnya bisa jadi email", "kuota internet yang habis pas zoom meeting",
-  "baterai laptop yang drop tanpa permisi", "meja guru yang penuh tumpukan harta karun",
-  "spidol yang tintanya memudar perlahan", "air galon yang habis di saat haus",
-  "stapler yang dipinjam tapi lupa jalan pulang", "suara gesekan kursi di kelas sebelah"
+const inContexts = [
+  "secangkir kopi yang masih mengepul", "papan tulis yang masih bersih mengkilap", 
+  "semangat mengajar yang masih 100%", "antrean absen yang tertib dan damai", 
+  "suara kicauan burung di lapangan sekolah", "daftar hadir yang masih kosong melompong",
+  "udara pagi Manggarai yang menyejukkan jiwa", "tumpukan buku yang siap dibagikan"
 ];
 
-const punchlines = [
-  "memang ujian kesabaran tingkat tinggi.", "adalah seni dalam mendidik.",
-  "lebih menantang daripada soal matematika.", "butuh kopi hitam tanpa gula.",
-  "membuat hari ini semakin berwarna.", "adalah definisi kebahagiaan sederhana.",
-  "jangan dibawa serius, bawa ketawa saja.", "lebih baik daripada dengerin gosip.",
-  "pertanda hari ini akan sangat sibuk.", "untung bel pulang selalu setia menanti.",
-  "seperti perasaan yang tak terbalas.", "memang butuh kesabaran ekstra.",
-  "adalah bagian dari petualangan mengajar.", "mari kita hadapi dengan senyum tipis.",
-  "setidaknya kita sudah berusaha maksimal.", "lebih seru daripada nonton sinetron.",
-  "memang tidak ada di dalam kurikulum.", "segera tarik napas panjang.",
-  "pastikan jiwa tetap sinkron.", "hanya terjadi di SMPN 5."
+const inPunchlines = [
+  "mari kita buat sejarah di kelas hari ini.", "pastikan jiwa dan raga sudah sinkron.", 
+  "hadapi murid dengan kesabaran tingkat tinggi.", "jangan lupa bahagia sebelum mengajar.", 
+  "siapkan amunisi ilmu pengetahuan Anda.", "semoga hari ini berjalan sesuai RPP.",
+  "tetap tenang, bel masuk segera berbunyi.", "ingat, Anda adalah pahlawan tanpa tanda jasa."
+];
+
+// FRAGMEN KHUSUS ABSEN PULANG (OUT)
+const outHooks = [
+  "Misi tuntas:", "Laporan akhir shift:", "Log out harian:", "Misi selesai:", 
+  "Evaluasi sore:", "Catatan penutup:", "Status terkini:", "Kabar terakhir:"
+];
+
+const outContexts = [
+  "baterai HP yang sudah masuk masa kritis", "tinta spidol yang habis berjuang di papan", 
+  "otak yang sudah minta mode hemat daya", "senyum lebar saat melihat gerbang sekolah", 
+  "bayangan bantal dan kasur yang melambai", "laptop yang mulai hangat seperti perasaan",
+  "bel pulang yang bunyinya paling merdu", "langit sore yang indah di atas sekolah"
+];
+
+const outPunchlines = [
+  "saatnya lupakan rumus matematika sejenak.", "rehat dulu, besok kita tempur lagi.", 
+  "hadiahi diri sendiri dengan makan malam enak.", "biarkan RPP beristirahat di dalam tas.", 
+  "selamat menikmati waktu bersama keluarga.", "tugas negara selesai, saatnya tugas rumah tangga.",
+  "pastikan tidak ada barang tertinggal di laci.", "pulanglah dengan hati yang gembira."
 ];
 
 const fallbackQuotes = [
-  "Tetap tenang, printer mogok adalah cara alam menyuruh kita istirahat sejenak.",
-  "WiFi sekolah mungkin lambat, tapi semangat mengajar kita harus tetap 4G.",
-  "Absen sudah sukses, sisa hari ini tinggal menghadapi kenyataan dan tumpukan koreksian.",
-  "Ingat, bel pulang adalah musik paling merdu yang pernah diciptakan manusia."
+  "Tetap tenang, hari ini adalah petualangan baru di SMPN 5.",
+  "Absen sukses, sisa hari ini tinggal jalani dengan senyuman.",
+  "Ingat, pendidikan adalah seni yang membutuhkan energi positif.",
+  "Selamat beristirahat, kumpulkan tenaga untuk hari esok."
 ];
 
 export async function generateQuote(input: QuoteInput): Promise<QuoteOutput> {
@@ -89,27 +94,32 @@ const generateQuoteFlow = ai.defineFlow(
   },
   async (input) => {
     const fullSeed = `${input.userId}|${input.date}|${input.day}|${input.attendanceType}|${input.creativeSeed}`;
+    const hash = getHash(fullSeed);
+
+    const isEntry = input.attendanceType === 'in';
     
-    const hookHash = getHash(fullSeed + "|hook-salt");
-    const contextHash = getHash(fullSeed + "|context-salt");
-    const punchHash = getHash(fullSeed + "|punch-salt");
-    
-    const selectedHook = hooks[hookHash % hooks.length];
-    const selectedContext = contexts[contextHash % contexts.length];
-    const selectedPunchline = punchlines[punchHash % punchlines.length];
-    const selectedFallback = fallbackQuotes[hookHash % fallbackQuotes.length];
+    const hooks = isEntry ? inHooks : outHooks;
+    const contexts = isEntry ? inContexts : outContexts;
+    const punchlines = isEntry ? inPunchlines : outPunchlines;
+
+    const selectedHook = hooks[hash % hooks.length];
+    const selectedContext = contexts[(hash >> 2) % contexts.length];
+    const selectedPunchline = punchlines[(hash >> 4) % punchlines.length];
+    const selectedFallback = fallbackQuotes[hash % fallbackQuotes.length];
 
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-1.5-flash',
         config: {
-          temperature: 1.1,
-          maxOutputTokens: 100,
+          temperature: 1.2,
+          maxOutputTokens: 120,
         },
-        system: `Anda adalah perangkai kata yang humoris di SMPN 5 Langke Rembong.
+        system: `Anda adalah perangkai kata yang humoris dan bijak di SMPN 5 Langke Rembong.
 TUGAS: 
-Gabungkan tiga fragmen narasi berikut menjadi SATU kalimat pendek yang lucu, mengalir alami, dan santai. 
-JANGAN membuat pantun. JANGAN menggunakan baris baru (newline). Cukup satu baris kalimat saja.
+Gabungkan tiga fragmen narasi berikut menjadi SATU kalimat pendek yang lucu dan santai sesuai jenis absen. 
+PENTING: Kalimat harus terasa natural dan mengalir.
+
+KONTEKS ABSEN: ${isEntry ? 'MASUK SEKOLAH (PAGI)' : 'PULANG SEKOLAH (SORE)'}.
 
 FRAGMEN WAJIB:
 1. Hook: "${selectedHook}"
@@ -117,11 +127,11 @@ FRAGMEN WAJIB:
 3. Punchline: "${selectedPunchline}"
 
 ATURAN:
-1. Maksimal 20 kata.
+1. Maksimal 22 kata.
 2. JANGAN gunakan emoji.
-3. JANGAN gunakan kata: "Semangat", "Masa Depan", "Sukses".
-4. Masukkan nama "AI E-SPENLI" pada kolom author.`,
-        prompt: `Rangkai fragmen ini menjadi satu kalimat lucu untuk ${input.userName} (${input.role}): [${selectedHook}] [${selectedContext}] [${selectedPunchline}].`,
+3. JANGAN buat pantun. Cukup satu baris kalimat.
+4. Sesuaikan nada bicara untuk ${input.userName} dengan peran ${input.role}.`,
+        prompt: `Buat kalimat lucu untuk ABSEN ${isEntry ? 'MASUK' : 'PULANG'} menggunakan fragmen: [${selectedHook}] [${selectedContext}] [${selectedPunchline}].`,
         output: { schema: QuoteOutputSchema },
       });
 
