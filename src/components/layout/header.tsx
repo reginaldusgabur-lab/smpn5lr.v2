@@ -65,7 +65,6 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const currentPhoto = userData?.photoURL || user?.photoURL;
   const isProfileLoading = isUserLoading || isUserDataLoading;
 
-  // REFACTORED: Use sticky instead of fixed to align naturally with parent content area
   const headerClasses = cn(
     "sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b bg-background/95 backdrop-blur-md px-4 sm:px-6 transition-all duration-300",
     isTransparent ? "opacity-0 pointer-events-none" : "opacity-100"
@@ -74,7 +73,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
   return (
     <header className={headerClasses}>
       {/* Left: User Profile Dropdown */}
-      <div className="flex items-center gap-3 min-w-0 max-w-[65%]">
+      <div className="flex items-center gap-3 min-w-0 max-w-[70%]">
         {isProfileLoading && !displayName ? (
             <div className="flex items-center gap-3">
                 <Skeleton className="h-9 w-9 rounded-full shrink-0" />
@@ -92,8 +91,11 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                             <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{getInitials(displayName)}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col justify-center text-left min-w-0 overflow-hidden pr-2">
-                            <p className="text-sm font-bold leading-none tracking-tight truncate">{displayName || 'Pengguna'}</p>
-                            <p className="text-[10px] tracking-widest leading-none text-muted-foreground mt-1.5 font-bold uppercase opacity-60 truncate">{displayRole || 'User'}</p>
+                            <p className="text-sm font-bold leading-none tracking-tight truncate pr-1">{displayName || 'Pengguna'}</p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                                <p className="text-[10px] tracking-widest leading-none text-muted-foreground font-bold uppercase opacity-60 truncate">{displayRole || 'User'}</p>
+                                <NetworkStatusDot />
+                            </div>
                         </div>
                     </button>
                 </DropdownMenuTrigger>
@@ -131,7 +133,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                     <DropdownMenuItem 
                         onClick={handleLogout} 
                         className="rounded-xl cursor-pointer py-3 px-4 text-destructive focus:bg-destructive/5 focus:text-destructive group"
-                    >
+                    ) : (
                         <Power className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" />
                         <span className="text-sm font-bold uppercase tracking-wider">Keluar</span>
                     </DropdownMenuItem>
@@ -143,7 +145,6 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
       {/* Right: Actions & Logo */}
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         <ModeToggle />
-        <NetworkStatusDot />
         <button onClick={() => router.push('/dashboard/bantuan')} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full transition-transform active:scale-95">
           <Image
             src="/logo-3d.png"
