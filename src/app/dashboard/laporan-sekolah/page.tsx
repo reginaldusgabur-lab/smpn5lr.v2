@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
 import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth } from 'date-fns';
-import { id as indonesiaLocale } from 'date-fns/locale';
+import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer, FileText, RefreshCw } from 'lucide-react';
@@ -45,6 +45,15 @@ interface ReportRowData {
 }
 
 const minDate = new Date(2026, 0, 1);
+
+const safeFormat = (dateInput: any, formatString: string): string => {
+    if (!dateInput) return '-';
+    let date: Date;
+    if (typeof dateInput === 'string') date = parseISO(dateInput);
+    else if (dateInput.toDate) date = dateInput.toDate();
+    else date = new Date(dateInput);
+    return isValid(date) ? format(date, formatString, { locale: id }) : '-';
+};
 
 export default function SchoolReportPage() {
     const { user, isUserLoading } = useUser();
@@ -104,7 +113,7 @@ export default function SchoolReportPage() {
 
             const [attSnap, attFallbackSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
-                getDocs(attendanceFallbackSnap), 
+                getDocs(attendanceFallbackQuery), 
                 getDocs(leaveQuery)
             ]);
 
@@ -343,7 +352,7 @@ export default function SchoolReportPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-sm text-primary capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                    <span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
@@ -410,7 +419,7 @@ export default function SchoolReportPage() {
                                                     {item.totalAlpa}
                                                 </TableCell>
                                                 <TableCell className="text-center font-black text-primary">
-                                                    {item.presentasi}
+                                                    {item.persentase}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>
