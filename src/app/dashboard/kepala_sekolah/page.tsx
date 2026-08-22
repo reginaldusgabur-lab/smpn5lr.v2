@@ -294,8 +294,8 @@ export default function KepalaSekolahDashboardPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang</p>
-        <h1 className="text-2xl font-black tracking-tighter text-foreground leading-tight">E-SPENLI Cloud System</h1>
+        <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
+        <h1 className="text-2xl font-black tracking-tighter text-foreground leading-tight">Sistem E-SPENLI</h1>
         <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">Akses pemantauan kinerja dan kehadiran personil satuan pendidikan.</p>
       </div>
 

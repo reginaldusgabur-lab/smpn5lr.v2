@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -312,8 +311,8 @@ export default function PegawaiDashboardPage() {
   return (
     <div className="space-y-6">
        <div className="space-y-1 px-1">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Selamat Datang</h1>
-            <p className="text-lg text-muted-foreground">{userData?.name || 'Pengguna'}</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
+            <h1 className="text-2xl font-black tracking-tighter text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
             <p className="text-muted-foreground !mt-2">Ini adalah ringkasan kehadiran dan aktivitas Anda hari ini.</p>
         </div>
 
