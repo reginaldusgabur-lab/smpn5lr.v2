@@ -65,17 +65,18 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const currentPhoto = userData?.photoURL || user?.photoURL;
   const isProfileLoading = isUserLoading || isUserDataLoading;
 
+  // REFACTORED: Use sticky instead of fixed to align naturally with parent content area
   const headerClasses = cn(
-    "fixed top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background px-3 sm:px-6 transition-all duration-300",
-    "sm:left-[16rem] sm:w-[calc(100%-16rem)]",
+    "sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b bg-background/95 backdrop-blur-md px-4 sm:px-6 transition-all duration-300",
     isTransparent ? "opacity-0 pointer-events-none" : "opacity-100"
   );
 
   return (
     <header className={headerClasses}>
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      {/* Left: User Profile Dropdown */}
+      <div className="flex items-center gap-3 min-w-0 max-w-[65%]">
         {isProfileLoading && !displayName ? (
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-3">
                 <Skeleton className="h-9 w-9 rounded-full shrink-0" />
                 <div className="hidden sm:flex flex-col gap-1">
                     <Skeleton className="h-4 w-24" />
@@ -85,12 +86,12 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
         ) : (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 sm:gap-3 focus:outline-none rounded-full p-1 -ml-1 sm:p-0 sm:ml-0 group min-w-0 max-w-[200px] sm:max-w-none">
-                        <Avatar className="h-9 w-9 border border-primary/10 shadow-sm transition-transform group-active:scale-95 shrink-0">
-                            <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" />
+                    <button className="flex items-center gap-3 focus:outline-none rounded-full p-0.5 group min-w-0 overflow-hidden">
+                        <Avatar className="h-9 w-9 border border-primary/10 shadow-sm shrink-0 transition-transform group-active:scale-95">
+                            <AvatarImage src={currentPhoto ?? undefined} alt="Avatar" className="object-cover" />
                             <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{getInitials(displayName)}</AvatarFallback>
                         </Avatar>
-                        <div className="hidden sm:flex flex-col justify-center text-left min-w-0 overflow-hidden">
+                        <div className="flex flex-col justify-center text-left min-w-0 overflow-hidden">
                             <p className="text-sm font-bold leading-none tracking-tight truncate">{displayName || 'Pengguna'}</p>
                             <p className="text-[10px] tracking-widest leading-none text-muted-foreground mt-1.5 font-bold uppercase opacity-60 truncate">{displayRole || 'User'}</p>
                         </div>
@@ -137,12 +138,11 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                 </DropdownMenuContent>
             </DropdownMenu>
         )}
-        <div className="shrink-0">
-          <ModeToggle />
-        </div>
       </div>
 
+      {/* Right: Actions & Logo */}
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        <ModeToggle />
         <NetworkStatusDot />
         <button onClick={() => router.push('/dashboard/bantuan')} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full transition-transform active:scale-95">
           <Image
