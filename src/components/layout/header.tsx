@@ -133,7 +133,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
                     <DropdownMenuItem 
                         onClick={handleLogout} 
                         className="rounded-xl cursor-pointer py-3 px-4 text-destructive focus:bg-destructive/5 focus:text-destructive group"
-                    ) : (
+                    >
                         <Power className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" />
                         <span className="text-sm font-bold uppercase tracking-wider">Keluar</span>
                     </DropdownMenuItem>
