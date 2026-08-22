@@ -122,12 +122,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-white text-foreground">
+    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-background text-foreground">
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-xl bg-white border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden">
+        <Card className="w-full max-w-xl bg-card border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden transition-all duration-300">
           <CardHeader className="text-center space-y-2 pt-6 pb-4">
             <div className="flex justify-center mb-2">
-              <div className="relative w-24 h-24">
+              <div className="relative w-24 h-24 transition-all duration-500 hover:scale-105">
                 <Image
                   src="/logo-3d.png"
                   alt="Logo E-SPENLI"
@@ -156,7 +156,7 @@ export default function LoginPage() {
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-white transition-all font-normal shadow-none"
+                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-normal shadow-none"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -183,7 +183,7 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-white transition-all font-normal shadow-none"
+                              className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-normal shadow-none"
                             />
                           </FormControl>
                           <Button
@@ -194,6 +194,7 @@ export default function LoginPage() {
                             onClick={() => setShowLoginPass(!showLoginPass)}
                           >
                             {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            <span className="sr-only">Tampilkan kata sandi</span>
                           </Button>
                         </div>
                         <FormMessage className="text-[10px] font-bold" />
@@ -213,7 +214,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <DialogContent className="rounded-xl border-none p-10 shadow-md max-w-xl bg-white">
+        <DialogContent className="rounded-xl border-none p-10 shadow-md max-w-xl">
           <DialogHeader>
             <DialogTitle className="font-bold text-2xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
             <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">
@@ -234,7 +235,7 @@ export default function LoginPage() {
                           id="reset-email" 
                           placeholder="email@anda.com" 
                           {...field} 
-                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-white shadow-none font-normal"
+                          className="h-12 rounded-xl bg-muted/30 border-muted-foreground/5 focus:bg-background shadow-none font-normal"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
