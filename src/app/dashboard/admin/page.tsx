@@ -227,10 +227,10 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Selamat Datang</h1>
-          <p className="text-lg text-muted-foreground">{userData?.name || 'Admin'}</p>
-          <p className="text-muted-foreground !mt-2">Ini adalah ringkasan data dan statistik sekolah.</p>
+      <div className="space-y-0.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Administrator Console</p>
+          <h1 className="text-3xl font-black tracking-tighter text-foreground mt-1 leading-tight">Selamat Datang</h1>
+          <p className="text-xs font-bold text-muted-foreground mt-2">Pusat kendali operasional dan ringkasan statistik sekolah.</p>
       </div>
       
        <div className="grid gap-6">

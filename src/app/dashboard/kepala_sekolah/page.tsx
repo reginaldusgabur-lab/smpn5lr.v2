@@ -293,10 +293,10 @@ export default function KepalaSekolahDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Selamat Datang</h1>
-        <p className="text-lg text-muted-foreground">{userData?.name || 'Kepala Sekolah'}</p>
-        <p className="text-muted-foreground !mt-2">Ini adalah dasbor pribadi dan ringkasan pemantauan Anda.</p>
+      <div className="space-y-0.5">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Executive Dashboard</p>
+        <h1 className="text-3xl font-black tracking-tighter text-foreground mt-1 leading-tight">Selamat Datang</h1>
+        <p className="text-xs font-bold text-muted-foreground mt-2">Akses pemantauan kinerja dan kehadiran personil satuan pendidikan.</p>
       </div>
 
       {isHoliday && (
@@ -336,7 +336,7 @@ export default function KepalaSekolahDashboardPage() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 w-full max-w-sm mx-auto pt-4">
+                    <div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4">
                         <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
                             <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
                             <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">

@@ -270,11 +270,11 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-4 pb-10 flex flex-col items-stretch">
-        <div className="w-full px-0 space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">Selamat datang</p>
-            <h1 className="text-xl font-bold tracking-tight text-foreground mt-0.5 leading-tight">{user?.name || 'Pengguna'}</h1>
-            <p className="text-sm font-normal text-muted-foreground mt-1">
-                {isAdmin ? 'Pantau aktivitas kehadiran hari ini.' : 'Lakukan absensi dan lihat riwayat kehadiran Anda.'}
+        <div className="w-full px-0 space-y-0.5 mb-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">E-SPENLI Cloud System</p>
+            <h1 className="text-2xl font-black tracking-tighter text-foreground mt-1 leading-tight">Selamat Datang</h1>
+            <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">
+                {isAdmin ? 'Sistem monitoring kehadiran personil secara real-time.' : 'Portal layanan absensi digital mandiri SMPN 5 Langke Rembong.'}
             </p>
         </div>
 
@@ -300,7 +300,7 @@ export default function DashboardPage() {
                 <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
                     <CardContent className="p-8 space-y-6 pt-10 text-center">
                         <LiveClockUI />
-                        <div className="grid grid-cols-2 gap-4 w-full max-w-sm mx-auto pt-4">
+                        <div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4">
                             <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
                                 <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
                                 <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
@@ -314,7 +314,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                             <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
-                                <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
+                                <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
                                 <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-blue-500/20 shrink-0 relative z-10">
                                     <LogOut className="h-4 w-4" />
                                 </div>
