@@ -11,11 +11,15 @@ export const metadata: Metadata = {
   description: 'Aplikasi Absensi Digital untuk SMPN 5 Langke Rembong',
   manifest: '/manifest.json',
   applicationName: 'E-SPENLI',
-  // Menghapus appleWebApp icons untuk diagnosa pendobelan logo
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-capable': 'yes',
-  }
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'E-SPENLI',
+  },
+  icons: {
+    icon: '/logo-3d.png',
+    apple: '/logo-3d.png',
+  },
 };
 
 export const viewport: Viewport = {
@@ -39,8 +43,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased bg-white text-foreground" style={{ colorScheme: 'light' }} suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+      <body className="font-body antialiased" suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={true} disableTransitionOnChange>
           <FirebaseClientProvider>
             {children}
           </FirebaseClientProvider>
