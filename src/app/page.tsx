@@ -147,19 +147,19 @@ export default function LoginPage() {
         <Card className="w-full max-w-md bg-card/80 backdrop-blur-md border border-muted-foreground/10 shadow-2xl rounded-[2rem] overflow-hidden transition-all duration-300 relative z-10">
           <CardHeader className="text-center space-y-2 pt-10 pb-4">
             <div className="flex justify-center mb-4">
-              <div className="relative w-24 h-24 transition-all duration-500 hover:scale-105">
+              <div className="relative w-32 h-32 transition-all duration-500 hover:scale-105">
                 <Image
                   src="/logo-3d.png"
                   alt="Logo E-SPENLI"
                   fill
-                  sizes="96px"
+                  sizes="128px"
                   className="object-contain"
                   priority
                 />
               </div>
             </div>
-            <CardTitle className="text-5xl font-black tracking-tighter text-primary">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/80 text-xs tracking-[0.2em] px-2 uppercase">
+            <CardTitle className="text-4xl font-black tracking-tighter text-primary">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/80 text-sm px-2">
               Aplikasi absensi digital
             </CardDescription>
           </CardHeader>
@@ -171,7 +171,7 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <Label className="text-[10px] font-black tracking-widest text-muted-foreground ml-1 uppercase">Alamat email</Label>
+                      <Label className="text-sm font-bold text-muted-foreground ml-1">Alamat email</Label>
                       <FormControl>
                         <Input 
                           placeholder="nama@email.com" 
@@ -185,9 +185,9 @@ export default function LoginPage() {
                 />
                 <div className="space-y-2">
                   <div className="flex items-center justify-between mb-1">
-                    <Label htmlFor="password" className="text-[10px] font-black tracking-widest text-muted-foreground ml-1 uppercase">Kata sandi</Label>
+                    <Label htmlFor="password" className="text-sm font-bold text-muted-foreground ml-1">Kata sandi</Label>
                     <DialogTrigger asChild>
-                      <button type="button" className="text-[10px] font-black text-primary hover:opacity-70 transition-opacity tracking-widest uppercase">
+                      <button type="button" className="text-sm font-bold text-primary hover:opacity-70 transition-opacity">
                         Lupa sandi?
                       </button>
                     </DialogTrigger>
@@ -224,7 +224,7 @@ export default function LoginPage() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-16 text-sm font-black rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-6 tracking-[0.2em] uppercase" 
+                  className="w-full h-16 text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-6" 
                   disabled={isLoginLoading}
                 >
                   {isLoginLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Masuk sekarang"}
