@@ -122,9 +122,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground">
+    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
+      {/* Background Watermark Pohon - Eksklusif Halaman Login */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.15] dark:opacity-[0.2]">
+        <div className="absolute -right-20 -bottom-20 rotate-12 scale-150">
+          <svg width="600" height="600" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+            <path d="M24 44V34" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M24 34C24 34 38 32 38 24C38 16 24 14 24 14C24 14 10 16 10 24C10 32 24 34 24 34Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M24 24C24 24 34 22 34 16C34 10 24 8 24 8C24 8 14 10 14 16C14 22 24 24 24 24Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M24 14C24 14 30 12 30 8C30 4 24 2 24 2C24 2 18 4 18 8C18 12 24 14 24 14Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <div className="absolute -left-20 -top-20 -rotate-12 scale-125">
+          <svg width="500" height="500" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+            <path d="M24 44V34" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M24 34C24 34 38 32 38 24C38 16 24 14 24 14C24 14 10 16 10 24C10 32 24 34 24 34Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M24 24C24 24 34 22 34 16C34 10 24 8 24 8C24 8 14 10 14 16C14 22 24 24 24 24Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M24 14C24 14 30 12 30 8C30 4 24 2 24 2C24 2 18 4 18 8C18 12 24 14 24 14Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-2xl bg-card border border-muted-foreground/10 shadow-2xl rounded-[2rem] overflow-hidden transition-all duration-300">
+        <Card className="w-full max-w-md bg-card/80 backdrop-blur-md border border-muted-foreground/10 shadow-2xl rounded-[2rem] overflow-hidden transition-all duration-300 relative z-10">
           <CardHeader className="text-center space-y-2 pt-10 pb-4">
             <div className="flex justify-center mb-4">
               <div className="relative w-24 h-24 transition-all duration-500 hover:scale-105">
@@ -256,7 +276,7 @@ export default function LoginPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      <footer className="mt-12 text-center flex flex-col items-center gap-1.5 opacity-60">
+      <footer className="mt-12 text-center flex flex-col items-center gap-1.5 opacity-60 relative z-10">
         <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">
           SMP NEGERI 5 LANGKE REMBONG
         </p>
