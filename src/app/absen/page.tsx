@@ -32,6 +32,41 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
     navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
 
+/**
+ * Menghasilkan bunyi "ting" menggunakan Web Audio API dan memicu getaran.
+ */
+const playSuccessFeedback = () => {
+    try {
+        // Bunyi Getar (Mobile)
+        if ('vibrate' in navigator) {
+            navigator.vibrate(200);
+        }
+
+        // Bunyi "Ting" (Synthesized)
+        const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+            const context = new AudioContextClass();
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, context.currentTime); // Nada A5
+            oscillator.frequency.exponentialRampToValueAtTime(440, context.currentTime + 0.5);
+
+            gain.gain.setValueAtTime(0.1, context.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+
+            oscillator.start();
+            oscillator.stop(context.currentTime + 0.5);
+        }
+    } catch (e) {
+        console.warn("Feedback audio/vibration failed", e);
+    }
+};
+
 type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'success_out' | 'error_radius' | 'error_time' | 'error_checkin_closed' | 'error_already_in' | 'error_already_out' | 'error_generic' | 'error_location' | 'info_holiday' | 'info_checked_out' | 'info_no_camera' | 'info_disabled' | 'info_leave';
 
 export default function AbsenPage() {
@@ -136,6 +171,7 @@ export default function AbsenPage() {
                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
             }
             invalidateCache();
+            playSuccessFeedback();
             setStatus('success_in');
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
@@ -145,6 +181,7 @@ export default function AbsenPage() {
                 await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
             }
             invalidateCache();
+            playSuccessFeedback();
             setStatus('success_out');
         }
     } catch (error) {
