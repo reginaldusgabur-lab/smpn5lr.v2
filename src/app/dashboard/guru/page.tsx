@@ -313,7 +313,7 @@ export default function GuruDashboardPage() {
        <div className="space-y-1 px-1">
             <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
             <h1 className="text-2xl font-black tracking-tighter text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
-            <p className="text-muted-foreground !mt-2">Ini adalah ringkasan kehadiran dan aktivitas Anda hari ini.</p>
+            <p className="text-muted-foreground !mt-2">Absensi digital mandiri SMPN 5 Langke Rembong.</p>
         </div>
 
         {pendingLeaveRequests && pendingLeaveRequests.length > 0 && (
