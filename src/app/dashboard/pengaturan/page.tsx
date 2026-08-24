@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button'
@@ -22,9 +23,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -113,6 +114,11 @@ export default function PengaturanPage() {
   const [isNotificationActive, setIsNotificationActive] = useState(false);
   const [notificationInterval, setNotificationInterval] = useState(3);
 
+  // Audio State
+  const [isAudioSaving, setIsAudioSaving] = useState(false);
+  const [successSoundBase64, setSuccessSoundBase64] = useState<string | null>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
@@ -147,6 +153,7 @@ export default function PengaturanPage() {
       notificationContent?: string;
       isNotificationActive?: boolean;
       notificationInterval?: number;
+      successSoundUrl?: string;
   }>(user, schoolConfigRef);
 
   useEffect(() => {
@@ -174,6 +181,7 @@ export default function PengaturanPage() {
       setNotificationContent(schoolConfigData.notificationContent ?? '');
       setIsNotificationActive(schoolConfigData.isNotificationActive ?? false);
       setNotificationInterval(schoolConfigData.notificationInterval ?? 3);
+      setSuccessSoundBase64(schoolConfigData.successSoundUrl ?? null);
     }
   }, [schoolConfigData]);
 
@@ -187,6 +195,30 @@ export default function PengaturanPage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          if (file.size > 1024 * 1024) { // Limit to 1MB for base64 storage
+              toast({ variant: 'destructive', title: 'File terlalu besar', description: 'Ukuran audio maksimal adalah 1MB.' });
+              return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => {
+              setSuccessSoundBase64(reader.result as string);
+              toast({ title: 'Audio siap', description: 'File audio telah dimuat. Klik simpan untuk menerapkan.' });
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const playTestAudio = () => {
+      if (!successSoundBase64) return;
+      const audio = new Audio(successSoundBase64);
+      audio.play().catch(e => {
+          toast({ variant: 'destructive', title: 'Gagal memutar', description: 'Pastikan format file didukung.' });
+      });
   };
 
   const onCropComplete = useCallback((_area: Area, pixels: Area) => {
@@ -297,6 +329,16 @@ export default function PengaturanPage() {
     setIsNotificationSaving(false);
   };
 
+  const handleAudioSettingsSave = () => {
+      if (!schoolConfigRef) return;
+      setIsAudioSaving(true);
+      updateDocumentNonBlocking(schoolConfigRef, {
+          successSoundUrl: successSoundBase64
+      });
+      toast({ title: 'Nada Diperbarui', description: 'Nada konfirmasi keberhasilan absen telah disimpan.' });
+      setIsAudioSaving(false);
+  };
+
   const getInitials = (n: string | null) => n ? n.split(' ').map(x => x[0]).join('').substring(0, 2).toUpperCase() : 'U';
   const currentPhoto = photoPreview || userData?.photoURL;
   const isTeacherOrStaff = ['guru', 'pegawai', 'kepala_sekolah'].includes(userData?.role || '');
@@ -349,7 +391,7 @@ export default function PengaturanPage() {
                   </div>
                   {isTeacherOrStaff && (
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP</Label>
+                        <Label className="text-[10px) font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP</Label>
                         <Input className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" value={nip} onChange={(e) => setNip(e.target.value)} />
                     </div>
                   )}
@@ -446,10 +488,38 @@ export default function PengaturanPage() {
                         <Textarea placeholder="Tuliskan isi pesan atau kutipan motivasi di sini..." value={notificationContent} onChange={e => setNotificationContent(e.target.value)} className="rounded-xl bg-muted/30 shadow-none min-h-[100px] font-medium" />
                       </div>
                   </div>
+
+                  <div className="pt-8 border-t mt-6">
+                      <div className="flex items-center gap-3 mb-6">
+                          <Volume2 className="h-5 w-5 text-primary" />
+                          <div>
+                              <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
+                              <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom yang akan diputar saat absensi berhasil (Maks 1MB).</p>
+                          </div>
+                      </div>
+                      <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-2xl border border-muted-foreground/10">
+                          <div className="flex-1 space-y-1.5">
+                              <Label htmlFor="audio-upload" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Pilih File Suara</Label>
+                              <Input 
+                                  id="audio-upload" 
+                                  type="file" 
+                                  accept="audio/mp3,audio/wav,audio/ogg" 
+                                  className="h-11 rounded-xl bg-background border-muted-foreground/10 shadow-none cursor-pointer file:font-bold file:text-xs" 
+                                  onChange={handleAudioFileChange}
+                              />
+                          </div>
+                          {successSoundBase64 && (
+                              <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-xl shadow-none shrink-0" onClick={playTestAudio}>
+                                  <Play className="h-4 w-4 fill-primary text-primary" />
+                              </Button>
+                          )}
+                      </div>
+                  </div>
               </CardContent>
-              <CardFooter className="border-t px-6 py-5 bg-muted/5 gap-3">
+              <CardFooter className="border-t px-6 py-5 bg-muted/5 flex flex-wrap gap-3">
                   <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-6 shadow-none">SIMPAN DATA PDF</Button>
                   <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN</Button>
+                  <Button onClick={handleAudioSettingsSave} disabled={isAudioSaving} variant="secondary" className="font-bold rounded-xl h-11 px-6 shadow-none bg-primary/10 text-primary hover:bg-primary/20">SIMPAN NADA</Button>
               </CardFooter>
           </Card>
         )}
