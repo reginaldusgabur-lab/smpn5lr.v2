@@ -34,7 +34,7 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
 
 /**
  * Menghasilkan bunyi "ting" menggunakan Web Audio API dan memicu getaran.
- * Diperbarui untuk kompatibilitas mobile (AudioContext Resume).
+ * Diperbarui untuk kepatuhan PWA dan Chrome Mobile (Force Resume).
  */
 const playSuccessFeedback = async () => {
     try {
@@ -43,13 +43,13 @@ const playSuccessFeedback = async () => {
             navigator.vibrate(200);
         }
 
-        // 2. Bunyi "Ting"
+        // 2. Bunyi "Ting" menggunakan AudioContext
         const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
         if (!AudioContextClass) return;
 
         const context = new AudioContextClass();
         
-        // Browser memerlukan 'resume' setelah interaksi atau sebelum play
+        // PENTING: Browser memerlukan resume eksplisit sesaat sebelum memutar suara
         if (context.state === 'suspended') {
             await context.resume();
         }
@@ -58,19 +58,22 @@ const playSuccessFeedback = async () => {
         const gain = context.createGain();
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1000, context.currentTime); // Nada lebih tinggi agar jelas
-        oscillator.frequency.exponentialRampToValueAtTime(500, context.currentTime + 0.3);
+        oscillator.frequency.setValueAtTime(880, context.currentTime); // Nada A5 (Ting yang jernih)
+        oscillator.frequency.exponentialRampToValueAtTime(440, context.currentTime + 0.4);
 
-        gain.gain.setValueAtTime(0.2, context.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.15, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.4);
 
         oscillator.connect(gain);
         gain.connect(context.destination);
 
         oscillator.start();
-        oscillator.stop(context.currentTime + 0.3);
+        oscillator.stop(context.currentTime + 0.4);
+        
+        // Tutup context setelah selesai untuk menghemat memori
+        setTimeout(() => context.close(), 500);
     } catch (e) {
-        console.warn("Feedback audio/vibration failed", e);
+        console.warn("Umpan balik suara/getar gagal:", e);
     }
 };
 
