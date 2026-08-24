@@ -22,16 +22,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { invalidateCache } from '@/lib/cache';
 import Cropper, { Area, Point } from 'react-easy-crop';
+import { cn } from '@/lib/utils';
 
 /**
  * Helper to process image cropping and compression on a canvas.
@@ -46,7 +57,6 @@ const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string>
 
     if (!ctx) return '';
 
-    // Set resolution to 800x800 for consistent quality and size
     const targetSize = 800;
     canvas.width = targetSize;
     canvas.height = targetSize;
@@ -63,7 +73,6 @@ const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string>
         targetSize
     );
 
-    // Export as JPEG with 0.8 quality to ensure < 500KB size
     return canvas.toDataURL('image/jpeg', 0.8);
 };
 
@@ -73,14 +82,12 @@ export default function PengaturanPage() {
   const auth = useAuth();
   const { toast } = useToast();
   
-  // Password State
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-  // Profile State
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [name, setName] = useState('');
   const [nip, setNip] = useState('');
@@ -89,14 +96,12 @@ export default function PengaturanPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Cropper State
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isCroppingModalOpen, setIsCroppingModalOpen] = useState(false);
 
-  // Admin Config State
   const [isReportSaving, setIsReportSaving] = useState(false);
   const [governmentAgency, setGovernmentAgency] = useState('');
   const [educationAgency, setEducationAgency] = useState('');
@@ -114,9 +119,10 @@ export default function PengaturanPage() {
   const [isNotificationActive, setIsNotificationActive] = useState(false);
   const [notificationInterval, setNotificationInterval] = useState(3);
 
-  // Audio State
   const [isAudioSaving, setIsAudioSaving] = useState(false);
   const [successSoundBase64, setSuccessSoundBase64] = useState<string | null>(null);
+  const [successSoundName, setSuccessSoundName] = useState<string>('');
+  const [isAudioConfirmOpen, setIsAudioConfirmOpen] = useState(false);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
   const userDocRef = useMemoFirebase(() => {
@@ -154,6 +160,7 @@ export default function PengaturanPage() {
       isNotificationActive?: boolean;
       notificationInterval?: number;
       successSoundUrl?: string;
+      successSoundName?: string;
   }>(user, schoolConfigRef);
 
   useEffect(() => {
@@ -182,6 +189,7 @@ export default function PengaturanPage() {
       setIsNotificationActive(schoolConfigData.isNotificationActive ?? false);
       setNotificationInterval(schoolConfigData.notificationInterval ?? 3);
       setSuccessSoundBase64(schoolConfigData.successSoundUrl ?? null);
+      setSuccessSoundName(schoolConfigData.successSoundName ?? '');
     }
   }, [schoolConfigData]);
 
@@ -200,14 +208,15 @@ export default function PengaturanPage() {
   const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           const file = e.target.files[0];
-          if (file.size > 1024 * 1024) { // Limit to 1MB for base64 storage
+          if (file.size > 1024 * 1024) {
               toast({ variant: 'destructive', title: 'File terlalu besar', description: 'Ukuran audio maksimal adalah 1MB.' });
               return;
           }
           const reader = new FileReader();
           reader.onload = () => {
               setSuccessSoundBase64(reader.result as string);
-              toast({ title: 'Audio siap', description: 'File audio telah dimuat. Klik simpan untuk menerapkan.' });
+              setSuccessSoundName(file.name);
+              toast({ title: 'Audio dimuat', description: `File "${file.name}" siap disimpan.` });
           };
           reader.readAsDataURL(file);
       }
@@ -333,7 +342,8 @@ export default function PengaturanPage() {
       if (!schoolConfigRef) return;
       setIsAudioSaving(true);
       updateDocumentNonBlocking(schoolConfigRef, {
-          successSoundUrl: successSoundBase64
+          successSoundUrl: successSoundBase64,
+          successSoundName: successSoundName
       });
       toast({ title: 'Nada Diperbarui', description: 'Nada konfirmasi keberhasilan absen telah disimpan.' });
       setIsAudioSaving(false);
@@ -391,7 +401,7 @@ export default function PengaturanPage() {
                   </div>
                   {isTeacherOrStaff && (
                     <div className="space-y-2">
-                        <Label className="text-[10px) font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP</Label>
                         <Input className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" value={nip} onChange={(e) => setNip(e.target.value)} />
                     </div>
                   )}
@@ -490,29 +500,38 @@ export default function PengaturanPage() {
                   </div>
 
                   <div className="pt-8 border-t mt-6">
-                      <div className="flex items-center gap-3 mb-6">
+                      <div className="flex items-center gap-3 mb-4">
                           <Volume2 className="h-5 w-5 text-primary" />
                           <div>
                               <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
-                              <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom yang akan diputar saat absensi berhasil (Maks 1MB).</p>
+                              <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom (Maks 1MB).</p>
                           </div>
                       </div>
-                      <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-2xl border border-muted-foreground/10">
-                          <div className="flex-1 space-y-1.5">
-                              <Label htmlFor="audio-upload" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Pilih File Suara</Label>
-                              <Input 
-                                  id="audio-upload" 
-                                  type="file" 
-                                  accept="audio/mp3,audio/wav,audio/ogg" 
-                                  className="h-11 rounded-xl bg-background border-muted-foreground/10 shadow-none cursor-pointer file:font-bold file:text-xs" 
-                                  onChange={handleAudioFileChange}
-                              />
+                      <div className="flex flex-col gap-4 bg-muted/30 p-4 rounded-2xl border border-muted-foreground/10">
+                          <div className="flex items-center justify-between px-1">
+                              <div className="flex items-center gap-2">
+                                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nada Aktif:</span>
+                                  <span className="text-[10px] font-bold text-primary truncate max-w-[150px]">{successSoundName || 'Default (Tinggggg)'}</span>
+                              </div>
+                              <div className="flex gap-2">
+                                  {successSoundBase64 && (
+                                      <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg shadow-none flex items-center gap-2 font-bold text-[10px]" onClick={playTestAudio}>
+                                          <Play className="h-3 w-3 fill-primary text-primary" /> TEST
+                                      </Button>
+                                  )}
+                                  <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg shadow-none border-primary/20 hover:bg-primary/5 font-bold text-[10px] uppercase" onClick={() => successSoundBase64 ? setIsAudioConfirmOpen(true) : audioInputRef.current?.click()}>
+                                      Ganti nada
+                                  </Button>
+                              </div>
                           </div>
-                          {successSoundBase64 && (
-                              <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-xl shadow-none shrink-0" onClick={playTestAudio}>
-                                  <Play className="h-4 w-4 fill-primary text-primary" />
-                              </Button>
-                          )}
+                          <input 
+                              type="file" 
+                              ref={audioInputRef}
+                              accept="audio/mp3,audio/wav,audio/ogg" 
+                              className="hidden" 
+                              onChange={handleAudioFileChange}
+                          />
                       </div>
                   </div>
               </CardContent>
@@ -556,7 +575,26 @@ export default function PengaturanPage() {
         </Card>
       </div>
 
-      {/* MODAL PEMOTONG GAMBAR (1:1 Aspect Ratio) */}
+      <AlertDialog open={isAudioConfirmOpen} onOpenChange={setIsAudioConfirmOpen}>
+          <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
+              <AlertDialogHeader>
+                  <div className="flex items-center gap-3 text-amber-500 mb-2">
+                      <AlertTriangle className="h-6 w-6" />
+                      <AlertDialogTitle className="text-xl font-bold">Ganti nada konfirmasi?</AlertDialogTitle>
+                  </div>
+                  <AlertDialogDescription className="text-sm font-medium">
+                      Anda akan mengganti nada absensi yang sudah tersimpan sebelumnya. Apakah Anda yakin ingin memilih file audio baru?
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-4 gap-2">
+                  <AlertDialogCancel className="h-11 rounded-xl font-bold border-muted-foreground/10 shadow-none">Batal</AlertDialogCancel>
+                  <AlertDialogAction className="h-11 rounded-xl font-bold bg-primary hover:bg-primary/90 shadow-none" onClick={() => { setIsAudioConfirmOpen(false); audioInputRef.current?.click(); }}>
+                      Ya, Pilih File Baru
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={isCroppingModalOpen} onOpenChange={setIsCroppingModalOpen}>
           <DialogContent className="max-w-2xl rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
               <DialogHeader className="p-6 bg-primary text-white">
