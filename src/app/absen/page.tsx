@@ -33,23 +33,21 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
   });
 
 /**
- * Menghasilkan bunyi "ting" menggunakan Web Audio API dan memicu getaran.
- * Diperbarui untuk kepatuhan PWA dan Chrome Mobile (Force Resume).
+ * Menghasilkan bunyi "tinggggg" yang nyaring dan ceria (seperti notif Facebook)
+ * serta memicu getaran ganda pada perangkat mobile.
  */
 const playSuccessFeedback = async () => {
     try {
-        // 1. Getar (Hanya Android/Chrome)
+        // 1. Getar Ganda (Hanya Android/Chrome) - Lebih terasa mantap
         if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-            navigator.vibrate(200);
+            navigator.vibrate([100, 50, 100]); 
         }
 
-        // 2. Bunyi "Ting" menggunakan AudioContext
+        // 2. Bunyi "Tinggggg" menggunakan AudioContext
         const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
         if (!AudioContextClass) return;
 
         const context = new AudioContextClass();
-        
-        // PENTING: Browser memerlukan resume eksplisit sesaat sebelum memutar suara
         if (context.state === 'suspended') {
             await context.resume();
         }
@@ -57,23 +55,26 @@ const playSuccessFeedback = async () => {
         const oscillator = context.createOscillator();
         const gain = context.createGain();
 
+        // Menggunakan nada tinggi yang jernih (Sekitar 1800Hz)
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, context.currentTime); // Nada A5 (Ting yang jernih)
-        oscillator.frequency.exponentialRampToValueAtTime(440, context.currentTime + 0.4);
+        oscillator.frequency.setValueAtTime(1800, context.currentTime); 
+        oscillator.frequency.exponentialRampToValueAtTime(1200, context.currentTime + 0.6);
 
-        gain.gain.setValueAtTime(0.15, context.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.4);
+        // Amplop volume: Tajam di awal, gema di akhir (Tinggggg)
+        gain.gain.setValueAtTime(0, context.currentTime);
+        gain.gain.linearRampToValueAtTime(0.3, context.currentTime + 0.01); 
+        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.8);
 
         oscillator.connect(gain);
         gain.connect(context.destination);
 
         oscillator.start();
-        oscillator.stop(context.currentTime + 0.4);
+        oscillator.stop(context.currentTime + 0.8);
         
-        // Tutup context setelah selesai untuk menghemat memori
-        setTimeout(() => context.close(), 500);
+        // Membersihkan context
+        setTimeout(() => context.close(), 1000);
     } catch (e) {
-        console.warn("Umpan balik suara/getar gagal:", e);
+        console.warn("Feedback audio/vibration failed", e);
     }
 };
 
