@@ -246,17 +246,8 @@ export default function PegawaiDashboardPage() {
       if (checkOutTime < earlyTime) isEarly = true;
     }
 
-    let buttonAction;
-    if (checkInTime && !checkOutTime) {
-      buttonAction = <Button asChild size="lg" className="w-full"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
-    } else if (!checkInTime) {
-      buttonAction = <Button asChild size="lg" className="w-full"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
-    } else {
-       buttonAction = <Button disabled size="lg" className="w-full">Absensi Selesai</Button>;
-    }
-
     return (
-        CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
+        <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
           <LiveClock />
           <div className="grid grid-cols-2 gap-4 text-center w-full max-sm pt-4">
             <div className="rounded-lg border bg-card p-4">

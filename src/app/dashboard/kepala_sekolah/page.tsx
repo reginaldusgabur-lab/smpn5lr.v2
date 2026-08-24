@@ -181,7 +181,7 @@ export default function KepalaSekolahDashboardPage() {
                 .filter(att => {
                     const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : null);
                     const role = userMap.get(att.userId);
-                    return dStr === todayStr && role && ['guru', 'kepala_sekolah', 'pegawai'].includes(role);
+                    return dStr === todayStr && role && ['guru', 'pegawai', 'kepala_sekolah'].includes(role);
                 });
             
             const allPendingLeave = leaveSnap.docs

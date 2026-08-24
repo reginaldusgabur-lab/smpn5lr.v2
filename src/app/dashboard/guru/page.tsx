@@ -246,15 +246,6 @@ export default function GuruDashboardPage() {
       if (checkOutTime < earlyTime) isEarly = true;
     }
 
-    let buttonAction;
-    if (checkInTime && !checkOutTime) {
-      buttonAction = <Button asChild size="lg" className="w-full"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
-    } else if (!checkInTime) {
-      buttonAction = <Button asChild size="lg" className="w-full"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
-    } else {
-       buttonAction = <Button disabled size="lg" className="w-full">Absensi Selesai</Button>;
-    }
-
     return (
         <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
           <LiveClock />

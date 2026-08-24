@@ -267,10 +267,12 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-4 pb-10 flex flex-col items-stretch">
-        <div className="space-y-1">
+        <div className="w-full px-0 space-y-1 mb-2">
             <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
             <h1 className="text-2xl font-black tracking-tight text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
-            <p className="text-xs font-bold text-muted-foreground mt-2">Absensi digital mandiri SMPN 5 Langke Rembong.</p>
+            <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">
+                Absensi digital mandiri SMPN 5 Langke Rembong.
+            </p>
         </div>
 
         {!isAdmin && (
