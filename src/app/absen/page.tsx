@@ -35,7 +35,7 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
 
 /**
  * Menghasilkan konfirmasi audio dan getaran.
- * Mendukung audio kustom dari database atau nada sintetis "tinggggg".
+ * MEMASTIKAN hanya satu suara yang diputar.
  */
 const playSuccessFeedback = async (customAudioBase64?: string) => {
     try {
@@ -45,7 +45,7 @@ const playSuccessFeedback = async (customAudioBase64?: string) => {
         }
 
         // 2. Putar Suara
-        if (customAudioBase64) {
+        if (customAudioBase64 && customAudioBase64.length > 100) {
             const audio = new Audio(customAudioBase64);
             await audio.play();
         } else {

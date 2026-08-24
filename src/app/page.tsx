@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -123,7 +124,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
-      {/* Background Watermark Pohon - Eksklusif Halaman Login */}
+      {/* Background Watermark Pohon */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.15] dark:opacity-[0.2]">
         <div className="absolute -right-20 -bottom-20 rotate-12 scale-150">
           <svg width="600" height="600" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
@@ -147,18 +148,18 @@ export default function LoginPage() {
         <Card className="w-full max-w-md bg-card/80 backdrop-blur-md border border-muted-foreground/10 shadow-2xl rounded-[2rem] overflow-hidden transition-all duration-300 relative z-10">
           <CardHeader className="text-center space-y-2 pt-10 pb-4">
             <div className="flex justify-center mb-4">
-              <div className="relative w-32 h-32 transition-all duration-500 hover:scale-105">
+              <div className="relative w-40 h-40 transition-all duration-500 hover:scale-105">
                 <Image
                   src="/logo-3d.png"
                   alt="Logo E-SPENLI"
                   fill
-                  sizes="128px"
+                  sizes="160px"
                   className="object-contain"
                   priority
                 />
               </div>
             </div>
-            <CardTitle className="text-4xl font-black tracking-tighter text-primary uppercase">E-SPENLI</CardTitle>
+            <CardTitle className="text-2xl font-black tracking-tight text-primary">E-SPENLI</CardTitle>
             <CardDescription className="font-bold text-muted-foreground/80 text-sm px-2">
               Aplikasi absensi digital
             </CardDescription>
