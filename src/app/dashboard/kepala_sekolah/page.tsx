@@ -59,9 +59,9 @@ function LiveClock() {
 const KepalaSekolahDashboardSkeleton = () => (
     <div className="space-y-6 animate-pulse">
         <div className="space-y-1">
-            <Skeleton className="h-8 w-1/2" />
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-3/4 !mt-2" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-8 w-48 mt-2" />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
             <Card className="w-full lg:col-span-2 rounded-xl">
@@ -294,9 +294,9 @@ export default function KepalaSekolahDashboardPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Selamat Datang</h1>
-        <p className="text-lg text-muted-foreground">{userData?.name || 'Kepala Sekolah'}</p>
-        <p className="text-muted-foreground !mt-2">Ini adalah dasbor pribadi dan ringkasan pemantauan Anda.</p>
+        <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
+        <h1 className="text-2xl font-black tracking-tight text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
+        <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">Absensi digital mandiri SMPN 5 Langke Rembong.</p>
       </div>
 
       {isHoliday && (
@@ -336,14 +336,14 @@ export default function KepalaSekolahDashboardPage() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 w-full max-w-sm mx-auto pt-4">
+                    <div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4">
                         <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
                             <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
                             <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
                                 <LogIn className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
-                                <p className="text-[10px] font-semibold text-green-600 leading-none mb-1">Masuk</p>
+                                <p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p>
                                 <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                     {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
                                 </p>
@@ -355,7 +355,7 @@ export default function KepalaSekolahDashboardPage() {
                                 <LogOut className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
-                                <p className="text-[10px] font-semibold text-blue-600 leading-none mb-1">Pulang</p>
+                                <p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p>
                                 <p className="text-xl font-bold tabular-nums text-foreground leading-none">
                                     {todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}
                                 </p>

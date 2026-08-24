@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -65,9 +64,9 @@ const ActivityItem = ({ icon: Icon, title, date, details, status, statusVariant 
 const DashboardSkeleton = () => (
     <div className="space-y-6 animate-pulse">
       <div className="space-y-1">
-        <Skeleton className="h-8 w-1/2" />
-        <Skeleton className="h-6 w-1/3" />
-        <Skeleton className="h-4 w-3/4 !mt-2" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-8 w-48 mt-2" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="w-full lg:col-span-2">
@@ -312,9 +311,9 @@ export default function GuruDashboardPage() {
   return (
     <div className="space-y-6">
        <div className="space-y-1 px-1">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Selamat Datang</h1>
-            <p className="text-lg text-muted-foreground">{userData?.name || 'Pengguna'}</p>
-            <p className="text-muted-foreground !mt-2">Ini adalah ringkasan kehadiran dan aktivitas Anda hari ini.</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
+            <h1 className="text-2xl font-black tracking-tight text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
+            <p className="text-muted-foreground !mt-2">Absensi digital mandiri SMPN 5 Langke Rembong.</p>
         </div>
 
         {pendingLeaveRequests && pendingLeaveRequests.length > 0 && (

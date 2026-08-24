@@ -33,23 +33,21 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
   });
 
 /**
- * Menghasilkan bunyi "ting" menggunakan Web Audio API dan memicu getaran.
- * Diperbarui untuk kompatibilitas mobile (AudioContext Resume).
+ * Menghasilkan bunyi "tinggggg" yang nyaring (seperti notif Facebook)
+ * dan memicu getaran ganda pada perangkat mobile.
  */
 const playSuccessFeedback = async () => {
     try {
-        // 1. Getar (Hanya Android/Chrome)
+        // 1. Getar Ganda (Hanya Android/Chrome)
         if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-            navigator.vibrate(200);
+            navigator.vibrate([100, 50, 100]); 
         }
 
-        // 2. Bunyi "Ting"
+        // 2. Bunyi "Tinggggg" menggunakan AudioContext
         const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
         if (!AudioContextClass) return;
 
         const context = new AudioContextClass();
-        
-        // Browser memerlukan 'resume' setelah interaksi atau sebelum play
         if (context.state === 'suspended') {
             await context.resume();
         }
@@ -58,17 +56,20 @@ const playSuccessFeedback = async () => {
         const gain = context.createGain();
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1000, context.currentTime); // Nada lebih tinggi agar jelas
-        oscillator.frequency.exponentialRampToValueAtTime(500, context.currentTime + 0.3);
+        oscillator.frequency.setValueAtTime(1900, context.currentTime); 
+        oscillator.frequency.exponentialRampToValueAtTime(1400, context.currentTime + 0.6);
 
-        gain.gain.setValueAtTime(0.2, context.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.3);
+        gain.gain.setValueAtTime(0, context.currentTime);
+        gain.gain.linearRampToValueAtTime(0.4, context.currentTime + 0.01); 
+        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.8);
 
         oscillator.connect(gain);
         gain.connect(context.destination);
 
         oscillator.start();
-        oscillator.stop(context.currentTime + 0.3);
+        oscillator.stop(context.currentTime + 0.8);
+        
+        setTimeout(() => context.close(), 1000);
     } catch (e) {
         console.warn("Feedback audio/vibration failed", e);
     }

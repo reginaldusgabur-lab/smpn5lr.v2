@@ -147,21 +147,21 @@ export default function LoginPage() {
         <Card className="w-full max-w-md bg-card/80 backdrop-blur-md border border-muted-foreground/10 shadow-2xl rounded-[2rem] overflow-hidden transition-all duration-300 relative z-10">
           <CardHeader className="text-center space-y-2 pt-10 pb-4">
             <div className="flex justify-center mb-4">
-              <div className="relative w-32 h-32 transition-all duration-500 hover:scale-105">
+              <div className="relative w-40 h-40 transition-all duration-500 hover:scale-105">
                 <Image
                   src="/logo-3d.png"
                   alt="Logo E-SPENLI"
                   fill
-                  sizes="128px"
+                  sizes="160px"
                   className="object-contain"
                   priority
                 />
               </div>
             </div>
-            <CardTitle className="text-4xl font-black tracking-tighter text-primary">E-SPENLI</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-primary">E-SPENLI</CardTitle>
             <CardDescription className="font-bold text-muted-foreground/80 text-sm px-2">
               Aplikasi absensi digital
-              </CardDescription>
+            </CardDescription>
           </CardHeader>
           <CardContent className="px-10 pb-12 pt-6">
             <Form {...loginForm}>
@@ -236,7 +236,7 @@ export default function LoginPage() {
 
         <DialogContent className="rounded-[2rem] border-none p-10 shadow-2xl max-w-xl">
           <DialogHeader>
-            <DialogTitle className="font-black text-2xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
+            <DialogTitle className="font-bold text-2xl tracking-tighter text-primary">Atur ulang sandi</DialogTitle>
             <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">
               Masukkan email terdaftar Anda untuk menerima tautan pemulihan.
             </DialogDescription>
@@ -249,7 +249,7 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="reset-email" className="text-[10px] font-black tracking-widest text-muted-foreground ml-1 uppercase">Email terdaftar</Label>
+                      <Label htmlFor="reset-email" className="text-sm font-bold text-muted-foreground ml-1 uppercase">Email terdaftar</Label>
                       <FormControl>
                         <Input 
                           id="reset-email" 
@@ -267,7 +267,7 @@ export default function LoginPage() {
                 <Button 
                   type="submit" 
                   disabled={isResetLoading} 
-                  className="w-full h-14 rounded-2xl font-black tracking-widest shadow-xl shadow-primary/20 uppercase"
+                  className="w-full h-14 rounded-2xl font-bold shadow-xl shadow-primary/20"
                 >
                   {isResetLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim link pemulihan"}
                 </Button>

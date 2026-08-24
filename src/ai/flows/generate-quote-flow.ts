@@ -78,7 +78,7 @@ const generateQuoteFlow = ai.defineFlow(
         model: 'googleai/gemini-2.0-flash',
         config: {
           temperature: 1.2, // Menaikkan kreativitas agar tidak membosankan
-          maxOutputTokens: 150,
+          maxOutputTokens: 200,
         },
         system: `Anda adalah stand-up comedian yang merangkap jadi motivator pendidikan paling hits.
 TUGAS: Buat SATU kutipan (quote) yang lucu, segar, "relate" banget sama guru/staf, dan tetap inspiratif.
@@ -90,8 +90,9 @@ ATURAN MAIN:
 3. Jika ABSEN PULANG: Kasih ucapan selamat istirahat yang lucu (tentang rebahan, lupakan cicilan sebentar, atau macetnya jalan).
 4. Gaya bahasa santai tapi tetap berkelas (Quotes gaya sosmed).
 5. Maksimal 25 kata. JANGAN gunakan emoji. JANGAN buat pantun.
-6. Pastikan setiap hasil BERBEDA (Random) dan sangat unik.`,
-        prompt: `Buat satu kutipan eksklusif dan humoris untuk ${input.userName} (${input.role}) yang baru saja absen ${isEntry ? 'masuk pagi' : 'pulang sore'}. Seed: ${input.creativeSeed}`,
+6. Pastikan setiap hasil BERBEDA (Random) dan sangat unik.
+7. JANGAN MENYURUH ISTIRAHAT SAAT ABSEN MASUK.`,
+        prompt: `Buat satu kutipan eksklusif, random, dan humoris untuk ${input.userName} (${input.role}) yang baru saja absen ${isEntry ? 'masuk pagi' : 'pulang sore'}. Pastikan isi kutipan relevan dengan waktu absennya. Seed: ${input.creativeSeed}`,
         output: { schema: QuoteOutputSchema },
       });
 
