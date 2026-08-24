@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, CalendarOff, Check, FileText, Thermometer, LogIn, LogOut } from 'lucide-react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { format, isBefore, addDays, startOfDay, endOfDay, eachDayOfInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -244,15 +245,6 @@ export default function PegawaiDashboardPage() {
       const earlyTime = new Date(checkOutTime);
       earlyTime.setHours(earlyH, earlyM, 0, 0);
       if (checkOutTime < earlyTime) isEarly = true;
-    }
-
-    let buttonAction;
-    if (checkInTime && !checkOutTime) {
-      buttonAction = <Button asChild size="lg" className="w-full"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
-    } else if (!checkInTime) {
-      buttonAction = <Button asChild size="lg" className="w-full"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
-    } else {
-       buttonAction = <Button disabled size="lg" className="w-full">Absensi Selesai</Button>;
     }
 
     return (

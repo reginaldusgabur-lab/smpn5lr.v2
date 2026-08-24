@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -244,15 +245,6 @@ export default function GuruDashboardPage() {
       const earlyTime = new Date(checkOutTime);
       earlyTime.setHours(earlyH, earlyM, 0, 0);
       if (checkOutTime < earlyTime) isEarly = true;
-    }
-
-    let buttonAction;
-    if (checkInTime && !checkOutTime) {
-      buttonAction = <Button asChild size="lg" className="w-full"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
-    } else if (!checkInTime) {
-      buttonAction = <Button asChild size="lg" className="w-full"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
-    } else {
-       buttonAction = <Button disabled size="lg" className="w-full">Absensi Selesai</Button>;
     }
 
     return (
