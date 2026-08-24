@@ -295,7 +295,7 @@ export default function KepalaSekolahDashboardPage() {
     <div className="space-y-6">
       <div className="space-y-1">
         <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
-        <h1 className="text-2xl font-black tracking-tighter text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
+        <h1 className="text-2xl font-black tracking-tight text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
         <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">Absensi digital mandiri SMPN 5 Langke Rembong.</p>
       </div>
 

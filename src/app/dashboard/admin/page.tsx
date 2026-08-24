@@ -229,7 +229,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
-          <h1 className="text-2xl font-black tracking-tighter text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
+          <h1 className="text-2xl font-black tracking-tight text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
           <p className="text-xs font-bold text-muted-foreground mt-2">Absensi digital mandiri SMPN 5 Langke Rembong.</p>
       </div>
       
@@ -303,7 +303,7 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
                             <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
-                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-blue-500/20 shrink-0 relative z-10">
+                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
                                 <LogOut className="h-4 w-4" />
                             </div>
                             <div className="text-left relative z-10">
