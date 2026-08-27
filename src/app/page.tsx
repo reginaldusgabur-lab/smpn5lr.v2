@@ -46,6 +46,24 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
+// Komponen siluet Pohon Beringin
+const BeringinIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M100 20 C140 20, 175 40, 185 85 C190 120, 160 145, 100 155 C40 145, 10 120, 15 85 C25 40, 60 20, 100 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M100 45 C125 45, 145 60, 150 85 C150 110, 125 125, 100 135 C75 125, 50 110, 50 85 C50 60, 75 45, 100 45" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+    <path d="M100 135 L100 185 M85 140 L75 175 M115 140 L125 175" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+
+// Komponen siluet Api
+const ApiIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M50 10 C50 10, 65 35, 50 65 C35 35, 50 10, 50 10" fill="currentColor"/>
+    <path d="M35 25 C35 25, 25 40, 40 60" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+    <path d="M65 25 C65 25, 75 40, 60 60" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+
 export default function LoginPage() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
@@ -123,25 +141,21 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
-      {/* Background Watermark: Pohon Beringin & Api */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.07] dark:opacity-[0.1] flex items-center justify-center overflow-hidden">
-        <svg width="1000" height="1000" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary transition-all duration-1000">
-          {/* Canopy (Pohon Beringin) */}
-          <path d="M100 20 C140 20, 175 40, 185 85 C190 120, 160 145, 100 155 C40 145, 10 120, 15 85 C25 40, 60 20, 100 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M100 45 C125 45, 145 60, 150 85 C150 110, 125 125, 100 135 C75 125, 50 110, 50 85 C50 60, 75 45, 100 45" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-          
-          {/* Trunk & Hanging Roots */}
-          <path d="M100 135 L100 185 M85 140 L75 175 M115 140 L125 175" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M70 70 Q80 120 85 140 M130 70 Q120 120 115 140" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 4"/>
-          
-          {/* Flame (Api) in Center */}
-          <path d="M100 105 C100 105, 115 125, 100 150 C85 125, 100 105, 100 105" fill="currentColor"/>
-          <path d="M88 115 C88 115, 82 125, 92 140" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M112 115 C112 115, 118 125, 108 140" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          
-          {/* Bottom Ground Curve */}
-          <path d="M40 185 Q100 195 160 185" stroke="currentColor" strokeWidth="1" opacity="0.5"/>
-        </svg>
+      
+      {/* Scattered Pattern Background Watermark */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.05] dark:opacity-[0.08] overflow-hidden">
+        {/* Pohon-pohon Beringin Tersebar */}
+        <BeringinIcon className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] text-primary -rotate-12" />
+        <BeringinIcon className="absolute top-10 right-[-10%] w-[350px] h-[350px] text-primary rotate-45" />
+        <BeringinIcon className="absolute bottom-[-10%] left-[10%] w-[500px] h-[500px] text-primary rotate-12" />
+        <BeringinIcon className="absolute bottom-20 right-0 w-[300px] h-[300px] text-primary -rotate-45" />
+        
+        {/* Elemen Api Tersebar */}
+        <ApiIcon className="absolute top-[20%] left-[40%] w-24 h-24 text-primary opacity-50" />
+        <ApiIcon className="absolute top-[60%] right-[30%] w-32 h-32 text-primary rotate-12" />
+        <ApiIcon className="absolute top-[10%] left-[20%] w-16 h-16 text-primary -rotate-12" />
+        <ApiIcon className="absolute bottom-[20%] right-[10%] w-20 h-20 text-primary rotate-45" />
+        <ApiIcon className="absolute bottom-[40%] left-[-5%] w-28 h-28 text-primary -rotate-45" />
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
