@@ -67,11 +67,6 @@ export default function LoginPage() {
     defaultValues: { email: '', password: '' },
   });
 
-  const resetForm = useForm<z.infer<typeof resetPasswordSchema>>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { email: '' },
-  });
-
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoginLoading(true);
     if (!auth) {
@@ -121,6 +116,11 @@ export default function LoginPage() {
       );
   }
 
+  const resetForm = useForm<z.infer<typeof resetPasswordSchema>>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { email: '' },
+  });
+
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       {/* Background Subtle Watermark */}
@@ -136,8 +136,8 @@ export default function LoginPage() {
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-[380px] bg-card border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
-          <CardHeader className="text-center space-y-0 pt-8 pb-4">
-            <div className="flex justify-center mb-4">
+          <CardHeader className="text-center space-y-0 pt-6 pb-2">
+            <div className="flex justify-center mb-1">
               <div className="relative w-36 h-36">
                 <Image
                   src="/logo-3d.png"
@@ -150,11 +150,11 @@ export default function LoginPage() {
               </div>
             </div>
             <CardTitle className="text-4xl font-black tracking-tighter text-primary leading-none uppercase">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/50 text-sm mt-1.5 tracking-tight">
+            <CardDescription className="font-bold text-muted-foreground/50 text-sm mt-0.5 tracking-tight">
               Aplikasi absensi digital
             </CardDescription>
 
-            <div className="pt-6 space-y-3">
+            <div className="pt-4 space-y-2">
                <div className="flex items-center gap-3 w-full max-w-[200px] mx-auto opacity-30">
                   <div className="h-px bg-muted-foreground/50 grow" />
                   <div className="bg-primary/80 rounded-full p-1 shadow-sm">
@@ -162,14 +162,14 @@ export default function LoginPage() {
                   </div>
                   <div className="h-px bg-muted-foreground/50 grow" />
                </div>
-               <div className="space-y-1">
+               <div className="space-y-0.5">
                   <p className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none opacity-80">SMP NEGERI 5 LANGKE REMBONG</p>
                   <p className="text-[10px] font-bold text-muted-foreground/40 leading-none mt-1">Sistem Absensi Digital</p>
                </div>
             </div>
           </CardHeader>
 
-          <CardContent className="px-8 pb-8 pt-4">
+          <CardContent className="px-8 pb-6 pt-2">
             <Form {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
@@ -289,7 +289,7 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
 
-      <footer className="mt-6 text-center flex flex-col items-center gap-1 opacity-40 relative z-10">
+      <footer className="mt-4 text-center flex flex-col items-center gap-1 opacity-40 relative z-10">
         <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">
           SMP NEGERI 5 LANGKE REMBONG
         </p>
