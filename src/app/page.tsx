@@ -177,7 +177,7 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
-                      <Label className="text-sm font-bold text-foreground/70 ml-1">Alamat email</Label>
+                      <Label className="text-sm font-bold text-foreground ml-1">Alamat email</Label>
                       <FormControl>
                         <Input 
                           placeholder="nama@email.com" 
@@ -192,7 +192,7 @@ export default function LoginPage() {
                 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between mb-0.5 px-1">
-                    <Label htmlFor="password" className="text-sm font-bold text-foreground/70">Kata sandi</Label>
+                    <Label htmlFor="password" className="text-sm font-bold text-foreground">Kata sandi</Label>
                     <DialogTrigger asChild>
                       <button type="button" className="text-xs font-bold text-primary hover:opacity-70 transition-opacity">
                         Lupa sandi?
