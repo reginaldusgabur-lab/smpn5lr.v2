@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react';
@@ -19,7 +18,18 @@ const CacheContext = createContext<CacheContextType | undefined>(undefined);
 export function CacheProvider({ children }: { children: ReactNode }) {
   const firestore = useFirestore();
   const { user } = useUser();
-  const [config, setConfig] = useState<DocumentData | null>(null);
+  const [config, setConfig] = useState<DocumentData | null>(() => {
+    // Immediate recovery from session storage
+    if (typeof window !== 'undefined') {
+      const backup = sessionStorage.getItem('espenli_config_backup');
+      if (backup) {
+        try {
+          return JSON.parse(backup);
+        } catch (e) {}
+      }
+    }
+    return null;
+  });
 
   // Memuat konfigurasi sekolah secara real-time satu kali
   const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
@@ -31,12 +41,8 @@ export function CacheProvider({ children }: { children: ReactNode }) {
       setConfig(fetchedConfig);
       // Simpan ke sessionStorage sebagai cadangan darurat
       sessionStorage.setItem('espenli_config_backup', JSON.stringify(fetchedConfig));
-    } else if (!isConfigLoading && !fetchedConfig) {
-      // Cek cadangan jika fetch gagal/kosong tapi sedang tidak loading
-      const backup = sessionStorage.getItem('espenli_config_backup');
-      if (backup) setConfig(JSON.parse(backup));
     }
-  }, [fetchedConfig, isConfigLoading]);
+  }, [fetchedConfig]);
 
   const value = useMemo(() => ({
     schoolConfig: config,

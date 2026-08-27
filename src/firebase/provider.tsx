@@ -65,14 +65,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
+    // IMMEDIATELY load from cache to skip initial white screen
     const cached = sessionStorage.getItem('espenli_user_profile');
     if (cached) {
       try {
         const user = JSON.parse(cached);
         setUserAuthState({ user, isUserLoading: false, userError: null });
-      } catch (e) {
-        // Ignore
-      }
+      } catch (e) {}
     }
 
     const unsubscribe = onAuthStateChanged(
@@ -121,13 +120,16 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
+  // Optimized transition: Only show loading if we have NO cached user AND it's still loading
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
-      <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
+      <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">
+        <div className="relative flex items-center justify-center">
+            <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
+            </div>
         </div>
       </div>
     );
@@ -136,7 +138,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      <div className="w-full h-full min-h-screen bg-white">
+      <div className="w-full h-full min-h-screen bg-background">
         {children}
       </div>
     </FirebaseContext.Provider>
@@ -148,10 +150,13 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   if (context === undefined) {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
+  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
+    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
+  }
   return {
-    firebaseApp: context.firebaseApp!,
-    firestore: context.firestore!,
-    auth: context.auth!,
+    firebaseApp: context.firebaseApp,
+    firestore: context.firestore,
+    auth: context.auth,
     user: context.user,
     isUserLoading: context.isUserLoading,
     userError: context.userError,
