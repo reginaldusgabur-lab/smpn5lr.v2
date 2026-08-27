@@ -135,54 +135,54 @@ export default function LoginPage() {
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[400px] bg-card border border-muted-foreground/10 shadow-2xl rounded-[2.5rem] overflow-hidden relative z-10">
-          <CardHeader className="text-center space-y-1 pt-8 pb-0">
-            <div className="flex justify-center mb-4">
-              <div className="relative w-32 h-32">
+        <Card className="w-full max-w-[380px] bg-card border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
+          <CardHeader className="text-center space-y-0 pt-6 pb-2">
+            <div className="flex justify-center mb-2">
+              <div className="relative w-28 h-28">
                 <Image
                   src="/logo-3d.png"
                   alt="Logo E-SPENLI"
                   fill
-                  sizes="128px"
+                  sizes="112px"
                   className="object-contain"
                   priority
                 />
               </div>
             </div>
-            <CardTitle className="text-3xl font-black tracking-tight text-primary leading-none">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/80 text-sm mt-1">
+            <CardTitle className="text-3xl font-black tracking-tighter text-primary leading-none">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/60 text-xs mt-1 tracking-tight">
               Aplikasi absensi digital
             </CardDescription>
 
-            <div className="pt-4 space-y-2">
-               <div className="flex items-center gap-3 w-full max-w-[200px] mx-auto">
-                  <div className="h-px bg-muted-foreground/20 grow" />
-                  <div className="bg-blue-600 rounded-full p-1 shadow-md">
-                     <ShieldCheck className="h-3 w-3 text-white" />
+            <div className="pt-3 space-y-2">
+               <div className="flex items-center gap-3 w-full max-w-[180px] mx-auto opacity-40">
+                  <div className="h-px bg-muted-foreground/30 grow" />
+                  <div className="bg-primary rounded-full p-1 shadow-sm">
+                     <ShieldCheck className="h-2.5 w-2.5 text-white" />
                   </div>
-                  <div className="h-px bg-muted-foreground/20 grow" />
+                  <div className="h-px bg-muted-foreground/30 grow" />
                </div>
                <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
-                  <p className="text-[10px] font-bold text-muted-foreground/60 leading-none mt-1">Sistem Absensi Digital</p>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-tight leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
+                  <p className="text-[10px] font-bold text-muted-foreground/50 leading-none mt-0.5">Sistem Absensi Digital</p>
                </div>
             </div>
           </CardHeader>
 
-          <CardContent className="px-8 pb-10 pt-6">
+          <CardContent className="px-8 pb-8 pt-4">
             <Form {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
                   control={loginForm.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <Label className="text-sm font-bold text-foreground/80 ml-1">Alamat email</Label>
+                    <FormItem className="space-y-1.5">
+                      <Label className="text-sm font-bold text-foreground/70 ml-1">Alamat email</Label>
                       <FormControl>
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-14 rounded-2xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
+                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -190,9 +190,9 @@ export default function LoginPage() {
                   )}
                 />
                 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-1 px-1">
-                    <Label htmlFor="password" className="text-sm font-bold text-foreground/80">Kata sandi</Label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between mb-0.5 px-1">
+                    <Label htmlFor="password" className="text-sm font-bold text-foreground/70">Kata sandi</Label>
                     <DialogTrigger asChild>
                       <button type="button" className="text-xs font-bold text-primary hover:opacity-70 transition-opacity">
                         Lupa sandi?
@@ -210,17 +210,17 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-14 rounded-2xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
+                              className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
                             />
                           </FormControl>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="absolute inset-y-0 right-0 h-full px-4 text-muted-foreground hover:bg-transparent shadow-none"
+                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none"
                             onClick={() => setShowLoginPass(!showLoginPass)}
                           >
-                            {showLoginPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
                         <FormMessage className="text-[10px] font-bold" />
@@ -231,12 +231,12 @@ export default function LoginPage() {
 
                 <Button 
                   type="submit" 
-                  className="w-full h-16 text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-4 flex items-center justify-center gap-2" 
+                  className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-2 flex items-center justify-center gap-2" 
                   disabled={isLoginLoading}
                 >
-                  {isLoginLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                  {isLoginLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                     <>
-                      <LogIn className="h-5 w-5" />
+                      <LogIn className="h-4 w-4" />
                       Masuk sekarang
                     </>
                   )}
@@ -246,16 +246,16 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <DialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-md">
+        <DialogContent className="rounded-3xl border-none p-8 shadow-2xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-black text-2xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
-            <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">
-              Masukkan email terdaftar Anda untuk menerima tautan pemulihan.
+            <DialogTitle className="font-black text-xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
+            <DialogDescription className="font-bold text-xs text-muted-foreground mt-1">
+              Masukkan email terdaftar Anda untuk pemulihan.
             </DialogDescription>
           </DialogHeader>
           <Form {...resetForm}>
             <form onSubmit={resetForm.handleSubmit(handlePasswordReset)}>
-              <div className="py-8">
+              <div className="py-6">
                 <FormField
                   control={resetForm.control}
                   name="email"
@@ -267,7 +267,7 @@ export default function LoginPage() {
                           id="reset-email" 
                           placeholder="email@anda.com" 
                           {...field} 
-                          className="h-14 rounded-2xl bg-muted/20 border-muted-foreground/10 focus:bg-background shadow-none font-bold"
+                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background shadow-none font-bold"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -279,7 +279,7 @@ export default function LoginPage() {
                 <Button 
                   type="submit" 
                   disabled={isResetLoading} 
-                  className="w-full h-14 rounded-2xl font-black tracking-widest shadow-xl shadow-primary/20 uppercase"
+                  className="w-full h-12 rounded-xl font-black tracking-widest shadow-lg shadow-primary/20 uppercase text-xs"
                 >
                   {isResetLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim link pemulihan"}
                 </Button>
@@ -289,7 +289,7 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
 
-      <footer className="mt-8 text-center flex flex-col items-center gap-1 opacity-40 relative z-10">
+      <footer className="mt-6 text-center flex flex-col items-center gap-1 opacity-40 relative z-10">
         <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">
           SMP NEGERI 5 LANGKE REMBONG
         </p>
