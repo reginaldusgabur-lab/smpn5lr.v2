@@ -123,15 +123,24 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
-      {/* Background Subtle Watermark */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.05] dark:opacity-[0.1]">
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <svg width="800" height="800" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="0.5" />
-                <circle cx="30" cy="40" r="25" stroke="currentColor" strokeWidth="0.5" />
-                <circle cx="70" cy="60" r="30" stroke="currentColor" strokeWidth="0.5" />
-            </svg>
-         </div>
+      {/* Background Subtle Watermark: Pohon Beringin & Api */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.06] flex items-center justify-center overflow-hidden">
+        <svg width="1200" height="1200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary transition-all duration-1000">
+          {/* Canopy Arcs representing Banyan Tree */}
+          <path d="M100 20 Q160 20 180 80 Q190 140 100 180 Q10 140 20 80 Q40 20 100 20Z" stroke="currentColor" strokeWidth="0.3"/>
+          <path d="M100 40 C120 40 140 50 140 80 C140 110 110 130 100 150 C90 130 60 110 60 80 C60 50 80 40 100 40Z" stroke="currentColor" strokeWidth="0.5"/>
+          
+          {/* Central Stylized Flame (Api) */}
+          <path d="M92 165 C92 165 85 150 100 145 C115 150 108 165 108 165 C108 165 104 160 100 160 C96 160 92 165 92 165Z" fill="currentColor"/>
+          
+          {/* Atmospheric Rings */}
+          <circle cx="100" cy="100" r="95" stroke="currentColor" strokeWidth="0.1"/>
+          <circle cx="50" cy="60" r="110" stroke="currentColor" strokeWidth="0.05"/>
+          <circle cx="150" cy="140" r="110" stroke="currentColor" strokeWidth="0.05"/>
+          
+          {/* Root-like structures */}
+          <path d="M100 150 L100 180 M90 155 L80 175 M110 155 L120 175" stroke="currentColor" strokeWidth="0.2"/>
+        </svg>
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
