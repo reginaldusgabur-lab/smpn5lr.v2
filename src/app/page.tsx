@@ -123,28 +123,29 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
-      {/* Background Subtle Watermark: Pohon Beringin & Api */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.06] flex items-center justify-center overflow-hidden">
-        <svg width="1200" height="1200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary transition-all duration-1000">
-          {/* Canopy Arcs representing Banyan Tree */}
-          <path d="M100 20 Q160 20 180 80 Q190 140 100 180 Q10 140 20 80 Q40 20 100 20Z" stroke="currentColor" strokeWidth="0.3"/>
-          <path d="M100 40 C120 40 140 50 140 80 C140 110 110 130 100 150 C90 130 60 110 60 80 C60 50 80 40 100 40Z" stroke="currentColor" strokeWidth="0.5"/>
+      {/* Background Watermark: Pohon Beringin & Api */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.07] dark:opacity-[0.1] flex items-center justify-center overflow-hidden">
+        <svg width="1000" height="1000" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary transition-all duration-1000">
+          {/* Canopy (Pohon Beringin) */}
+          <path d="M100 20 C140 20, 175 40, 185 85 C190 120, 160 145, 100 155 C40 145, 10 120, 15 85 C25 40, 60 20, 100 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M100 45 C125 45, 145 60, 150 85 C150 110, 125 125, 100 135 C75 125, 50 110, 50 85 C50 60, 75 45, 100 45" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
           
-          {/* Central Stylized Flame (Api) */}
-          <path d="M92 165 C92 165 85 150 100 145 C115 150 108 165 108 165 C108 165 104 160 100 160 C96 160 92 165 92 165Z" fill="currentColor"/>
+          {/* Trunk & Hanging Roots */}
+          <path d="M100 135 L100 185 M85 140 L75 175 M115 140 L125 175" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M70 70 Q80 120 85 140 M130 70 Q120 120 115 140" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 4"/>
           
-          {/* Atmospheric Rings */}
-          <circle cx="100" cy="100" r="95" stroke="currentColor" strokeWidth="0.1"/>
-          <circle cx="50" cy="60" r="110" stroke="currentColor" strokeWidth="0.05"/>
-          <circle cx="150" cy="140" r="110" stroke="currentColor" strokeWidth="0.05"/>
+          {/* Flame (Api) in Center */}
+          <path d="M100 105 C100 105, 115 125, 100 150 C85 125, 100 105, 100 105" fill="currentColor"/>
+          <path d="M88 115 C88 115, 82 125, 92 140" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M112 115 C112 115, 118 125, 108 140" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           
-          {/* Root-like structures */}
-          <path d="M100 150 L100 180 M90 155 L80 175 M110 155 L120 175" stroke="currentColor" strokeWidth="0.2"/>
+          {/* Bottom Ground Curve */}
+          <path d="M40 185 Q100 195 160 185" stroke="currentColor" strokeWidth="1" opacity="0.5"/>
         </svg>
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[380px] bg-card border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
+        <Card className="w-full max-w-[380px] bg-card/90 backdrop-blur-sm border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
           <CardHeader className="text-center space-y-0 pt-6 pb-2">
             <div className="flex justify-center mb-1">
               <div className="relative w-36 h-36">
@@ -159,7 +160,7 @@ export default function LoginPage() {
               </div>
             </div>
             <CardTitle className="text-4xl font-black tracking-tight text-primary leading-none uppercase">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/50 text-sm mt-0.5 tracking-tight">
+            <CardDescription className="font-bold text-muted-foreground/60 text-sm mt-1 tracking-tight">
               Aplikasi absensi online
             </CardDescription>
 
@@ -191,7 +192,7 @@ export default function LoginPage() {
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
+                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none text-foreground"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -219,7 +220,7 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
+                              className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none text-foreground"
                             />
                           </FormControl>
                           <Button
