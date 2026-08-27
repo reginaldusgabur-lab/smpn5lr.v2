@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useCache } from "@/context/CacheContext";
+import { format } from "date-fns";
 
 /**
- * Hook useAttendanceWindow sekarang menggunakan data dari CacheContext.
- * Ini menghemat ribuan pembacaan database karena tidak lagi berlangganan ke dokumen 'schoolConfig' di setiap komponen.
+ * Hook useAttendanceWindow menggunakan data dari CacheContext.
+ * Kini menyertakan validasi hari libur kalender (monthlyConfig).
  */
 
 export interface SchoolConfig {
@@ -21,16 +22,16 @@ export interface SchoolConfig {
 
 export type AttendanceWindowStatus =
   | "LOADING"          // Keadaan awal
-  | "DISABLED"         // Dinonaktifkan secara manual oleh Admin melalui tombol switch
-  | "SESSION_INACTIVE" // Hari libur terjadwal (rutin mingguan atau spesifik bulanan)
+  | "DISABLED"         // Dinonaktifkan secara manual oleh Admin
+  | "SESSION_INACTIVE" // Hari libur terjadwal (rutin atau kalender)
   | "BEFORE_IN"        // Belum jam masuk
   | "CHECK_IN_OPEN"    // Jendela masuk terbuka
-  | "AFTER_IN"         // Batas jam masuk berakhir (sebelum jam pulang)
+  | "AFTER_IN"         // Batas jam masuk berakhir
   | "CHECK_OUT_OPEN"   // Jendela pulang terbuka
   | "CLOSED";          // Sesi hari ini berakhir
 
 export const useAttendanceWindow = () => {
-  const { schoolConfig: config, isCacheLoading: configLoading } = useCache();
+  const { schoolConfig: config, monthlyConfig: mConfig, isCacheLoading: configLoading } = useCache();
   const [status, setStatus] = useState<AttendanceWindowStatus>("LOADING");
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export const useAttendanceWindow = () => {
       return;
     }
 
-    // PRIORITAS 1: Cek apakah dinonaktifkan manual oleh Admin (Switch di Pengaturan)
+    // PRIORITAS 1: Cek apakah dinonaktifkan manual oleh Admin
     if (config.isAttendanceActive === false) {
       setStatus("DISABLED"); 
       return;
@@ -54,10 +55,13 @@ export const useAttendanceWindow = () => {
         const now = new Date();
         const currentTime = now.getHours() * 60 + now.getMinutes();
         const dayOfWeek = now.getDay();
+        const todayStr = format(now, 'yyyy-MM-dd');
         
-        // PRIORITAS 2: Cek hari libur rutin
-        const offDays = config.offDays ?? [0, 6];
-        if (offDays.includes(dayOfWeek)) {
+        // PRIORITAS 2: Cek hari libur rutin DAN kalender
+        const offDays = (config as any).offDays ?? [0, 6];
+        const isSpecificHoliday = (mConfig as any)?.holidays?.includes(todayStr);
+
+        if (offDays.includes(dayOfWeek) || isSpecificHoliday) {
             setStatus("SESSION_INACTIVE");
             return;
         }
@@ -76,7 +80,7 @@ export const useAttendanceWindow = () => {
         const inStart = parseToMinutes(config.checkInStartTime || "00:00");
         const inEnd = parseToMinutes(config.checkInEndTime || "23:59");
         
-        const dailyOut = config.dailyCheckOutTimes?.[dayOfWeek.toString()];
+        const dailyOut = (config as any).dailyCheckOutTimes?.[dayOfWeek.toString()];
         const outStart = parseToMinutes(dailyOut?.start || config.checkOutStartTime || "14:00");
         const outEnd = parseToMinutes(dailyOut?.end || config.checkOutEndTime || "16:00");
 
@@ -98,7 +102,7 @@ export const useAttendanceWindow = () => {
 
     return () => clearInterval(intervalId);
     
-  }, [config, configLoading]);
+  }, [config, mConfig, configLoading]);
 
-  return { status, config: config as SchoolConfig | null };
+  return { status, config: config as SchoolConfig | null, monthlyConfig: mConfig };
 };

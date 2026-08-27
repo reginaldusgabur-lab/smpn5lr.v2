@@ -46,6 +46,28 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
+// Komponen siluet Pohon Beringin (Solid/Full)
+const BeringinIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {/* Canopy Solid */}
+    <path d="M100 20 C140 20, 185 45, 185 90 C185 125, 150 145, 100 155 C50 145, 15 125, 15 90 C15 45, 60 20, 100 20 Z" />
+    {/* Trunk Solid */}
+    <path d="M95 145 H105 V190 H95 V145 Z" />
+  </svg>
+);
+
+// Komponen siluet Api (Solid/Full)
+const ApiIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {/* Central Flame Solid */}
+    <path d="M50 5 C50 5, 80 40, 50 95 C20 40, 50 5, 50 5 Z" />
+    {/* Left Branch Solid */}
+    <path d="M35 25 C35 25, 20 45, 45 65 Z" />
+    {/* Right Branch Solid */}
+    <path d="M65 25 C65 25, 80 45, 55 65 Z" />
+  </svg>
+);
+
 export default function LoginPage() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
@@ -123,19 +145,25 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
-      {/* Background Subtle Watermark */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.05] dark:opacity-[0.1]">
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <svg width="800" height="800" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="0.5" />
-                <circle cx="30" cy="40" r="25" stroke="currentColor" strokeWidth="0.5" />
-                <circle cx="70" cy="60" r="30" stroke="currentColor" strokeWidth="0.5" />
-            </svg>
-         </div>
+      
+      {/* Scattered Pattern Background Watermark - FULL SHAPES */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.04] dark:opacity-[0.06] overflow-hidden">
+        {/* Pohon-pohon Beringin Tersebar (Solid) */}
+        <BeringinIcon className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] text-primary -rotate-12" />
+        <BeringinIcon className="absolute top-10 right-[-10%] w-[350px] h-[350px] text-primary rotate-45" />
+        <BeringinIcon className="absolute bottom-[-10%] left-[10%] w-[500px] h-[500px] text-primary rotate-12" />
+        <BeringinIcon className="absolute bottom-20 right-0 w-[300px] h-[300px] text-primary -rotate-45" />
+        
+        {/* Elemen Api Tersebar (Solid) */}
+        <ApiIcon className="absolute top-[20%] left-[40%] w-24 h-24 text-primary" />
+        <ApiIcon className="absolute top-[60%] right-[30%] w-32 h-32 text-primary rotate-12" />
+        <ApiIcon className="absolute top-[10%] left-[20%] w-16 h-16 text-primary -rotate-12" />
+        <ApiIcon className="absolute bottom-[20%] right-[10%] w-20 h-20 text-primary rotate-45" />
+        <ApiIcon className="absolute bottom-[40%] left-[-5%] w-28 h-28 text-primary -rotate-45" />
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[380px] bg-card border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
+        <Card className="w-full max-w-[380px] bg-card/90 backdrop-blur-sm border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
           <CardHeader className="text-center space-y-0 pt-6 pb-2">
             <div className="flex justify-center mb-1">
               <div className="relative w-36 h-36">
@@ -150,7 +178,7 @@ export default function LoginPage() {
               </div>
             </div>
             <CardTitle className="text-4xl font-black tracking-tight text-primary leading-none uppercase">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/50 text-sm mt-0.5 tracking-tight">
+            <CardDescription className="font-bold text-muted-foreground/60 text-sm mt-1 tracking-tight">
               Aplikasi absensi online
             </CardDescription>
 
@@ -182,7 +210,7 @@ export default function LoginPage() {
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
+                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none text-foreground"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -210,7 +238,7 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
+                              className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none text-foreground"
                             />
                           </FormControl>
                           <Button

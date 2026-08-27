@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -60,7 +60,7 @@ export default function IzinPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const router = useRouter();
-    const { status: windowStatus, config: schoolConfig } = useAttendanceWindow();
+    const { status: windowStatus, config: schoolConfig, monthlyConfig } = useAttendanceWindow();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
@@ -87,12 +87,26 @@ export default function IzinPage() {
         return { today: t, tomorrow: tom };
     }, [currentTime]);
 
-    // Logika Penguncian Tanggal: Jika absen sudah tutup atau hari libur, kunci pilihan "Hari Ini"
-    const isTodayLocked = useMemo(() => {
-        return windowStatus === 'CLOSED' || windowStatus === 'SESSION_INACTIVE' || windowStatus === 'DISABLED';
-    }, [windowStatus]);
+    const isDateHoliday = useCallback((date: Date) => {
+        if (!schoolConfig) return false;
+        const dayOfWeek = date.getDay();
+        const offDays = schoolConfig.offDays ?? [0, 6];
+        const isRecurringOff = offDays.includes(dayOfWeek);
+        
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const isSpecificHoliday = (monthlyConfig as any)?.holidays?.includes(dateStr);
+        
+        return isRecurringOff || isSpecificHoliday || schoolConfig.isAttendanceActive === false;
+    }, [schoolConfig, monthlyConfig]);
 
-    // Efek untuk mengalihkan ke "Besok" secara otomatis jika "Hari Ini" terkunci
+    const isTodayLocked = useMemo(() => {
+        return windowStatus === 'CLOSED' || windowStatus === 'SESSION_INACTIVE' || windowStatus === 'DISABLED' || isDateHoliday(today);
+    }, [windowStatus, isDateHoliday, today]);
+
+    const isTomorrowLocked = useMemo(() => {
+        return isDateHoliday(tomorrow);
+    }, [isDateHoliday, tomorrow]);
+
     useEffect(() => {
         if (isTodayLocked && form.getValues('leaveDate') === 'today') {
             form.setValue('leaveDate', 'tomorrow');
@@ -125,7 +139,6 @@ export default function IzinPage() {
     const hasCheckedIn = !!(targetDateAttendance && targetDateAttendance[0]?.checkInTime);
     const hasCheckedOut = !!(targetDateAttendance && targetDateAttendance[0]?.checkOutTime);
 
-    // Contoh alasan dinamis berdasarkan jenis yang dipilih
     const selectedType = form.watch('type');
     const dynamicPlaceholder = useMemo(() => {
         switch (selectedType) {
@@ -179,7 +192,6 @@ export default function IzinPage() {
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
-                {/* Header Utama */}
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
@@ -230,9 +242,11 @@ export default function IzinPage() {
                                                     </FormControl>
                                                     <SelectContent className="rounded-xl border-none shadow-2xl">
                                                         <SelectItem value="today" disabled={isTodayLocked} className="rounded-lg font-bold">
-                                                            Hari Ini {isTodayLocked && '(Tutup)'}
+                                                            Hari Ini {isTodayLocked && '(Libur/Tutup)'}
                                                         </SelectItem>
-                                                        <SelectItem value="tomorrow" className="rounded-lg font-bold">Besok</SelectItem>
+                                                        <SelectItem value="tomorrow" disabled={isTomorrowLocked} className="rounded-lg font-bold">
+                                                            Besok {isTomorrowLocked && '(Libur)'}
+                                                        </SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage className="text-[10px] font-bold" />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -35,28 +34,22 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
 
 /**
  * Menghasilkan konfirmasi audio dan getaran.
- * MEMASTIKAN hanya satu suara yang diputar.
  */
 const playSuccessFeedback = async (customAudioBase64?: string) => {
     try {
-        // 1. Getar Ganda (Android Only)
         if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
             navigator.vibrate([100, 50, 100]); 
         }
 
-        // 2. Putar Suara
         if (customAudioBase64 && customAudioBase64.length > 100) {
             const audio = new Audio(customAudioBase64);
             await audio.play();
         } else {
-            // Bunyi "Tinggggg" sintetis (FB Style) menggunakan AudioContext
             const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
             if (!AudioContextClass) return;
 
             const context = new AudioContextClass();
-            if (context.state === 'suspended') {
-                await context.resume();
-            }
+            if (context.state === 'suspended') await context.resume();
 
             const oscillator = context.createOscillator();
             const gain = context.createGain();
@@ -99,7 +92,6 @@ export default function AbsenPage() {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const readerId = "qr-reader-fullscreen";
 
-  // Hydration safety
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -155,6 +147,11 @@ export default function AbsenPage() {
         setStatus('error_generic');
         return;
     }
+    // CEK ULANG HARI LIBUR AGAR TIDAK BISA DITEMBUS
+    if (windowStatus === 'SESSION_INACTIVE' || windowStatus === 'DISABLED') {
+        setStatus(windowStatus === 'SESSION_INACTIVE' ? 'info_holiday' : 'info_disabled');
+        return;
+    }
     if (windowStatus !== 'CHECK_IN_OPEN' && windowStatus !== 'CHECK_OUT_OPEN') {
         setStatus(windowStatus === 'AFTER_IN' ? 'error_checkin_closed' : 'error_time');
         return;
@@ -167,8 +164,8 @@ export default function AbsenPage() {
             try {
                 const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
                 latitude = pos.coords.latitude; longitude = pos.coords.longitude;
-                if (schoolConfig.radius && schoolConfig.latitude && schoolConfig.longitude) {
-                    if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) return setStatus('error_radius');
+                if (schoolConfig.radius && (schoolConfig as any).latitude && (schoolConfig as any).longitude) {
+                    if (getDistance(latitude, longitude, (schoolConfig as any).latitude, (schoolConfig as any).longitude) > schoolConfig.radius) return setStatus('error_radius');
                 }
             } catch (error: any) {
                 let specificError = 'Gagal mendapatkan lokasi.';
@@ -223,8 +220,8 @@ export default function AbsenPage() {
   }, [isClient]);
 
   const onScanSuccess = useCallback((decodedText: string) => {
-    if (statusRef.current === 'idle' && schoolConfig?.qrCodeValue) {
-        if (decodedText === schoolConfig.qrCodeValue) {
+    if (statusRef.current === 'idle' && (schoolConfig as any)?.qrCodeValue) {
+        if (decodedText === (schoolConfig as any).qrCodeValue) {
             handleAttendanceRef.current();
         } else {
             toast({ variant: 'destructive', title: 'QR Code tidak valid' });
