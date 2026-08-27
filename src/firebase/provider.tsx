@@ -53,10 +53,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: null,
-    isUserLoading: true,
-    userError: null,
+  const [userAuthState, setUserAuthState] = useState<UserAuthState>(() => {
+    // Initializing state from cache synchronously for instant load
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('espenli_user_profile');
+      if (cached) {
+        try {
+          return { user: JSON.parse(cached), isUserLoading: false, userError: null };
+        } catch (e) {}
+      }
+    }
+    return { user: null, isUserLoading: true, userError: null };
   });
 
   useEffect(() => {
