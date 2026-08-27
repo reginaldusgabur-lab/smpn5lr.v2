@@ -136,8 +136,8 @@ export default function LoginPage() {
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-[400px] bg-card border border-muted-foreground/10 shadow-2xl rounded-[2.5rem] overflow-hidden relative z-10">
-          <CardHeader className="text-center space-y-1 pt-10 pb-2">
-            <div className="flex justify-center mb-6">
+          <CardHeader className="text-center space-y-1 pt-8 pb-0">
+            <div className="flex justify-center mb-4">
               <div className="relative w-32 h-32">
                 <Image
                   src="/logo-3d.png"
@@ -149,29 +149,29 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <CardTitle className="text-4xl font-black tracking-tight text-primary">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/80 text-sm">
+            <CardTitle className="text-3xl font-black tracking-tight text-primary leading-none">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/80 text-sm mt-1">
               Aplikasi absensi digital
             </CardDescription>
 
-            <div className="pt-4 space-y-3">
-               <div className="flex items-center gap-3 w-full max-w-[220px] mx-auto">
+            <div className="pt-4 space-y-2">
+               <div className="flex items-center gap-3 w-full max-w-[200px] mx-auto">
                   <div className="h-px bg-muted-foreground/20 grow" />
-                  <div className="bg-blue-600 rounded-full p-1 shadow-lg shadow-blue-600/20">
+                  <div className="bg-blue-600 rounded-full p-1 shadow-md">
                      <ShieldCheck className="h-3 w-3 text-white" />
                   </div>
                   <div className="h-px bg-muted-foreground/20 grow" />
                </div>
                <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">SMP NEGERI 5 LANGKE REMBONG</p>
-                  <p className="text-[10px] font-bold text-muted-foreground/60">Sistem Absensi Digital</p>
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
+                  <p className="text-[10px] font-bold text-muted-foreground/60 leading-none mt-1">Sistem Absensi Digital</p>
                </div>
             </div>
           </CardHeader>
 
-          <CardContent className="px-8 pb-12 pt-6">
+          <CardContent className="px-8 pb-10 pt-6">
             <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-5">
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
                   control={loginForm.control}
                   name="email"
@@ -289,7 +289,7 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
 
-      <footer className="mt-12 text-center flex flex-col items-center gap-1.5 opacity-40 relative z-10">
+      <footer className="mt-8 text-center flex flex-col items-center gap-1 opacity-40 relative z-10">
         <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">
           SMP NEGERI 5 LANGKE REMBONG
         </p>
