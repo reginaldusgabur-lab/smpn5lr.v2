@@ -58,7 +58,7 @@ export const useAttendanceWindow = () => {
         const todayStr = format(now, 'yyyy-MM-dd');
         
         // PRIORITAS 2: Cek hari libur rutin DAN kalender
-        const offDays = config.offDays ?? [0, 6];
+        const offDays = (config as any).offDays ?? [0, 6];
         const isSpecificHoliday = (mConfig as any)?.holidays?.includes(todayStr);
 
         if (offDays.includes(dayOfWeek) || isSpecificHoliday) {
@@ -80,7 +80,7 @@ export const useAttendanceWindow = () => {
         const inStart = parseToMinutes(config.checkInStartTime || "00:00");
         const inEnd = parseToMinutes(config.checkInEndTime || "23:59");
         
-        const dailyOut = config.dailyCheckOutTimes?.[dayOfWeek.toString()];
+        const dailyOut = (config as any).dailyCheckOutTimes?.[dayOfWeek.toString()];
         const outStart = parseToMinutes(dailyOut?.start || config.checkOutStartTime || "14:00");
         const outEnd = parseToMinutes(dailyOut?.end || config.checkOutEndTime || "16:00");
 
