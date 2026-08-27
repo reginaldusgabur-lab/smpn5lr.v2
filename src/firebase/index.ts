@@ -1,15 +1,22 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const firestore = getFirestore(app);
+
+/**
+ * Inisialisasi Firestore dengan pengaturan khusus.
+ * Menggunakan experimentalForceLongPolling untuk stabilitas koneksi yang lebih baik
+ * di lingkungan port-forwarding/cloud workstation.
+ */
+const firestore = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
 
 // Eksplicitly set persistence for PWA compatibility across all browsers
 if (typeof window !== 'undefined') {
