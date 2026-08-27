@@ -136,35 +136,35 @@ export default function LoginPage() {
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-[380px] bg-card border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
-          <CardHeader className="text-center space-y-0 pt-6 pb-2">
-            <div className="flex justify-center mb-2">
-              <div className="relative w-28 h-28">
+          <CardHeader className="text-center space-y-0 pt-8 pb-4">
+            <div className="flex justify-center mb-4">
+              <div className="relative w-36 h-36">
                 <Image
                   src="/logo-3d.png"
                   alt="Logo E-SPENLI"
                   fill
-                  sizes="112px"
+                  sizes="144px"
                   className="object-contain"
                   priority
                 />
               </div>
             </div>
-            <CardTitle className="text-3xl font-black tracking-tighter text-primary leading-none">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/60 text-xs mt-1 tracking-tight">
+            <CardTitle className="text-4xl font-black tracking-tighter text-primary leading-none uppercase">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/50 text-sm mt-1.5 tracking-tight">
               Aplikasi absensi digital
             </CardDescription>
 
-            <div className="pt-3 space-y-2">
-               <div className="flex items-center gap-3 w-full max-w-[180px] mx-auto opacity-40">
-                  <div className="h-px bg-muted-foreground/30 grow" />
-                  <div className="bg-primary rounded-full p-1 shadow-sm">
-                     <ShieldCheck className="h-2.5 w-2.5 text-white" />
+            <div className="pt-6 space-y-3">
+               <div className="flex items-center gap-3 w-full max-w-[200px] mx-auto opacity-30">
+                  <div className="h-px bg-muted-foreground/50 grow" />
+                  <div className="bg-primary/80 rounded-full p-1 shadow-sm">
+                     <ShieldCheck className="h-3 w-3 text-white" />
                   </div>
-                  <div className="h-px bg-muted-foreground/30 grow" />
+                  <div className="h-px bg-muted-foreground/50 grow" />
                </div>
-               <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-tight leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
-                  <p className="text-[10px] font-bold text-muted-foreground/50 leading-none mt-0.5">Sistem Absensi Digital</p>
+               <div className="space-y-1">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none opacity-80">SMP NEGERI 5 LANGKE REMBONG</p>
+                  <p className="text-[10px] font-bold text-muted-foreground/40 leading-none mt-1">Sistem Absensi Digital</p>
                </div>
             </div>
           </CardHeader>
