@@ -34,8 +34,8 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { auth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { auth, useUser, initiateEmailSignIn } from '@/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Format email tidak valid" }),
@@ -97,15 +97,10 @@ export default function LoginPage() {
   const handleLogin = (values: z.infer<typeof loginSchema>) => {
     if (!auth) return;
     
-    // Proses non-blocking agar terasa instan setelah klik
-    signInWithEmailAndPassword(auth, values.email, values.password)
-      .catch((error: any) => {
-        toast({ 
-          variant: "destructive", 
-          title: "Login gagal", 
-          description: "Email atau kata sandi salah." 
-        });
-      });
+    // PROSES NON-BLOCKING: Langsung jalankan tanpa await agar transisi terasa instan
+    initiateEmailSignIn(auth, values.email, values.password);
+    
+    // Feedback suara/getar opsional bisa ditaruh di sini jika diperlukan
   };
 
   const handlePasswordReset = async (values: z.infer<typeof resetPasswordSchema>) => {
