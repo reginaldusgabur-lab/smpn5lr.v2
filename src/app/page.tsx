@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -267,12 +267,8 @@ export default function LoginPage() {
                   className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-2 flex items-center justify-center gap-2" 
                   disabled={isLoginLoading}
                 >
-                  {isLoginLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                    <>
-                      <LogIn className="h-4 w-4" />
-                      Masuk sekarang
-                    </>
-                  )}
+                  <LogIn className="h-4 w-4" />
+                  Masuk sekarang
                 </Button>
               </form>
             </Form>
