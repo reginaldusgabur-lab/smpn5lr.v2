@@ -21,6 +21,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
+    if (!isUserLoading && !user) {
+        router.replace('/');
+    }
+  }, [user, isUserLoading, router]);
+
+  useEffect(() => {
     if (user && !user.onboardingSelesai && !runTour) {
       if (sessionStorage.getItem('onboardingInProgress') !== 'true') {
         sessionStorage.setItem('onboardingInProgress', 'true');
@@ -47,23 +53,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-        router.replace('/');
-    }
-  }, [user, isUserLoading, router]);
-
-  if (isUserLoading || !user) {
+  // Optimized: Show dashboard immediately if user is already in state (cache-ready)
+  if (!user && isUserLoading) {
     return (
       <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
         </div>
       </div>
     );
   }
+
+  // Final check to prevent unauthorized render
+  if (!user) return null;
 
   return (
     <CacheProvider>

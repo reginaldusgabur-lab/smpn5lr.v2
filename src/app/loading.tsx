@@ -4,15 +4,16 @@ import React from 'react';
 
 /**
  * Global Loading UI.
- * Mematenkan latar belakang putih agar transisi dari splash screen OS terasa mulus.
+ * Memaksa latar belakang putih bersih untuk menghilangkan kilatan hitam.
+ * Menggunakan animasi yang sangat ringan.
  */
 export default function Loading() {
   return (
-    <div className="flex h-svh w-full items-center justify-center bg-white">
-      <div className="flex items-center gap-2">
-        <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
+    <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
+      <div className="flex items-center gap-1.5">
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
       </div>
     </div>
   );

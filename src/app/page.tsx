@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -57,12 +56,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
 
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.replace('/dashboard');
-    }
-  }, [user, isUserLoading, router]);
-
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
@@ -72,6 +65,12 @@ export default function LoginPage() {
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { email: '' },
   });
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoginLoading(true);
@@ -113,10 +112,10 @@ export default function LoginPage() {
   if (isUserLoading || user) {
       return (
         <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
-             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
+             <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
             </div>
         </div>
       );
@@ -124,71 +123,78 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
-      {/* Background Watermark Pohon */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.15] dark:opacity-[0.2]">
-        <div className="absolute -right-20 -bottom-20 rotate-12 scale-150">
-          <svg width="600" height="600" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-            <path d="M24 44V34" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M24 34C24 34 38 32 38 24C38 16 24 14 24 14C24 14 10 16 10 24C10 32 24 34 24 34Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M24 24C24 24 34 22 34 16C34 10 24 8 24 8C24 8 14 10 14 16C14 22 24 24 24 24Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M24 14C24 14 30 12 30 8C30 4 24 2 24 2C24 2 18 4 18 8C18 12 24 14 24 14Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-        <div className="absolute -left-20 -top-20 -rotate-12 scale-125">
-          <svg width="500" height="500" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-            <path d="M24 44V34" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M24 34C24 34 38 32 38 24C38 16 24 14 24 14C24 14 10 16 10 24C10 32 24 34 24 34Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M24 24C24 24 34 22 34 16C34 10 24 8 24 8C24 8 14 10 14 16C14 22 24 24 24 24Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M24 14C24 14 30 12 30 8C30 4 24 2 24 2C24 2 18 4 18 8C18 12 24 14 24 14Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
+      {/* Background Subtle Watermark */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.05] dark:opacity-[0.1]">
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <svg width="800" height="800" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="0.5" />
+                <circle cx="30" cy="40" r="25" stroke="currentColor" strokeWidth="0.5" />
+                <circle cx="70" cy="60" r="30" stroke="currentColor" strokeWidth="0.5" />
+            </svg>
+         </div>
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-md bg-card/80 backdrop-blur-md border border-muted-foreground/10 shadow-2xl rounded-[2rem] overflow-hidden transition-all duration-300 relative z-10">
-          <CardHeader className="text-center space-y-2 pt-10 pb-4">
-            <div className="flex justify-center mb-4">
-              <div className="relative w-40 h-40 transition-all duration-500 hover:scale-105">
+        <Card className="w-full max-w-[380px] bg-card border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
+          <CardHeader className="text-center space-y-0 pt-6 pb-2">
+            <div className="flex justify-center mb-1">
+              <div className="relative w-36 h-36">
                 <Image
                   src="/logo-3d.png"
                   alt="Logo E-SPENLI"
                   fill
-                  sizes="160px"
+                  sizes="144px"
                   className="object-contain"
                   priority
                 />
               </div>
             </div>
-            <CardTitle className="text-2xl font-black tracking-tight text-primary">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/80 text-sm px-2">
-              Aplikasi absensi digital
+            <CardTitle className="text-4xl font-black tracking-tight text-primary leading-none uppercase">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/50 text-sm mt-0.5 tracking-tight">
+              Aplikasi absensi online
             </CardDescription>
+
+            <div className="pt-4 space-y-2">
+               <div className="flex items-center gap-3 w-full max-w-[220px] mx-auto">
+                  <div className="h-px bg-muted-foreground/20 grow" />
+                  <div className="bg-primary rounded-full p-1 shadow-sm">
+                     <ShieldCheck className="h-3 w-3 text-white" />
+                  </div>
+                  <div className="h-px bg-muted-foreground/20 grow" />
+               </div>
+               <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none opacity-90">SMP NEGERI 5 LANGKE REMBONG</p>
+                  <p className="text-[10px] font-bold text-muted-foreground/60 leading-none mt-1">Sistem Absensi Online</p>
+               </div>
+            </div>
           </CardHeader>
-          <CardContent className="px-10 pb-12 pt-6">
+
+          <CardContent className="px-8 pb-6 pt-2">
             <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-6">
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
                   control={loginForm.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <Label className="text-sm font-bold text-muted-foreground ml-1">Alamat email</Label>
+                    <FormItem className="space-y-1.5">
+                      <Label className="text-sm font-bold text-foreground ml-1">Alamat email</Label>
                       <FormControl>
                         <Input 
                           placeholder="nama@email.com" 
                           {...field} 
-                          className="h-14 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-bold shadow-none"
+                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
                   )}
                 />
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <Label htmlFor="password" className="text-sm font-bold text-muted-foreground ml-1">Kata sandi</Label>
+                
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between mb-0.5 px-1">
+                    <Label htmlFor="password" className="text-sm font-bold text-foreground">Kata sandi</Label>
                     <DialogTrigger asChild>
-                      <button type="button" className="text-sm font-bold text-primary hover:opacity-70 transition-opacity">
+                      <button type="button" className="text-xs font-bold text-primary hover:opacity-70 transition-opacity">
                         Lupa sandi?
                       </button>
                     </DialogTrigger>
@@ -204,18 +210,17 @@ export default function LoginPage() {
                               type={showLoginPass ? 'text' : 'password'} 
                               placeholder="Masukkan kata sandi" 
                               {...field} 
-                              className="h-14 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background transition-all font-bold shadow-none"
+                              className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none"
                             />
                           </FormControl>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="absolute inset-y-0 right-0 h-full px-4 text-muted-foreground hover:bg-transparent shadow-none"
+                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none"
                             onClick={() => setShowLoginPass(!showLoginPass)}
                           >
-                            {showLoginPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                            <span className="sr-only">Tampilkan kata sandi</span>
+                            {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
                         <FormMessage className="text-[10px] font-bold" />
@@ -223,28 +228,34 @@ export default function LoginPage() {
                     )}
                   />
                 </div>
+
                 <Button 
                   type="submit" 
-                  className="w-full h-16 text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-6" 
+                  className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-2 flex items-center justify-center gap-2" 
                   disabled={isLoginLoading}
                 >
-                  {isLoginLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Masuk sekarang"}
+                  {isLoginLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                    <>
+                      <LogIn className="h-4 w-4" />
+                      Masuk sekarang
+                    </>
+                  )}
                 </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
 
-        <DialogContent className="rounded-[2rem] border-none p-10 shadow-2xl max-w-xl">
+        <DialogContent className="rounded-3xl border-none p-8 shadow-2xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-black text-2xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
-            <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">
-              Masukkan email terdaftar Anda untuk menerima tautan pemulihan.
+            <DialogTitle className="font-black text-xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
+            <DialogDescription className="font-bold text-xs text-muted-foreground mt-1">
+              Masukkan email terdaftar Anda untuk pemulihan.
             </DialogDescription>
           </DialogHeader>
           <Form {...resetForm}>
             <form onSubmit={resetForm.handleSubmit(handlePasswordReset)}>
-              <div className="py-8">
+              <div className="py-6">
                 <FormField
                   control={resetForm.control}
                   name="email"
@@ -256,7 +267,7 @@ export default function LoginPage() {
                           id="reset-email" 
                           placeholder="email@anda.com" 
                           {...field} 
-                          className="h-14 rounded-2xl bg-muted/30 border-muted-foreground/5 focus:bg-background shadow-none font-bold"
+                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background shadow-none font-bold"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -268,7 +279,7 @@ export default function LoginPage() {
                 <Button 
                   type="submit" 
                   disabled={isResetLoading} 
-                  className="w-full h-14 rounded-2xl font-black tracking-widest shadow-xl shadow-primary/20 uppercase"
+                  className="w-full h-12 rounded-xl font-black tracking-widest shadow-lg shadow-primary/20 uppercase text-xs"
                 >
                   {isResetLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim link pemulihan"}
                 </Button>
@@ -277,11 +288,12 @@ export default function LoginPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      <footer className="mt-12 text-center flex flex-col items-center gap-1.5 opacity-60 relative z-10">
+
+      <footer className="mt-4 text-center flex flex-col items-center gap-1 opacity-40 relative z-10">
         <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">
           SMP NEGERI 5 LANGKE REMBONG
         </p>
-        <p className="text-[9px] font-bold text-muted-foreground/80 tracking-widest">
+        <p className="text-[9px] font-bold text-muted-foreground tracking-widest">
           ©2026 | All Rights Reserved.
         </p>
       </footer>

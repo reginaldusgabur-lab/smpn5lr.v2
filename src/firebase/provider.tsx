@@ -65,14 +65,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
+    // Instant recovery from session storage on mount
     const cached = sessionStorage.getItem('espenli_user_profile');
     if (cached) {
       try {
         const user = JSON.parse(cached);
         setUserAuthState({ user, isUserLoading: false, userError: null });
-      } catch (e) {
-        // Ignore malformed cache
-      }
+      } catch (e) {}
     }
 
     const unsubscribe = onAuthStateChanged(
@@ -124,12 +123,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
       <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">
-        <div className="relative flex items-center justify-center">
-            <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.15s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce [animation-duration:0.8s] [animation-delay:0.3s]" />
-            </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
         </div>
       </div>
     );
@@ -138,7 +135,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      <div className="w-full h-full min-h-screen">
+      <div className="w-full h-full min-h-screen bg-background">
         {children}
       </div>
     </FirebaseContext.Provider>
