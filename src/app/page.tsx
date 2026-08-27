@@ -56,16 +56,21 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
 
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const resetForm = useForm<z.infer<typeof resetPasswordSchema>>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { email: '' },
+  });
+
   useEffect(() => {
     if (!isUserLoading && user) {
       router.replace('/dashboard');
     }
   }, [user, isUserLoading, router]);
-
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
-  });
 
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoginLoading(true);
@@ -115,11 +120,6 @@ export default function LoginPage() {
         </div>
       );
   }
-
-  const resetForm = useForm<z.infer<typeof resetPasswordSchema>>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { email: '' },
-  });
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
