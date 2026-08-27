@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, LogIn, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -49,7 +49,6 @@ const resetPasswordSchema = z.object({
 // Komponen siluet Pohon Beringin (Detailed Solid)
 const BeringinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Canopy Solid - More detailed bushy look */}
     <path d="M100 20 C120 20, 140 30, 155 45 C175 60, 185 80, 185 105 C185 135, 160 155, 130 160 C120 162, 110 162, 100 162 C90 162, 80 162, 70 160 C40 155, 15 135, 15 105 C15 80, 25 60, 45 45 C60 30, 80 20, 100 20 Z" />
     <circle cx="65" cy="65" r="30" />
     <circle cx="135" cy="65" r="30" />
@@ -57,16 +56,13 @@ const BeringinIcon = ({ className }: { className?: string }) => (
     <circle cx="50" cy="100" r="28" />
     <circle cx="150" cy="100" r="28" />
     <circle cx="100" cy="110" r="40" />
-    {/* Trunk Solid */}
     <rect x="92" y="145" width="16" height="40" rx="4" />
     <path d="M80 185 H120 V195 H80 Z" />
   </svg>
 );
 
-// Komponen siluet Api (Detailed Solid)
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Three distinct solid flames */}
     <path d="M50 5 C50 5, 80 45, 50 95 C20 45, 50 5, 50 5 Z" />
     <path d="M38 30 C38 30, 15 55, 42 80 C48 70, 38 30, 38 30 Z" />
     <path d="M62 30 C62 30, 85 55, 58 80 C52 70, 62 30, 62 30 Z" />
@@ -74,7 +70,6 @@ const ApiIcon = ({ className }: { className?: string }) => (
 );
 
 export default function LoginPage() {
-  const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
@@ -99,19 +94,18 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleLogin = async (values: z.infer<typeof loginSchema>) => {
-    setIsLoginLoading(true);
-    if (!auth) {
-      toast({ variant: "destructive", title: "Layanan belum siap", description: "Layanan otentikasi belum tersedia." });
-      setIsLoginLoading(false);
-      return;
-    }
-    try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Login gagal", description: "Email atau kata sandi salah." });
-      setIsLoginLoading(false);
-    }
+  const handleLogin = (values: z.infer<typeof loginSchema>) => {
+    if (!auth) return;
+    
+    // Proses non-blocking agar terasa instan setelah klik
+    signInWithEmailAndPassword(auth, values.email, values.password)
+      .catch((error: any) => {
+        toast({ 
+          variant: "destructive", 
+          title: "Login gagal", 
+          description: "Email atau kata sandi salah." 
+        });
+      });
   };
 
   const handlePasswordReset = async (values: z.infer<typeof resetPasswordSchema>) => {
@@ -153,13 +147,11 @@ export default function LoginPage() {
       
       {/* Scattered Pattern Background Watermark - DETAILED SOLID SHAPES */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.05] dark:opacity-[0.07] overflow-hidden">
-        {/* Pohon-pohon Beringin Tersebar */}
         <BeringinIcon className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] text-primary -rotate-12" />
         <BeringinIcon className="absolute top-10 right-[-10%] w-[350px] h-[350px] text-primary rotate-45" />
         <BeringinIcon className="absolute bottom-[-10%] left-[10%] w-[500px] h-[500px] text-primary rotate-12" />
         <BeringinIcon className="absolute bottom-20 right-0 w-[300px] h-[300px] text-primary -rotate-45" />
         
-        {/* Elemen Api Tersebar */}
         <ApiIcon className="absolute top-[20%] left-[40%] w-24 h-24 text-primary" />
         <ApiIcon className="absolute top-[60%] right-[30%] w-32 h-32 text-primary rotate-12" />
         <ApiIcon className="absolute top-[10%] left-[20%] w-16 h-16 text-primary -rotate-12" />
@@ -264,8 +256,7 @@ export default function LoginPage() {
 
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-2 flex items-center justify-center gap-2" 
-                  disabled={isLoginLoading}
+                  className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-2 flex items-center justify-center gap-2"
                 >
                   <LogIn className="h-4 w-4" />
                   Masuk sekarang
