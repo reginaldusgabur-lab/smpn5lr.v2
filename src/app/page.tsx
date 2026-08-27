@@ -46,25 +46,30 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
-// Komponen siluet Pohon Beringin (Solid/Full)
+// Komponen siluet Pohon Beringin (Detailed Solid)
 const BeringinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Canopy Solid */}
-    <path d="M100 20 C140 20, 185 45, 185 90 C185 125, 150 145, 100 155 C50 145, 15 125, 15 90 C15 45, 60 20, 100 20 Z" />
+    {/* Canopy Solid - More detailed bushy look */}
+    <path d="M100 20 C120 20, 140 30, 155 45 C175 60, 185 80, 185 105 C185 135, 160 155, 130 160 C120 162, 110 162, 100 162 C90 162, 80 162, 70 160 C40 155, 15 135, 15 105 C15 80, 25 60, 45 45 C60 30, 80 20, 100 20 Z" />
+    <circle cx="65" cy="65" r="30" />
+    <circle cx="135" cy="65" r="30" />
+    <circle cx="100" cy="55" r="35" />
+    <circle cx="50" cy="100" r="28" />
+    <circle cx="150" cy="100" r="28" />
+    <circle cx="100" cy="110" r="40" />
     {/* Trunk Solid */}
-    <path d="M95 145 H105 V190 H95 V145 Z" />
+    <rect x="92" y="145" width="16" height="40" rx="4" />
+    <path d="M80 185 H120 V195 H80 Z" />
   </svg>
 );
 
-// Komponen siluet Api (Solid/Full)
+// Komponen siluet Api (Detailed Solid)
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Central Flame Solid */}
-    <path d="M50 5 C50 5, 80 40, 50 95 C20 40, 50 5, 50 5 Z" />
-    {/* Left Branch Solid */}
-    <path d="M35 25 C35 25, 20 45, 45 65 Z" />
-    {/* Right Branch Solid */}
-    <path d="M65 25 C65 25, 80 45, 55 65 Z" />
+    {/* Three distinct solid flames */}
+    <path d="M50 5 C50 5, 80 45, 50 95 C20 45, 50 5, 50 5 Z" />
+    <path d="M38 30 C38 30, 15 55, 42 80 C48 70, 38 30, 38 30 Z" />
+    <path d="M62 30 C62 30, 85 55, 58 80 C52 70, 62 30, 62 30 Z" />
   </svg>
 );
 
@@ -146,15 +151,15 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      {/* Scattered Pattern Background Watermark - FULL SHAPES */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.04] dark:opacity-[0.06] overflow-hidden">
-        {/* Pohon-pohon Beringin Tersebar (Solid) */}
+      {/* Scattered Pattern Background Watermark - DETAILED SOLID SHAPES */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.05] dark:opacity-[0.07] overflow-hidden">
+        {/* Pohon-pohon Beringin Tersebar */}
         <BeringinIcon className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] text-primary -rotate-12" />
         <BeringinIcon className="absolute top-10 right-[-10%] w-[350px] h-[350px] text-primary rotate-45" />
         <BeringinIcon className="absolute bottom-[-10%] left-[10%] w-[500px] h-[500px] text-primary rotate-12" />
         <BeringinIcon className="absolute bottom-20 right-0 w-[300px] h-[300px] text-primary -rotate-45" />
         
-        {/* Elemen Api Tersebar (Solid) */}
+        {/* Elemen Api Tersebar */}
         <ApiIcon className="absolute top-[20%] left-[40%] w-24 h-24 text-primary" />
         <ApiIcon className="absolute top-[60%] right-[30%] w-32 h-32 text-primary rotate-12" />
         <ApiIcon className="absolute top-[10%] left-[20%] w-16 h-16 text-primary -rotate-12" />
