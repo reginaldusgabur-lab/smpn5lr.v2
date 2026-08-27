@@ -53,17 +53,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>(() => {
-    // Initializing state from cache synchronously for instant load
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('espenli_user_profile');
-      if (cached) {
-        try {
-          return { user: JSON.parse(cached), isUserLoading: false, userError: null };
-        } catch (e) {}
-      }
-    }
-    return { user: null, isUserLoading: true, userError: null };
+  // Initialize with loading true and user null to match server render
+  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
+    user: null,
+    isUserLoading: true,
+    userError: null,
   });
 
   useEffect(() => {
@@ -72,7 +66,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
-    // IMMEDIATELY load from cache to skip initial white screen
+    // Attempt to recover user from session storage immediately on mount (Client-side)
     const cached = sessionStorage.getItem('espenli_user_profile');
     if (cached) {
       try {
@@ -127,16 +121,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // Optimized transition: Only show loading if we have NO cached user AND it's still loading
+  // Loading UI using standard tiny dots
   if (userAuthState.isUserLoading && !userAuthState.user) {
     return (
       <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">
-        <div className="relative flex items-center justify-center">
-            <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
-            </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
         </div>
       </div>
     );
