@@ -149,22 +149,22 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <CardTitle className="text-4xl font-black tracking-tighter text-primary leading-none uppercase">E-SPENLI</CardTitle>
+            <CardTitle className="text-4xl font-black tracking-tight text-primary leading-none uppercase">E-SPENLI</CardTitle>
             <CardDescription className="font-bold text-muted-foreground/50 text-sm mt-0.5 tracking-tight">
               Aplikasi absensi digital
             </CardDescription>
 
             <div className="pt-4 space-y-2">
-               <div className="flex items-center gap-3 w-full max-w-[200px] mx-auto opacity-30">
-                  <div className="h-px bg-muted-foreground/50 grow" />
-                  <div className="bg-primary/80 rounded-full p-1 shadow-sm">
+               <div className="flex items-center gap-3 w-full max-w-[220px] mx-auto">
+                  <div className="h-px bg-muted-foreground/20 grow" />
+                  <div className="bg-primary rounded-full p-1 shadow-sm">
                      <ShieldCheck className="h-3 w-3 text-white" />
                   </div>
-                  <div className="h-px bg-muted-foreground/50 grow" />
+                  <div className="h-px bg-muted-foreground/20 grow" />
                </div>
                <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none opacity-80">SMP NEGERI 5 LANGKE REMBONG</p>
-                  <p className="text-[10px] font-bold text-muted-foreground/40 leading-none mt-1">Sistem Absensi Digital</p>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none opacity-90">SMP NEGERI 5 LANGKE REMBONG</p>
+                  <p className="text-[10px] font-bold text-muted-foreground/60 leading-none mt-1">Sistem Absensi Digital</p>
                </div>
             </div>
           </CardHeader>
