@@ -19,6 +19,7 @@ function triggerDownload(data: any, fileName: string, fileType: string) {
 // Helper to sanitize position names for PDF
 const sanitizePosition = (pos: string) => {
     if (!pos) return '-';
+    // Menyingkat PPPK Paruh Waktu (PW) menjadi PPPK PW agar hemat ruang
     return pos.replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
 };
 
@@ -126,7 +127,9 @@ export function exportToPdf(
 
         let currentY = 68;
 
+        // Table Headings
         const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
+        
         const tableRows = dataToExport.map((user, index) => [
             user.sequenceNumber || index + 1,
             user.name,
@@ -155,7 +158,7 @@ export function exportToPdf(
                 lineWidth: 0
             },
             alternateRowStyles: {
-                fillColor: [225, 242, 254] 
+                fillColor: [225, 242, 254] // Biru transparan cerah
             },
             styles: { 
               cellPadding: 1.0,
@@ -163,19 +166,19 @@ export function exportToPdf(
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0, 
+              lineWidth: 0, // HILANGKAN SELURUH GARIS
               valign: 'middle',
-              fillColor: [248, 250, 252] 
+              fillColor: [248, 250, 252] // Warna abu-abu kebiruan sangat muda (tidak putih polos)
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
                 2: { halign: 'left', cellWidth: 36 }, 
                 3: { halign: 'center', cellWidth: 14 }, 
-                4: { halign: 'center', cellWidth: 15 },
-                5: { halign: 'center', cellWidth: 12 },
-                6: { halign: 'center', cellWidth: 15 },
-                7: { halign: 'center', cellWidth: 12 },
+                4: { halign: 'center', cellWidth: 13 },
+                5: { halign: 'center', cellWidth: 10 },
+                6: { halign: 'center', cellWidth: 13 },
+                7: { halign: 'center', cellWidth: 10 },
                 8: { halign: 'right', cellWidth: 15 }
             }
         });

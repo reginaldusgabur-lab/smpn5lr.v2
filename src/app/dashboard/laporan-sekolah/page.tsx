@@ -459,6 +459,44 @@ export default function SchoolReportPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {!isReportLoading && filteredReports.length > 0 && (
+                    <Card className="border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden bg-card">
+                        <CardHeader className="p-6 border-b border-muted-foreground/5">
+                            <div className="flex items-center gap-3">
+                                <PieIcon className="h-5 w-5 text-primary" />
+                                <div><CardTitle className="text-lg font-bold">Statistik Kehadiran</CardTitle><CardDescription className="text-xs font-medium">Rekapitulasi performa bulan ini.</CardDescription></div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie data={statsData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">{statsData.pie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Pie>
+                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
+                                            <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-[11px] font-medium text-muted-foreground">{v}</span>} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex items-start gap-4">
+                                        <Award className="h-6 w-6 text-green-600 mt-1" />
+                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-green-600/60">Paling rajin (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topRajin.map((u, idx) => u.persentaseNum > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-green-600">{u.persentase}</span></div>)}</div></div>
+                                    </div>
+                                    <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-start gap-4">
+                                        <Thermometer className="h-6 w-6 text-orange-600 mt-1" />
+                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-orange-600/60">Sering sakit (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topSakit.map((u, idx) => u.totalSakit > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-orange-600">{u.totalSakit} hari</span></div>)}</div></div>
+                                    </div>
+                                    <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-start gap-4">
+                                        <AlertCircle className="h-6 w-6 text-red-600 mt-1" />
+                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-red-600/60">Sering alpa (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topAlpa.map((u, idx) => u.totalAlpa > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-red-600">{u.totalAlpa} hari</span></div>)}</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </div>
     );

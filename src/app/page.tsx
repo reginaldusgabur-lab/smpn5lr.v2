@@ -138,7 +138,6 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      {/* Background patterns & watermarks - Opacity ditingkatkan agar identitas terlihat jelas */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
@@ -154,7 +153,6 @@ export default function LoginPage() {
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-6 pb-2 relative">
-            {/* Elemen Dekorasi Teknologi Melayang */}
             <div className="absolute top-8 left-6 opacity-10 -rotate-12">
               <Smartphone className="h-8 w-8 text-blue-600" />
             </div>
@@ -184,7 +182,6 @@ export default function LoginPage() {
 
             <div className="pt-4 space-y-2">
                <div className="flex flex-col items-center gap-1">
-                  {/* Ikon Perisai Sentral di atas Nama Sekolah */}
                   <div className="bg-blue-600/10 rounded-full p-2 border border-blue-500/20 mb-1">
                     <ShieldCheck className="h-4 w-4 text-blue-600" />
                   </div>
