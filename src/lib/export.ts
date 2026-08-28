@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -162,7 +161,7 @@ export function exportToPdf(
                 fillColor: [225, 242, 254] // Biru transparan cerah
             },
             styles: { 
-              cellPadding: 1.5,
+              cellPadding: 1.0,
               fontSize: 10,
               font: 'times', 
               textColor: [0, 0, 0],
@@ -174,13 +173,13 @@ export function exportToPdf(
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
-                2: { halign: 'left', cellWidth: 40 }, 
-                3: { halign: 'center', cellWidth: 18 }, 
-                4: { halign: 'center', cellWidth: 15 },
-                5: { halign: 'center', cellWidth: 12 },
-                6: { halign: 'center', cellWidth: 15 },
-                7: { halign: 'center', cellWidth: 12 },
-                8: { halign: 'right', cellWidth: 13 }
+                2: { halign: 'left', cellWidth: 36 }, 
+                3: { halign: 'center', cellWidth: 14 }, 
+                4: { halign: 'center', cellWidth: 13 },
+                5: { halign: 'center', cellWidth: 10 },
+                6: { halign: 'center', cellWidth: 13 },
+                7: { halign: 'center', cellWidth: 10 },
+                8: { halign: 'right', cellWidth: 20 }
             }
         });
 

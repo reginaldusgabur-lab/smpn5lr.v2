@@ -1,26 +1,26 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getAnalytics, isSupported } from 'firebase/analytics';
+import { getAuth } from 'firebase/auth';
+import { initializeFirestore, getFirestore } from 'firebase/firestore';
 
+// Inisialisasi App secara idempotent
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const firestore = getFirestore(app);
 
-// Eksplicitly set persistence for PWA compatibility across all browsers
-if (typeof window !== 'undefined') {
-  setPersistence(auth, browserLocalPersistence).catch((err) => {
-    console.warn("Firebase persistence error:", err);
-  });
-}
+/**
+ * Inisialisasi Firestore dengan pengaman re-initialization.
+ * Menggunakan experimentalForceLongPolling untuk stabilitas maksimal di lingkungan Vercel/Studio.
+ * Ini mencegah error "Could not reach Cloud Firestore backend" yang disebabkan oleh blokir gRPC/WebSocket.
+ */
+const firestore = getApps().length 
+  ? getFirestore(app) 
+  : initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+    });
 
-const analytics = typeof window !== 'undefined' ? isSupported().then(yes => yes ? getAnalytics(app) : null) : null;
-
-export { app as firebaseApp, auth, firestore, analytics };
+export { app as firebaseApp, auth, firestore };
 
 export * from './provider';
 export * from './client-provider';
