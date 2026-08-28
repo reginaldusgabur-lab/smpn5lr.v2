@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -20,7 +19,6 @@ function triggerDownload(data: any, fileName: string, fileType: string) {
 // Helper to sanitize position names for PDF
 const sanitizePosition = (pos: string) => {
     if (!pos) return '-';
-    // Menyingkat PPPK Paruh Waktu (PW) menjadi PPPK PW agar hemat ruang
     return pos.replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
 };
 
@@ -128,9 +126,7 @@ export function exportToPdf(
 
         let currentY = 68;
 
-        // Table Headings
         const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
-        
         const tableRows = dataToExport.map((user, index) => [
             user.sequenceNumber || index + 1,
             user.name,
@@ -148,7 +144,7 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 40 }, // Tingkatkan margin bawah untuk mencegah pemotongan yang tidak rapi
+            margin: { bottom: 40 },
             headStyles: { 
                 fillColor: [52, 152, 219], 
                 textColor: 255, 
@@ -162,8 +158,8 @@ export function exportToPdf(
                 fillColor: [225, 242, 254] 
             },
             styles: { 
-              cellPadding: 1.0, // Rapatkan padding untuk mengimbangi ukuran font yang lebih besar
-              fontSize: 10, // Ukuran huruf ditingkatkan menjadi 10
+              cellPadding: 1.0,
+              fontSize: 10,
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
@@ -174,8 +170,8 @@ export function exportToPdf(
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
-                2: { halign: 'left', cellWidth: 36 }, // Rapatkan kolom NIP
-                3: { halign: 'center', cellWidth: 14 }, // Rapatkan kolom Status
+                2: { halign: 'left', cellWidth: 36 }, 
+                3: { halign: 'center', cellWidth: 14 }, 
                 4: { halign: 'center', cellWidth: 15 },
                 5: { halign: 'center', cellWidth: 12 },
                 6: { halign: 'center', cellWidth: 15 },

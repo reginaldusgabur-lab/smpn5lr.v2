@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -14,9 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, CheckCircle2, XCircle, FileWarning, CalendarClock, MoreVertical, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -47,32 +45,15 @@ export default function ReportClientShell({
 }: ClientShellProps) {
     const router = useRouter();
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const firestore = useFirestore();
     const { user: authUser } = useUser();
     const { toast } = useToast();
 
     const [userData] = useState<UserData>(initialUserData);
-    const [reportDetails, setReportDetails] = useState<ReportDetail[]>(initialReportData || []);
-    const [isMutating, setIsMutating] = useState(false);
+    const [reportDetails] = useState<ReportDetail[]>(initialReportData || []);
 
     const parsedInitialMonth = parseISO(initialMonth);
-    const [currentMonth, setCurrentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
-
-    const summaryStats = useMemo(() => {
-        const hadir = reportDetails.filter(d => d.status === 'Hadir' || d.status === 'Terlambat' || d.status === 'Pulang').length;
-        const sakit = reportDetails.filter(d => d.status === 'Sakit').length;
-        const izin = reportDetails.filter(d => d.status === 'Izin' || d.status === 'Dinas').length;
-        const alpa = reportDetails.filter(d => d.status === 'Alpa').length;
-        return { hadir, sakit, izin, alpa };
-    }, [reportDetails]);
-
-    const chartData = [
-        { name: 'Hadir', Jumlah: summaryStats.hadir, fill: '#22c55e' },
-        { name: 'Sakit', Jumlah: summaryStats.sakit, fill: '#f97316' },
-        { name: 'Izin', Jumlah: summaryStats.izin, fill: '#f59e0b' },
-        { name: 'Alpa', Jumlah: summaryStats.alpa, fill: '#ef4444' },
-    ];
+    const [currentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
 
     const handleMonthChange = (amount: number) => {
         const newMonthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
@@ -84,43 +65,6 @@ export default function ReportClientShell({
         const dateObj = typeof date === 'string' ? parseISO(date) : date;
         return isValid(dateObj) ? format(dateObj, formatString, { locale: indonesiaLocale }) : '-';
     }
-
-    const handleStatusChange = async (dateStr: string, newStatus: string, reason: string) => {
-        if (!authUser || !firestore || isMutating) return;
-        setIsMutating(true);
-        try {
-            const targetDate = parseISO(dateStr);
-            const batch = writeBatch(firestore);
-            const todayStr = format(targetDate, 'yyyy-MM-dd');
-            
-            const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
-            const qA = query(attendanceRef, where('date', '==', todayStr));
-            const snapA = await getDocs(qA);
-            snapA.forEach(d => batch.delete(d.ref));
-
-            const leaveRef = collection(firestore, 'users', userId, 'leaveRequests');
-            const qL = query(leaveRef, where('startDate', '==', Timestamp.fromDate(startOfDay(targetDate))));
-            const snapL = await getDocs(qL);
-            snapL.forEach(d => batch.delete(d.ref));
-
-            const newLeaveDoc = doc(leaveRef);
-            batch.set(newLeaveDoc, {
-                id: newLeaveDoc.id,
-                userId, userName: userData.name, userRole: userData.role,
-                type: newStatus === 'Sakit' ? 'Sakit' : 'Izin',
-                status: 'approved', reason,
-                startDate: Timestamp.fromDate(startOfDay(targetDate)),
-                endDate: Timestamp.fromDate(endOfDay(targetDate)),
-                createdAt: serverTimestamp(), approvedBy: authUser.uid, approvedAt: serverTimestamp()
-            });
-
-            await batch.commit();
-            invalidateCache();
-            toast({ title: 'Berhasil', description: `Status diperbarui menjadi ${reason}.` });
-            router.refresh();
-        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); }
-        finally { setIsMutating(false); }
-    };
 
     const handleDownloadPdf = () => {
         if (!userData || reportDetails.length === 0) return;
@@ -241,7 +185,6 @@ export default function ReportClientShell({
                 </div>
 
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
-                    {/* Header Card - Biru Gradasi */}
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
                             <FileText className="w-24 h-24 text-white" />
