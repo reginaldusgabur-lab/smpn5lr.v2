@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, ShieldCheck, LogIn, Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,8 +34,8 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { auth, useUser, initiateEmailSignIn } from '@/firebase';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth, useUser } from '@/firebase';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Format email tidak valid" }),
@@ -46,30 +46,8 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
-// Komponen siluet Pohon Beringin (Detailed Solid)
-const BeringinIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M100 20 C120 20, 140 30, 155 45 C175 60, 185 80, 185 105 C185 135, 160 155, 130 160 C120 162, 110 162, 100 162 C90 162, 80 162, 70 160 C40 155, 15 135, 15 105 C15 80, 25 60, 45 45 C60 30, 80 20, 100 20 Z" />
-    <circle cx="65" cy="65" r="30" />
-    <circle cx="135" cy="65" r="30" />
-    <circle cx="100" cy="55" r="35" />
-    <circle cx="50" cy="100" r="28" />
-    <circle cx="150" cy="100" r="28" />
-    <circle cx="100" cy="110" r="40" />
-    <rect x="92" y="145" width="16" height="40" rx="4" />
-    <path d="M80 185 H120 V195 H80 Z" />
-  </svg>
-);
-
-const ApiIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M50 5 C50 5, 80 45, 50 95 C20 45, 50 5, 50 5 Z" />
-    <path d="M38 30 C38 30, 15 55, 42 80 C48 70, 38 30, 38 30 Z" />
-    <path d="M62 30 C62 30, 85 55, 58 80 C52 70, 62 30, 62 30 Z" />
-  </svg>
-);
-
 export default function LoginPage() {
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
@@ -94,224 +72,124 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleLogin = (values: z.infer<typeof loginSchema>) => {
-    if (!auth) return;
-    
-    // PROSES NON-BLOCKING: Langsung jalankan tanpa await agar transisi terasa instan
-    initiateEmailSignIn(auth, values.email, values.password);
-    
-    // Feedback suara/getar opsional bisa ditaruh di sini jika diperlukan
+  const handleLogin = async (values: z.infer<typeof loginSchema>) => {
+    setIsLoginLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth!, values.email, values.password);
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Login gagal", description: "Email atau kata sandi salah." });
+      setIsLoginLoading(false);
+    }
   };
 
   const handlePasswordReset = async (values: z.infer<typeof resetPasswordSchema>) => {
     setIsResetLoading(true);
-    if (!auth) return;
     try {
-      auth.languageCode = 'id';
-      await sendPasswordResetEmail(auth, values.email);
-      toast({
-        title: "Link pemulihan terkirim",
-        description: `Periksa kotak masuk & spam di ${values.email}.`
-      });
-      setIsResetDialogOpen(false);
+      if (auth) {
+        auth.languageCode = 'id';
+        await sendPasswordResetEmail(auth, values.email);
+        toast({ title: "Link pemulihan terkirim", description: `Periksa email di ${values.email}.` });
+        setIsResetDialogOpen(false);
+      }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Gagal",
-        description: "Gagal mengirim email reset. Pastikan email terdaftar."
-      });
+      toast({ variant: "destructive", title: "Gagal", description: "Gagal mengirim email reset." });
     } finally {
       setIsResetLoading(false);
     }
   };
   
   if (isUserLoading || user) {
-      return (
-        <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
-             <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
-            </div>
-        </div>
-      );
+      return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
-      
-      {/* Scattered Pattern Background Watermark - DETAILED SOLID SHAPES */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.05] dark:opacity-[0.07] overflow-hidden">
-        <BeringinIcon className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] text-primary -rotate-12" />
-        <BeringinIcon className="absolute top-10 right-[-10%] w-[350px] h-[350px] text-primary rotate-45" />
-        <BeringinIcon className="absolute bottom-[-10%] left-[10%] w-[500px] h-[500px] text-primary rotate-12" />
-        <BeringinIcon className="absolute bottom-20 right-0 w-[300px] h-[300px] text-primary -rotate-45" />
-        
-        <ApiIcon className="absolute top-[20%] left-[40%] w-24 h-24 text-primary" />
-        <ApiIcon className="absolute top-[60%] right-[30%] w-32 h-32 text-primary rotate-12" />
-        <ApiIcon className="absolute top-[10%] left-[20%] w-16 h-16 text-primary -rotate-12" />
-        <ApiIcon className="absolute bottom-[20%] right-[10%] w-20 h-20 text-primary rotate-45" />
-        <ApiIcon className="absolute bottom-[40%] left-[-5%] w-28 h-28 text-primary -rotate-45" />
-      </div>
+    <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950">
+      <Card className="w-full max-w-[380px] shadow-2xl rounded-3xl border-none">
+        <CardHeader className="text-center pt-8">
+          <div className="flex justify-center mb-4">
+            <Image src="/logo-3d.png" alt="Logo" width={100} height={100} className="object-contain" priority />
+          </div>
+          <CardTitle className="text-3xl font-black text-primary uppercase">E-SPENLI</CardTitle>
+          <CardDescription className="font-bold text-muted-foreground">Aplikasi Absensi Online</CardDescription>
+        </CardHeader>
+
+        <CardContent className="px-8 pb-8">
+          <Form {...loginForm}>
+            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+              <FormField
+                control={loginForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Alamat Email</Label>
+                    <FormControl>
+                      <Input placeholder="nama@email.com" {...field} className="rounded-xl h-11 bg-muted/20" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={loginForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <Label>Kata Sandi</Label>
+                      <button type="button" onClick={() => setIsResetDialogOpen(true)} className="text-xs font-bold text-primary">Lupa sandi?</button>
+                    </div>
+                    <div className="relative">
+                      <FormControl>
+                        <Input type={showLoginPass ? 'text' : 'password'} placeholder="Masukkan kata sandi" {...field} className="rounded-xl h-11 bg-muted/20" />
+                      </FormControl>
+                      <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full" onClick={() => setShowLoginPass(!showLoginPass)}>
+                        {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" className="w-full h-11 rounded-xl font-bold mt-2" disabled={isLoginLoading}>
+                {isLoginLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Masuk"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[380px] bg-card/90 backdrop-blur-sm border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
-          <CardHeader className="text-center space-y-0 pt-6 pb-2">
-            <div className="flex justify-center mb-1">
-              <div className="relative w-36 h-36">
-                <Image
-                  src="/logo-3d.png"
-                  alt="Logo E-SPENLI"
-                  fill
-                  sizes="144px"
-                  className="object-contain"
-                  priority
-                />
-              </div>
-            </div>
-            <CardTitle className="text-4xl font-black tracking-tight text-primary leading-none uppercase">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/60 text-sm mt-1 tracking-tight">
-              Aplikasi absensi online
-            </CardDescription>
-
-            <div className="pt-4 space-y-2">
-               <div className="flex items-center gap-3 w-full max-w-[220px] mx-auto">
-                  <div className="h-px bg-muted-foreground/20 grow" />
-                  <div className="bg-primary rounded-full p-1 shadow-sm">
-                     <ShieldCheck className="h-3 w-3 text-white" />
-                  </div>
-                  <div className="h-px bg-muted-foreground/20 grow" />
-               </div>
-               <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none opacity-90">SMP NEGERI 5 LANGKE REMBONG</p>
-                  <p className="text-[10px] font-bold text-muted-foreground/60 leading-none mt-1">Sistem Absensi Online</p>
-               </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="px-8 pb-6 pt-2">
-            <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                <FormField
-                  control={loginForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem className="space-y-1.5">
-                      <Label className="text-sm font-bold text-foreground ml-1">Alamat email</Label>
-                      <FormControl>
-                        <Input 
-                          placeholder="nama@email.com" 
-                          {...field} 
-                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none text-foreground"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px] font-bold" />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between mb-0.5 px-1">
-                    <Label htmlFor="password" className="text-sm font-bold text-foreground">Kata sandi</Label>
-                    <DialogTrigger asChild>
-                      <button type="button" className="text-xs font-bold text-primary hover:opacity-70 transition-opacity">
-                        Lupa sandi?
-                      </button>
-                    </DialogTrigger>
-                  </div>
-                  <FormField
-                    control={loginForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="relative">
-                          <FormControl>
-                            <Input 
-                              type={showLoginPass ? 'text' : 'password'} 
-                              placeholder="Masukkan kata sandi" 
-                              {...field} 
-                              className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none text-foreground"
-                            />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none"
-                            onClick={() => setShowLoginPass(!showLoginPass)}
-                          >
-                            {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        <FormMessage className="text-[10px] font-bold" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-2 flex items-center justify-center gap-2"
-                >
-                  <LogIn className="h-4 w-4" />
-                  Masuk sekarang
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        <DialogContent className="rounded-3xl border-none p-8 shadow-2xl max-w-sm">
+        <DialogContent className="rounded-3xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-black text-xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
-            <DialogDescription className="font-bold text-xs text-muted-foreground mt-1">
-              Masukkan email terdaftar Anda untuk pemulihan.
-            </DialogDescription>
+            <DialogTitle>Reset Kata Sandi</DialogTitle>
+            <DialogDescription>Masukkan email Anda untuk menerima tautan pemulihan.</DialogDescription>
           </DialogHeader>
           <Form {...resetForm}>
-            <form onSubmit={resetForm.handleSubmit(handlePasswordReset)}>
-              <div className="py-6">
-                <FormField
-                  control={resetForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="reset-email" className="text-[10px] font-black tracking-widest text-muted-foreground ml-1 uppercase">Email terdaftar</Label>
-                      <FormControl>
-                        <Input 
-                          id="reset-email" 
-                          placeholder="email@anda.com" 
-                          {...field} 
-                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background shadow-none font-bold"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[10px] font-bold" />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <form onSubmit={resetForm.handleSubmit(handlePasswordReset)} className="space-y-4 pt-4">
+              <FormField
+                control={resetForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Email Terdaftar</Label>
+                    <FormControl>
+                      <Input placeholder="email@anda.com" {...field} className="rounded-xl" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={isResetLoading} 
-                  className="w-full h-12 rounded-xl font-black tracking-widest shadow-lg shadow-primary/20 uppercase text-xs"
-                >
-                  {isResetLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim link pemulihan"}
+                <Button type="submit" disabled={isResetLoading} className="w-full rounded-xl">
+                  {isResetLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kirim Tautan"}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-
-      <footer className="mt-4 text-center flex flex-col items-center gap-1 opacity-40 relative z-10">
-        <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">
-          SMP NEGERI 5 LANGKE REMBONG
-        </p>
-        <p className="text-[9px] font-bold text-muted-foreground tracking-widest">
-          ©2026 | All Rights Reserved.
-        </p>
-      </footer>
     </div>
   );
 }

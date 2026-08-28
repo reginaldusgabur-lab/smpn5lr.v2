@@ -53,7 +53,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  // Initialize with loading true and user null to match server render
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
     isUserLoading: true,
@@ -64,15 +63,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     if (!auth || !firestore) {
       setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth or Firestore service not provided.") });
       return;
-    }
-
-    // Attempt to recover user from session storage immediately on mount (Client-side)
-    const cached = sessionStorage.getItem('espenli_user_profile');
-    if (cached) {
-      try {
-        const user = JSON.parse(cached);
-        setUserAuthState({ user, isUserLoading: false, userError: null });
-      } catch (e) {}
     }
 
     const unsubscribe = onAuthStateChanged(
@@ -89,8 +79,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 ...userProfile,
                 id: userDocSnap.id,
               };
-              
-              sessionStorage.setItem('espenli_user_profile', JSON.stringify(combinedUser));
               setUserAuthState({ user: combinedUser, isUserLoading: false, userError: null });
             } else {
               setUserAuthState({ user: null, isUserLoading: false, userError: null });
@@ -99,7 +87,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             setUserAuthState(prev => ({ ...prev, userError: error as Error, isUserLoading: false }));
           }
         } else {
-          sessionStorage.removeItem('espenli_user_profile');
           setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },
@@ -121,25 +108,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // Loading UI using standard tiny dots
-  if (userAuthState.isUserLoading && !userAuthState.user) {
-    return (
-      <div className="flex flex-col items-center justify-center bg-white h-svh w-full overflow-hidden">
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      <div className="w-full h-full min-h-screen bg-background">
-        {children}
-      </div>
+      {children}
     </FirebaseContext.Provider>
   );
 };

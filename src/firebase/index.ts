@@ -2,32 +2,21 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
-import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /**
  * Inisialisasi Firestore dengan pengaturan khusus.
- * Menggunakan experimentalForceLongPolling untuk stabilitas koneksi yang lebih baik
- * di lingkungan port-forwarding/cloud workstation.
+ * Menggunakan experimentalForceLongPolling untuk stabilitas koneksi yang lebih baik.
  */
 const firestore = initializeFirestore(app, {
   experimentalForceLongPolling: true,
 });
 
-// Eksplicitly set persistence for PWA compatibility across all browsers
-if (typeof window !== 'undefined') {
-  setPersistence(auth, browserLocalPersistence).catch((err) => {
-    console.warn("Firebase persistence error:", err);
-  });
-}
-
-const analytics = typeof window !== 'undefined' ? isSupported().then(yes => yes ? getAnalytics(app) : null) : null;
-
-export { app as firebaseApp, auth, firestore, analytics };
+export { app as firebaseApp, auth, firestore };
 
 export * from './provider';
 export * from './client-provider';
