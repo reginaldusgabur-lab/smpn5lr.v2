@@ -159,6 +159,10 @@ export default function AdminUsersPage() {
         setIsSaving(true);
 
         try {
+            // Pengamanan Parse Integer agar tidak NaN
+            const parsedSeq = values.sequenceNumber ? parseInt(values.sequenceNumber, 10) : null;
+            const finalSeq = (parsedSeq !== null && !isNaN(parsedSeq)) ? parsedSeq : null;
+
             if (editingUser) {
                 const userRef = doc(firestore, "users", editingUser.id);
                 const updatedData = {
@@ -167,7 +171,7 @@ export default function AdminUsersPage() {
                     gender: values.gender,
                     nip: values.nip || null,
                     position: values.position || null,
-                    sequenceNumber: values.sequenceNumber ? parseInt(values.sequenceNumber, 10) : null,
+                    sequenceNumber: finalSeq,
                 };
                 await updateDocumentNonBlocking(userRef, updatedData);
                 toast({ title: 'Berhasil', description: 'Data pengguna telah diperbarui.' });
@@ -190,7 +194,7 @@ export default function AdminUsersPage() {
                         email: values.email, 
                         status: 'Aktif',
                         nip: values.nip || null, position: values.position || null,
-                        sequenceNumber: values.sequenceNumber ? parseInt(values.sequenceNumber, 10) : null,
+                        sequenceNumber: finalSeq,
                     };
                     await setDocumentNonBlocking(doc(firestore, "users", cred.user.uid), userDoc, {});
                     toast({ title: 'Berhasil', description: 'Akun baru telah dibuat.' });
