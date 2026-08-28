@@ -46,25 +46,18 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
-// Komponen siluet Pohon Beringin (Solid/Full)
 const BeringinIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Canopy Solid */}
-    <path d="M100 20 C140 20, 185 45, 185 90 C185 125, 150 145, 100 155 C50 145, 15 125, 15 90 C15 45, 60 20, 100 20 Z" />
-    {/* Trunk Solid */}
-    <path d="M95 145 H105 V190 H95 V145 Z" />
+  <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="50" cy="35" r="25" />
+    <circle cx="35" cy="50" r="20" />
+    <circle cx="65" cy="50" r="20" />
+    <rect x="46" y="60" width="8" height="25" />
   </svg>
 );
 
-// Komponen siluet Api (Solid/Full)
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Central Flame Solid */}
-    <path d="M50 5 C50 5, 80 40, 50 95 C20 40, 50 5, 50 5 Z" />
-    {/* Left Branch Solid */}
-    <path d="M35 25 C35 25, 20 45, 45 65 Z" />
-    {/* Right Branch Solid */}
-    <path d="M65 25 C65 25, 80 45, 55 65 Z" />
+    <path d="M50 5 C50 5 85 45 50 95 C15 45 50 5 50 5 Z M50 35 C50 35 70 55 50 80 C30 55 50 35 50 35 Z" />
   </svg>
 );
 
@@ -73,6 +66,7 @@ export default function LoginPage() {
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -89,15 +83,19 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!isUserLoading && user) {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && !isUserLoading && user) {
       router.replace('/dashboard');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, isClient]);
 
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoginLoading(true);
     if (!auth) {
-      toast({ variant: "destructive", title: "Layanan belum siap", description: "Layanan otentikasi belum tersedia." });
+      toast({ variant: "destructive", title: "Gagal", description: "Layanan belum siap." });
       setIsLoginLoading(false);
       return;
     }
@@ -115,23 +113,16 @@ export default function LoginPage() {
     try {
       auth.languageCode = 'id';
       await sendPasswordResetEmail(auth, values.email);
-      toast({
-        title: "Link pemulihan terkirim",
-        description: `Periksa kotak masuk & spam di ${values.email}.`
-      });
+      toast({ title: "Terkirim", description: `Cek email ${values.email}.` });
       setIsResetDialogOpen(false);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Gagal",
-        description: "Gagal mengirim email reset. Pastikan email terdaftar."
-      });
+      toast({ variant: "destructive", title: "Gagal", description: "Gagal mengirim email reset." });
     } finally {
       setIsResetLoading(false);
     }
   };
   
-  if (isUserLoading || user) {
+  if (!isClient || isUserLoading || user) {
       return (
         <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
              <div className="flex items-center gap-1.5">
@@ -146,58 +137,44 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      {/* Scattered Pattern Background Watermark - FULL SHAPES */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.04] dark:opacity-[0.06] overflow-hidden">
-        {/* Pohon-pohon Beringin Tersebar (Solid) */}
-        <BeringinIcon className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] text-primary -rotate-12" />
-        <BeringinIcon className="absolute top-10 right-[-10%] w-[350px] h-[350px] text-primary rotate-45" />
-        <BeringinIcon className="absolute bottom-[-10%] left-[10%] w-[500px] h-[500px] text-primary rotate-12" />
-        <BeringinIcon className="absolute bottom-20 right-0 w-[300px] h-[300px] text-primary -rotate-45" />
+      {/* Background patterns & watermarks - Opacity ditingkatkan agar lebih terang */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        {/* Elemen Api Tersebar (Solid) */}
-        <ApiIcon className="absolute top-[20%] left-[40%] w-24 h-24 text-primary" />
-        <ApiIcon className="absolute top-[60%] right-[30%] w-32 h-32 text-primary rotate-12" />
-        <ApiIcon className="absolute top-[10%] left-[20%] w-16 h-16 text-primary -rotate-12" />
-        <ApiIcon className="absolute bottom-[20%] right-[10%] w-20 h-20 text-primary rotate-45" />
-        <ApiIcon className="absolute bottom-[40%] left-[-5%] w-28 h-28 text-primary -rotate-45" />
+        <div className="absolute inset-0 opacity-[0.25] dark:opacity-[0.3]">
+          <BeringinIcon className="absolute top-10 left-[5%] w-64 h-64 -rotate-12" />
+          <ApiIcon className="absolute top-1/4 right-[10%] w-32 h-32 rotate-12" />
+          <BeringinIcon className="absolute bottom-20 left-[15%] w-80 h-80 rotate-45" />
+          <ApiIcon className="absolute bottom-[10%] right-[-5%] w-48 h-48 -rotate-45" />
+        </div>
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[380px] bg-card/90 backdrop-blur-sm border border-muted-foreground/10 shadow-2xl rounded-3xl overflow-hidden relative z-10">
-          <CardHeader className="text-center space-y-0 pt-6 pb-2">
-            <div className="flex justify-center mb-1">
-              <div className="relative w-36 h-36">
-                <Image
-                  src="/logo-3d.png"
-                  alt="Logo E-SPENLI"
-                  fill
-                  sizes="144px"
-                  className="object-contain"
-                  priority
-                />
+        <Card className="w-full max-w-[380px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
+          <CardHeader className="text-center space-y-0 pt-8 pb-2">
+            <div className="flex justify-center mb-0">
+              <div className="relative w-40 h-40 transition-transform duration-500 hover:scale-105">
+                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="160px" className="object-contain" priority />
               </div>
             </div>
-            <CardTitle className="text-4xl font-black tracking-tight text-primary leading-none uppercase">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/60 text-sm mt-1 tracking-tight">
-              Aplikasi absensi online
-            </CardDescription>
+            <CardTitle className="text-5xl font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase -mt-1">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/60 text-xs mt-1 tracking-tight">Aplikasi absensi online</CardDescription>
 
-            <div className="pt-4 space-y-2">
-               <div className="flex items-center gap-3 w-full max-w-[220px] mx-auto">
-                  <div className="h-px bg-muted-foreground/20 grow" />
-                  <div className="bg-primary rounded-full p-1 shadow-sm">
-                     <ShieldCheck className="h-3 w-3 text-white" />
-                  </div>
-                  <div className="h-px bg-muted-foreground/20 grow" />
+            <div className="pt-6 space-y-3">
+               <div className="flex items-center gap-3 w-full max-w-[240px] mx-auto opacity-30">
+                  <div className="h-[0.5px] bg-muted-foreground/40 grow" />
+                  <div className="bg-blue-600/10 rounded-full p-2.5 border border-blue-500/20"><ShieldCheck className="h-4 w-4 text-blue-600" /></div>
+                  <div className="h-[0.5px] bg-muted-foreground/40 grow" />
                </div>
-               <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none opacity-90">SMP NEGERI 5 LANGKE REMBONG</p>
-                  <p className="text-[10px] font-bold text-muted-foreground/60 leading-none mt-1">Sistem Absensi Online</p>
+               <div className="space-y-1 px-4">
+                  <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
+                  <p className="text-[9px] font-bold text-muted-foreground/40 leading-none uppercase tracking-[0.2em]">Sistem Absensi Online</p>
                </div>
             </div>
           </CardHeader>
 
-          <CardContent className="px-8 pb-6 pt-2">
+          <CardContent className="px-8 pb-8 pt-4">
             <Form {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
@@ -205,13 +182,9 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
-                      <Label className="text-sm font-bold text-foreground ml-1">Alamat email</Label>
+                      <Label className="text-[10px] font-black tracking-widest text-slate-500 ml-1 uppercase">Email</Label>
                       <FormControl>
-                        <Input 
-                          placeholder="nama@email.com" 
-                          {...field} 
-                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none text-foreground"
-                        />
+                        <Input placeholder="nama@email.com" {...field} className="h-11 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 text-sm" />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
@@ -219,12 +192,10 @@ export default function LoginPage() {
                 />
                 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between mb-0.5 px-1">
-                    <Label htmlFor="password" className="text-sm font-bold text-foreground">Kata sandi</Label>
+                  <div className="flex items-center justify-between px-1">
+                    <Label htmlFor="password" className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Kata sandi</Label>
                     <DialogTrigger asChild>
-                      <button type="button" className="text-xs font-bold text-primary hover:opacity-70 transition-opacity">
-                        Lupa sandi?
-                      </button>
+                      <button type="button" className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Lupa sandi?</button>
                     </DialogTrigger>
                   </div>
                   <FormField
@@ -234,20 +205,9 @@ export default function LoginPage() {
                       <FormItem>
                         <div className="relative">
                           <FormControl>
-                            <Input 
-                              type={showLoginPass ? 'text' : 'password'} 
-                              placeholder="Masukkan kata sandi" 
-                              {...field} 
-                              className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background transition-all font-bold shadow-none text-foreground"
-                            />
+                            <Input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••••••" {...field} className="h-11 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 pr-12 text-sm" />
                           </FormControl>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none"
-                            onClick={() => setShowLoginPass(!showLoginPass)}
-                          >
+                          <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground/30 hover:bg-transparent shadow-none" onClick={() => setShowLoginPass(!showLoginPass)}>
                             {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
@@ -257,29 +217,18 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.97] bg-primary hover:bg-primary/90 mt-2 flex items-center justify-center gap-2" 
-                  disabled={isLoginLoading}
-                >
-                  {isLoginLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                    <>
-                      <LogIn className="h-4 w-4" />
-                      Masuk sekarang
-                    </>
-                  )}
+                <Button type="submit" className="w-full h-11 text-xs font-black uppercase tracking-[0.2em] rounded-xl shadow-xl shadow-blue-500/10 transition-all active:scale-[0.98] bg-blue-600 hover:bg-blue-700 text-white mt-4 flex items-center justify-center gap-2" disabled={isLoginLoading}>
+                  {isLoginLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><LogIn className="h-3.5 w-3.5" />Masuk sekarang</>}
                 </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
 
-        <DialogContent className="rounded-3xl border-none p-8 shadow-2xl max-w-sm">
+        <DialogContent className="rounded-2xl border-none p-8 shadow-2xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-black text-xl tracking-tighter text-primary uppercase">Atur ulang sandi</DialogTitle>
-            <DialogDescription className="font-bold text-xs text-muted-foreground mt-1">
-              Masukkan email terdaftar Anda untuk pemulihan.
-            </DialogDescription>
+            <DialogTitle className="font-black text-xl tracking-tight text-blue-600 uppercase">Pemulihan Sandi</DialogTitle>
+            <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">Masukkan email terdaftar Anda untuk pemulihan.</DialogDescription>
           </DialogHeader>
           <Form {...resetForm}>
             <form onSubmit={resetForm.handleSubmit(handlePasswordReset)}>
@@ -289,14 +238,9 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="reset-email" className="text-[10px] font-black tracking-widest text-muted-foreground ml-1 uppercase">Email terdaftar</Label>
+                      <Label className="text-[10px] font-black tracking-widest text-muted-foreground ml-1 uppercase">Email Terdaftar</Label>
                       <FormControl>
-                        <Input 
-                          id="reset-email" 
-                          placeholder="email@anda.com" 
-                          {...field} 
-                          className="h-12 rounded-xl bg-muted/20 border-muted-foreground/10 focus:bg-background shadow-none font-bold"
-                        />
+                        <Input placeholder="email@anda.com" {...field} className="h-12 rounded-xl bg-slate-100 border-transparent focus:bg-white shadow-none font-bold" />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
@@ -304,12 +248,8 @@ export default function LoginPage() {
                 />
               </div>
               <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={isResetLoading} 
-                  className="w-full h-12 rounded-xl font-black tracking-widest shadow-lg shadow-primary/20 uppercase text-xs"
-                >
-                  {isResetLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim link pemulihan"}
+                <Button type="submit" disabled={isResetLoading} className="w-full h-12 rounded-xl font-black tracking-widest bg-blue-600 shadow-lg uppercase text-xs">
+                  {isResetLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim Tautan"}
                 </Button>
               </DialogFooter>
             </form>
@@ -317,13 +257,9 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
 
-      <footer className="mt-4 text-center flex flex-col items-center gap-1 opacity-40 relative z-10">
-        <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">
-          SMP NEGERI 5 LANGKE REMBONG
-        </p>
-        <p className="text-[9px] font-bold text-muted-foreground tracking-widest">
-          ©2026 | All Rights Reserved.
-        </p>
+      <footer className="mt-8 text-center flex flex-col items-center gap-1 opacity-20 relative z-10 transition-opacity hover:opacity-50">
+        <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 tracking-[0.25em] uppercase">SMP NEGERI 5 LANGKE REMBONG</p>
+        <p className="text-[9px] font-bold text-slate-500 tracking-widest">©2026 | All Rights Reserved.</p>
       </footer>
     </div>
   );
