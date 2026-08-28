@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -320,8 +321,8 @@ export default function UserReportDetailPage() {
             margin: { bottom: 35 },
             styles: { 
               font: 'times', 
-              fontSize: 10, 
-              cellPadding: 1.5,
+              fontSize: 9, 
+              cellPadding: 1.2,
               valign: 'middle',
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
@@ -334,13 +335,13 @@ export default function UserReportDetailPage() {
                 halign: 'center', 
                 valign: 'middle',
                 fontStyle: 'bold',
-                minCellHeight: 12,
+                minCellHeight: 11,
                 lineWidth: 0
             },
             alternateRowStyles: {
                 fillColor: [225, 242, 254] // Biru transparan selang-seling
             },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 28 }, 3: { halign: 'center', cellWidth: 28 }, 4: { halign: 'center', cellWidth: 22 } }
         });
 
         let finalY = (doc as any).lastAutoTable.finalY || currentY;
@@ -522,7 +523,6 @@ export default function UserReportDetailPage() {
                                                                 <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleSetHadir(item)}>{hasIn ? 'Lengkapi absen pulang' : 'Jadikan Hadir'}</DropdownMenuItem>
-                                                                    {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(day, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>}
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Ubah Status</DropdownMenuLabel>
                                                                     {!hasIn && (
