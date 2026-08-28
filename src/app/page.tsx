@@ -46,20 +46,23 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
-// Siluet Pohon Beringin (Solid)
+// Siluet Pohon Beringin (Solid) - Diperbarui agar lebih artistik
 const BeringinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M100 20 C140 20, 185 45, 185 90 C185 125, 150 145, 100 155 C50 145, 15 125, 15 90 C15 45, 60 20, 100 20 Z" />
     <path d="M95 145 H105 V190 H95 V145 Z" />
+    <circle cx="100" cy="55" r="30" />
+    <circle cx="140" cy="85" r="25" />
+    <circle cx="60" cy="85" r="25" />
   </svg>
 );
 
-// Siluet Api (Solid)
+// Siluet Api (Solid) - Diperbarui agar lebih artistik
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M50 5 C50 5, 80 40, 50 95 C20 40, 50 5, 50 5 Z" />
-    <path d="M35 25 C35 25, 20 45, 45 65 Z" />
-    <path d="M65 25 C65 25, 80 45, 55 65 Z" />
+    <path d="M45 40 C45 40, 30 55, 50 75 Z" opacity="0.6" />
+    <path d="M55 40 C55 40, 70 55, 50 75 Z" opacity="0.6" />
   </svg>
 );
 
@@ -139,12 +142,12 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      {/* Background patterns & watermarks */}
+      {/* Background patterns & watermarks - Opacity ditingkatkan agar lebih terang */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
+        <div className="absolute inset-0 opacity-[0.08] dark:opacity-[0.12]">
           <BeringinIcon className="absolute top-10 left-[5%] w-64 h-64 -rotate-12" />
           <ApiIcon className="absolute top-1/4 right-[10%] w-32 h-32 rotate-12" />
           <BeringinIcon className="absolute bottom-20 left-[15%] w-80 h-80 rotate-45" />
@@ -153,24 +156,24 @@ export default function LoginPage() {
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[420px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-[2rem] overflow-hidden relative z-10 p-2 sm:p-4">
-          <CardHeader className="text-center space-y-0 pt-4 pb-2">
+        <Card className="w-full max-w-[400px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] rounded-2xl overflow-hidden relative z-10 p-1 sm:p-2">
+          <CardHeader className="text-center space-y-0 pt-6 pb-2">
             <div className="flex justify-center mb-1">
-              <div className="relative w-36 h-36 transition-transform duration-500 hover:scale-105">
-                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="144px" className="object-contain" priority />
+              <div className="relative w-40 h-40 transition-transform duration-500 hover:scale-105">
+                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="160px" className="object-contain" priority />
               </div>
             </div>
-            <CardTitle className="text-[2.6rem] font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/60 text-[13px] mt-1.5 tracking-tight">Aplikasi absensi online</CardDescription>
+            <CardTitle className="text-[2.8rem] font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/60 text-[13px] mt-1 tracking-tight">Aplikasi absensi online</CardDescription>
 
             <div className="pt-6 space-y-2">
-               <div className="flex items-center gap-3 w-full max-w-[240px] mx-auto opacity-30">
-                  <div className="h-[1px] bg-muted-foreground/40 grow" />
-                  <div className="bg-blue-600 rounded-full p-1.5"><ShieldCheck className="h-3 w-3 text-white" /></div>
-                  <div className="h-[1px] bg-muted-foreground/40 grow" />
+               <div className="flex items-center gap-3 w-full max-w-[220px] mx-auto opacity-30">
+                  <div className="h-[0.5px] bg-muted-foreground/40 grow" />
+                  <div className="bg-blue-600 rounded-full p-1.5 shadow-sm"><ShieldCheck className="h-3 w-3 text-white" /></div>
+                  <div className="h-[0.5px] bg-muted-foreground/40 grow" />
                </div>
                <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.12em] leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
+                  <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.1em] leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
                   <p className="text-[9px] font-bold text-muted-foreground/40 leading-none mt-1 uppercase tracking-widest">Sistem Absensi Online</p>
                </div>
             </div>
@@ -178,26 +181,26 @@ export default function LoginPage() {
 
           <CardContent className="px-6 pb-6 pt-4">
             <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-5">
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
                   control={loginForm.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="space-y-1.5">
-                      <Label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Alamat email</Label>
+                    <FormItem className="space-y-1">
+                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Alamat email</Label>
                       <FormControl>
-                        <Input placeholder="smpn5lr@gmail.com" {...field} className="h-14 rounded-2xl bg-blue-50/40 dark:bg-slate-800/50 border-transparent focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-5 text-base" />
+                        <Input placeholder="nama@email.com" {...field} className="h-12 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 text-sm" />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
                   )}
                 />
                 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <div className="flex items-center justify-between px-1">
-                    <Label htmlFor="password" className="text-sm font-bold text-slate-700 dark:text-slate-300">Kata sandi</Label>
+                    <Label htmlFor="password" className="text-xs font-bold text-slate-700 dark:text-slate-300">Kata sandi</Label>
                     <DialogTrigger asChild>
-                      <button type="button" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">Lupa sandi?</button>
+                      <button type="button" className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Lupa sandi?</button>
                     </DialogTrigger>
                   </div>
                   <FormField
@@ -207,9 +210,9 @@ export default function LoginPage() {
                       <FormItem>
                         <div className="relative">
                           <FormControl>
-                            <Input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••••••" {...field} className="h-14 rounded-2xl bg-blue-50/40 dark:bg-slate-800/50 border-transparent focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-5 pr-12 text-base" />
+                            <Input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••••••" {...field} className="h-12 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 pr-12 text-sm" />
                           </FormControl>
-                          <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-4 text-muted-foreground/50 hover:bg-transparent shadow-none" onClick={() => setShowLoginPass(!showLoginPass)}>
+                          <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground/50 hover:bg-transparent shadow-none" onClick={() => setShowLoginPass(!showLoginPass)}>
                             {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
@@ -219,7 +222,7 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full h-14 text-base font-bold rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] bg-blue-600 hover:bg-blue-700 text-white mt-2 flex items-center justify-center gap-2" disabled={isLoginLoading}>
+                <Button type="submit" className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-blue-500/10 transition-all active:scale-[0.98] bg-blue-600 hover:bg-blue-700 text-white mt-4 flex items-center justify-center gap-2" disabled={isLoginLoading}>
                   {isLoginLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><LogIn className="h-4 w-4" />Masuk sekarang</>}
                 </Button>
               </form>
@@ -227,7 +230,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <DialogContent className="rounded-[2rem] border-none p-8 shadow-2xl max-w-sm">
+        <DialogContent className="rounded-2xl border-none p-8 shadow-2xl max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-black text-xl tracking-tight text-blue-600 uppercase">Pemulihan Sandi</DialogTitle>
             <DialogDescription className="font-bold text-xs text-muted-foreground mt-2">Masukkan email terdaftar Anda untuk pemulihan.</DialogDescription>
