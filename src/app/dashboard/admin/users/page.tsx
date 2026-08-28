@@ -273,7 +273,7 @@ export default function AdminUsersPage() {
                                                 </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
-                                    )) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs opacity-40">Data tidak ditemukan</TableCell></TableRow>}
+                                    )) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Data tidak ditemukan</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>
@@ -317,7 +317,7 @@ export default function AdminUsersPage() {
                     <div className="space-y-4 p-4">
                         <DialogTitle className="font-bold text-xl">Reset kata sandi</DialogTitle>
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-bold uppercase">Sandi baru untuk {userForReset?.name}</Label>
+                            <label className="text-[10px] font-bold uppercase">Sandi baru untuk {userForReset?.name}</label>
                             <Input type="password" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} placeholder="Minimal 6 karakter" className="h-11 rounded-xl bg-muted/30" />
                         </div>
                         <Button className="w-full h-11 rounded-xl font-bold" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Update Sandi'}</Button>
