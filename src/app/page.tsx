@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ShieldCheck, LogIn, Network, Smartphone, Server, Wifi, Globe, Cpu } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -48,16 +48,17 @@ const resetPasswordSchema = z.object({
 
 const BeringinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="50" cy="35" r="25" />
-    <circle cx="35" cy="50" r="20" />
-    <circle cx="65" cy="50" r="20" />
-    <rect x="46" y="60" width="8" height="25" />
+    <path d="M50 10 C40 10 30 15 25 25 C15 25 10 35 10 45 C10 55 18 63 28 65 L28 85 L36 85 L36 65 C36 65 43 68 50 68 C57 68 64 65 64 65 L64 85 L72 85 L72 65 C82 63 90 55 90 45 C90 35 85 25 75 25 C70 15 60 10 50 10 Z" />
+    <circle cx="50" cy="35" r="15" />
+    <circle cx="35" cy="45" r="12" />
+    <circle cx="65" cy="45" r="12" />
   </svg>
 );
 
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M50 5 C50 5 85 45 50 95 C15 45 50 5 50 5 Z M50 35 C50 35 70 55 50 80 C30 55 50 35 50 35 Z" />
+    <path d="M50 20 C50 20 65 40 50 60 C35 40 50 20 50 20 Z" />
   </svg>
 );
 
@@ -137,12 +138,12 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      {/* Background patterns & watermarks - Opacity ditingkatkan agar ikon terang */}
+      {/* Background patterns & watermarks - Opacity ditingkatkan agar terang */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        <div className="absolute inset-0 opacity-[0.2] dark:opacity-[0.25]">
+        <div className="absolute inset-0 opacity-[0.25] dark:opacity-[0.3]">
           <BeringinIcon className="absolute top-10 left-[5%] w-64 h-64 -rotate-12" />
           <ApiIcon className="absolute top-1/4 right-[10%] w-32 h-32 rotate-12" />
           <BeringinIcon className="absolute bottom-20 left-[15%] w-80 h-80 rotate-45" />
@@ -150,11 +151,30 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Main Container - Wrap in Dialog to fix Runtime Error */}
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[360px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
-          <CardHeader className="text-center space-y-0 pt-6 pb-2">
-            <div className="flex justify-center mb-0">
+        <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
+          <CardHeader className="text-center space-y-0 pt-6 pb-2 relative">
+            {/* Tech Icons Decoration */}
+            <div className="absolute top-8 left-6 opacity-10 -rotate-12">
+              <Smartphone className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="absolute top-12 left-16 opacity-5 rotate-45">
+              <Network className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="absolute top-8 right-6 opacity-10 rotate-12">
+              <Server className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="absolute top-14 right-16 opacity-5 -rotate-12">
+              <Wifi className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="absolute top-24 left-4 opacity-5 rotate-12">
+              <Globe className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="absolute top-24 right-4 opacity-5 -rotate-45">
+              <Cpu className="h-5 w-5 text-blue-600" />
+            </div>
+
+            <div className="flex justify-center mb-0 relative z-10">
               <div className="relative w-36 h-36 transition-transform duration-500 hover:scale-105">
                 <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="144px" className="object-contain" priority />
               </div>
@@ -172,14 +192,14 @@ export default function LoginPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="px-6 pb-6 pt-2">
+          <CardContent className="px-8 pb-8 pt-2">
             <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-3">
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
                   control={loginForm.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="space-y-1">
+                    <FormItem className="space-y-1.5">
                       <Label className="text-[10px] font-bold text-slate-500 ml-1">Email</Label>
                       <FormControl>
                         <Input placeholder="nama@email.com" {...field} className="h-11 rounded-xl bg-blue-50/50 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 text-sm" />
@@ -189,7 +209,7 @@ export default function LoginPage() {
                   )}
                 />
                 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between px-1">
                     <Label htmlFor="password" className="text-[10px] font-bold text-slate-500">Kata sandi</Label>
                     <DialogTrigger asChild>
@@ -223,7 +243,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        {/* Password Recovery Dialog Content */}
         <DialogContent className="rounded-2xl border-none p-8 shadow-2xl max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-black text-xl tracking-tight text-blue-600 uppercase">Pemulihan Sandi</DialogTitle>
