@@ -1,3 +1,4 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -10,7 +11,8 @@ const auth = getAuth(app);
 
 /**
  * Inisialisasi Firestore dengan pengaturan khusus.
- * Menggunakan experimentalForceLongPolling untuk stabilitas koneksi yang lebih baik.
+ * Menggunakan experimentalForceLongPolling untuk stabilitas koneksi yang lebih baik
+ * di lingkungan cloud/proxied seperti Vercel dan Firebase Studio.
  */
 const firestore = initializeFirestore(app, {
   experimentalForceLongPolling: true,
