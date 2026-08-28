@@ -46,7 +46,6 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
-// Siluet Pohon Beringin (Solid) - Diperbarui agar lebih artistik
 const BeringinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M100 20 C140 20, 185 45, 185 90 C185 125, 150 145, 100 155 C50 145, 15 125, 15 90 C15 45, 60 20, 100 20 Z" />
@@ -57,7 +56,6 @@ const BeringinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Siluet Api (Solid) - Diperbarui agar lebih artistik
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M50 5 C50 5, 80 40, 50 95 C20 40, 50 5, 50 5 Z" />
@@ -147,7 +145,7 @@ export default function LoginPage() {
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        <div className="absolute inset-0 opacity-[0.08] dark:opacity-[0.12]">
+        <div className="absolute inset-0 opacity-[0.2] dark:opacity-[0.25]">
           <BeringinIcon className="absolute top-10 left-[5%] w-64 h-64 -rotate-12" />
           <ApiIcon className="absolute top-1/4 right-[10%] w-32 h-32 rotate-12" />
           <BeringinIcon className="absolute bottom-20 left-[15%] w-80 h-80 rotate-45" />
@@ -156,30 +154,30 @@ export default function LoginPage() {
       </div>
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[400px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] rounded-2xl overflow-hidden relative z-10 p-1 sm:p-2">
-          <CardHeader className="text-center space-y-0 pt-6 pb-2">
-            <div className="flex justify-center mb-1">
-              <div className="relative w-40 h-40 transition-transform duration-500 hover:scale-105">
-                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="160px" className="object-contain" priority />
+        <Card className="w-full max-w-[380px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
+          <CardHeader className="text-center space-y-0 pt-8 pb-2">
+            <div className="flex justify-center mb-0">
+              <div className="relative w-44 h-44 transition-transform duration-500 hover:scale-105">
+                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="176px" className="object-contain" priority />
               </div>
             </div>
-            <CardTitle className="text-[2.8rem] font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/60 text-[13px] mt-1 tracking-tight">Aplikasi absensi online</CardDescription>
+            <CardTitle className="text-5xl font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase -mt-2">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/60 text-xs mt-1 tracking-tight">Aplikasi absensi online</CardDescription>
 
             <div className="pt-6 space-y-2">
-               <div className="flex items-center gap-3 w-full max-w-[220px] mx-auto opacity-30">
+               <div className="flex items-center gap-3 w-full max-w-[240px] mx-auto opacity-30">
                   <div className="h-[0.5px] bg-muted-foreground/40 grow" />
-                  <div className="bg-blue-600 rounded-full p-1.5 shadow-sm"><ShieldCheck className="h-3 w-3 text-white" /></div>
+                  <div className="bg-blue-600/20 rounded-full p-2"><ShieldCheck className="h-4 w-4 text-blue-600" /></div>
                   <div className="h-[0.5px] bg-muted-foreground/40 grow" />
                </div>
-               <div className="space-y-0.5">
-                  <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.1em] leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
+               <div className="space-y-0.5 px-4">
+                  <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
                   <p className="text-[9px] font-bold text-muted-foreground/40 leading-none mt-1 uppercase tracking-widest">Sistem Absensi Online</p>
                </div>
             </div>
           </CardHeader>
 
-          <CardContent className="px-6 pb-6 pt-4">
+          <CardContent className="px-8 pb-8 pt-4">
             <Form {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
@@ -187,9 +185,9 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem className="space-y-1">
-                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Alamat email</Label>
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Email</Label>
                       <FormControl>
-                        <Input placeholder="nama@email.com" {...field} className="h-12 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 text-sm" />
+                        <Input placeholder="nama@email.com" {...field} className="h-11 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 text-sm" />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
@@ -198,7 +196,7 @@ export default function LoginPage() {
                 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between px-1">
-                    <Label htmlFor="password" className="text-xs font-bold text-slate-700 dark:text-slate-300">Kata sandi</Label>
+                    <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Kata sandi</Label>
                     <DialogTrigger asChild>
                       <button type="button" className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Lupa sandi?</button>
                     </DialogTrigger>
@@ -210,9 +208,9 @@ export default function LoginPage() {
                       <FormItem>
                         <div className="relative">
                           <FormControl>
-                            <Input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••••••" {...field} className="h-12 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 pr-12 text-sm" />
+                            <Input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••••••" {...field} className="h-11 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 pr-12 text-sm" />
                           </FormControl>
-                          <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground/50 hover:bg-transparent shadow-none" onClick={() => setShowLoginPass(!showLoginPass)}>
+                          <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground/30 hover:bg-transparent shadow-none" onClick={() => setShowLoginPass(!showLoginPass)}>
                             {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
@@ -222,8 +220,8 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full h-12 text-sm font-bold rounded-xl shadow-lg shadow-blue-500/10 transition-all active:scale-[0.98] bg-blue-600 hover:bg-blue-700 text-white mt-4 flex items-center justify-center gap-2" disabled={isLoginLoading}>
-                  {isLoginLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><LogIn className="h-4 w-4" />Masuk sekarang</>}
+                <Button type="submit" className="w-full h-11 text-xs font-black uppercase tracking-[0.2em] rounded-xl shadow-xl shadow-blue-500/10 transition-all active:scale-[0.98] bg-blue-600 hover:bg-blue-700 text-white mt-4 flex items-center justify-center gap-2" disabled={isLoginLoading}>
+                  {isLoginLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><LogIn className="h-3.5 w-3.5" />Masuk sekarang</>}
                 </Button>
               </form>
             </Form>
@@ -262,7 +260,7 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
 
-      <footer className="mt-6 text-center flex flex-col items-center gap-1 opacity-20 relative z-10 transition-opacity hover:opacity-50">
+      <footer className="mt-8 text-center flex flex-col items-center gap-1 opacity-20 relative z-10 transition-opacity hover:opacity-50">
         <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 tracking-[0.25em] uppercase">SMP NEGERI 5 LANGKE REMBONG</p>
         <p className="text-[9px] font-bold text-slate-500 tracking-widest">©2026 | All Rights Reserved.</p>
       </footer>
