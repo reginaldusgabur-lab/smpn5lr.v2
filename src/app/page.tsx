@@ -47,20 +47,17 @@ const resetPasswordSchema = z.object({
 });
 
 const BeringinIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 200 200" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M100 20 C140 20, 185 45, 185 90 C185 125, 150 145, 100 155 C50 145, 15 125, 15 90 C15 45, 60 20, 100 20 Z" />
-    <path d="M95 145 H105 V190 H95 V145 Z" />
-    <circle cx="100" cy="55" r="30" />
-    <circle cx="140" cy="85" r="25" />
-    <circle cx="60" cy="85" r="25" />
+  <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="50" cy="35" r="25" />
+    <circle cx="35" cy="50" r="20" />
+    <circle cx="65" cy="50" r="20" />
+    <rect x="46" y="60" width="8" height="25" />
   </svg>
 );
 
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M50 5 C50 5, 80 40, 50 95 C20 40, 50 5, 50 5 Z" />
-    <path d="M45 40 C45 40, 30 55, 50 75 Z" opacity="0.6" />
-    <path d="M55 40 C55 40, 70 55, 50 75 Z" opacity="0.6" />
+    <path d="M50 5 C50 5 85 45 50 95 C15 45 50 5 50 5 Z M50 35 C50 35 70 55 50 80 C30 55 50 35 50 35 Z" />
   </svg>
 );
 
@@ -145,7 +142,7 @@ export default function LoginPage() {
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        <div className="absolute inset-0 opacity-[0.2] dark:opacity-[0.25]">
+        <div className="absolute inset-0 opacity-[0.25] dark:opacity-[0.3]">
           <BeringinIcon className="absolute top-10 left-[5%] w-64 h-64 -rotate-12" />
           <ApiIcon className="absolute top-1/4 right-[10%] w-32 h-32 rotate-12" />
           <BeringinIcon className="absolute bottom-20 left-[15%] w-80 h-80 rotate-45" />
@@ -157,22 +154,22 @@ export default function LoginPage() {
         <Card className="w-full max-w-[380px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-8 pb-2">
             <div className="flex justify-center mb-0">
-              <div className="relative w-44 h-44 transition-transform duration-500 hover:scale-105">
-                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="176px" className="object-contain" priority />
+              <div className="relative w-40 h-40 transition-transform duration-500 hover:scale-105">
+                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="160px" className="object-contain" priority />
               </div>
             </div>
-            <CardTitle className="text-5xl font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase -mt-2">E-SPENLI</CardTitle>
+            <CardTitle className="text-5xl font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase -mt-1">E-SPENLI</CardTitle>
             <CardDescription className="font-bold text-muted-foreground/60 text-xs mt-1 tracking-tight">Aplikasi absensi online</CardDescription>
 
-            <div className="pt-6 space-y-2">
+            <div className="pt-6 space-y-3">
                <div className="flex items-center gap-3 w-full max-w-[240px] mx-auto opacity-30">
                   <div className="h-[0.5px] bg-muted-foreground/40 grow" />
-                  <div className="bg-blue-600/20 rounded-full p-2"><ShieldCheck className="h-4 w-4 text-blue-600" /></div>
+                  <div className="bg-blue-600/10 rounded-full p-2.5 border border-blue-500/20"><ShieldCheck className="h-4 w-4 text-blue-600" /></div>
                   <div className="h-[0.5px] bg-muted-foreground/40 grow" />
                </div>
-               <div className="space-y-0.5 px-4">
+               <div className="space-y-1 px-4">
                   <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
-                  <p className="text-[9px] font-bold text-muted-foreground/40 leading-none mt-1 uppercase tracking-widest">Sistem Absensi Online</p>
+                  <p className="text-[9px] font-bold text-muted-foreground/40 leading-none uppercase tracking-[0.2em]">Sistem Absensi Online</p>
                </div>
             </div>
           </CardHeader>
@@ -184,8 +181,8 @@ export default function LoginPage() {
                   control={loginForm.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Email</Label>
+                    <FormItem className="space-y-1.5">
+                      <Label className="text-[10px] font-black tracking-widest text-slate-500 ml-1 uppercase">Email</Label>
                       <FormControl>
                         <Input placeholder="nama@email.com" {...field} className="h-11 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 text-sm" />
                       </FormControl>
@@ -194,9 +191,9 @@ export default function LoginPage() {
                   )}
                 />
                 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between px-1">
-                    <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Kata sandi</Label>
+                    <Label htmlFor="password" className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Kata sandi</Label>
                     <DialogTrigger asChild>
                       <button type="button" className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Lupa sandi?</button>
                     </DialogTrigger>
