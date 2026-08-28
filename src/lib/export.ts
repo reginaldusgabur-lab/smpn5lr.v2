@@ -180,7 +180,7 @@ export function exportToPdf(
                 5: { halign: 'center', cellWidth: 12 },
                 6: { halign: 'center', cellWidth: 15 },
                 7: { halign: 'center', cellWidth: 12 },
-                8: { halign: 'right', cellWidth: 13 }
+                8: { halign: 'right', cellWidth: 20 } // Perlebar kolom % agar 100.0% tidak berantakan
             }
         });
 

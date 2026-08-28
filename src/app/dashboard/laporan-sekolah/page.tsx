@@ -46,15 +46,6 @@ interface ReportRowData {
 
 const minDate = new Date(2026, 0, 1);
 
-const safeFormat = (dateInput: any, formatString: string): string => {
-    if (!dateInput) return '-';
-    let date: Date;
-    if (typeof dateInput === 'string') date = parseISO(dateInput);
-    else if (dateInput.toDate) date = dateInput.toDate();
-    else date = new Date(dateInput);
-    return isValid(date) ? format(date, formatString, { locale: id }) : '-';
-};
-
 export default function SchoolReportPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -275,7 +266,7 @@ export default function SchoolReportPage() {
                 styles: { font: 'times', fontSize: 10, cellPadding: 1.5, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
                 alternateRowStyles: { fillColor: [235, 245, 255] },
-                columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 40 }, 3: { halign: 'center', cellWidth: 18 }, 4: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 12 }, 6: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 12 }, 8: { halign: 'right', cellWidth: 13 } }
+                columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 40 }, 3: { halign: 'center', cellWidth: 18 }, 4: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 12 }, 6: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 12 }, 8: { halign: 'right', cellWidth: 20 } }
             });
 
             let finalY = (doc as any).lastAutoTable.finalY + 15;
