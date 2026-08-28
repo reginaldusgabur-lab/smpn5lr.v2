@@ -1,22 +1,24 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore } from 'firebase/firestore';
 
+// Inisialisasi App secara idempotent
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /**
- * Inisialisasi Firestore dengan pengaturan khusus.
- * Menggunakan experimentalForceLongPolling untuk stabilitas koneksi yang lebih baik
- * di lingkungan cloud/proxied seperti Vercel dan Firebase Studio.
+ * Inisialisasi Firestore dengan pengaman re-initialization.
+ * Menggunakan experimentalForceLongPolling untuk stabilitas maksimal di lingkungan Vercel/Studio.
+ * Ini mencegah error "Could not reach Cloud Firestore backend" yang disebabkan oleh blokir gRPC/WebSocket.
  */
-const firestore = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-});
+const firestore = getApps().length 
+  ? getFirestore(app) 
+  : initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+    });
 
 export { app as firebaseApp, auth, firestore };
 
