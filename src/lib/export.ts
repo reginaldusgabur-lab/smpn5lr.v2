@@ -147,7 +147,7 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 35 },
+            margin: { bottom: 40 },
             headStyles: { 
                 fillColor: [52, 152, 219], 
                 textColor: 255, 
@@ -158,7 +158,7 @@ export function exportToPdf(
                 lineWidth: 0
             },
             alternateRowStyles: {
-                fillColor: [225, 242, 254] // Biru transparan cerah
+                fillColor: [225, 242, 254] 
             },
             styles: { 
               cellPadding: 1.0,
@@ -166,9 +166,9 @@ export function exportToPdf(
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0, // HILANGKAN SELURUH GARIS
+              lineWidth: 0,
               valign: 'middle',
-              fillColor: [248, 250, 252] // Warna abu-abu kebiruan sangat muda (tidak putih polos)
+              fillColor: [248, 250, 252]
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
@@ -179,7 +179,7 @@ export function exportToPdf(
                 5: { halign: 'center', cellWidth: 10 },
                 6: { halign: 'center', cellWidth: 13 },
                 7: { halign: 'center', cellWidth: 10 },
-                8: { halign: 'right', cellWidth: 20 }
+                8: { halign: 'right', cellWidth: 15 }
             }
         });
 

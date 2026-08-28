@@ -1,6 +1,7 @@
 'use client';
-import React, { useState, useMemo, useEffect } from 'react';
 
+import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -27,8 +28,6 @@ import {
   Filter,
   Edit2,
   Trash2,
-  Power,
-  AlertCircle,
   KeyRound,
   Users as UsersIcon,
   RefreshCw,
@@ -38,14 +37,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -60,7 +56,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -78,9 +73,7 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, collection } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
-import { Skeleton } from '@/components/ui/skeleton';
 import { resetUserPassword } from '@/app/actions/admin-actions';
-import { useRouter } from 'next/navigation';
 
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
@@ -100,6 +93,7 @@ export default function AdminUsersPage() {
     const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
+    
     const [userFilter, setUserFilter] = useState('all');
     const [userSearch, setUserSearch] = useState('');
     const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
@@ -123,14 +117,6 @@ export default function AdminUsersPage() {
         }).sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
     }, [usersData, userFilter, userSearch]);
 
-    const genderStats = useMemo(() => {
-        return filteredUsers.reduce((acc, u) => {
-            if (u.gender === 'Laki-laki') acc.male++;
-            else if (u.gender === 'Perempuan') acc.female++;
-            return acc;
-        }, { male: 0, female: 0 });
-    }, [filteredUsers]);
-
     const userForm = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
         defaultValues: { role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', position: '', sequenceNumber: '', password: '' },
@@ -153,7 +139,7 @@ export default function AdminUsersPage() {
         }
     }, [editingUser, userForm]);
 
-    async function handleSaveUser(values: z.infer<typeof addUserSchema>) {
+    const handleSaveUser = async (values: z.infer<typeof addUserSchema>) => {
         if (!firestore) return;
         setIsSaving(true);
         try {
@@ -186,9 +172,26 @@ export default function AdminUsersPage() {
                     setIsUserDialogOpen(false);
                 } finally { await deleteApp(tempApp); }
             }
-        } catch (e: any) { toast({ variant: 'destructive', title: 'Kesalahan', description: e.message }); }
-        finally { setIsSaving(false); }
-    }
+        } catch (e: any) { 
+            toast({ variant: 'destructive', title: 'Kesalahan', description: e.message }); 
+        } finally { setIsSaving(false); }
+    };
+
+    const handleDeleteUser = async () => {
+        if (!userToDelete || !firestore) return;
+        setIsSaving(true);
+        try {
+            const userRef = doc(firestore, "users", userToDelete.id);
+            await deleteDocumentNonBlocking(userRef);
+            toast({ title: 'Berhasil', description: 'Pengguna telah dihapus.' });
+            setIsDeleteDialogOpen(false);
+            setUserToDelete(null);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Gagal', description: e.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleManualResetPassword = async () => {
         if (!userForReset || newPassInput.length < 6) return;
@@ -200,14 +203,25 @@ export default function AdminUsersPage() {
                 setIsResetPassDialogOpen(false);
                 setNewPassInput('');
             } else throw new Error(result.error);
-        } catch (e: any) { toast({ variant: 'destructive', title: 'Gagal', description: e.message }); }
-        finally { setIsSaving(false); }
+        } catch (e: any) { 
+            toast({ variant: 'destructive', title: 'Gagal', description: e.message }); 
+        } finally { 
+            setIsSaving(false); 
+        }
     };
+
+    if (isAuthLoading || isUsersLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
-                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl p-0">
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><UsersIcon className="w-24 h-24 text-white" /></div>
                         <div className="flex items-center justify-between relative z-10">
@@ -269,7 +283,7 @@ export default function AdminUsersPage() {
 
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
                 <DialogContent className="rounded-xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh]">
-                    <DialogHeader className="p-6 pb-2 border-b border-muted-foreground/5"><DialogTitle className="text-xl font-bold">{editingUser ? 'Perbarui data' : 'Tambah personil'}</DialogTitle></DialogHeader>
+                    <div className="p-6 pb-2 border-b border-muted-foreground/5"><DialogTitle className="text-xl font-bold">{editingUser ? 'Perbarui data' : 'Tambah personil'}</DialogTitle></div>
                     <div className="flex-1 overflow-y-auto px-6 pb-6">
                         <Form {...userForm}>
                             <form onSubmit={userForm.handleSubmit(handleSaveUser)} className="space-y-4 py-4">
@@ -278,8 +292,8 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
@@ -287,7 +301,7 @@ export default function AdminUsersPage() {
                                 </div>
                                 <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
                                 {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Sandi</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />}
-                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin" /> : 'Simpan'}</Button>
+                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan'}</Button>
                             </form>
                         </Form>
                     </div>
@@ -297,6 +311,19 @@ export default function AdminUsersPage() {
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setUserToDelete(null); }}>
                 <AlertDialogContent className="rounded-xl border-none"><AlertDialogHeader><AlertDialogTitle className="font-bold">Hapus pengguna?</AlertDialogTitle><AlertDialogDescription>Data <strong>{userToDelete?.name}</strong> akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="rounded-xl font-bold">Batal</AlertDialogCancel><AlertDialogAction className="rounded-xl font-bold bg-destructive" onClick={handleDeleteUser}>Ya, hapus</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
             </AlertDialog>
+
+            <Dialog open={isResetPassDialogOpen} onOpenChange={setIsResetPassDialogOpen}>
+                <DialogContent className="rounded-xl border-none max-w-sm">
+                    <div className="space-y-4 p-4">
+                        <DialogTitle className="font-bold text-xl">Reset kata sandi</DialogTitle>
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase">Sandi baru untuk {userForReset?.name}</Label>
+                            <Input type="password" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} placeholder="Minimal 6 karakter" className="h-11 rounded-xl bg-muted/30" />
+                        </div>
+                        <Button className="w-full h-11 rounded-xl font-bold" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Update Sandi'}</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
