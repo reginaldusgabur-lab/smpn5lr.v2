@@ -272,15 +272,23 @@ export default function SchoolReportPage() {
                 head: [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']],
                 body: tableRows,
                 theme: 'striped',
-                margin: { bottom: 35 },
-                styles: { font: 'times', fontSize: 9, cellPadding: 1.2, valign: 'middle', textColor: [0, 0, 0], lineColor: [200, 200, 200], lineWidth: 0 },
-                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 11 },
+                margin: { bottom: 40 }, // Mencegah konten tanda tangan terpotong kaku
+                styles: { 
+                    font: 'times', 
+                    fontSize: 10, // Ukuran huruf ditingkatkan kembali
+                    cellPadding: 1.0, // Padding diperketat agar pas dengan font 10
+                    valign: 'middle', 
+                    textColor: [0, 0, 0], 
+                    lineColor: [200, 200, 200], 
+                    lineWidth: 0 
+                },
+                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
                 alternateRowStyles: { fillColor: [235, 245, 255] },
                 columnStyles: { 
                   0: { halign: 'center', cellWidth: 8 }, 
                   1: { cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 38 }, 
-                  3: { halign: 'center', cellWidth: 16 }, 
+                  2: { halign: 'left', cellWidth: 36 }, // NIP dirapatkan
+                  3: { halign: 'center', cellWidth: 14 }, // Status dirapatkan (PPPK PW muat di 14mm font 10)
                   4: { halign: 'center', cellWidth: 13 }, 
                   5: { halign: 'center', cellWidth: 10 }, 
                   6: { halign: 'center', cellWidth: 13 }, 
@@ -495,4 +503,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-

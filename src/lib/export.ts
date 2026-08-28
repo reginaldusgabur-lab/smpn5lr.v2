@@ -148,39 +148,39 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 35 },
+            margin: { bottom: 40 }, // Tingkatkan margin bawah untuk mencegah pemotongan yang tidak rapi
             headStyles: { 
                 fillColor: [52, 152, 219], 
                 textColor: 255, 
                 fontStyle: 'bold', 
                 halign: 'center',
                 valign: 'middle',
-                minCellHeight: 11,
+                minCellHeight: 12,
                 lineWidth: 0
             },
             alternateRowStyles: {
-                fillColor: [225, 242, 254] // Biru transparan cerah
+                fillColor: [225, 242, 254] 
             },
             styles: { 
-              cellPadding: 1.2,
-              fontSize: 9,
+              cellPadding: 1.0, // Rapatkan padding untuk mengimbangi ukuran font yang lebih besar
+              fontSize: 10, // Ukuran huruf ditingkatkan menjadi 10
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0, // HILANGKAN SELURUH GARIS
+              lineWidth: 0, 
               valign: 'middle',
-              fillColor: [248, 250, 252] // Warna abu-abu kebiruan sangat muda (tidak putih polos)
+              fillColor: [248, 250, 252] 
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
                 1: { halign: 'left', cellWidth: 'auto' }, 
-                2: { halign: 'left', cellWidth: 38 }, 
-                3: { halign: 'center', cellWidth: 16 }, 
-                4: { halign: 'center', cellWidth: 13 },
-                5: { halign: 'center', cellWidth: 10 },
-                6: { halign: 'center', cellWidth: 13 },
-                7: { halign: 'center', cellWidth: 10 },
-                8: { halign: 'right', cellWidth: 15 } // Perlebar kolom % agar 100.0% tidak berantakan
+                2: { halign: 'left', cellWidth: 36 }, // Rapatkan kolom NIP
+                3: { halign: 'center', cellWidth: 14 }, // Rapatkan kolom Status
+                4: { halign: 'center', cellWidth: 15 },
+                5: { halign: 'center', cellWidth: 12 },
+                6: { halign: 'center', cellWidth: 15 },
+                7: { halign: 'center', cellWidth: 12 },
+                8: { halign: 'right', cellWidth: 15 }
             }
         });
 

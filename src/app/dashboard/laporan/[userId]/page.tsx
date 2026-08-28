@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -318,16 +317,16 @@ export default function UserReportDetailPage() {
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 35 },
+            margin: { bottom: 40 }, // Mencegah konten tanda tangan terpotong nanggung
             styles: { 
               font: 'times', 
-              fontSize: 9, 
-              cellPadding: 1.2,
+              fontSize: 10, // Ukuran font ditingkatkan kembali ke 10 untuk kejelasan
+              cellPadding: 1.0, // Padding dirapatkan untuk muat lebih banyak
               valign: 'middle',
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0, // HILANGKAN TABEL (GARIS)
-              fillColor: [248, 250, 252] // Warna abu-abu kebiruan sangat muda
+              lineWidth: 0, 
+              fillColor: [248, 250, 252] 
             },
             headStyles: { 
                 fillColor: [52, 152, 219], 
@@ -335,13 +334,13 @@ export default function UserReportDetailPage() {
                 halign: 'center', 
                 valign: 'middle',
                 fontStyle: 'bold',
-                minCellHeight: 11,
+                minCellHeight: 12,
                 lineWidth: 0
             },
             alternateRowStyles: {
-                fillColor: [225, 242, 254] // Biru transparan selang-seling
+                fillColor: [225, 242, 254] 
             },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 28 }, 3: { halign: 'center', cellWidth: 28 }, 4: { halign: 'center', cellWidth: 22 } }
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 25 } }
         });
 
         let finalY = (doc as any).lastAutoTable.finalY || currentY;
@@ -578,4 +577,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
