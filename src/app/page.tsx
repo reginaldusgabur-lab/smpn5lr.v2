@@ -137,12 +137,12 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      {/* Background patterns & watermarks - Opacity ditingkatkan agar lebih terang */}
+      {/* Background patterns & watermarks - Opacity ditingkatkan agar ikon terang */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        <div className="absolute inset-0 opacity-[0.25] dark:opacity-[0.3]">
+        <div className="absolute inset-0 opacity-[0.2] dark:opacity-[0.25]">
           <BeringinIcon className="absolute top-10 left-[5%] w-64 h-64 -rotate-12" />
           <ApiIcon className="absolute top-1/4 right-[10%] w-32 h-32 rotate-12" />
           <BeringinIcon className="absolute bottom-20 left-[15%] w-80 h-80 rotate-45" />
@@ -150,50 +150,48 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* Main Container - Wrap in Dialog to fix Runtime Error */}
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <Card className="w-full max-w-[380px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
-          <CardHeader className="text-center space-y-0 pt-8 pb-2">
+        <Card className="w-full max-w-[360px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
+          <CardHeader className="text-center space-y-0 pt-6 pb-2">
             <div className="flex justify-center mb-0">
-              <div className="relative w-40 h-40 transition-transform duration-500 hover:scale-105">
-                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="160px" className="object-contain" priority />
+              <div className="relative w-36 h-36 transition-transform duration-500 hover:scale-105">
+                <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="144px" className="object-contain" priority />
               </div>
             </div>
-            <CardTitle className="text-5xl font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase -mt-1">E-SPENLI</CardTitle>
-            <CardDescription className="font-bold text-muted-foreground/60 text-xs mt-1 tracking-tight">Aplikasi absensi online</CardDescription>
+            <CardTitle className="text-4xl font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase -mt-2">E-SPENLI</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground/60 text-[10px] mt-1 tracking-tight">Aplikasi absensi online</CardDescription>
 
-            <div className="pt-6 space-y-3">
-               <div className="flex items-center gap-3 w-full max-w-[240px] mx-auto opacity-30">
-                  <div className="h-[0.5px] bg-muted-foreground/40 grow" />
-                  <div className="bg-blue-600/10 rounded-full p-2.5 border border-blue-500/20"><ShieldCheck className="h-4 w-4 text-blue-600" /></div>
-                  <div className="h-[0.5px] bg-muted-foreground/40 grow" />
-               </div>
-               <div className="space-y-1 px-4">
-                  <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
-                  <p className="text-[9px] font-bold text-muted-foreground/40 leading-none uppercase tracking-[0.2em]">Sistem Absensi Online</p>
+            <div className="pt-4 space-y-2">
+               <div className="flex flex-col items-center gap-1">
+                  <div className="bg-blue-600/10 rounded-full p-2 border border-blue-500/20 mb-1">
+                    <ShieldCheck className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight leading-none">SMP NEGERI 5 LANGKE REMBONG</p>
                </div>
             </div>
           </CardHeader>
 
-          <CardContent className="px-8 pb-8 pt-4">
+          <CardContent className="px-6 pb-6 pt-2">
             <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-3">
                 <FormField
                   control={loginForm.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="space-y-1.5">
-                      <Label className="text-[10px] font-black tracking-widest text-slate-500 ml-1 uppercase">Email</Label>
+                    <FormItem className="space-y-1">
+                      <Label className="text-[10px] font-bold text-slate-500 ml-1">Email</Label>
                       <FormControl>
-                        <Input placeholder="nama@email.com" {...field} className="h-11 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 text-sm" />
+                        <Input placeholder="nama@email.com" {...field} className="h-11 rounded-xl bg-blue-50/50 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 text-sm" />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
                     </FormItem>
                   )}
                 />
                 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <div className="flex items-center justify-between px-1">
-                    <Label htmlFor="password" className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Kata sandi</Label>
+                    <Label htmlFor="password" className="text-[10px] font-bold text-slate-500">Kata sandi</Label>
                     <DialogTrigger asChild>
                       <button type="button" className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Lupa sandi?</button>
                     </DialogTrigger>
@@ -205,7 +203,7 @@ export default function LoginPage() {
                       <FormItem>
                         <div className="relative">
                           <FormControl>
-                            <Input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••••••" {...field} className="h-11 rounded-xl bg-blue-50/30 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 pr-12 text-sm" />
+                            <Input type={showLoginPass ? 'text' : 'password'} placeholder="••••••••••••" {...field} className="h-11 rounded-xl bg-blue-50/50 dark:bg-slate-800/50 border-transparent focus:border-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-bold shadow-none px-4 pr-12 text-sm" />
                           </FormControl>
                           <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground/30 hover:bg-transparent shadow-none" onClick={() => setShowLoginPass(!showLoginPass)}>
                             {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -217,7 +215,7 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full h-11 text-xs font-black uppercase tracking-[0.2em] rounded-xl shadow-xl shadow-blue-500/10 transition-all active:scale-[0.98] bg-blue-600 hover:bg-blue-700 text-white mt-4 flex items-center justify-center gap-2" disabled={isLoginLoading}>
+                <Button type="submit" className="w-full h-11 text-xs font-bold rounded-xl shadow-lg shadow-blue-500/10 transition-all active:scale-[0.98] bg-blue-600 hover:bg-blue-700 text-white mt-4 flex items-center justify-center gap-2" disabled={isLoginLoading}>
                   {isLoginLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><LogIn className="h-3.5 w-3.5" />Masuk sekarang</>}
                 </Button>
               </form>
@@ -225,6 +223,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
+        {/* Password Recovery Dialog Content */}
         <DialogContent className="rounded-2xl border-none p-8 shadow-2xl max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-black text-xl tracking-tight text-blue-600 uppercase">Pemulihan Sandi</DialogTitle>
