@@ -303,6 +303,7 @@ export default function AdminUsersPage() {
                             </Table>
                         </div>
 
+                        {/* Statistik Ringkasan */}
                         <div className="mt-8 pt-8 border-t border-muted-foreground/10 grid grid-cols-3 gap-3">
                             <div className="bg-primary/5 p-4 rounded-2xl text-center border border-primary/5">
                                 <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Total Staf</p>

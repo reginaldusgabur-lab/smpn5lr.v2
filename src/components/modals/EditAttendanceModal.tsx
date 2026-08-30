@@ -50,7 +50,8 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 const problems = reportData.filter(d => 
                     (d.status === 'Alpa') || 
                     (d.description === 'Belum absen pulang') ||
-                    (d.description === 'Absen pulang (Tanpa masuk)')
+                    (d.description === 'Absen pulang (Tanpa masuk)') ||
+                    (d.status === 'Terlambat')
                 );
                 if (isMounted.current) {
                     setProblematicDays(problems);
@@ -96,7 +97,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 userId: user.uid,
                 userName: user.name,
                 userRole: user.role,
-                type: newStatus === 'Sakit' ? 'Sakit' : 'Izin',
+                type: newStatus === 'Sakit' ? 'Sakit' : 'Izin Pribadi',
                 status: 'approved',
                 reason: newStatus === 'Sakit' ? 'Sakit' : 'Izin pribadi',
                 startDate: Timestamp.fromDate(startOfDay(targetDate)),
@@ -265,27 +266,30 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                     <div className="py-4 space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>
                 ) : problematicDays.length > 0 ? (
                     <div className="py-4">
-                        <DialogDescription className="mb-4 text-sm font-bold text-muted-foreground">Pilih data untuk diperbaiki otomatis atau ubah status secara manual.</DialogDescription>
-                        <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
+                        <DialogDescription className="mb-4 text-sm font-bold text-muted-foreground">Pilih data untuk diperbaiki otomatis atau klik titik tiga untuk ubah status manual.</DialogDescription>
+                        <div className="max-h-[350px] overflow-y-auto space-y-2 pr-1">
                             {problematicDays.map(item => {
                                 const hasIn = !!item.checkInTime;
                                 const hasOut = !!item.checkOutTime;
                                 const isNoIn = !hasIn && hasOut;
                                 const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
-                                const displayStatus = isManualLate ? 'Hadir' : item.status;
+                                const displayStatus = isManualLate ? 'Terlambat' : item.status;
 
                                 return (
-                                    <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 border border-muted-foreground/5">
+                                    <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 border border-muted-foreground/5 transition-all">
                                         {(item.status === 'Alpa' && !isManualLate) ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[item.id]} onCheckedChange={() => handleSelectDay(item.id)} />}
-                                        <label className="text-sm font-bold grow">{format(parseISO(item.date), 'eeee, d MMM yyyy', { locale: id })}</label>
+                                        <div className="flex flex-col grow">
+                                            <label className="text-[13px] font-bold text-foreground leading-none">{format(parseISO(item.date), 'eeee, d MMM', { locale: id })}</label>
+                                            <span className="text-[9px] font-medium text-muted-foreground mt-1">{item.description}</span>
+                                        </div>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Badge variant="outline" className={cn("cursor-pointer font-bold text-[10px] px-3 py-1 rounded-lg uppercase shadow-none", getAdminBadgeClass(item.status, item.description))}>
-                                                    {displayStatus} <MoreVertical className="h-3 w-3 ml-1" />
-                                                </Badge>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                                </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
-                                                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
+                                                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                 {isNoIn ? (
                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
                                                 ) : (
@@ -315,8 +319,8 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 )}
                 </div>
                 <DialogFooter className="p-6 pt-0 gap-2">
-                    <DialogClose asChild><Button variant="ghost" className="rounded-xl font-bold shadow-none">Batal</Button></DialogClose>
-                    <Button onClick={handleSaveChanges} className="rounded-xl font-bold bg-primary uppercase text-xs tracking-wider shadow-none" disabled={isLoading || isSaving || !Object.values(selectedDays).some(Boolean)}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Lengkapi Terpilih'}</Button>
+                    <DialogClose asChild><Button variant="ghost" className="rounded-xl font-bold shadow-none h-11">Batal</Button></DialogClose>
+                    <Button onClick={handleSaveChanges} className="rounded-xl font-bold bg-primary uppercase text-[10px] tracking-widest shadow-none h-11" disabled={isLoading || isSaving || !Object.values(selectedDays).some(Boolean)}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Lengkapi Terpilih'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

@@ -291,7 +291,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
 
         const now = new Date();
         const todayStart = startOfDay(now);
-        const offDays: number[] = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
+        const offDays: number[] = Array.isArray(schoolConfig?.offDays) ? schoolConfig.offDays : [0, 6];
         const holidays: string[] = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
 
         const attendanceMap = new Map();
@@ -340,8 +340,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                         const deadline = setMinutes(setHours(startOfDay(checkInTime), h), m);
                         if (checkInTime > deadline) {
                             description = 'Terlambat';
-                        } else {
-                            description = 'Kehadiran penuh';
                         }
                     }
                 }

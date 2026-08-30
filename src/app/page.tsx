@@ -46,10 +46,6 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
-/**
- * Ikon Pohon Beringin yang rimbun dengan gugusan lingkaran (daun).
- * High Visibility untuk mobile.
- */
 const BeringinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M48 95 L48 72 M52 95 L52 72 M44 95 L47 82 M56 95 L53 82" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
@@ -64,10 +60,6 @@ const BeringinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-/**
- * Ikon Api berbentuk tetesan amber.
- * High Visibility untuk mobile.
- */
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M50 5 C50 5 85 50 85 75 C85 92 70 100 50 98 C30 100 15 92 15 75 C15 50 50 5 50 5 Z" />
@@ -150,12 +142,10 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      {/* Background Stylized Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        {/* Beringin and Api Background Watermarks with High Visibility */}
         <div className="absolute inset-0">
           <div className="absolute top-[8%] left-[-15%] sm:left-[2%] flex items-center justify-center opacity-90 dark:opacity-70">
              <BeringinIcon className="w-96 h-96 text-blue-600 -rotate-12" />
@@ -178,7 +168,6 @@ export default function LoginPage() {
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-6 pb-2 relative">
             
-            {/* Tech Icons Decoration - All synced to blue-600 */}
             <div className="absolute top-8 left-6 opacity-40 -rotate-12">
               <Smartphone className="h-8 w-8 text-blue-600" />
             </div>
