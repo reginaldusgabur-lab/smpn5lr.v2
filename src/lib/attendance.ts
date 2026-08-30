@@ -15,8 +15,8 @@ export interface MonthlyReportData {
     manualEntry: boolean;
 }
 
-const cleanDesc = (desc: string) => {
-    if (!desc) return 'Kehadiran penuh';
+const cleanDesc = (desc: any) => {
+    if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
     const d = desc.toLowerCase();
     
     if (d === 'terlambat') return 'Terlambat';
@@ -35,7 +35,6 @@ const cleanDesc = (desc: string) => {
 
 /**
  * Mengambil statistik kehadiran staf hari ini.
- * CACHE DINONAKTIFKAN agar sinkron dengan tabel Aktivitas Kehadiran.
  */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
@@ -55,9 +54,10 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const monthlyConfig = monthlyConfigSnap.data();
 
         const isManualOff = schoolConfig?.isAttendanceActive === false;
-        const isCalendarHoliday = monthlyConfig?.holidays?.includes(todayStr);
+        const holidays = Array.isArray(monthlyConfig?.holidays) ? monthlyConfig.holidays : [];
+        const isCalendarHoliday = holidays.includes(todayStr);
         const dayOfWeek = today.getDay();
-        const offDays: number[] = schoolConfig?.offDays ?? [0, 6];
+        const offDays: number[] = Array.isArray(schoolConfig?.offDays) ? schoolConfig.offDays : [0, 6];
         const isRecurringOff = offDays.includes(dayOfWeek);
 
         const isHoliday = !isManualOff && (isCalendarHoliday || isRecurringOff);
@@ -136,13 +136,14 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             isCalendarHoliday: isCalendarHoliday
         };
     } catch (e) {
+        console.error("Daily stats calculation error:", e);
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false };
     }
 }
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v152_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v155_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -177,8 +178,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             .map(d => d.data())
             .filter((l: any) => l.startDate.toDate() <= end);
 
-        const offDays: number[] = schoolConfig?.offDays ?? [0, 6];
-        const holidays: string[] = monthlyConfig?.holidays ?? [];
+        const offDays: number[] = Array.isArray(schoolConfig?.offDays) ? schoolConfig.offDays : [0, 6];
+        const holidays: string[] = Array.isArray(monthlyConfig?.holidays) ? monthlyConfig.holidays : [];
 
         const workingDaysInPeriod = eachDayOfInterval({ start, end }).filter(day => 
             !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd'))
@@ -252,6 +253,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
+        console.error("Stats calculation error:", e);
         return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
     }
 }
@@ -288,8 +290,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
 
         const now = new Date();
         const todayStart = startOfDay(now);
-        const offDays = schoolConfig?.offDays ?? [0, 6];
-        const holidays = monthlyConfig?.holidays ?? [];
+        const offDays: number[] = Array.isArray(schoolConfig?.offDays) ? schoolConfig.offDays : [0, 6];
+        const holidays: string[] = Array.isArray(monthlyConfig?.holidays) ? monthlyConfig.holidays : [];
 
         const attendanceMap = new Map();
         attendanceHistory.forEach((rec: any) => {
@@ -333,8 +335,9 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const specialStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'sakit', 'izin', 'izin pribadi', 'kegiatan luar sekolah', 'terlambat'];
                 
                 if (checkInTime && checkOutTime && !specialStatuses.includes(description.toLowerCase())) {
-                    if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
-                        const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
+                    if (schoolConfig?.useTimeValidation && schoolConfig?.checkInEndTime) {
+                        const inEndStr = typeof schoolConfig.checkInEndTime === 'string' ? schoolConfig.checkInEndTime : '08:00';
+                        const [h, m] = inEndStr.split(':').map(Number);
                         const deadline = setMinutes(setHours(startOfDay(checkInTime), h), m);
                         if (checkInTime > deadline) {
                             description = 'Terlambat';
@@ -388,7 +391,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             checkOutTime: item.checkOutTime ? item.checkOutTime.toISOString() : null,
         }));
     } catch (e) {
-        console.error("Fetch report error:", e);
+        console.error("Fetch monthly report error detail:", e);
         return [];
     }
 }

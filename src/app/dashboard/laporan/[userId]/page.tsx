@@ -233,20 +233,20 @@ export default function UserReportDetailPage() {
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
-                            <div className="flex justify-end gap-3">
+                            <div className="flex justify-end gap-3 px-2 sm:px-0">
                                 {isAdmin && (
-                                    <Button onClick={() => setIsEditModalOpen(true)} variant="outline" className="font-bold border-primary text-primary hover:bg-primary/5 h-11 rounded-xl text-xs shadow-none">
+                                    <Button onClick={() => setIsEditModalOpen(true)} variant="outline" className="flex-1 sm:flex-none font-bold border-primary text-primary hover:bg-primary/5 h-11 rounded-xl text-xs shadow-none">
                                         <PencilLine className="mr-2 h-4 w-4" />Perbaiki kehadiran
                                     </Button>
                                 )}
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="flex-1 sm:flex-none font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
                             </div>
                         </div>
 
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
-                                    <TableRow className="border-none h-11">
+                                    <TableRow className="border-none">
                                         <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none h-11">No</TableHead>
                                         <TableHead className="w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
@@ -259,7 +259,7 @@ export default function UserReportDetailPage() {
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => (
                                         <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                             <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                            <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
+                                            <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
                                             <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                             <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                             <TableCell className="text-center">

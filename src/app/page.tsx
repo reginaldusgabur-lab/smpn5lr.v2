@@ -47,29 +47,28 @@ const resetPasswordSchema = z.object({
 });
 
 /**
- * Stylized Banyan Tree Icon (Pohon Beringin) matching the circular leaf style.
+ * Ikon Pohon Beringin yang rimbun dengan gugusan lingkaran (daun) sesuai gambar referensi.
  */
 const BeringinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M48 95 L48 70 M52 95 L52 70 M44 95 L47 80 M56 95 L53 80" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-    <path d="M38 75 C45 72 55 72 62 75" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    <circle cx="50" cy="30" r="14" fill="currentColor" fillOpacity="0.5" />
-    <circle cx="34" cy="42" r="11" fill="currentColor" fillOpacity="0.4" />
-    <circle cx="66" cy="42" r="11" fill="currentColor" fillOpacity="0.4" />
-    <circle cx="22" cy="58" r="9" fill="currentColor" fillOpacity="0.3" />
-    <circle cx="78" cy="58" r="9" fill="currentColor" fillOpacity="0.3" />
-    <circle cx="40" cy="54" r="10" fill="currentColor" fillOpacity="0.4" />
-    <circle cx="60" cy="54" r="10" fill="currentColor" fillOpacity="0.4" />
-    <circle cx="50" cy="65" r="8" fill="currentColor" fillOpacity="0.2" />
+    <path d="M48 95 L48 72 M52 95 L52 72 M44 95 L47 82 M56 95 L53 82" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    <circle cx="50" cy="30" r="16" fill="currentColor" fillOpacity="0.6" />
+    <circle cx="32" cy="45" r="14" fill="currentColor" fillOpacity="0.5" />
+    <circle cx="68" cy="45" r="14" fill="currentColor" fillOpacity="0.5" />
+    <circle cx="20" cy="65" r="12" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="80" cy="65" r="12" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="38" cy="60" r="13" fill="currentColor" fillOpacity="0.5" />
+    <circle cx="62" cy="60" r="13" fill="currentColor" fillOpacity="0.5" />
+    <circle cx="50" cy="70" r="10" fill="currentColor" fillOpacity="0.3" />
   </svg>
 );
 
 /**
- * Teardrop/Flame Icon matching the stylized drop.
+ * Ikon Api berbentuk tetesan emas transparan.
  */
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M50 5 C50 5 82 48 82 72 C82 88 68 98 50 95 C32 98 18 88 18 72 C18 48 50 5 50 5 Z" />
+    <path d="M50 5 C50 5 85 50 85 75 C85 92 70 100 50 98 C30 100 15 92 15 75 C15 50 50 5 50 5 Z" />
   </svg>
 );
 
@@ -154,19 +153,19 @@ export default function LoginPage() {
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        {/* Beringin and Api Background Watermarks with optimized visibility */}
+        {/* Beringin and Api Background Watermarks with optimized visibility for mobile */}
         <div className="absolute inset-0">
-          <div className="absolute top-[8%] left-[-10%] sm:left-[2%] flex items-center justify-center opacity-40 dark:opacity-50">
+          <div className="absolute top-[8%] left-[-10%] sm:left-[2%] flex items-center justify-center opacity-50 dark:opacity-60">
              <BeringinIcon className="w-80 h-80 text-blue-600 -rotate-12" />
              <ApiIcon className="absolute w-20 h-20 text-amber-500 mb-14" />
           </div>
           
-          <div className="absolute bottom-[12%] left-[3%] flex items-center justify-center opacity-35 dark:opacity-45 rotate-12">
+          <div className="absolute bottom-[12%] left-[3%] flex items-center justify-center opacity-45 dark:opacity-55 rotate-12">
              <BeringinIcon className="w-96 h-96 text-blue-600" />
              <ApiIcon className="absolute w-24 h-24 text-amber-500 mb-16" />
           </div>
           
-          <div className="absolute top-[25%] right-[-15%] flex items-center justify-center opacity-30 dark:opacity-40 -rotate-45">
+          <div className="absolute top-[25%] right-[-15%] flex items-center justify-center opacity-40 dark:opacity-50 -rotate-45">
              <BeringinIcon className="w-72 h-72 text-blue-600" />
              <ApiIcon className="absolute w-16 h-16 text-amber-500 mb-10" />
           </div>
@@ -177,7 +176,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-6 pb-2 relative">
             
-            {/* Tech Icons Decoration - All Blue-600 */}
+            {/* Tech Icons Decoration - Sinkron Blue-600 */}
             <div className="absolute top-8 left-6 opacity-30 -rotate-12">
               <Smartphone className="h-8 w-8 text-blue-600" />
             </div>
