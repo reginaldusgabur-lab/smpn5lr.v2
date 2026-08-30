@@ -179,8 +179,10 @@ export default function UserReportDetailPage() {
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Dinas siang';
                 } else if (type === 'pulang-cepat') {
+                    // Find original inTime if it exists
+                    const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
                     const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = itemDate ? Timestamp.fromDate(parseISO(itemDate)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                    dataToSave.checkInTime = existingAtt?.checkInTime ? Timestamp.fromDate(parseISO(existingAtt.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Pulang cepat';
                 }
