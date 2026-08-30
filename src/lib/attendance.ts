@@ -140,7 +140,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v172_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v180_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -220,8 +220,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                     if (leave.type === 'Sakit') {
                         point = 0.9;
                         sakitCount++;
-                    } else if (['Izin', 'Izin Pribadi', 'Terlambat'].includes(leave.type)) {
-                        point = leave.type === 'Terlambat' ? 0.95 : 0.7;
+                    } else if (['Izin', 'Izin Pribadi', 'Terlambat', 'Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(leave.type)) {
+                        const lowT = leave.type.toLowerCase();
+                        if (lowT.includes('dinas') || lowT.includes('luar sekolah')) point = 1.0;
+                        else point = 0.7;
                         izinCount++;
                     } else {
                         point = 1.0;
@@ -337,13 +339,16 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 }
                 
                 const lowDesc = description.toLowerCase();
+                const statusLabel = 'Hadir'; // Semua kategori di atas dihitung Hadir (Poin 1.0)
+                
                 if (['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'].includes(lowDesc)) {
+                    const isLuarSekolah = lowDesc === 'kegiatan luar sekolah';
                     return { 
                         id: attendanceRecord.id, 
                         date: day, 
-                        checkInTime: lowDesc === 'kegiatan luar sekolah' ? null : checkInTime, 
-                        checkOutTime: lowDesc === 'kegiatan luar sekolah' ? null : checkOutTime, 
-                        status: 'Hadir', 
+                        checkInTime: isLuarSekolah ? null : checkInTime, 
+                        checkOutTime: isLuarSekolah ? null : checkOutTime, 
+                        status: statusLabel, 
                         description: description.charAt(0).toUpperCase() + description.slice(1), 
                         manualEntry: isManual 
                     };
@@ -358,11 +363,15 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             }
 
             if (leaveRecord) {
-                const isDuty = ['Dinas', 'Dinas Pagi', 'Dinas Siang', 'Terlambat', 'Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(leaveRecord.type);
-                if (['Pulang Cepat', 'Dinas Siang'].includes(leaveRecord.type)) {
-                     return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: `Tugas ${leaveRecord.type} (Tanpa absen masuk)` };
-                }
-                return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: isDuty ? 'Hadir' : leaveRecord.type, description: cleanDesc(leaveRecord.reason) || leaveRecord.type };
+                const type = leaveRecord.type;
+                const isHadirFull = ['Dinas', 'Dinas Pagi', 'Dinas Siang', 'Terlambat', 'Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(type);
+                
+                return { 
+                    id: `${leaveRecord.id}-${dayStr}`, 
+                    date: day, checkInTime: null, checkOutTime: null, 
+                    status: isHadirFull ? 'Hadir' : type, 
+                    description: cleanDesc(leaveRecord.reason) || type 
+                };
             }
 
             return { id: dayStr, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: 'Tidak ada keterangan' };

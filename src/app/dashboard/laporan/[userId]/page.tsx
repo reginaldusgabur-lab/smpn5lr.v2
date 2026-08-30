@@ -107,16 +107,6 @@ export default function UserReportDetailPage() {
         return dailyOut?.start || (schoolConfigData as any).checkOutStartTime || '14:00';
     }, [schoolConfigData]);
 
-    const generateRandomOutTime = useCallback((date: Date) => {
-        const outStart = getDailyOutStart(date);
-        const [h, m] = outStart.split(':').map(Number);
-        const base = setMinutes(setHours(startOfDay(date), h), m);
-        // ACAK 10 MENIT SETELAH ABSEN DIBUKA
-        const randomMins = Math.floor(Math.random() * 10) + 1;
-        const randomSecs = Math.floor(Math.random() * 60);
-        return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
-    }, [getDailyOutStart]);
-
     const handleStatusChange = async (dateStr: string, type: string) => {
         if (!currentUser || !firestore || isMutating || !schoolConfigData || !userData) return;
         setIsMutating(true);
@@ -150,37 +140,51 @@ export default function UserReportDetailPage() {
                 let dataToSave: any = {
                     userId, date: todayStr,
                     manualEntry: true, 
-                    reasonForUpdate: 'Kehadiran penuh',
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
                 if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
-                    // ACAK 5 MENIT SEBELUM TUTUP
-                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
-                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
+                    const randomInOffset = Math.floor(Math.random() * 299) + 1; // acak 5 menit di akhir batas
+                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
+                    
+                    if (fillOut) {
+                        const randomOutOffset = Math.floor(Math.random() * 600) + 1; // acak 10 menit di awal buka
+                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
+                    } else {
+                        dataToSave.checkOutTime = null;
+                    }
                     dataToSave.reasonForUpdate = 'Kehadiran penuh';
                 } else if (type === 'terlambat') {
                     dataToSave.checkInTime = null;
-                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
+                    if (fillOut) {
+                        const randomOutOffset = Math.floor(Math.random() * 600) + 1;
+                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
+                    } else {
+                        dataToSave.checkOutTime = null;
+                    }
                     dataToSave.reasonForUpdate = 'Terlambat';
                 } else if (type === 'dinas-pagi') {
                     dataToSave.checkInTime = null;
-                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
+                    if (fillOut) {
+                        const randomOutOffset = Math.floor(Math.random() * 600) + 1;
+                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
+                    } else {
+                        dataToSave.checkOutTime = null;
+                    }
                     dataToSave.reasonForUpdate = 'Dinas pagi';
                 } else if (type === 'luar-sekolah') {
                     dataToSave.checkInTime = null;
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Kegiatan luar sekolah';
                 } else if (type === 'dinas-siang') {
-                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                    const randomInOffset = Math.floor(Math.random() * 299) + 1;
+                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Dinas siang';
                 } else if (type === 'pulang-cepat') {
                     const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
-                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = existingAtt?.checkInTime ? Timestamp.fromDate(parseISO(existingAtt.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                    const randomInOffset = Math.floor(Math.random() * 299) + 1;
+                    dataToSave.checkInTime = existingAtt?.checkInTime ? Timestamp.fromDate(parseISO(existingAtt.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Pulang cepat';
                 }
@@ -407,7 +411,7 @@ export default function UserReportDetailPage() {
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas Siang</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
                                                                         </>
                                                                     )}
