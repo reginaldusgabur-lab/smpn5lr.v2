@@ -260,7 +260,7 @@ export default function AdminUsersPage() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className='border-none'>
-                                    <SelectItem value="all">Semua staf</SelectItem>
+                                    <SelectItem value="all">Semua peran</SelectItem>
                                     <SelectItem value="guru">Guru</SelectItem>
                                     <SelectItem value="pegawai">Pegawai</SelectItem>
                                     <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>

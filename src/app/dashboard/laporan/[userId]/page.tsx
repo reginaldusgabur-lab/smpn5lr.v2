@@ -144,12 +144,10 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
-                    // ACAK 5 MENIT SEBELUM BATAS AKHIR MASUK
                     const randomInOffset = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
                     
                     if (fillOut) {
-                        // ACAK 10 MENIT SETELAH JAM BUKA PULANG
                         const randomOutOffset = Math.floor(Math.random() * 600) + 1;
                         dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
                     } else {
@@ -244,7 +242,7 @@ export default function UserReportDetailPage() {
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
-            safeFormat(item.date, 'eeee, dd MMMM yyyy'),
+            safeFormat(item.date, 'eeee, d MMMM yyyy'),
             (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
             safeFormat(item.checkOutTime, 'HH:mm:ss'),
             item.status,
@@ -372,8 +370,6 @@ export default function UserReportDetailPage() {
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
                                         const isManual = item.manualEntry === true;
-                                        
-                                        // Proteksi Absen Mandiri: Sembunyikan PencilLine jika sudah ada jam masuk & pulang oleh staf sendiri
                                         const isMandiriSukses = hasIn && hasOut && !isManual;
                                         const canEdit = isAdmin && !isMandiriSukses;
                                         
