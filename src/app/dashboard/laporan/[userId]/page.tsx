@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -108,11 +109,28 @@ export default function UserReportDetailPage() {
         return dailyOut?.start || (schoolConfigData as any).checkOutStartTime || '14:00';
     }, [schoolConfigData]);
 
-    const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat') => {
+    const generateRandomOutTime = useCallback((date: Date) => {
+        const outStart = getDailyOutStart(date);
+        const [h, m] = outStart.split(':').map(Number);
+        const base = setMinutes(setHours(startOfDay(date), h), m);
+        const randomMins = Math.floor(Math.random() * 20) + 5;
+        const randomSecs = Math.floor(Math.random() * 60);
+        return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
+    }, [getDailyOutStart]);
+
+    const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat' | 'luar-sekolah') => {
         if (!currentUser || !firestore || isMutating || !schoolConfigData || !userData) return;
         setIsMutating(true);
         try {
             const targetDate = parseISO(dateStr);
+            const now = new Date();
+            const isToday = isSameDay(targetDate, now);
+            const outStart = getDailyOutStart(targetDate);
+            const [hO, mO] = outStart.split(':').map(Number);
+            const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
+            
+            const fillOut = !isToday || (isToday && now > limitOutStart);
+
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
             
@@ -126,38 +144,34 @@ export default function UserReportDetailPage() {
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
-            const [hE, mE] = inEnd.split(':').map(Number);
-            const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
-
-            const outStart = getDailyOutStart(targetDate);
-            const [hO, mO] = outStart.split(':').map(Number);
-            const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-
-            if (type !== 'sakit' && type !== 'izin') {
+            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
+                const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
+                const [hE, mE] = inEnd.split(':').map(Number);
+                const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
+                
                 let data: any = {
                     userId, date: todayStr,
                     manualEntry: true, 
-                    reasonForUpdate: 'Kehadiran penuh',
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
                 if (type === 'hadir') {
-                    const randomInSecs = Math.floor(Math.random() * 299) + 1; // acak 5 menit sebelum tutup
+                    const randomInSecs = Math.floor(Math.random() * 299) + 1; 
                     data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInSecs * 1000));
-                    
-                    const randomOutSecs = Math.floor(Math.random() * 599) + 1; // acak 10 menit setelah buka
-                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutSecs * 1000));
+                    data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
+                    data.reasonForUpdate = 'Kehadiran penuh';
                 } else if (type === 'terlambat') {
                     data.checkInTime = null;
-                    const randomOutSecs = Math.floor(Math.random() * 599) + 1;
-                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutSecs * 1000));
+                    data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
                     data.reasonForUpdate = 'Terlambat';
                 } else if (type === 'dinas-pagi') {
                     data.checkInTime = null;
-                    const randomOutSecs = Math.floor(Math.random() * 599) + 1;
-                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutSecs * 1000));
+                    data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
                     data.reasonForUpdate = 'Dinas pagi';
+                } else if (type === 'luar-sekolah') {
+                    data.checkInTime = null;
+                    data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
+                    data.reasonForUpdate = 'Kegiatan luar sekolah';
                 } else if (type === 'dinas-siang') {
                     const randomInSecs = Math.floor(Math.random() * 299) + 1;
                     data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInSecs * 1000));
@@ -187,7 +201,7 @@ export default function UserReportDetailPage() {
 
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Status kehadiran diperbarui.' });
+            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
             fetchData();
         } catch (err) { 
             toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); 
@@ -276,7 +290,7 @@ export default function UserReportDetailPage() {
         const s = status.toLowerCase();
         if (s === 'alpa') return "bg-red-500 text-white border-none shadow-sm";
         if (s === 'sakit') return "bg-orange-500 text-white border-none shadow-sm";
-        if (s.includes('izin') || s.includes('dinas') || s.includes('cepat')) return "bg-amber-500 text-white border-none shadow-sm";
+        if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return "bg-amber-500 text-white border-none shadow-sm";
         return "bg-emerald-500 text-white border-none shadow-sm";
     };
 
@@ -351,6 +365,8 @@ export default function UserReportDetailPage() {
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
                                         const isAlpa = item.status === 'Alpa';
                                         const isManual = item.manualEntry === true;
+                                        // Hanya data yang bermasalah (Alpa) atau data hasil edit sebelumnya yang boleh diedit kembali.
+                                        // Absen mandiri dipatenkan.
                                         const canEdit = isAdmin && (isAlpa || isManual);
                                         
                                         return (
@@ -379,10 +395,11 @@ export default function UserReportDetailPage() {
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas Siang</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         )}
@@ -401,3 +418,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+

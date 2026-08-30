@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
@@ -353,7 +354,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 if (importantStatuses.includes(lowDesc)) {
                     let finalStatus = statusLabel;
                     // Changed: Dinas siang and Pulang cepat now show as "Hadir" in status column
-                    if (['terlambat', 'dinas siang', 'pulang cepat'].includes(lowDesc)) {
+                    if (['terlambat', 'dinas siang', 'pulang cepat', 'kegiatan luar sekolah'].includes(lowDesc)) {
                         finalStatus = 'Hadir';
                     }
                     return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: finalStatus, description: statusLabel, manualEntry: isManual };
