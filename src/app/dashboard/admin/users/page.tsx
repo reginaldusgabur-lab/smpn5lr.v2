@@ -217,7 +217,9 @@ export default function AdminUsersPage() {
             } else { throw new Error(result.error); }
         } catch (e: any) { 
             toast({ variant: 'destructive', title: 'Gagal', description: e.message }); 
-        } finally { setIsSaving(false); }
+        } finally { 
+            setIsSaving(false); 
+        }
     };
 
     if (isAuthLoading || isUsersLoading) {
@@ -257,12 +259,12 @@ export default function AdminUsersPage() {
                                     <Filter className="h-4 w-4 text-primary mr-2" />
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className='border-none'>
-                                    <SelectItem value="all">Semua staf</SelectItem>
-                                    <SelectItem value="guru">Guru</SelectItem>
-                                    <SelectItem value="pegawai">Pegawai</SelectItem>
-                                    <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
-                                    <SelectItem value="siswa">Siswa</SelectItem>
+                                <SelectContent className='border-none shadow-2xl'>
+                                    <SelectItem value="all" className="rounded-lg">Semua staf</SelectItem>
+                                    <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
+                                    <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
+                                    <SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem>
+                                    <SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem>
                                 </SelectContent>
                             </Select>
                             <div className="relative w-full sm:w-[320px]">
@@ -298,9 +300,9 @@ export default function AdminUsersPage() {
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9 rounded-full"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none shadow-2xl">
                                                         <DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-destructive" onClick={() => { setUserToDelete(u); setIsDeleteDialogOpen(true); }}><Trash2 className="mr-3 h-4 w-4" />Hapus akun</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-lg" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-lg" onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem>
+                                                        <DropdownMenuItem className="text-destructive rounded-lg" onClick={() => { setUserToDelete(u); setIsDeleteDialogOpen(true); }}><Trash2 className="mr-3 h-4 w-4" />Hapus akun</DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
@@ -339,8 +341,8 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem><SelectItem value="siswa">Siswa</SelectItem></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="guru" className="rounded-lg">Guru</SelectItem><SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem><SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem><SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem><SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP (Staf)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
@@ -348,10 +350,10 @@ export default function AdminUsersPage() {
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status/Jabatan</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. Urut Laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Sandi</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />}
-                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-none" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan data'}</Button>
+                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-none mt-4" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan data'}</Button>
                             </form>
                         </Form>
                     </div>

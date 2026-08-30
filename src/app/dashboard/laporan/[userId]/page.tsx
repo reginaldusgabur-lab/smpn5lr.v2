@@ -144,11 +144,13 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
+                    // ACAK 5 MENIT SEBELUM TUTUP
                     const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                     
                     if (fillOut) {
-                        const randomOutOffsetSecs = Math.floor(Math.random() * 600) + 1;
+                        // ACAK 10 MENIT SETELAH BUKA
+                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
                         dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                     } else {
                         dataToSave.checkOutTime = null;
@@ -157,7 +159,7 @@ export default function UserReportDetailPage() {
                 } else if (type === 'terlambat') {
                     dataToSave.checkInTime = null;
                     if (fillOut) {
-                        const randomOutOffsetSecs = Math.floor(Math.random() * 600) + 1;
+                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
                         dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                     } else {
                         dataToSave.checkOutTime = null;
@@ -166,7 +168,7 @@ export default function UserReportDetailPage() {
                 } else if (type === 'dinas-pagi') {
                     dataToSave.checkInTime = null;
                     if (fillOut) {
-                        const randomOutOffsetSecs = Math.floor(Math.random() * 600) + 1;
+                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
                         dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                     } else {
                         dataToSave.checkOutTime = null;
@@ -242,7 +244,7 @@ export default function UserReportDetailPage() {
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
-            safeFormat(item.date, 'eeee, d MMMM yyyy'),
+            safeFormat(item.date, 'eeee, dd MMMM yyyy'),
             (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
             safeFormat(item.checkOutTime, 'HH:mm:ss'),
             item.status,

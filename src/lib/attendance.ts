@@ -83,7 +83,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();
         
-        const staffIdsSet = new Set(allStaff.map(s => (s as any).id));
+        const staffIdsSet = new Set(allStaff.map(s => s.id));
         
         attendanceSnap.forEach(doc => {
             const data = doc.data();
