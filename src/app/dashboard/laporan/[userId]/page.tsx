@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserMonthlyReportData, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -368,7 +368,6 @@ export default function UserReportDetailPage() {
                                         const isAlpa = item.status === 'Alpa';
                                         const isManual = item.manualEntry === true;
                                         
-                                        // Menu hanya muncul untuk Admin jika data Alpa, data tidak lengkap (hanya ada salah satu jam), atau sudah pernah diedit Admin
                                         const canEdit = isAdmin && (isAlpa || (hasIn && !hasOut) || (!hasIn && hasOut) || isManual);
                                         
                                         return (
@@ -414,6 +413,7 @@ export default function UserReportDetailPage() {
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas Siang</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
                                                                         </>
                                                                     )}
@@ -435,3 +435,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+
