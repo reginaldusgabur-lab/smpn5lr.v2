@@ -81,6 +81,7 @@ const addUserSchema = z.object({
     role: z.enum(['guru', 'pegawai', 'kepala_sekolah', 'admin', 'siswa']),
     gender: z.enum(['Laki-laki', 'Perempuan'], { required_error: 'Jenis kelamin wajib dipilih' }),
     nip: z.string().optional(),
+    nisn: z.string().optional(),
     position: z.string().optional(),
     sequenceNumber: z.string().optional(),
     password: z.string().optional().refine((val) => !val || val.length >= 6, {
@@ -128,7 +129,7 @@ export default function AdminUsersPage() {
 
     const userForm = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
-        defaultValues: { role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', position: '', sequenceNumber: '', password: '' },
+        defaultValues: { role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', nisn: '', position: '', sequenceNumber: '', password: '' },
     });
 
     useEffect(() => {
@@ -139,12 +140,13 @@ export default function AdminUsersPage() {
                 role: editingUser.role || 'guru',
                 gender: editingUser.gender || 'Laki-laki',
                 nip: editingUser.nip || '',
+                nisn: editingUser.nisn || '',
                 position: editingUser.position || '',
                 sequenceNumber: editingUser.sequenceNumber?.toString() || '',
                 password: '',
             });
         } else {
-            userForm.reset({ role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', position: '', sequenceNumber: '', password: '' });
+            userForm.reset({ role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', nisn: '', position: '', sequenceNumber: '', password: '' });
         }
     }, [editingUser, userForm]);
 
@@ -162,6 +164,7 @@ export default function AdminUsersPage() {
                     role: values.role,
                     gender: values.gender,
                     nip: values.nip || null,
+                    nisn: values.nisn || null,
                     position: values.position || null,
                     sequenceNumber: finalSeq,
                 });
@@ -174,8 +177,8 @@ export default function AdminUsersPage() {
                     const cred = await createUserWithEmailAndPassword(getAuth(tempApp), values.email, values.password);
                     setDocumentNonBlocking(doc(firestore, "users", cred.user.uid), {
                         id: cred.user.uid, name: values.name, role: values.role, gender: values.gender,
-                        email: values.email, status: 'Aktif', nip: values.nip || null, position: values.position || null,
-                        sequenceNumber: finalSeq,
+                        email: values.email, status: 'Aktif', nip: values.nip || null, nisn: values.nisn || null,
+                        position: values.position || null, sequenceNumber: finalSeq,
                     }, {});
                     toast({ title: 'Berhasil', description: 'Akun baru telah dibuat.' });
                     setIsUserDialogOpen(false);
@@ -342,10 +345,13 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name={userForm.watch('role') === 'siswa' ? 'nisn' : 'nip'} render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">{userForm.watch('role') === 'siswa' ? 'NISN' : 'NIP'}</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="nisn" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NISN (Siswa)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
-                                <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                </div>
                                 {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Sandi</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />}
                                 <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan'}</Button>
                             </form>
