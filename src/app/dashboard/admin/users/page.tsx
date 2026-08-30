@@ -176,17 +176,28 @@ export default function AdminUsersPage() {
                 try {
                     const cred = await createUserWithEmailAndPassword(getAuth(tempApp), values.email, values.password);
                     setDocumentNonBlocking(doc(firestore, "users", cred.user.uid), {
-                        id: cred.user.uid, name: values.name, role: values.role, gender: values.gender,
-                        email: values.email, status: 'Aktif', nip: values.nip || null, nisn: values.nisn || null,
-                        position: values.position || null, sequenceNumber: finalSeq,
+                        id: cred.user.uid, 
+                        name: values.name, 
+                        role: values.role, 
+                        gender: values.gender,
+                        email: values.email, 
+                        status: 'Aktif', 
+                        nip: values.nip || null, 
+                        nisn: values.nisn || null,
+                        position: values.position || null, 
+                        sequenceNumber: finalSeq,
                     }, {});
                     toast({ title: 'Berhasil', description: 'Akun baru telah dibuat.' });
                     setIsUserDialogOpen(false);
-                } finally { await deleteApp(tempApp); }
+                } finally { 
+                    await deleteApp(tempApp); 
+                }
             }
         } catch (e: any) { 
             toast({ variant: 'destructive', title: 'Kesalahan', description: e.message }); 
-        } finally { setIsSaving(false); }
+        } finally { 
+            setIsSaving(false); 
+        }
     };
 
     const handleDeleteUser = async () => {
@@ -214,7 +225,9 @@ export default function AdminUsersPage() {
                 toast({ title: 'Berhasil', description: `Kata sandi ${userForReset.name} diperbarui.` });
                 setIsResetPassDialogOpen(false);
                 setNewPassInput('');
-            } else { throw new Error(result.error); }
+            } else { 
+                throw new Error(result.error); 
+            }
         } catch (e: any) { 
             toast({ variant: 'destructive', title: 'Gagal', description: e.message }); 
         } finally { 
@@ -260,11 +273,12 @@ export default function AdminUsersPage() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className='border-none shadow-2xl'>
-                                    <SelectItem value="all" className="rounded-lg">Semua staf</SelectItem>
+                                    <SelectItem value="all" className="rounded-lg">Semua pengguna</SelectItem>
                                     <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
                                     <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
                                     <SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem>
                                     <SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem>
+                                    <SelectItem value="admin" className="rounded-lg font-bold text-primary">Admin Utama</SelectItem>
                                 </SelectContent>
                             </Select>
                             <div className="relative w-full sm:w-[320px]">
@@ -318,11 +332,11 @@ export default function AdminUsersPage() {
                                 <p className="text-2xl font-black text-primary leading-none">{userStats.total}</p>
                             </div>
                             <div className="bg-blue-500/5 p-4 rounded-2xl text-center border border-blue-500/10">
-                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Laki-laki</p>
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2 text-blue-600">Laki-laki</p>
                                 <p className="text-2xl font-black text-blue-600 leading-none">{userStats.lakiLaki}</p>
                             </div>
                             <div className="bg-pink-500/5 p-4 rounded-2xl text-center border border-pink-500/10">
-                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Perempuan</p>
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2 text-pink-600">Perempuan</p>
                                 <p className="text-2xl font-black text-pink-600 leading-none">{userStats.perempuan}</p>
                             </div>
                         </div>
@@ -332,17 +346,17 @@ export default function AdminUsersPage() {
 
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
                 <DialogContent className="rounded-xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
-                    <div className="p-6 pb-2 border-b border-muted-foreground/5"><DialogTitle className="text-xl font-bold">{editingUser ? 'Perbarui data' : 'Tambah personil'}</DialogTitle></div>
+                    <div className="p-6 pb-2 border-b border-muted-foreground/5"><DialogTitle className="text-xl font-bold">{editingUser ? 'Perbarui data personil' : 'Tambah personil baru'}</DialogTitle></div>
                     <div className="flex-1 overflow-y-auto px-6 pb-6">
                         <Form {...userForm}>
                             <form onSubmit={userForm.handleSubmit(handleSaveUser)} className="space-y-4 py-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="name" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Nama</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="name" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Nama Lengkap</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Alamat Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="guru" className="rounded-lg">Guru</SelectItem><SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem><SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem><SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem><SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran Sistem</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="guru" className="rounded-lg">Guru</SelectItem><SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem><SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem><SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem><SelectItem value="admin" className="rounded-lg font-bold text-primary">Admin Utama</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem><SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP (Staf)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
@@ -352,8 +366,8 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status/Jabatan</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                     <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
-                                {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Sandi</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />}
-                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-none mt-4" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan data'}</Button>
+                                {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kata sandi awal</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />}
+                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-none mt-4 uppercase" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan data personil'}</Button>
                             </form>
                         </Form>
                     </div>
@@ -361,18 +375,18 @@ export default function AdminUsersPage() {
             </Dialog>
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setUserToDelete(null); }}>
-                <AlertDialogContent className="rounded-xl border-none shadow-2xl"><AlertDialogHeader><AlertDialogTitle className="font-bold">Hapus pengguna?</AlertDialogTitle><AlertDialogDescription className="font-medium text-sm">Data <strong>{userToDelete?.name}</strong> akan dihapus permanen dari sistem.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-2"><AlertDialogCancel className="rounded-xl font-bold shadow-none">Batal</AlertDialogCancel><AlertDialogAction className="rounded-xl font-bold bg-destructive shadow-none" onClick={handleDeleteUser}>Ya, hapus</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                <AlertDialogContent className="rounded-xl border-none shadow-2xl"><AlertDialogHeader><AlertDialogTitle className="font-bold">Hapus pengguna?</AlertDialogTitle><AlertDialogDescription className="font-medium text-sm">Data <strong>{userToDelete?.name}</strong> akan dihapus permanen dari sistem.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-2"><AlertDialogCancel className="rounded-xl font-bold shadow-none">Batal</AlertDialogCancel><AlertDialogAction className="rounded-xl font-bold bg-destructive shadow-none uppercase" onClick={handleDeleteUser}>Ya, hapus permanen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
             </AlertDialog>
 
             <Dialog open={isResetPassDialogOpen} onOpenChange={setIsResetPassDialogOpen}>
                 <DialogContent className="rounded-xl border-none max-w-sm shadow-2xl">
                     <div className="space-y-4 p-4">
-                        <DialogTitle className="font-bold text-xl">Reset kata sandi</DialogTitle>
+                        <DialogTitle className="font-bold text-xl uppercase text-primary">Reset kata sandi</DialogTitle>
                         <div className="space-y-2">
                             <label className="text-[10px] font-bold uppercase text-muted-foreground">Sandi baru untuk {userForReset?.name}</label>
                             <Input type="password" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} placeholder="Minimal 6 karakter" className="h-11 rounded-xl bg-muted/30 shadow-none" />
                         </div>
-                        <Button className="w-full h-11 rounded-xl font-bold shadow-none" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Perbarui Sandi'}</Button>
+                        <Button className="w-full h-11 rounded-xl font-bold shadow-none uppercase" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Perbarui Sandi'}</Button>
                     </div>
                 </DialogContent>
             </Dialog>
