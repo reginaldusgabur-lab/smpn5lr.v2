@@ -47,26 +47,29 @@ const resetPasswordSchema = z.object({
 });
 
 /**
- * Ikon Pohon Beringin yang lebih realistis dan mendetail.
+ * Stylized Banyan Tree Icon (Pohon Beringin) matching the circular leaf style in the image.
  */
 const BeringinIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M50 85 L50 65 M40 85 L44 65 M60 85 L56 65" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-    <path d="M50 15 C30 15 15 30 15 50 C15 65 30 75 50 75 C70 75 85 65 85 50 C85 30 70 15 50 15 Z" opacity="0.4" />
-    <path d="M35 25 C25 25 10 35 10 50 C10 65 25 70 35 70 C45 70 55 60 55 50 C55 35 45 25 35 25 Z" />
-    <path d="M65 25 C55 25 45 35 45 50 C45 60 55 70 65 70 C75 70 90 65 90 50 C90 35 75 25 65 25 Z" />
-    <path d="M50 10 C35 10 25 20 25 35 C25 45 35 55 50 55 C65 55 75 45 75 35 C75 20 65 10 50 10 Z" opacity="0.8" />
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M48 95 L48 70 M52 95 L52 70 M44 95 L47 80 M56 95 L53 80" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    <path d="M38 75 C45 72 55 72 62 75" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    <circle cx="50" cy="30" r="14" fill="currentColor" fillOpacity="0.5" />
+    <circle cx="34" cy="42" r="11" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="66" cy="42" r="11" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="22" cy="58" r="9" fill="currentColor" fillOpacity="0.3" />
+    <circle cx="78" cy="58" r="9" fill="currentColor" fillOpacity="0.3" />
+    <circle cx="40" cy="54" r="10" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="60" cy="54" r="10" fill="currentColor" fillOpacity="0.4" />
+    <circle cx="50" cy="65" r="8" fill="currentColor" fillOpacity="0.2" />
   </svg>
 );
 
 /**
- * Ikon Api yang lebih dinamis dan tajam.
+ * Teardrop/Flame Icon matching the stylized golden drop in the image.
  */
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M50 5 C50 5 80 40 80 65 C80 82 66 95 50 95 C34 95 20 82 20 65 C20 40 50 5 50 5 Z" />
-    <path d="M50 30 C50 30 65 55 65 70 C65 80 58 85 50 85 C42 85 35 80 35 70 C35 55 50 30 50 30 Z" opacity="0.5" fill="white" />
-    <path d="M50 15 C50 15 72 45 72 65 C72 78 62 88 50 88 C38 88 28 78 28 65 C28 45 50 15 50 15 Z" opacity="0.3" fill="white" />
+    <path d="M50 5 C50 5 82 48 82 72 C82 88 68 98 50 95 C32 98 18 88 18 72 C18 48 50 5 50 5 Z" />
   </svg>
 );
 
@@ -146,16 +149,20 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      {/* Background Watermark Elements - Blue Theme */}
+      {/* Background Stylized Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        <div className="absolute inset-0 opacity-[0.25] dark:opacity-[0.3] text-blue-600 dark:text-blue-400">
-          <BeringinIcon className="absolute top-10 left-[5%] w-64 h-64 -rotate-12" />
-          <ApiIcon className="absolute top-1/4 right-[10%] w-32 h-32 rotate-12" />
-          <BeringinIcon className="absolute bottom-20 left-[15%] w-80 h-80 rotate-45" />
-          <ApiIcon className="absolute bottom-[10%] right-[-5%] w-48 h-48 -rotate-45" />
+        {/* Beringin and Api Background Watermarks */}
+        <div className="absolute inset-0">
+          <BeringinIcon className="absolute top-[10%] left-[2%] w-64 h-64 text-green-500/20 -rotate-12" />
+          <ApiIcon className="absolute top-[25%] left-[10%] w-16 h-16 text-amber-500/20" />
+          
+          <BeringinIcon className="absolute bottom-[15%] left-[5%] w-80 h-80 text-green-500/20 rotate-12" />
+          <ApiIcon className="absolute bottom-[40%] right-[10%] w-24 h-24 text-amber-500/15" />
+          
+          <BeringinIcon className="absolute top-[20%] right-[-5%] w-56 h-56 text-green-500/15 -rotate-45" />
         </div>
       </div>
 
@@ -163,23 +170,23 @@ export default function LoginPage() {
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-6 pb-2 relative">
             
-            {/* Tech Icons Decoration - Matching Blue-600 */}
-            <div className="absolute top-8 left-6 opacity-20 -rotate-12">
+            {/* Tech Icons Decoration - Unified Blue-600 */}
+            <div className="absolute top-8 left-6 opacity-30 -rotate-12">
               <Smartphone className="h-8 w-8 text-blue-600" />
             </div>
-            <div className="absolute top-12 left-16 opacity-10 rotate-45">
+            <div className="absolute top-12 left-16 opacity-20 rotate-45">
               <Network className="h-6 w-6 text-blue-600" />
             </div>
-            <div className="absolute top-8 right-6 opacity-20 rotate-12">
+            <div className="absolute top-8 right-6 opacity-30 rotate-12">
               <Server className="h-8 w-8 text-blue-600" />
             </div>
-            <div className="absolute top-14 right-16 opacity-10 -rotate-12">
+            <div className="absolute top-14 right-16 opacity-20 -rotate-12">
               <Wifi className="h-6 w-6 text-blue-600" />
             </div>
-            <div className="absolute top-24 left-4 opacity-10 rotate-12">
+            <div className="absolute top-24 left-4 opacity-20 rotate-12">
               <Globe className="h-5 w-5 text-blue-600" />
             </div>
-            <div className="absolute top-24 right-4 opacity-10 -rotate-45">
+            <div className="absolute top-24 right-4 opacity-20 -rotate-45">
               <Cpu className="h-5 w-5 text-blue-600" />
             </div>
 
