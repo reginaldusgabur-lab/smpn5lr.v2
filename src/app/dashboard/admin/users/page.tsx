@@ -112,10 +112,19 @@ export default function AdminUsersPage() {
         if (!usersData) return [];
         return usersData.filter(u => {
             const matchRole = userFilter === 'all' ? u.role !== 'admin' : u.role === userFilter;
-            const matchSearch = u.name.toLowerCase().includes(userSearch.toLowerCase());
+            const matchSearch = (u.name || '').toLowerCase().includes(userSearch.toLowerCase());
             return matchRole && matchSearch;
         }).sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
     }, [usersData, userFilter, userSearch]);
+
+    const userStats = useMemo(() => {
+        return filteredUsers.reduce((acc, curr) => {
+            acc.total++;
+            if (curr.gender === 'Laki-laki') acc.lakiLaki++;
+            else if (curr.gender === 'Perempuan') acc.perempuan++;
+            return acc;
+        }, { total: 0, lakiLaki: 0, perempuan: 0 });
+    }, [filteredUsers]);
 
     const userForm = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
@@ -148,7 +157,7 @@ export default function AdminUsersPage() {
 
             if (editingUser) {
                 const userRef = doc(firestore, "users", editingUser.id);
-                await updateDocumentNonBlocking(userRef, {
+                updateDocumentNonBlocking(userRef, {
                     name: values.name,
                     role: values.role,
                     gender: values.gender,
@@ -163,7 +172,7 @@ export default function AdminUsersPage() {
                 const tempApp = initializeApp(firebaseConfig, `temp-${Date.now()}`);
                 try {
                     const cred = await createUserWithEmailAndPassword(getAuth(tempApp), values.email, values.password);
-                    await setDocumentNonBlocking(doc(firestore, "users", cred.user.uid), {
+                    setDocumentNonBlocking(doc(firestore, "users", cred.user.uid), {
                         id: cred.user.uid, name: values.name, role: values.role, gender: values.gender,
                         email: values.email, status: 'Aktif', nip: values.nip || null, position: values.position || null,
                         sequenceNumber: finalSeq,
@@ -182,7 +191,7 @@ export default function AdminUsersPage() {
         setIsSaving(true);
         try {
             const userRef = doc(firestore, "users", userToDelete.id);
-            await deleteDocumentNonBlocking(userRef);
+            deleteDocumentNonBlocking(userRef);
             toast({ title: 'Berhasil', description: 'Pengguna telah dihapus.' });
             setIsDeleteDialogOpen(false);
             setUserToDelete(null);
@@ -234,14 +243,30 @@ export default function AdminUsersPage() {
                     </div>
                 </Card>
 
-                <Button size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg shadow-primary/20 bg-primary" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}><PlusCircle className="mr-2 h-5 w-5" />Tambah personil</Button>
+                <Button size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg shadow-primary/20 bg-primary" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
+                    <PlusCircle className="mr-2 h-5 w-5" />Tambah personil
+                </Button>
 
                 <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/5"><CardTitle className="font-bold text-blue-600 text-sm">Daftar pengguna sistem</CardTitle></CardHeader>
                     <CardContent className="py-6">
                         <div className="flex flex-col gap-4 sm:flex-row mb-8">
-                            <Select value={userFilter} onValueChange={setUserFilter}><SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 font-bold text-xs"><Filter className="h-4 w-4 text-primary mr-2" /><SelectValue /></SelectTrigger><SelectContent className='border-none'><SelectItem value="all">Semua staf</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
-                            <div className="relative w-full sm:w-[320px]"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Cari nama..." className="pl-10 h-11 rounded-xl bg-muted/30 font-bold text-xs" value={userSearch} onChange={e => setUserSearch(e.target.value)} /></div>
+                            <Select value={userFilter} onValueChange={setUserFilter}>
+                                <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 font-bold text-xs">
+                                    <Filter className="h-4 w-4 text-primary mr-2" />
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className='border-none'>
+                                    <SelectItem value="all">Semua staf</SelectItem>
+                                    <SelectItem value="guru">Guru</SelectItem>
+                                    <SelectItem value="pegawai">Pegawai</SelectItem>
+                                    <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <div className="relative w-full sm:w-[320px]">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                                <Input placeholder="Cari nama..." className="pl-10 h-11 rounded-xl bg-muted/30 font-bold text-xs" value={userSearch} onChange={e => setUserSearch(e.target.value)} />
+                            </div>
                         </div>
 
                         <div className="border rounded-xl overflow-hidden border-muted-foreground/5">
@@ -269,13 +294,33 @@ export default function AdminUsersPage() {
                                             <TableCell className="text-right pr-4">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9 rounded-full"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none"><DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel><DropdownMenuItem onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem><DropdownMenuItem onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={() => { setUserToDelete(u); setIsDeleteDialogOpen(true); }}><Trash2 className="mr-3 h-4 w-4" />Hapus akun</DropdownMenuItem></DropdownMenuContent>
+                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none">
+                                                        <DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem>
+                                                        <DropdownMenuItem className="text-destructive" onClick={() => { setUserToDelete(u); setIsDeleteDialogOpen(true); }}><Trash2 className="mr-3 h-4 w-4" />Hapus akun</DropdownMenuItem>
+                                                    </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     )) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Data tidak ditemukan</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
+                        </div>
+
+                        <div className="mt-8 pt-8 border-t border-muted-foreground/10 grid grid-cols-3 gap-3">
+                            <div className="bg-primary/5 p-4 rounded-2xl text-center border border-primary/5">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Total Staf</p>
+                                <p className="text-2xl font-black text-primary leading-none">{userStats.total}</p>
+                            </div>
+                            <div className="bg-blue-500/5 p-4 rounded-2xl text-center border border-blue-500/10">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Laki-laki</p>
+                                <p className="text-2xl font-black text-blue-600 leading-none">{userStats.lakiLaki}</p>
+                            </div>
+                            <div className="bg-pink-500/5 p-4 rounded-2xl text-center border border-pink-500/10">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Perempuan</p>
+                                <p className="text-2xl font-black text-pink-600 leading-none">{userStats.perempuan}</p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -292,8 +337,8 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />

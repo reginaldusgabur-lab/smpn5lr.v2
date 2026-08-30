@@ -15,8 +15,8 @@ export interface MonthlyReportData {
     manualEntry: boolean;
 }
 
-const cleanDesc = (desc: string) => {
-    if (!desc) return 'Kehadiran penuh';
+const cleanDesc = (desc: any) => {
+    if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
     const d = desc.toLowerCase();
     
     if (d === 'terlambat') return 'Terlambat';
@@ -33,10 +33,6 @@ const cleanDesc = (desc: string) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
-/**
- * Mengambil statistik kehadiran staf hari ini.
- * CACHE DINONAKTIFKAN agar sinkron dengan tabel Aktivitas Kehadiran.
- */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
@@ -51,13 +47,14 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             getDoc(monthlyConfigRef)
         ]);
 
-        const schoolConfig = schoolConfigSnap.data();
-        const monthlyConfig = monthlyConfigSnap.data();
+        const schoolConfig = schoolConfigSnap.exists() ? schoolConfigSnap.data() : {};
+        const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
 
-        const isManualOff = schoolConfig?.isAttendanceActive === false;
-        const isCalendarHoliday = monthlyConfig?.holidays?.includes(todayStr);
+        const isManualOff = schoolConfig.isAttendanceActive === false;
+        const holidays = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
+        const isCalendarHoliday = holidays.includes(todayStr);
         const dayOfWeek = today.getDay();
-        const offDays: number[] = schoolConfig?.offDays ?? [0, 6];
+        const offDays: number[] = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
         const isRecurringOff = offDays.includes(dayOfWeek);
 
         const isHoliday = !isManualOff && (isCalendarHoliday || isRecurringOff);
@@ -136,13 +133,14 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             isCalendarHoliday: isCalendarHoliday
         };
     } catch (e) {
-        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false };
+        console.error("Daily stats calculation error:", e);
+        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false, isCalendarHoliday: false };
     }
 }
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v152_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v165_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -159,8 +157,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
         ]);
 
-        const schoolConfig = schoolConfigSnap.data();
-        const monthlyConfig = monthlyConfigSnap.data();
+        const schoolConfig = schoolConfigSnap.exists() ? schoolConfigSnap.data() : {};
+        const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
         
         const startStr = format(start, 'yyyy-MM-dd');
         const endStr = format(end, 'yyyy-MM-dd');
@@ -177,8 +175,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             .map(d => d.data())
             .filter((l: any) => l.startDate.toDate() <= end);
 
-        const offDays: number[] = schoolConfig?.offDays ?? [0, 6];
-        const holidays: string[] = monthlyConfig?.holidays ?? [];
+        const offDays: number[] = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
+        const holidays: string[] = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
 
         const workingDaysInPeriod = eachDayOfInterval({ start, end }).filter(day => 
             !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd'))
@@ -252,11 +250,13 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         setInCache(cacheKey, result);
         return result;
     } catch (e) {
+        console.error("Stats calculation error:", e);
         return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
     }
 }
 
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
+    if (!schoolConfig) return [];
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
 
@@ -288,8 +288,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
 
         const now = new Date();
         const todayStart = startOfDay(now);
-        const offDays = schoolConfig?.offDays ?? [0, 6];
-        const holidays = monthlyConfig?.holidays ?? [];
+        const offDays: number[] = Array.isArray(schoolConfig?.offDays) ? schoolConfig.offDays : [0, 6];
+        const holidays: string[] = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
 
         const attendanceMap = new Map();
         attendanceHistory.forEach((rec: any) => {
@@ -316,11 +316,9 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
 
             if (!isWorkingDay) return null;
 
-            if (isBefore(todayStart, day) && !isToday) {
-                return null;
-            }
+            if (isBefore(todayStart, day) && !isToday) return null;
 
-            const attendanceRecord = attendanceMap.get(dayStr) as any;
+            const attendanceRecord = attendanceMap.get(dayStr);
             const leaveRecord = leaveMap.get(dayStr);
 
             if (attendanceRecord) {
@@ -334,15 +332,12 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 if (checkInTime && checkOutTime && !specialStatuses.includes(description.toLowerCase())) {
                     if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
-                        const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
+                        const inEndStr = schoolConfig.checkInEndTime;
+                        const [h, m] = inEndStr.split(':').map(Number);
                         const deadline = setMinutes(setHours(startOfDay(checkInTime), h), m);
                         if (checkInTime > deadline) {
                             description = 'Terlambat';
-                        } else {
-                            description = 'Kehadiran penuh';
                         }
-                    } else {
-                        description = 'Kehadiran penuh';
                     }
                 }
                 
@@ -353,9 +348,18 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 const importantStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'];
                 if (importantStatuses.includes(lowDesc)) {
-                    let finalStatus = statusLabel;
-                    if (lowDesc === 'terlambat') finalStatus = 'Hadir';
-                    return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: finalStatus, description: statusLabel, manualEntry: isManual };
+                    let finalStatus = 'Hadir'; 
+                    const isLuarSekolah = lowDesc === 'kegiatan luar sekolah';
+                    
+                    return { 
+                        id: attendanceRecord.id, 
+                        date: day, 
+                        checkInTime: isLuarSekolah ? null : checkInTime, 
+                        checkOutTime: isLuarSekolah ? null : checkOutTime, 
+                        status: finalStatus, 
+                        description: statusLabel, 
+                        manualEntry: isManual 
+                    };
                 }
 
                 if (!checkInTime && checkOutTime) {

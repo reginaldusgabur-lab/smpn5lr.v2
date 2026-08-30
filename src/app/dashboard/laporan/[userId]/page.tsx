@@ -13,9 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { fetchUserMonthlyReportData, type MonthlyReportData } from '@/lib/attendance';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,10 +24,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
 
 const safeFormat = (dateInput: any, formatString: string): string => {
     if (!dateInput) return '-';
@@ -49,7 +49,6 @@ export default function UserReportDetailPage() {
 
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData[]>([]);
-    const [stats, setStats] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isMutating, setIsMutating] = useState(false);
@@ -73,10 +72,9 @@ export default function UserReportDetailPage() {
             const userRef = doc(firestore, 'users', userId);
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
             
-            const [userSnap, reportData, reportStats, monthlyConfigSnap] = await Promise.all([
+            const [userSnap, reportData, monthlyConfigSnap] = await Promise.all([
                 getDoc(userRef),
                 fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData),
-                calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) }),
                 getDoc(monthlyConfigRef)
             ]);
 
@@ -85,7 +83,6 @@ export default function UserReportDetailPage() {
             if (isMounted.current) {
                 setUserData(userSnap.data());
                 setMonthlyReportData(reportData);
-                setStats(reportStats);
                 
                 const mData = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
                 setAcademicYear(mData.academicYear || schoolConfigData.academicYear || "");
@@ -115,12 +112,13 @@ export default function UserReportDetailPage() {
         const outStart = getDailyOutStart(date);
         const [h, m] = outStart.split(':').map(Number);
         const base = setMinutes(setHours(startOfDay(date), h), m);
-        const randomMins = Math.floor(Math.random() * 20) + 5;
+        // ACAK 10 MENIT SETELAH ABSEN DIBUKA
+        const randomMins = Math.floor(Math.random() * 10) + 1;
         const randomSecs = Math.floor(Math.random() * 60);
         return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
     }, [getDailyOutStart]);
 
-    const handleStatusChange = async (dateStr: string, newStatus: string, reason: string) => {
+    const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat' | 'luar-sekolah') => {
         if (!currentUser || !firestore || isMutating || !schoolConfigData || !userData) return;
         setIsMutating(true);
         try {
@@ -141,12 +139,12 @@ export default function UserReportDetailPage() {
             const snapA = await getDocs(qA);
             snapA.forEach(d => batch.delete(d.ref));
 
-            const leaveRef = collection(firestore, 'users', user.uid, 'leaveRequests');
+            const leaveRef = collection(firestore, 'users', userId, 'leaveRequests');
             const qL = query(leaveRef, where('startDate', '==', Timestamp.fromDate(startOfDay(targetDate))));
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (['Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Terlambat', 'Kegiatan Luar Sekolah'].includes(newStatus)) {
+            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
@@ -154,17 +152,37 @@ export default function UserReportDetailPage() {
                 let dataToSave: any = {
                     userId, date: todayStr,
                     manualEntry: true, 
-                    reasonForUpdate: reason,
+                    reasonForUpdate: 'Kehadiran penuh',
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                if (newStatus === 'Dinas Pagi' || newStatus === 'Terlambat' || newStatus === 'Kegiatan Luar Sekolah') {
+                if (type === 'hadir') {
+                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
+                    dataToSave.reasonForUpdate = 'Kehadiran penuh';
+                } else if (type === 'terlambat') {
                     dataToSave.checkInTime = null;
                     dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
-                } else {
-                    const randomSeconds = Math.floor(Math.random() * 299) + 1; 
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
+                    dataToSave.reasonForUpdate = 'Terlambat';
+                } else if (type === 'dinas-pagi') {
+                    dataToSave.checkInTime = null;
+                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
+                    dataToSave.reasonForUpdate = 'Dinas pagi';
+                } else if (type === 'luar-sekolah') {
+                    dataToSave.checkInTime = null;
                     dataToSave.checkOutTime = null;
+                    dataToSave.reasonForUpdate = 'Kegiatan luar sekolah';
+                } else if (type === 'dinas-siang') {
+                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                    dataToSave.checkOutTime = null;
+                    dataToSave.reasonForUpdate = 'Dinas siang';
+                } else if (type === 'pulang-cepat') {
+                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                    dataToSave.checkOutTime = null;
+                    dataToSave.reasonForUpdate = 'Pulang cepat';
                 }
 
                 batch.set(doc(attendanceRef), dataToSave);
@@ -172,9 +190,10 @@ export default function UserReportDetailPage() {
                 const newLeaveDoc = doc(leaveRef);
                 batch.set(newLeaveDoc, {
                     id: newLeaveDoc.id,
-                    userId, userName: userData.name, userRole: userData.role,
-                    type: newStatus === 'Sakit' ? 'Sakit' : 'Izin',
-                    status: 'approved', reason: reason,
+                    userId, userName: userData.name,
+                    type: type === 'sakit' ? 'Sakit' : 'Izin Pribadi',
+                    status: 'approved',
+                    reason: type === 'sakit' ? 'Sakit' : 'Izin pribadi',
                     startDate: Timestamp.fromDate(startOfDay(targetDate)),
                     endDate: Timestamp.fromDate(endOfDay(targetDate)),
                     createdAt: serverTimestamp(), approvedBy: currentUser.uid, approvedAt: serverTimestamp()
@@ -183,53 +202,11 @@ export default function UserReportDetailPage() {
 
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: `Status diperbarui menjadi ${reason}.` });
+            toast({ title: 'Berhasil', description: 'Data kehadiran telah diperbarui.' });
             fetchData();
-        } catch (err: any) { 
-            toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal mengubah status.' }); 
+        } catch (err) { 
+            toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); 
         } finally { setIsMutating(false); }
-    };
-
-    const handleSetHadir = async (item: MonthlyReportData) => {
-        if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
-        setIsMutating(true);
-        try {
-            const targetDate = parseISO(item.date);
-            const now = new Date();
-            const isToday = isSameDay(targetDate, now);
-            const outStart = getDailyOutStart(targetDate);
-            const [hO, mO] = outStart.split(':').map(Number);
-            const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            
-            const fillOut = !isToday || (isToday && now >= limitOutStart);
-
-            const batch = writeBatch(firestore);
-            const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
-            const [inH, inM] = inEnd.split(':').map(Number);
-            const limitIn = setMinutes(setHours(startOfDay(targetDate), inH), inM);
-
-            const data: any = {
-                userId, date: format(targetDate, 'yyyy-MM-dd'),
-                manualEntry: true, reasonForUpdate: 'Kehadiran penuh', 
-                updatedBy: currentUser.uid, updatedAt: serverTimestamp()
-            };
-
-            const randomSeconds = Math.floor(Math.random() * 299) + 1;
-            data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
-            data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
-
-            const q = query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '==', format(targetDate, 'yyyy-MM-dd')));
-            const snap = await getDocs(q);
-
-            if (!snap.empty) batch.update(snap.docs[0].ref, data);
-            else batch.set(doc(collection(firestore, 'users', userId, 'attendanceRecords')), data);
-
-            await batch.commit();
-            invalidateCache();
-            toast({ title: 'Berhasil', description: fillOut ? 'Kehadiran dipulihkan.' : 'Absen masuk diaktifkan.' });
-            fetchData();
-        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' }); }
-        finally { setIsMutating(false); }
     };
 
     const handleDownloadPdf = async () => {
@@ -264,9 +241,9 @@ export default function UserReportDetailPage() {
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
             safeFormat(item.date, 'eeee, dd MMMM yyyy'),
-            (item.status === 'Terlambat' || item.description === 'Terlambat' && !item.checkInTime) ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
+            (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
             safeFormat(item.checkOutTime, 'HH:mm:ss'),
-            (item.status === 'Terlambat' || item.description === 'Terlambat') ? 'Hadir' : item.status,
+            item.status,
             item.description || '-'
         ]);
 
@@ -309,6 +286,14 @@ export default function UserReportDetailPage() {
     const isAdmin = currentUser?.role === 'admin';
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
+
+    const getStatusColorClass = (status: string) => {
+        const s = status.toLowerCase();
+        if (s === 'alpa') return "bg-red-500 text-white border-none shadow-sm";
+        if (s === 'sakit') return "bg-orange-500 text-white border-none shadow-sm";
+        if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return "bg-amber-500 text-white border-none shadow-sm";
+        return "bg-emerald-500 text-white border-none shadow-sm";
+    };
 
     if (isLoading || !userData) return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
 
@@ -360,13 +345,15 @@ export default function UserReportDetailPage() {
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
-                            <div className="flex justify-end"><Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button></div>
+                            <div className="flex justify-end gap-3 px-2 sm:px-0">
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
+                            </div>
                         </div>
 
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
-                                    <TableRow className="border-none">
+                                    <TableRow className="border-none h-11">
                                         <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none h-11">No</TableHead>
                                         <TableHead className="w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
@@ -376,18 +363,51 @@ export default function UserReportDetailPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => (
-                                        <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
-                                            <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                            <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
-                                            <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                            <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
-                                            <TableCell className="text-center">
-                                                <span className={cn("inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight", (item.status === 'Alpa' ? "bg-red-500 text-white" : "bg-emerald-500 text-white"))}>{item.status}</span>
-                                            </TableCell>
-                                            <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
-                                        </TableRow>
-                                    )) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
+                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
+                                        const isAlpa = item.status === 'Alpa';
+                                        const isManual = item.manualEntry === true;
+                                        const canEdit = isAdmin && (isAlpa || isManual);
+                                        
+                                        return (
+                                            <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
+                                                <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
+                                                            {item.status}
+                                                        </Badge>
+                                                        
+                                                        {canEdit && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90">
+                                                                        <PencilLine className="h-4 w-4 text-primary" />
+                                                                    </button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
+                                            </TableRow>
+                                        );
+                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>
