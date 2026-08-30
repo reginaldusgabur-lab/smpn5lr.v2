@@ -78,7 +78,7 @@ import { resetUserPassword } from '@/app/actions/admin-actions';
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
     email: z.string().email({ message: 'Email tidak valid.' }),
-    role: z.enum(['guru', 'pegawai', 'kepala_sekolah', 'admin']),
+    role: z.enum(['guru', 'pegawai', 'kepala_sekolah', 'admin', 'siswa']),
     gender: z.enum(['Laki-laki', 'Perempuan'], { required_error: 'Jenis kelamin wajib dipilih' }),
     nip: z.string().optional(),
     position: z.string().optional(),
@@ -111,7 +111,7 @@ export default function AdminUsersPage() {
     const filteredUsers = useMemo(() => {
         if (!usersData) return [];
         return usersData.filter(u => {
-            const matchRole = userFilter === 'all' ? u.role !== 'admin' : u.role === userFilter;
+            const matchRole = userFilter === 'all' ? true : u.role === userFilter;
             const matchSearch = (u.name || '').toLowerCase().includes(userSearch.toLowerCase());
             return matchRole && matchSearch;
         }).sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
@@ -261,6 +261,7 @@ export default function AdminUsersPage() {
                                     <SelectItem value="guru">Guru</SelectItem>
                                     <SelectItem value="pegawai">Pegawai</SelectItem>
                                     <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                    <SelectItem value="siswa">Siswa</SelectItem>
                                 </SelectContent>
                             </Select>
                             <div className="relative w-full sm:w-[320px]">
@@ -289,7 +290,7 @@ export default function AdminUsersPage() {
                                             <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{u.name}</span><span className="text-[10px] text-muted-foreground font-bold">{u.email}</span></div></TableCell>
                                             <TableCell><Badge variant="secondary" className="text-[9px] font-bold px-3">{u.role.replace('_', ' ')}</Badge></TableCell>
                                             <TableCell><span className="text-xs font-medium">{u.gender || '-'}</span></TableCell>
-                                            <TableCell><div className="flex flex-col"><span className="text-[10px] font-bold">{u.nip || '-'}</span><span className="text-[9px] font-bold text-primary uppercase">{u.position || '-'}</span></div></TableCell>
+                                            <TableCell><div className="flex flex-col"><span className="text-[10px] font-bold">{u.nip || u.nisn || '-'}</span><span className="text-[9px] font-bold text-primary uppercase">{u.position || '-'}</span></div></TableCell>
                                             <TableCell className="text-center"><Badge variant={u.status === 'Aktif' ? 'default' : 'destructive'} className="text-[9px] font-bold">{u.status}</Badge></TableCell>
                                             <TableCell className="text-right pr-4">
                                                 <DropdownMenu>
@@ -337,11 +338,11 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem><SelectItem value="siswa">Siswa</SelectItem></Select><FormMessage /></FormItem>)} />
                                     <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name={userForm.watch('role') === 'siswa' ? 'nisn' : 'nip'} render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">{userForm.watch('role') === 'siswa' ? 'NISN' : 'NIP'}</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
                                     <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
