@@ -144,10 +144,12 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
+                    // ACAK 5 MENIT SEBELUM BATAS AKHIR MASUK
                     const randomInOffset = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
                     
                     if (fillOut) {
+                        // ACAK 10 MENIT SETELAH JAM BUKA PULANG
                         const randomOutOffset = Math.floor(Math.random() * 600) + 1;
                         dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
                     } else {
