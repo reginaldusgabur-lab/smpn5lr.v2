@@ -249,7 +249,18 @@ export default function AdminUsersPage() {
                     <CardHeader className="p-6 border-b border-muted-foreground/5"><CardTitle className="font-bold text-blue-600 text-sm">Daftar pengguna sistem</CardTitle></CardHeader>
                     <CardContent className="py-6">
                         <div className="flex flex-col gap-4 sm:flex-row mb-8">
-                            <Select value={userFilter} onValueChange={setUserFilter}><SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 font-bold text-xs"><Filter className="h-4 w-4 text-primary mr-2" /><SelectValue /></SelectTrigger><SelectContent className='border-none'><SelectItem value="all">Semua staf</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></Select><FormMessage /></Select>
+                            <Select value={userFilter} onValueChange={setUserFilter}>
+                                <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 font-bold text-xs">
+                                    <Filter className="h-4 w-4 text-primary mr-2" />
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className='border-none'>
+                                    <SelectItem value="all">Semua staf</SelectItem>
+                                    <SelectItem value="guru">Guru</SelectItem>
+                                    <SelectItem value="pegawai">Pegawai</SelectItem>
+                                    <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <div className="relative w-full sm:w-[320px]"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Cari nama..." className="pl-10 h-11 rounded-xl bg-muted/30 font-bold text-xs" value={userSearch} onChange={e => setUserSearch(e.target.value)} /></div>
                         </div>
 
@@ -278,7 +289,12 @@ export default function AdminUsersPage() {
                                             <TableCell className="text-right pr-4">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9 rounded-full"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none"><DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel><DropdownMenuItem onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem><DropdownMenuItem onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={() => { setUserToDelete(u); setIsDeleteDialogOpen(true); }}><Trash2 className="mr-3 h-4 w-4" />Hapus akun</DropdownMenuItem></DropdownMenuContent>
+                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none">
+                                                        <DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem>
+                                                        <DropdownMenuItem className="text-destructive" onClick={() => { setUserToDelete(u); setIsDeleteDialogOpen(true); }}><Trash2 className="mr-3 h-4 w-4" />Hapus akun</DropdownMenuItem>
+                                                    </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
