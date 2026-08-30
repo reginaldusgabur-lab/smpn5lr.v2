@@ -154,21 +154,21 @@ export default function LoginPage() {
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        {/* Beringin and Api Background Watermarks with higher visibility */}
+        {/* Beringin and Api Background Watermarks with optimized visibility for mobile */}
         <div className="absolute inset-0">
-          <div className="absolute top-[10%] left-[-5%] sm:left-[2%] flex items-center justify-center opacity-30 dark:opacity-40">
-             <BeringinIcon className="w-72 h-72 text-green-600 -rotate-12" />
+          <div className="absolute top-[8%] left-[-10%] sm:left-[2%] flex items-center justify-center opacity-35 dark:opacity-45">
+             <BeringinIcon className="w-80 h-80 text-green-600 -rotate-12" />
+             <ApiIcon className="absolute w-20 h-20 text-amber-500 mb-14" />
+          </div>
+          
+          <div className="absolute bottom-[12%] left-[3%] flex items-center justify-center opacity-30 dark:opacity-40 rotate-12">
+             <BeringinIcon className="w-96 h-96 text-green-600" />
+             <ApiIcon className="absolute w-24 h-24 text-amber-500 mb-16" />
+          </div>
+          
+          <div className="absolute top-[25%] right-[-15%] flex items-center justify-center opacity-25 dark:opacity-35 -rotate-45">
+             <BeringinIcon className="w-72 h-72 text-green-600" />
              <ApiIcon className="absolute w-16 h-16 text-amber-500 mb-10" />
-          </div>
-          
-          <div className="absolute bottom-[10%] left-[5%] flex items-center justify-center opacity-25 dark:opacity-35 rotate-12">
-             <BeringinIcon className="w-80 h-80 text-green-600" />
-             <ApiIcon className="absolute w-20 h-20 text-amber-500 mb-12" />
-          </div>
-          
-          <div className="absolute top-[20%] right-[-10%] flex items-center justify-center opacity-20 dark:opacity-30 -rotate-45">
-             <BeringinIcon className="w-64 h-64 text-green-600" />
-             <ApiIcon className="absolute w-14 h-14 text-amber-500 mb-8" />
           </div>
         </div>
       </div>
@@ -177,7 +177,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-6 pb-2 relative">
             
-            {/* Tech Icons Decoration - Sync Color with blue-600 */}
+            {/* Tech Icons Decoration - Unified Blue-600 */}
             <div className="absolute top-8 left-6 opacity-30 -rotate-12">
               <Smartphone className="h-8 w-8 text-blue-600" />
             </div>

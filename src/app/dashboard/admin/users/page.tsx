@@ -117,6 +117,16 @@ export default function AdminUsersPage() {
         }).sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
     }, [usersData, userFilter, userSearch]);
 
+    // RE-ADDED: Logic to calculate gender statistics
+    const userStats = useMemo(() => {
+        return filteredUsers.reduce((acc, curr) => {
+            acc.total++;
+            if (curr.gender === 'Laki-laki') acc.lakiLaki++;
+            else if (curr.gender === 'Perempuan') acc.perempuan++;
+            return acc;
+        }, { total: 0, lakiLaki: 0, perempuan: 0 });
+    }, [filteredUsers]);
+
     const userForm = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
         defaultValues: { role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', position: '', sequenceNumber: '', password: '' },
@@ -276,6 +286,22 @@ export default function AdminUsersPage() {
                                     )) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Data tidak ditemukan</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
+                        </div>
+
+                        {/* RE-ADDED: Summary statistics at the bottom */}
+                        <div className="mt-8 pt-8 border-t border-muted-foreground/10 grid grid-cols-3 gap-3">
+                            <div className="bg-primary/5 p-4 rounded-2xl text-center border border-primary/5">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Total Staf</p>
+                                <p className="text-2xl font-black text-primary leading-none">{userStats.total}</p>
+                            </div>
+                            <div className="bg-blue-500/5 p-4 rounded-2xl text-center border border-blue-500/10">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Laki-laki</p>
+                                <p className="text-2xl font-black text-blue-600 leading-none">{userStats.lakiLaki}</p>
+                            </div>
+                            <div className="bg-pink-500/5 p-4 rounded-2xl text-center border border-pink-500/10">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Perempuan</p>
+                                <p className="text-2xl font-black text-pink-600 leading-none">{userStats.perempuan}</p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
