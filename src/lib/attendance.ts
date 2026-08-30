@@ -24,7 +24,7 @@ const cleanDesc = (desc: any) => {
     if (d === 'izin' || d === 'izin pribadi') return 'Izin pribadi';
     if (d === 'dinas pagi') return 'Dinas pagi';
     if (d === 'dinas siang') return 'Dinas siang';
-    if (d === 'pulang cepat') return 'Pulang cepat';
+    if (d === 'pulang cepat' || d === 'izin pulang cepat') return 'Pulang cepat';
     if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
 
     if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi') || d.includes('diubah oleh admin')) {
@@ -112,8 +112,8 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                 const leave = activeLeave.data();
                 if (leave.status === 'approved') {
                     if (leave.type === 'Sakit') sakitCount++;
-                    else if (!['Pulang Cepat', 'Dinas Siang'].includes(leave.type)) izinCount++;
-                } else if (leave.status === 'pending' && !['Pulang Cepat', 'Dinas Siang'].includes(leave.type)) {
+                    else if (!['Pulang Cepat', 'Dinas Siang', 'Izin Pulang Cepat'].includes(leave.type)) izinCount++;
+                } else if (leave.status === 'pending' && !['Pulang Cepat', 'Dinas Siang', 'Izin Pulang Cepat'].includes(leave.type)) {
                     pendingCount++;
                 }
             } else {
@@ -140,7 +140,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v180_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v190_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -217,14 +217,19 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 const dayStr = format(day, 'yyyy-MM-dd');
                 if (workingDaysSet.has(dayStr) && !processedDates.has(dayStr)) {
                     let point = 0;
-                    if (leave.type === 'Sakit') {
+                    const typeLow = leave.type.toLowerCase();
+                    if (typeLow === 'sakit') {
                         point = 0.9;
                         sakitCount++;
-                    } else if (['Izin', 'Izin Pribadi', 'Terlambat', 'Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(leave.type)) {
-                        const lowT = leave.type.toLowerCase();
-                        if (lowT.includes('dinas') || lowT.includes('luar sekolah')) point = 1.0;
-                        else point = 0.7;
+                    } else if (['izin', 'izin pribadi'].includes(typeLow)) {
+                        point = 0.7;
                         izinCount++;
+                    } else if (typeLow.includes('dinas') || typeLow.includes('luar sekolah')) {
+                        point = 1.0;
+                        hadirCount++;
+                    } else if (typeLow === 'terlambat' || typeLow.includes('pulang cepat')) {
+                        point = 0.95;
+                        hadirCount++;
                     } else {
                         point = 1.0;
                         hadirCount++;
@@ -273,7 +278,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         ]);
 
         const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
-        
         const startStr = format(monthStart, 'yyyy-MM-dd');
         const endStr = format(monthEnd, 'yyyy-MM-dd');
 
@@ -339,7 +343,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 }
                 
                 const lowDesc = description.toLowerCase();
-                const statusLabel = 'Hadir'; // Semua kategori di atas dihitung Hadir (Poin 1.0)
+                const statusLabel = 'Hadir'; 
                 
                 if (['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'].includes(lowDesc)) {
                     const isLuarSekolah = lowDesc === 'kegiatan luar sekolah';
@@ -364,7 +368,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
 
             if (leaveRecord) {
                 const type = leaveRecord.type;
-                const isHadirFull = ['Dinas', 'Dinas Pagi', 'Dinas Siang', 'Terlambat', 'Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(type);
+                const isHadirFull = ['Dinas', 'Dinas Pagi', 'Dinas Siang', 'Terlambat', 'Pulang Cepat', 'Izin Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(type);
                 
                 return { 
                     id: `${leaveRecord.id}-${dayStr}`, 

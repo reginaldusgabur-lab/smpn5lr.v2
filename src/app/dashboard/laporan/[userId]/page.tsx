@@ -144,11 +144,11 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
-                    const randomInOffset = Math.floor(Math.random() * 299) + 1; // acak 5 menit di akhir batas
+                    const randomInOffset = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
                     
                     if (fillOut) {
-                        const randomOutOffset = Math.floor(Math.random() * 600) + 1; // acak 10 menit di awal buka
+                        const randomOutOffset = Math.floor(Math.random() * 600) + 1;
                         dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
                     } else {
                         dataToSave.checkOutTime = null;
