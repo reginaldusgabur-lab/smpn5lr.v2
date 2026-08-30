@@ -143,7 +143,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v163_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v166_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -199,7 +199,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 let point = 0;
                 const desc = (att.reasonForUpdate || '').toLowerCase();
                 
-                // Kegiatan Luar Sekolah dan Dinas dihitung poin penuh 1.0
                 if (desc.includes('dinas') || desc.includes('kehadiran penuh') || desc.includes('kegiatan luar sekolah')) {
                     point = 1.0;
                 } else if (desc.includes('terlambat') || desc.includes('pulang cepat')) {
@@ -352,9 +351,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 const importantStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'];
                 if (importantStatuses.includes(lowDesc)) {
-                    let finalStatus = 'Hadir'; // Default "Hadir" untuk kapsul status
-                    
-                    // Khusus kegiatan luar sekolah: hitungan hadir full, jam tidak perlu dicatat
+                    let finalStatus = 'Hadir'; 
                     const isLuarSekolah = lowDesc === 'kegiatan luar sekolah';
                     
                     return { 

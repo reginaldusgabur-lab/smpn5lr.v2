@@ -156,7 +156,6 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir') {
-                    // ACAK 5 MENIT SEBELUM TUTUP
                     const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                     dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
@@ -170,7 +169,6 @@ export default function UserReportDetailPage() {
                     dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
                     dataToSave.reasonForUpdate = 'Dinas pagi';
                 } else if (type === 'luar-sekolah') {
-                    // KEGIATAN LUAR SEKOLAH: Jam masuk/pulang tidak perlu dicatat (tetap null)
                     dataToSave.checkInTime = null;
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Kegiatan luar sekolah';
@@ -365,11 +363,9 @@ export default function UserReportDetailPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
-                                        const isAlpa = item.status === 'Alpa';
-                                        const isManual = item.manualEntry === true;
-                                        // Hanya data Alpa atau data hasil edit Admin sebelumnya yang boleh dikoreksi.
-                                        // Data absen mandiri sukses dipatenkan.
-                                        const canEdit = isAdmin && (isAlpa || isManual);
+                                        // LOGIKA PERBAIKAN: Izinkan edit jika Alpa, Manual (Admin), atau data belum lengkap (hanya masuk/pulang)
+                                        const isAbsenMandiriLengkap = !item.manualEntry && item.checkInTime && item.checkOutTime;
+                                        const canEdit = isAdmin && !isAbsenMandiriLengkap;
                                         
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
