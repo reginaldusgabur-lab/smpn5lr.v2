@@ -144,22 +144,24 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             };
 
             if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'dinas-siang') {
+                // ACAK 5 MENIT SEBELUM BATAS AKHIR MASUK
                 const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
                 data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                 
                 if (type === 'hadir' || type === 'lengkapi-masuk') {
-                   data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
+                   // ACAK 10 MENIT SETELAH JAM BUKA PULANG
+                   data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 10) + 1)) : null;
                 } else {
                    data.checkOutTime = null;
                    data.reasonForUpdate = 'Dinas siang';
                 }
             } else if (type === 'terlambat') {
                 data.checkInTime = null;
-                data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
+                data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 10) + 1)) : null;
                 data.reasonForUpdate = 'Terlambat';
             } else if (type === 'dinas-pagi') {
                 data.checkInTime = null;
-                data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
+                data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 10) + 1)) : null;
                 data.reasonForUpdate = 'Dinas pagi';
             } else if (type === 'luar-sekolah') {
                 data.checkInTime = null;
@@ -197,7 +199,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 const fillOut = !isToday || (isToday && now > limitOutStart);
 
                 if (fillOut) {
-                    const randomMins = Math.floor(Math.random() * 20) + 5;
+                    const randomMins = Math.floor(Math.random() * 10) + 1;
                     const randomSecs = Math.floor(Math.random() * 60);
                     const realOut = new Date(limitOutStart.getTime() + (randomMins * 60000) + (randomSecs * 1000));
                     

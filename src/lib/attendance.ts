@@ -271,6 +271,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         ]);
 
         const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
+        
         const startStr = format(monthStart, 'yyyy-MM-dd');
         const endStr = format(monthEnd, 'yyyy-MM-dd');
 

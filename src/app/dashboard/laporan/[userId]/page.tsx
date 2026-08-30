@@ -111,6 +111,7 @@ export default function UserReportDetailPage() {
         const outStart = getDailyOutStart(date);
         const [h, m] = outStart.split(':').map(Number);
         const base = setMinutes(setHours(startOfDay(date), h), m);
+        // ACAK 10 MENIT SETELAH ABSEN DIBUKA
         const randomMins = Math.floor(Math.random() * 10) + 1;
         const randomSecs = Math.floor(Math.random() * 60);
         return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
@@ -154,6 +155,7 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
+                    // ACAK 5 MENIT SEBELUM TUTUP
                     const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                     dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
