@@ -352,7 +352,10 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const importantStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'];
                 if (importantStatuses.includes(lowDesc)) {
                     let finalStatus = statusLabel;
-                    if (lowDesc === 'terlambat') finalStatus = 'Hadir';
+                    // Changed: Dinas siang and Pulang cepat now show as "Hadir" in status column
+                    if (['terlambat', 'dinas siang', 'pulang cepat'].includes(lowDesc)) {
+                        finalStatus = 'Hadir';
+                    }
                     return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: finalStatus, description: statusLabel, manualEntry: isManual };
                 }
 

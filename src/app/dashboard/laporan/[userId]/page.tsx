@@ -364,9 +364,9 @@ export default function UserReportDetailPage() {
                                                         {isAdmin && isProblematic && (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10 transition-all active:scale-90">
+                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90">
                                                                         <PencilLine className="h-4 w-4 text-primary" />
-                                                                    </Button>
+                                                                    </button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
