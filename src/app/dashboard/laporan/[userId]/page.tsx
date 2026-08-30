@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -15,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw, PencilLine } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
-import EditAttendanceModal from '@/components/modals/EditAttendanceModal';
 
 const safeFormat = (dateInput: any, formatString: string): string => {
     if (!dateInput) return '-';
@@ -50,13 +50,11 @@ export default function UserReportDetailPage() {
 
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData[]>([]);
-    const [stats, setStats] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isMutating, setIsMutating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [academicYear, setAcademicYear] = useState("");
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
@@ -75,10 +73,9 @@ export default function UserReportDetailPage() {
             const userRef = doc(firestore, 'users', userId);
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
             
-            const [userSnap, reportData, reportStats, monthlyConfigSnap] = await Promise.all([
+            const [userSnap, reportData, monthlyConfigSnap] = await Promise.all([
                 getDoc(userRef),
                 fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData),
-                calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) }),
                 getDoc(monthlyConfigRef)
             ]);
 
@@ -87,7 +84,6 @@ export default function UserReportDetailPage() {
             if (isMounted.current) {
                 setUserData(userSnap.data());
                 setMonthlyReportData(reportData);
-                setStats(reportStats);
                 
                 const mData = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
                 setAcademicYear(mData.academicYear || schoolConfigData.academicYear || "");
@@ -130,7 +126,7 @@ export default function UserReportDetailPage() {
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
             
-            // Cleanup existing
+            // Hapus data lama (baik di attendanceRecords maupun leaveRequests)
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const qA = query(attendanceRef, where('date', '==', todayStr));
             const snapA = await getDocs(qA);
@@ -153,7 +149,7 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir') {
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000)); // 5 menit sebelum
                     data.checkOutTime = generateRandomOutTime(targetDate);
                     data.reasonForUpdate = 'Kehadiran penuh';
                 } else if (type === 'terlambat') {
@@ -191,10 +187,11 @@ export default function UserReportDetailPage() {
 
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
+            toast({ title: 'Berhasil', description: 'Status kehadiran diperbarui.' });
             fetchData();
-        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); }
-        finally { setIsMutating(false); }
+        } catch (err) { 
+            toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); 
+        } finally { setIsMutating(false); }
     };
 
     const handleDownloadPdf = async () => {
@@ -334,12 +331,7 @@ export default function UserReportDetailPage() {
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3 px-2 sm:px-0">
-                                {isAdmin && (
-                                    <Button onClick={() => setIsEditModalOpen(true)} variant="outline" className="flex-1 sm:flex-none font-bold border-primary text-primary hover:bg-primary/5 h-11 rounded-xl text-xs shadow-none">
-                                        <PencilLine className="mr-2 h-4 w-4" />Perbaiki kehadiran
-                                    </Button>
-                                )}
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="flex-1 sm:flex-none font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
                             </div>
                         </div>
 
@@ -357,7 +349,7 @@ export default function UserReportDetailPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
-                                        const isProblematic = item.status === 'Alpa' || item.description.includes('Belum') || item.description.includes('Tanpa');
+                                        const isProblematic = item.status === 'Alpa' || item.status === 'Sakit' || item.description.includes('Belum') || item.description.includes('Tanpa');
                                         
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
@@ -367,7 +359,7 @@ export default function UserReportDetailPage() {
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <Badge className={cn("px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
+                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
                                                             {item.status}
                                                         </Badge>
                                                         
@@ -404,15 +396,7 @@ export default function UserReportDetailPage() {
                     </CardContent>
                 </Card>
             </div>
-            {isAdmin && userData && (
-                <EditAttendanceModal 
-                    user={{ id: userId, ...userData }}
-                    month={currentMonth}
-                    isOpen={isEditModalOpen}
-                    onClose={() => { setIsEditModalOpen(false); fetchData(); }}
-                    currentUser={currentUser}
-                />
-            )}
         </div>
     );
 }
+
