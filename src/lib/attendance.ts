@@ -374,12 +374,22 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 };
             }
 
-            if (leaveRecord && !['Pulang Cepat', 'Dinas Siang'].includes(leaveRecord.type)) {
-                return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type === 'Terlambat' ? 'Hadir' : leaveRecord.type, description: cleanDesc(leaveRecord.reason) || leaveRecord.type };
-            }
+            if (leaveRecord) {
+                const isDuty = ['Dinas', 'Dinas Pagi', 'Dinas Siang', 'Terlambat', 'Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(leaveRecord.type);
+                
+                // Jika sudah pulang cepat atau dinas siang tetapi tanpa scan masuk pagi sama sekali, tampilkan alpa.
+                if (['Pulang Cepat', 'Dinas Siang'].includes(leaveRecord.type)) {
+                     return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: `Tugas ${leaveRecord.type} (Tanpa absen masuk)` };
+                }
 
-            if (leaveRecord && ['Pulang Cepat', 'Dinas Siang'].includes(leaveRecord.type)) {
-                 return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: `Tugas ${leaveRecord.type} (Tanpa absen masuk)` };
+                return { 
+                    id: `${leaveRecord.id}-${dayStr}`, 
+                    date: day, 
+                    checkInTime: null, 
+                    checkOutTime: null, 
+                    status: isDuty ? 'Hadir' : leaveRecord.type, 
+                    description: cleanDesc(leaveRecord.reason) || leaveRecord.type 
+                };
             }
 
             return { id: dayStr, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: 'Tidak ada keterangan' };

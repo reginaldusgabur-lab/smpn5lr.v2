@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, MessageSquare, AlertCircle, MailCheck, Clock, CheckCircle2, Calendar } from 'lucide-react';
+import { Loader2, Trash2, MessageSquare, AlertCircle, MailCheck, Clock, CheckCircle2, Calendar, Briefcase } from 'lucide-react';
 import { startOfDay, endOfDay, addDays, format, setHours, setMinutes } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -99,7 +99,6 @@ export default function IzinPage() {
         return isRecurringOff || isSpecificHoliday || schoolConfig.isAttendanceActive === false;
     }, [schoolConfig, monthlyConfig]);
 
-    // Logika Penguncian Tanggal
     const isTodayLocked = useMemo(() => {
         return windowStatus === 'CLOSED' || windowStatus === 'SESSION_INACTIVE' || windowStatus === 'DISABLED' || isDateHoliday(today);
     }, [windowStatus, isDateHoliday, today]);
@@ -108,7 +107,6 @@ export default function IzinPage() {
         return isDateHoliday(tomorrow);
     }, [isDateHoliday, tomorrow]);
 
-    // Efek untuk mengalihkan ke "Besok" secara otomatis jika "Hari Ini" terkunci
     useEffect(() => {
         if (isTodayLocked && form.getValues('leaveDate') === 'today') {
             form.setValue('leaveDate', 'tomorrow');
@@ -147,6 +145,8 @@ export default function IzinPage() {
             case 'Sakit': return 'Contoh: Demam tinggi, Sakit gigi, Perlu istirahat medis...';
             case 'Izin Pribadi': return 'Contoh: Urusan keluarga mendesak, Menghadiri pernikahan saudara...';
             case 'Dinas': return 'Contoh: Menghadiri rapat MKKS di Dinas Pendidikan...';
+            case 'Dinas Pagi': return 'Contoh: Bertugas di lokasi lain pada pagi hari, Langsung ke lokasi dinas...';
+            case 'Dinas Siang': return 'Contoh: Bertugas ke luar sekolah setelah jam istirahat siang...';
             case 'Terlambat': return 'Contoh: Ban kendaraan bocor, Ada kendala tak terduga di jalan...';
             case 'Pulang Cepat': return 'Contoh: Ada keperluan darurat di rumah yang tidak bisa ditunda...';
             default: return 'Tuliskan alasan pengajuan Anda di sini...';
@@ -271,6 +271,8 @@ export default function IzinPage() {
                                                         <SelectItem value="Sakit" className="rounded-lg font-bold">Sakit</SelectItem>
                                                         <SelectItem value="Izin Pribadi" className="rounded-lg font-bold">Izin Pribadi</SelectItem>
                                                         <SelectItem value="Dinas" className="rounded-lg font-bold">Perjalanan Dinas</SelectItem>
+                                                        <SelectItem value="Dinas Pagi" className="rounded-lg font-bold">Dinas Pagi</SelectItem>
+                                                        <SelectItem value="Dinas Siang" className="rounded-lg font-bold" disabled={!hasCheckedIn}>Dinas Siang</SelectItem>
                                                         <SelectItem value="Terlambat" className="rounded-lg font-bold" disabled={hasCheckedIn}>Izin Terlambat</SelectItem>
                                                         <SelectItem value="Pulang Cepat" className="rounded-lg font-bold" disabled={!hasCheckedIn || hasCheckedOut}>Izin Pulang Cepat</SelectItem>
                                                     </SelectContent>
