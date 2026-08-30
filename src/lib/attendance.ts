@@ -33,9 +33,6 @@ const cleanDesc = (desc: any) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
-/**
- * Mengambil statistik kehadiran staf hari ini.
- */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
@@ -143,7 +140,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v166_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v168_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
