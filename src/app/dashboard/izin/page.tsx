@@ -134,7 +134,6 @@ export default function IzinPage() {
         switch (selectedType) {
             case 'Sakit': return 'Contoh: Demam tinggi, Sakit gigi, Perlu istirahat medis...';
             case 'Izin Pribadi': return 'Contoh: Urusan keluarga mendesak, Pernikahan saudara...';
-            case 'Dinas': return 'Contoh: Rapat MKKS di Dinas Pendidikan...';
             case 'Dinas Pagi': return 'Contoh: Bertugas di lokasi lain pada pagi hari...';
             case 'Dinas Siang': return 'Contoh: Bertugas ke luar sekolah setelah jam istirahat siang...';
             case 'Terlambat': return 'Contoh: Ban kendaraan bocor, Kendala tak terduga di jalan...';
