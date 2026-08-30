@@ -6,15 +6,22 @@ import { format, startOfMonth, parseISO, isValid, endOfMonth, endOfDay, startOfD
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { doc, writeBatch, collection, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+    DropdownMenu, 
+    DropdownMenuContent, 
+    DropdownMenuItem, 
+    DropdownMenuTrigger, 
+    DropdownMenuSeparator, 
+    DropdownMenuLabel 
+} from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -51,6 +58,7 @@ export default function ReportClientShell({
 
     const [userData] = useState<UserData>(initialUserData);
     const [reportDetails] = useState<ReportDetail[]>(initialReportData || []);
+    const [isMutating, setIsMutating] = useState(false);
 
     const parsedInitialMonth = parseISO(initialMonth);
     const [currentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
@@ -65,6 +73,81 @@ export default function ReportClientShell({
         const dateObj = typeof date === 'string' ? parseISO(date) : date;
         return isValid(dateObj) ? format(dateObj, formatString, { locale: indonesiaLocale }) : '-';
     }
+
+    const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat') => {
+        if (!authUser || !firestore || isMutating) return;
+        setIsMutating(true);
+        try {
+            const targetDate = parseISO(dateStr);
+            const batch = writeBatch(firestore);
+            const todayStr = format(targetDate, 'yyyy-MM-dd');
+            
+            // Hapus data lama
+            const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
+            const qA = query(attendanceRef, where('date', '==', todayStr));
+            const snapA = await getDocs(qA);
+            snapA.forEach(d => batch.delete(d.ref));
+
+            const leaveRef = collection(firestore, 'users', userId, 'leaveRequests');
+            const qL = query(leaveRef, where('startDate', '==', Timestamp.fromDate(startOfDay(targetDate))));
+            const snapL = await getDocs(qL);
+            snapL.forEach(d => batch.delete(d.ref));
+
+            const inEnd = initialSchoolConfig?.checkInEndTime || '07:30';
+            const [hE, mE] = inEnd.split(':').map(Number);
+            const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
+
+            if (type === 'hadir' || type === 'terlambat' || type === 'dinas-pagi' || type === 'dinas-siang' || type === 'pulang-cepat') {
+                let data: any = {
+                    userId, date: todayStr,
+                    manualEntry: true,
+                    updatedBy: authUser.uid,
+                    updatedAt: serverTimestamp()
+                };
+
+                if (type === 'hadir') {
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000)); // 5 menit sebelum deadline
+                    data.checkOutTime = Timestamp.fromDate(addMinutes(limitIn, 480)); // +8 jam
+                    data.reasonForUpdate = 'Kehadiran penuh';
+                } else if (type === 'terlambat') {
+                    data.checkInTime = null;
+                    data.checkOutTime = Timestamp.fromDate(addMinutes(limitIn, 480));
+                    data.reasonForUpdate = 'Terlambat';
+                } else if (type === 'dinas-pagi') {
+                    data.checkInTime = null;
+                    data.checkOutTime = Timestamp.fromDate(addMinutes(limitIn, 480));
+                    data.reasonForUpdate = 'Dinas pagi';
+                } else if (type === 'dinas-siang') {
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    data.checkOutTime = null;
+                    data.reasonForUpdate = 'Dinas siang';
+                } else {
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    data.checkOutTime = null;
+                    data.reasonForUpdate = 'Pulang cepat';
+                }
+                batch.set(doc(attendanceRef), data);
+            } else {
+                const newLeaveDoc = doc(leaveRef);
+                batch.set(newLeaveDoc, {
+                    id: newLeaveDoc.id,
+                    userId, userName: userData.name,
+                    type: type === 'sakit' ? 'Sakit' : 'Izin Pribadi',
+                    status: 'approved',
+                    reason: type === 'sakit' ? 'Sakit' : 'Izin pribadi',
+                    startDate: Timestamp.fromDate(startOfDay(targetDate)),
+                    endDate: Timestamp.fromDate(endOfDay(targetDate)),
+                    createdAt: serverTimestamp(), approvedBy: authUser.uid, approvedAt: serverTimestamp()
+                });
+            }
+
+            await batch.commit();
+            invalidateCache();
+            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
+            router.refresh();
+        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); }
+        finally { setIsMutating(false); }
+    };
 
     const handleDownloadPdf = () => {
         if (!userData || reportDetails.length === 0) return;
@@ -84,8 +167,7 @@ export default function ReportClientShell({
         doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-        doc.setFont('times', 'bold').setFontSize(12);
-        doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
+        doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}`, centerX, 54, { align: 'center' });
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, centerX, 60, { align: 'center' });
@@ -201,7 +283,7 @@ export default function ReportClientShell({
                                 </div>
                             </div>
                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}>
-                                <RefreshCw className="h-4 w-4" />
+                                <RefreshCw className={cn("h-4 w-4", isMutating && "animate-spin")} />
                             </Button>
                         </div>
                     </div>
@@ -268,9 +350,11 @@ export default function ReportClientShell({
                                 <TableBody className="bg-background">
                                     {reportDetails.length > 0 ? (
                                         reportDetails.map((item, index) => {
+                                            const isProblematic = item.status === 'Alpa' || item.description.includes('Belum') || item.description.includes('Tanpa');
                                             const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
+                                            
                                             return (
-                                                <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5">
+                                                <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold">
@@ -278,11 +362,36 @@ export default function ReportClientShell({
                                                     </TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center">
-                                                        <span className={cn("inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap", getStatusColorClass(item.status, item.description, !!item.checkOutTime))}>
-                                                            {isManualLate ? 'Hadir' : item.status}
-                                                        </span>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description, !!item.checkOutTime))}>
+                                                                {isManualLate ? 'Hadir' : item.status}
+                                                            </Badge>
+                                                            
+                                                            {/* Menu Perbaikan Cepat (Ellipsis) */}
+                                                            {isProblematic && (
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-primary/10">
+                                                                            <MoreVertical className="h-4 w-4 text-primary" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                        <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                        <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas Siang</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
-                                                    <TableCell className="text-[10px] font-medium italic opacity-70">{item.description}</TableCell>
+                                                    <TableCell className="text-[10px] font-medium italic opacity-70 whitespace-nowrap">{item.description}</TableCell>
                                                 </TableRow>
                                             );
                                         })
@@ -300,3 +409,4 @@ export default function ReportClientShell({
         </div>
     );
 }
+
