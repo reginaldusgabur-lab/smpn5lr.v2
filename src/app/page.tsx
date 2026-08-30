@@ -46,9 +46,6 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
-/**
- * Ikon Pohon Beringin yang rimbun dengan gugusan lingkaran (daun) sesuai gambar referensi.
- */
 const BeringinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M48 95 L48 72 M52 95 L52 72 M44 95 L47 82 M56 95 L53 82" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
@@ -63,9 +60,6 @@ const BeringinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-/**
- * Ikon Api berbentuk tetesan emas transparan.
- */
 const ApiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M50 5 C50 5 85 50 85 75 C85 92 70 100 50 98 C30 100 15 92 15 75 C15 50 50 5 50 5 Z" />
@@ -153,19 +147,19 @@ export default function LoginPage() {
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
         
-        {/* Beringin and Api Background Watermarks with optimized visibility for mobile */}
+        {/* Beringin and Api Background Watermarks */}
         <div className="absolute inset-0">
-          <div className="absolute top-[8%] left-[-10%] sm:left-[2%] flex items-center justify-center opacity-50 dark:opacity-60">
+          <div className="absolute top-[8%] left-[-10%] sm:left-[2%] flex items-center justify-center opacity-60 dark:opacity-70">
              <BeringinIcon className="w-80 h-80 text-blue-600 -rotate-12" />
              <ApiIcon className="absolute w-20 h-20 text-amber-500 mb-14" />
           </div>
           
-          <div className="absolute bottom-[12%] left-[3%] flex items-center justify-center opacity-45 dark:opacity-55 rotate-12">
+          <div className="absolute bottom-[12%] left-[3%] flex items-center justify-center opacity-55 dark:opacity-65 rotate-12">
              <BeringinIcon className="w-96 h-96 text-blue-600" />
              <ApiIcon className="absolute w-24 h-24 text-amber-500 mb-16" />
           </div>
           
-          <div className="absolute top-[25%] right-[-15%] flex items-center justify-center opacity-40 dark:opacity-50 -rotate-45">
+          <div className="absolute top-[25%] right-[-15%] flex items-center justify-center opacity-50 dark:opacity-60 -rotate-45">
              <BeringinIcon className="w-72 h-72 text-blue-600" />
              <ApiIcon className="absolute w-16 h-16 text-amber-500 mb-10" />
           </div>
@@ -176,7 +170,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-6 pb-2 relative">
             
-            {/* Tech Icons Decoration - Sinkron Blue-600 */}
+            {/* Tech Icons Decoration */}
             <div className="absolute top-8 left-6 opacity-30 -rotate-12">
               <Smartphone className="h-8 w-8 text-blue-600" />
             </div>

@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
@@ -44,7 +43,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             try {
                 const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
                 const schoolConfigSnap = await getDoc(schoolConfigRef);
-                const config = schoolConfigSnap.data() || {};
+                const config = schoolConfigSnap.exists() ? schoolConfigSnap.data() : {};
                 if (isMounted.current) setSchoolConfig(config);
                 const reportData = await fetchUserMonthlyReportData(firestore, user.uid, month, config);
                 
@@ -113,7 +112,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             setError(null);
         } catch (err) { 
             console.error("Alpa conversion error:", err);
-            setError("Terjadi kesalahan sistem saat mengubah status."); 
+            setError("Terjadi kesalahan sistem."); 
         } finally { setIsSaving(false); }
     };
 
@@ -135,7 +134,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(recordDate), hO), mO);
 
-            // LOGIKA: Hanya isi pulang jika sudah melewati jam pulang atau hari yang sudah berlalu
             const fillOut = !isToday || (isToday && now > limitOutStart);
 
             let data: any = {
@@ -155,7 +153,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                    data.reasonForUpdate = 'Dinas siang';
                 }
             } else if (type === 'terlambat') {
-                data.checkInTime = null; // Agar muncul strip merah
+                data.checkInTime = null;
                 data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
                 data.reasonForUpdate = 'Terlambat';
             } else if (type === 'dinas-pagi') {
@@ -192,7 +190,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 const [hO, mO] = outStart.split(':').map(Number);
                 const limitOutStart = setMinutes(setHours(startOfDay(recordDate), hO), mO);
                 
-                // LOGIKA: Jangan isi pulang jika hari ini dan belum waktunya
                 const fillOut = !isToday || (isToday && now > limitOutStart);
 
                 if (fillOut) {
@@ -200,7 +197,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                     const randomSecs = Math.floor(Math.random() * 60);
                     const realOut = new Date(limitOutStart.getTime() + (randomMins * 60000) + (randomSecs * 1000));
                     
-                    // Jika alpa, pastikan jam masuk terisi juga
                     if (day.status === 'Alpa') {
                         const inEnd = schoolConfig.checkInEndTime || '07:30';
                         const [hE, mE] = inEnd.split(':').map(Number);
@@ -223,8 +219,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                         }, { merge: true });
                     }
                 } else {
-                    // Jika hari ini dan belum waktu pulang, pastikan jam masuk terisi (jika alpa)
-                    // tapi jangan isi jam pulang agar guru bisa scan sendiri
                     if (day.status === 'Alpa') {
                         const inEnd = schoolConfig.checkInEndTime || '07:30';
                         const [hE, mE] = inEnd.split(':').map(Number);
@@ -235,7 +229,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                         batch.set(doc(firestore, 'users', user.uid, 'attendanceRecords', day.id), { 
                             userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
                             checkInTime: Timestamp.fromDate(realIn),
-                            checkOutTime: null, // PENTING: Biarkan null agar bisa scan pulang
+                            checkOutTime: null, 
                             updatedBy: currentUser.uid, updatedAt: serverTimestamp(), 
                             reasonForUpdate: 'Kehadiran penuh', manualEntry: true 
                         }, { merge: true });
