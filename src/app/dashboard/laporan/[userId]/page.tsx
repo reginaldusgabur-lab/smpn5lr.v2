@@ -144,14 +144,14 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
-                    // ACAK 5 MENIT SEBELUM BATAS AKHIR MASUK
-                    const randomInOffset = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
+                    // ACAK 5 MENIT TERAKHIR SEBELUM DEADLINE MASUK
+                    const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                     
                     if (fillOut) {
-                        // ACAK 10 MENIT SETELAH JAM BUKA PULANG
-                        const randomOutOffset = Math.floor(Math.random() * 600) + 1;
-                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
+                        // ACAK 10 MENIT PERTAMA SETELAH JAM BUKA PULANG
+                        const randomOutOffsetSecs = Math.floor(Math.random() * 600) + 1;
+                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                     } else {
                         dataToSave.checkOutTime = null;
                     }
@@ -159,8 +159,8 @@ export default function UserReportDetailPage() {
                 } else if (type === 'terlambat') {
                     dataToSave.checkInTime = null;
                     if (fillOut) {
-                        const randomOutOffset = Math.floor(Math.random() * 600) + 1;
-                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
+                        const randomOutOffsetSecs = Math.floor(Math.random() * 600) + 1;
+                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                     } else {
                         dataToSave.checkOutTime = null;
                     }
@@ -168,8 +168,8 @@ export default function UserReportDetailPage() {
                 } else if (type === 'dinas-pagi') {
                     dataToSave.checkInTime = null;
                     if (fillOut) {
-                        const randomOutOffset = Math.floor(Math.random() * 600) + 1;
-                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
+                        const randomOutOffsetSecs = Math.floor(Math.random() * 600) + 1;
+                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                     } else {
                         dataToSave.checkOutTime = null;
                     }
@@ -179,14 +179,14 @@ export default function UserReportDetailPage() {
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Kegiatan luar sekolah';
                 } else if (type === 'dinas-siang') {
-                    const randomInOffset = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
+                    const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Dinas siang';
                 } else if (type === 'pulang-cepat') {
                     const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
-                    const randomInOffset = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = existingAtt?.checkInTime ? Timestamp.fromDate(parseISO(existingAtt.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
+                    const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                    dataToSave.checkInTime = existingAtt?.checkInTime ? Timestamp.fromDate(parseISO(existingAtt.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Pulang cepat';
                 }
@@ -378,7 +378,7 @@ export default function UserReportDetailPage() {
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">

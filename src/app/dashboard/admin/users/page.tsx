@@ -214,20 +214,14 @@ export default function AdminUsersPage() {
                 toast({ title: 'Berhasil', description: `Kata sandi ${userForReset.name} diperbarui.` });
                 setIsResetPassDialogOpen(false);
                 setNewPassInput('');
-            } else throw new Error(result.error);
+            } else { throw new Error(result.error); }
         } catch (e: any) { 
             toast({ variant: 'destructive', title: 'Gagal', description: e.message }); 
-        } finally { 
-            setIsSaving(false); 
-        }
+        } finally { setIsSaving(false); }
     };
 
     if (isAuthLoading || isUsersLoading) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            </div>
-        );
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
     }
 
     return (
@@ -255,12 +249,12 @@ export default function AdminUsersPage() {
                     <CardContent className="py-6">
                         <div className="flex flex-col gap-4 sm:flex-row mb-8">
                             <Select value={userFilter} onValueChange={setUserFilter}>
-                                <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 font-bold text-xs">
+                                <SelectTrigger className="w-full sm:w-[240px] h-11 rounded-xl bg-muted/30 font-bold text-xs shadow-none">
                                     <Filter className="h-4 w-4 text-primary mr-2" />
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className='border-none'>
-                                    <SelectItem value="all">Semua peran</SelectItem>
+                                    <SelectItem value="all">Semua staf</SelectItem>
                                     <SelectItem value="guru">Guru</SelectItem>
                                     <SelectItem value="pegawai">Pegawai</SelectItem>
                                     <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
@@ -269,7 +263,7 @@ export default function AdminUsersPage() {
                             </Select>
                             <div className="relative w-full sm:w-[320px]">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                <Input placeholder="Cari nama..." className="pl-10 h-11 rounded-xl bg-muted/30 font-bold text-xs" value={userSearch} onChange={e => setUserSearch(e.target.value)} />
+                                <Input placeholder="Cari nama..." className="pl-10 h-11 rounded-xl bg-muted/30 font-bold text-xs shadow-none" value={userSearch} onChange={e => setUserSearch(e.target.value)} />
                             </div>
                         </div>
 
@@ -277,13 +271,13 @@ export default function AdminUsersPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow className="border-none">
-                                        <TableHead className="w-[60px] text-center font-bold text-[10px]">No</TableHead>
-                                        <TableHead className="font-bold text-[10px]">Nama & email</TableHead>
-                                        <TableHead className="font-bold text-[10px]">Peran</TableHead>
-                                        <TableHead className="font-bold text-[10px]">Jenis kelamin</TableHead>
-                                        <TableHead className="font-bold text-[10px]">Identitas</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px]">Status</TableHead>
-                                        <TableHead className="text-right font-bold text-[10px] pr-6">Aksi</TableHead>
+                                        <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Nama & email</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Peran</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Gender</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Identitas</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead>
+                                        <TableHead className="text-right font-bold text-[10px] uppercase pr-6">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -298,7 +292,7 @@ export default function AdminUsersPage() {
                                             <TableCell className="text-right pr-4">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9 rounded-full"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none">
+                                                    <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none shadow-2xl">
                                                         <DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel>
                                                         <DropdownMenuItem onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem>
@@ -331,29 +325,29 @@ export default function AdminUsersPage() {
             </div>
 
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
-                <DialogContent className="rounded-xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                <DialogContent className="rounded-xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
                     <div className="p-6 pb-2 border-b border-muted-foreground/5"><DialogTitle className="text-xl font-bold">{editingUser ? 'Perbarui data' : 'Tambah personil'}</DialogTitle></div>
                     <div className="flex-1 overflow-y-auto px-6 pb-6">
                         <Form {...userForm}>
                             <form onSubmit={userForm.handleSubmit(handleSaveUser)} className="space-y-4 py-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="name" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Nama</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="name" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Nama</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem><SelectItem value="siswa">Siswa</SelectItem></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem><SelectItem value="siswa">Siswa</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="nisn" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NISN (Siswa)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP (Staf)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="nisn" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NISN (Siswa)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status/Jabatan</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. Urut Laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
-                                {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Sandi</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30" /></FormControl><FormMessage /></FormItem>)} />}
-                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan'}</Button>
+                                {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Sandi</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />}
+                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-none" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan data'}</Button>
                             </form>
                         </Form>
                     </div>
@@ -361,18 +355,18 @@ export default function AdminUsersPage() {
             </Dialog>
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setUserToDelete(null); }}>
-                <AlertDialogContent className="rounded-xl border-none"><AlertDialogHeader><AlertDialogTitle className="font-bold">Hapus pengguna?</AlertDialogTitle><AlertDialogDescription>Data <strong>{userToDelete?.name}</strong> akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="rounded-xl font-bold">Batal</AlertDialogCancel><AlertDialogAction className="rounded-xl font-bold bg-destructive" onClick={handleDeleteUser}>Ya, hapus</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                <AlertDialogContent className="rounded-xl border-none shadow-2xl"><AlertDialogHeader><AlertDialogTitle className="font-bold">Hapus pengguna?</AlertDialogTitle><AlertDialogDescription className="font-medium text-sm">Data <strong>{userToDelete?.name}</strong> akan dihapus permanen dari sistem.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-2"><AlertDialogCancel className="rounded-xl font-bold shadow-none">Batal</AlertDialogCancel><AlertDialogAction className="rounded-xl font-bold bg-destructive shadow-none" onClick={handleDeleteUser}>Ya, hapus</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
             </AlertDialog>
 
             <Dialog open={isResetPassDialogOpen} onOpenChange={setIsResetPassDialogOpen}>
-                <DialogContent className="rounded-xl border-none max-w-sm">
+                <DialogContent className="rounded-xl border-none max-w-sm shadow-2xl">
                     <div className="space-y-4 p-4">
                         <DialogTitle className="font-bold text-xl">Reset kata sandi</DialogTitle>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase">Sandi baru untuk {userForReset?.name}</label>
-                            <Input type="password" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} placeholder="Minimal 6 karakter" className="h-11 rounded-xl bg-muted/30" />
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground">Sandi baru untuk {userForReset?.name}</label>
+                            <Input type="password" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} placeholder="Minimal 6 karakter" className="h-11 rounded-xl bg-muted/30 shadow-none" />
                         </div>
-                        <Button className="w-full h-11 rounded-xl font-bold" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Update Sandi'}</Button>
+                        <Button className="w-full h-11 rounded-xl font-bold shadow-none" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Perbarui Sandi'}</Button>
                     </div>
                 </DialogContent>
             </Dialog>
