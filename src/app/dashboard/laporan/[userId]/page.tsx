@@ -14,9 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -126,7 +126,6 @@ export default function UserReportDetailPage() {
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
             
-            // Hapus data lama (baik di attendanceRecords maupun leaveRequests)
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const qA = query(attendanceRef, where('date', '==', todayStr));
             const snapA = await getDocs(qA);
@@ -145,13 +144,13 @@ export default function UserReportDetailPage() {
                 let data: any = {
                     userId, date: todayStr,
                     manualEntry: true, 
+                    reasonForUpdate: 'Kehadiran penuh',
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
                 if (type === 'hadir') {
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000)); // 5 menit sebelum
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
                     data.checkOutTime = generateRandomOutTime(targetDate);
-                    data.reasonForUpdate = 'Kehadiran penuh';
                 } else if (type === 'terlambat') {
                     data.checkInTime = null;
                     data.checkOutTime = generateRandomOutTime(targetDate);
@@ -366,11 +365,11 @@ export default function UserReportDetailPage() {
                                                         {isAdmin && isProblematic && (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10">
-                                                                        <MoreVertical className="h-4 w-4 text-primary" />
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10 transition-all active:scale-90">
+                                                                        <PencilLine className="h-4 w-4 text-primary" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2">
+                                                                <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
@@ -399,4 +398,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
