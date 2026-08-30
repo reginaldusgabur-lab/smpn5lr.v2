@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, MessageSquare, AlertCircle, MailCheck, Clock, CheckCircle2, Calendar, Briefcase } from 'lucide-react';
+import { Loader2, Trash2, MessageSquare, MailCheck, Clock, CheckCircle2 } from 'lucide-react';
 import { startOfDay, endOfDay, addDays, format, setHours, setMinutes } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
