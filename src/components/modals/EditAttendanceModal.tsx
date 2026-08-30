@@ -117,7 +117,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         } finally { setIsSaving(false); }
     };
 
-    const handleAlpaConversionToAttendance = async (day: any, type: 'hadir' | 'terlambat' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat' | 'lengkapi-masuk') => {
+    const handleAlpaConversionToAttendance = async (day: any, type: 'hadir' | 'terlambat' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat' | 'lengkapi-masuk' | 'luar-sekolah') => {
         if (!currentUser?.uid || !firestore || !schoolConfig || !user) return;
         
         setIsSaving(true);
@@ -161,6 +161,10 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 data.checkInTime = null;
                 data.checkOutTime = fillOut ? Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 20) + 5)) : null;
                 data.reasonForUpdate = 'Dinas pagi';
+            } else if (type === 'luar-sekolah') {
+                data.checkInTime = null;
+                data.checkOutTime = null;
+                data.reasonForUpdate = 'Kegiatan luar sekolah';
             } else { // pulang-cepat
                 const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
                 data.checkInTime = day.checkInTime ? Timestamp.fromDate(parseISO(day.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
@@ -190,7 +194,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 const outStart = getDailyOutStart(recordDate, schoolConfig);
                 const [hO, mO] = outStart.split(':').map(Number);
                 const limitOutStart = setMinutes(setHours(startOfDay(recordDate), hO), mO);
-                
                 const fillOut = !isToday || (isToday && now > limitOutStart);
 
                 if (fillOut) {
@@ -244,16 +247,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         finally { setIsSaving(false); }
     };
 
-    const getAdminBadgeClass = (status: string, desc: string) => {
-        const s = status.toLowerCase();
-        const d = desc.toLowerCase();
-        if (s === 'terlambat' || d === 'terlambat') return 'bg-green-600 text-white border-none';
-        if (s === 'alpa') return 'bg-red-50 text-red-700 border-red-200';
-        if (s === 'sakit') return 'bg-orange-50 text-white border-none';
-        if (s === 'izin' || s.includes('izin')) return 'bg-blue-50 text-blue-700 border-blue-200';
-        return 'bg-orange-50 text-orange-700 border-orange-200';
-    };
-
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-md rounded-xl border-none shadow-none p-0 overflow-hidden">
@@ -273,8 +266,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                 const hasOut = !!item.checkOutTime;
                                 const isNoIn = !hasIn && hasOut;
                                 const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
-                                const displayStatus = isManualLate ? 'Terlambat' : item.status;
-
+                                
                                 return (
                                     <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 border border-muted-foreground/5 transition-all">
                                         {(item.status === 'Alpa' && !isManualLate) ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[item.id]} onCheckedChange={() => handleSelectDay(item.id)} />}
@@ -301,12 +293,13 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                                 {!hasIn && (
                                                     <>
                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(item, 'Sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(item, 'Izin')}>Jadikan Izin</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(item, 'Izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
                                                     </>
                                                 )}
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
+                                                {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
