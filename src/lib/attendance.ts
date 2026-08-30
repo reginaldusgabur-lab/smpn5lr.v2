@@ -140,7 +140,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v190_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v195_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -224,12 +224,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                     } else if (['izin', 'izin pribadi'].includes(typeLow)) {
                         point = 0.7;
                         izinCount++;
-                    } else if (typeLow.includes('dinas') || typeLow.includes('luar sekolah')) {
-                        point = 1.0;
-                        hadirCount++;
-                    } else if (typeLow === 'terlambat' || typeLow.includes('pulang cepat')) {
-                        point = 0.95;
-                        hadirCount++;
                     } else {
                         point = 1.0;
                         hadirCount++;
@@ -343,8 +337,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                     }
                 }
                 
-                const lowDesc = description.toLowerCase();
                 const statusLabel = 'Hadir'; 
+                const lowDesc = description.toLowerCase();
                 
                 if (['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'].includes(lowDesc)) {
                     const isLuarSekolah = lowDesc === 'kegiatan luar sekolah';
