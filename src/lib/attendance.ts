@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
@@ -144,7 +143,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v162_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v163_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -200,6 +199,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 let point = 0;
                 const desc = (att.reasonForUpdate || '').toLowerCase();
                 
+                // Kegiatan Luar Sekolah dan Dinas dihitung poin penuh 1.0
                 if (desc.includes('dinas') || desc.includes('kehadiran penuh') || desc.includes('kegiatan luar sekolah')) {
                     point = 1.0;
                 } else if (desc.includes('terlambat') || desc.includes('pulang cepat')) {
@@ -352,12 +352,20 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 
                 const importantStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'];
                 if (importantStatuses.includes(lowDesc)) {
-                    let finalStatus = statusLabel;
-                    // Changed: Dinas siang and Pulang cepat now show as "Hadir" in status column
-                    if (['terlambat', 'dinas siang', 'pulang cepat', 'kegiatan luar sekolah'].includes(lowDesc)) {
-                        finalStatus = 'Hadir';
-                    }
-                    return { id: attendanceRecord.id, date: day, checkInTime, checkOutTime, status: finalStatus, description: statusLabel, manualEntry: isManual };
+                    let finalStatus = 'Hadir'; // Default "Hadir" untuk kapsul status
+                    
+                    // Khusus kegiatan luar sekolah: hitungan hadir full, jam tidak perlu dicatat
+                    const isLuarSekolah = lowDesc === 'kegiatan luar sekolah';
+                    
+                    return { 
+                        id: attendanceRecord.id, 
+                        date: day, 
+                        checkInTime: isLuarSekolah ? null : checkInTime, 
+                        checkOutTime: isLuarSekolah ? null : checkOutTime, 
+                        status: finalStatus, 
+                        description: statusLabel, 
+                        manualEntry: isManual 
+                    };
                 }
 
                 if (!checkInTime && checkOutTime) {
