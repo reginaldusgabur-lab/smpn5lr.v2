@@ -143,7 +143,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v155_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v156_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;

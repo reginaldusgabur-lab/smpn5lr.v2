@@ -236,14 +236,21 @@ export default function AdminUsersPage() {
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><UsersIcon className="h-6 w-6" /></div>
-                                <div className="space-y-0.5"><h1 className="font-bold text-2xl tracking-tight">Manajemen pengguna</h1><p className="text-[11px] font-medium text-white/80">Kelola data personil sekolah.</p></div>
+                                <div className="space-y-0.5">
+                                    <h1 className="font-bold text-2xl tracking-tight">Manajemen pengguna</h1>
+                                    <p className="text-[11px] font-medium text-white/80">Kelola data personil sekolah.</p>
+                                </div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}><RefreshCw className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}>
+                                <RefreshCw className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                 </Card>
 
-                <Button size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg shadow-primary/20 bg-primary" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}><PlusCircle className="mr-2 h-5 w-5" />Tambah personil</Button>
+                <Button size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg shadow-primary/20 bg-primary" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
+                    <PlusCircle className="mr-2 h-5 w-5" />Tambah personil
+                </Button>
 
                 <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card">
                     <CardHeader className="p-6 border-b border-muted-foreground/5"><CardTitle className="font-bold text-blue-600 text-sm">Daftar pengguna sistem</CardTitle></CardHeader>
@@ -261,7 +268,10 @@ export default function AdminUsersPage() {
                                     <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <div className="relative w-full sm:w-[320px]"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Cari nama..." className="pl-10 h-11 rounded-xl bg-muted/30 font-bold text-xs" value={userSearch} onChange={e => setUserSearch(e.target.value)} /></div>
+                            <div className="relative w-full sm:w-[320px]">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                                <Input placeholder="Cari nama..." className="pl-10 h-11 rounded-xl bg-muted/30 font-bold text-xs" value={userSearch} onChange={e => setUserSearch(e.target.value)} />
+                            </div>
                         </div>
 
                         <div className="border rounded-xl overflow-hidden border-muted-foreground/5">
