@@ -112,13 +112,12 @@ export default function UserReportDetailPage() {
         const outStart = getDailyOutStart(date);
         const [h, m] = outStart.split(':').map(Number);
         const base = setMinutes(setHours(startOfDay(date), h), m);
-        // ACAK 10 MENIT SETELAH ABSEN DIBUKA
         const randomMins = Math.floor(Math.random() * 10) + 1;
         const randomSecs = Math.floor(Math.random() * 60);
         return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
     }, [getDailyOutStart]);
 
-    const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat' | 'luar-sekolah' | 'lengkapi-masuk' | 'lengkapi-pulang') => {
+    const handleStatusChange = async (dateStr: string, type: string) => {
         if (!currentUser || !firestore || isMutating || !schoolConfigData || !userData) return;
         setIsMutating(true);
         try {
@@ -129,13 +128,11 @@ export default function UserReportDetailPage() {
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
             
-            // LOGIKA: Isi pulang jika sudah lewat jam pulang atau hari yang sudah berlalu
             const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
             
-            // Bersihkan data lama
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const qA = query(attendanceRef, where('date', '==', todayStr));
             const snapA = await getDocs(qA);
@@ -368,12 +365,11 @@ export default function UserReportDetailPage() {
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
-                                        const isPartial = (hasIn && !hasOut) || (!hasIn && hasOut);
                                         const isAlpa = item.status === 'Alpa';
                                         const isManual = item.manualEntry === true;
                                         
-                                        // Menu hanya muncul untuk Admin jika data Alpa, Partial (Mandiri Lupa), atau sudah pernah diedit Admin
-                                        const canEdit = isAdmin && (isAlpa || isPartial || isManual);
+                                        // Menu hanya muncul untuk Admin jika data Alpa, data tidak lengkap (hanya ada salah satu jam), atau sudah pernah diedit Admin
+                                        const canEdit = isAdmin && (isAlpa || (hasIn && !hasOut) || (!hasIn && hasOut) || isManual);
                                         
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
@@ -394,30 +390,33 @@ export default function UserReportDetailPage() {
                                                                         <PencilLine className="h-4 w-4 text-primary" />
                                                                     </button>
                                                                 </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
-                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                     
                                                                     {hasIn && !hasOut ? (
                                                                         <>
+                                                                            <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-pulang')}>Lengkapi absen pulang</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                         </>
                                                                     ) : !hasIn && hasOut ? (
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                                        <>
+                                                                            <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                                        </>
                                                                     ) : (
                                                                         <>
+                                                                            <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                            <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                            <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
                                                                         </>
                                                                     )}
-
-                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
-                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Lainnya</DropdownMenuLabel>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         )}
