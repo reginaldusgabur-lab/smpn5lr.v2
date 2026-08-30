@@ -259,6 +259,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 }
 
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
+    if (!schoolConfig) return [];
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
 
@@ -290,7 +291,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
 
         const now = new Date();
         const todayStart = startOfDay(now);
-        const offDays: number[] = Array.isArray(schoolConfig?.offDays) ? schoolConfig.offDays : [0, 6];
+        const offDays: number[] = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
         const holidays: string[] = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
 
         const attendanceMap = new Map();
@@ -333,8 +334,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const specialStatuses = ['dinas pagi', 'dinas siang', 'pulang cepat', 'sakit', 'izin', 'izin pribadi', 'kegiatan luar sekolah', 'terlambat'];
                 
                 if (checkInTime && checkOutTime && !specialStatuses.includes(description.toLowerCase())) {
-                    if (schoolConfig?.useTimeValidation && schoolConfig?.checkInEndTime) {
-                        const inEndStr = typeof schoolConfig.checkInEndTime === 'string' ? schoolConfig.checkInEndTime : '08:00';
+                    if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
+                        const inEndStr = schoolConfig.checkInEndTime;
                         const [h, m] = inEndStr.split(':').map(Number);
                         const deadline = setMinutes(setHours(startOfDay(checkInTime), h), m);
                         if (checkInTime > deadline) {
@@ -342,8 +343,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                         } else {
                             description = 'Kehadiran penuh';
                         }
-                    } else {
-                        description = 'Kehadiran penuh';
                     }
                 }
                 
