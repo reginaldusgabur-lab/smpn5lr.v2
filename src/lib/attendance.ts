@@ -220,9 +220,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                     if (leave.type === 'Sakit') {
                         point = 0.9;
                         sakitCount++;
-                    } else if (['Izin', 'Izin Pribadi', 'Terlambat'].includes(leave.type)) {
-                        point = leave.type === 'Terlambat' ? 0.95 : 0.7;
-                        izinCount++;
+                    } else if (['Izin', 'Izin Pribadi', 'Terlambat', 'Dinas Pagi', 'Dinas Siang', 'Dinas'].includes(leave.type)) {
+                        const isDuty = ['Dinas Pagi', 'Dinas Siang', 'Dinas'].includes(leave.type);
+                        point = isDuty ? 1.0 : (leave.type === 'Terlambat' ? 0.95 : 0.7);
+                        if (isDuty) hadirCount++; else izinCount++;
                     } else {
                         point = 1.0;
                         hadirCount++;
@@ -377,7 +378,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (leaveRecord) {
                 const isDuty = ['Dinas', 'Dinas Pagi', 'Dinas Siang', 'Terlambat', 'Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(leaveRecord.type);
                 
-                // Jika sudah pulang cepat atau dinas siang tetapi tanpa scan masuk pagi sama sekali, tampilkan alpa.
                 if (['Pulang Cepat', 'Dinas Siang'].includes(leaveRecord.type)) {
                      return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: `Tugas ${leaveRecord.type} (Tanpa absen masuk)` };
                 }

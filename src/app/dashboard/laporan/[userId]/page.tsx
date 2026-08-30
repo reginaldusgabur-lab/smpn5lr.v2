@@ -112,6 +112,7 @@ export default function UserReportDetailPage() {
         const outStart = getDailyOutStart(date);
         const [h, m] = outStart.split(':').map(Number);
         const base = setMinutes(setHours(startOfDay(date), h), m);
+        // ACAK 10 MENIT SETELAH ABSEN DIBUKA
         const randomMins = Math.floor(Math.random() * 10) + 1;
         const randomSecs = Math.floor(Math.random() * 60);
         return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
@@ -179,7 +180,7 @@ export default function UserReportDetailPage() {
                     dataToSave.reasonForUpdate = 'Dinas siang';
                 } else if (type === 'pulang-cepat') {
                     const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+                    dataToSave.checkInTime = itemDate ? Timestamp.fromDate(parseISO(itemDate)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Pulang cepat';
                 }
@@ -435,4 +436,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
