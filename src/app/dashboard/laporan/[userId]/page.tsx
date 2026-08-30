@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
@@ -105,6 +106,97 @@ export default function UserReportDetailPage() {
         return () => { isMounted.current = false; };
     }, [fetchData, schoolConfigData]);
 
+    const getDailyOutStart = useCallback((date: Date) => {
+        if (!schoolConfigData) return '14:00';
+        const dayOfWeek = date.getDay().toString();
+        const dailyOut = (schoolConfigData as any).dailyCheckOutTimes?.[dayOfWeek];
+        return dailyOut?.start || (schoolConfigData as any).checkOutStartTime || '14:00';
+    }, [schoolConfigData]);
+
+    const generateRandomOutTime = useCallback((date: Date) => {
+        const outStart = getDailyOutStart(date);
+        const [h, m] = outStart.split(':').map(Number);
+        const base = setMinutes(setHours(startOfDay(date), h), m);
+        const randomMins = Math.floor(Math.random() * 20) + 5;
+        const randomSecs = Math.floor(Math.random() * 60);
+        return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
+    }, [getDailyOutStart]);
+
+    const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat') => {
+        if (!currentUser || !firestore || isMutating || !schoolConfigData || !userData) return;
+        setIsMutating(true);
+        try {
+            const targetDate = parseISO(dateStr);
+            const batch = writeBatch(firestore);
+            const todayStr = format(targetDate, 'yyyy-MM-dd');
+            
+            // Cleanup existing
+            const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
+            const qA = query(attendanceRef, where('date', '==', todayStr));
+            const snapA = await getDocs(qA);
+            snapA.forEach(d => batch.delete(d.ref));
+
+            const leaveRef = collection(firestore, 'users', userId, 'leaveRequests');
+            const qL = query(leaveRef, where('startDate', '==', Timestamp.fromDate(startOfDay(targetDate))));
+            const snapL = await getDocs(qL);
+            snapL.forEach(d => batch.delete(d.ref));
+
+            const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
+            const [hE, mE] = inEnd.split(':').map(Number);
+            const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
+
+            if (type !== 'sakit' && type !== 'izin') {
+                let data: any = {
+                    userId, date: todayStr,
+                    manualEntry: true, 
+                    updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
+                };
+
+                if (type === 'hadir') {
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    data.checkOutTime = generateRandomOutTime(targetDate);
+                    data.reasonForUpdate = 'Kehadiran penuh';
+                } else if (type === 'terlambat') {
+                    data.checkInTime = null;
+                    data.checkOutTime = generateRandomOutTime(targetDate);
+                    data.reasonForUpdate = 'Terlambat';
+                } else if (type === 'dinas-pagi') {
+                    data.checkInTime = null;
+                    data.checkOutTime = generateRandomOutTime(targetDate);
+                    data.reasonForUpdate = 'Dinas pagi';
+                } else if (type === 'dinas-siang') {
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    data.checkOutTime = null;
+                    data.reasonForUpdate = 'Dinas siang';
+                } else if (type === 'pulang-cepat') {
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    data.checkOutTime = null;
+                    data.reasonForUpdate = 'Pulang cepat';
+                }
+
+                batch.set(doc(attendanceRef), data);
+            } else {
+                const newLeaveDoc = doc(leaveRef);
+                batch.set(newLeaveDoc, {
+                    id: newLeaveDoc.id,
+                    userId, userName: userData.name,
+                    type: type === 'sakit' ? 'Sakit' : 'Izin Pribadi',
+                    status: 'approved',
+                    reason: type === 'sakit' ? 'Sakit' : 'Izin pribadi',
+                    startDate: Timestamp.fromDate(startOfDay(targetDate)),
+                    endDate: Timestamp.fromDate(endOfDay(targetDate)),
+                    createdAt: serverTimestamp(), approvedBy: currentUser.uid, approvedAt: serverTimestamp()
+                });
+            }
+
+            await batch.commit();
+            invalidateCache();
+            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
+            fetchData();
+        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); }
+        finally { setIsMutating(false); }
+    };
+
     const handleDownloadPdf = async () => {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
@@ -137,9 +229,9 @@ export default function UserReportDetailPage() {
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
             safeFormat(item.date, 'eeee, dd MMMM yyyy'),
-            (item.status === 'Terlambat' || item.description === 'Terlambat' && !item.checkInTime) ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
+            (item.description === 'Terlambat' && !item.checkInTime) ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
             safeFormat(item.checkOutTime, 'HH:mm:ss'),
-            (item.status === 'Terlambat' || item.description === 'Terlambat') ? 'Hadir' : item.status,
+            item.status,
             item.description || '-'
         ]);
 
@@ -182,6 +274,14 @@ export default function UserReportDetailPage() {
     const isAdmin = currentUser?.role === 'admin';
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
+
+    const getStatusColorClass = (status: string) => {
+        const s = status.toLowerCase();
+        if (s === 'alpa') return "bg-red-500 text-white border-none shadow-sm";
+        if (s === 'sakit') return "bg-orange-500 text-white border-none shadow-sm";
+        if (s.includes('izin') || s.includes('dinas') || s.includes('cepat')) return "bg-amber-500 text-white border-none shadow-sm";
+        return "bg-emerald-500 text-white border-none shadow-sm";
+    };
 
     if (isLoading || !userData) return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
 
@@ -246,7 +346,7 @@ export default function UserReportDetailPage() {
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
-                                    <TableRow className="border-none">
+                                    <TableRow className="border-none h-11">
                                         <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none h-11">No</TableHead>
                                         <TableHead className="w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
@@ -256,18 +356,48 @@ export default function UserReportDetailPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => (
-                                        <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
-                                            <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                            <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
-                                            <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                            <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
-                                            <TableCell className="text-center">
-                                                <span className={cn("inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight", (item.status === 'Alpa' ? "bg-red-500 text-white" : "bg-emerald-500 text-white"))}>{item.status}</span>
-                                            </TableCell>
-                                            <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
-                                        </TableRow>
-                                    )) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
+                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
+                                        const isProblematic = item.status === 'Alpa' || item.description.includes('Belum') || item.description.includes('Tanpa');
+                                        
+                                        return (
+                                            <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
+                                                <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' && !item.checkInTime) ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Badge className={cn("px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
+                                                            {item.status}
+                                                        </Badge>
+                                                        
+                                                        {isAdmin && isProblematic && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10">
+                                                                        <MoreVertical className="h-4 w-4 text-primary" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2">
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas Siang</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
+                                            </TableRow>
+                                        );
+                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>

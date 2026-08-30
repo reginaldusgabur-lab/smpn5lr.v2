@@ -236,14 +236,9 @@ export default function AdminUsersPage() {
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><UsersIcon className="h-6 w-6" /></div>
-                                <div className="space-y-0.5">
-                                    <h1 className="font-bold text-2xl tracking-tight">Manajemen pengguna</h1>
-                                    <p className="text-[11px] font-medium text-white/80">Kelola data personil sekolah.</p>
-                                </div>
+                                <div className="space-y-0.5"><h1 className="font-bold text-2xl tracking-tight">Manajemen pengguna</h1><p className="text-[11px] font-medium text-white/80">Kelola data personil sekolah.</p></div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}>
-                                <RefreshCw className="h-4 w-4" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}><RefreshCw className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 </Card>
@@ -378,4 +373,3 @@ export default function AdminUsersPage() {
         </div>
     );
 }
-
