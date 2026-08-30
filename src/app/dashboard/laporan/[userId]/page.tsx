@@ -83,7 +83,6 @@ export default function UserReportDetailPage() {
             if (isMounted.current) {
                 setUserData(userSnap.data());
                 setMonthlyReportData(reportData);
-                
                 const mData = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
                 setAcademicYear(mData.academicYear || schoolConfigData.academicYear || "");
             }
@@ -112,7 +111,6 @@ export default function UserReportDetailPage() {
         const outStart = getDailyOutStart(date);
         const [h, m] = outStart.split(':').map(Number);
         const base = setMinutes(setHours(startOfDay(date), h), m);
-        // ACAK 10 MENIT SETELAH ABSEN DIBUKA
         const randomMins = Math.floor(Math.random() * 10) + 1;
         const randomSecs = Math.floor(Math.random() * 60);
         return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
@@ -128,7 +126,6 @@ export default function UserReportDetailPage() {
             const outStart = getDailyOutStart(targetDate);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            
             const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const batch = writeBatch(firestore);
@@ -179,14 +176,12 @@ export default function UserReportDetailPage() {
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Dinas siang';
                 } else if (type === 'pulang-cepat') {
-                    // Find original inTime if it exists
                     const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
                     const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = existingAtt?.checkInTime ? Timestamp.fromDate(parseISO(existingAtt.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
                     dataToSave.checkOutTime = null;
                     dataToSave.reasonForUpdate = 'Pulang cepat';
                 }
-
                 batch.set(doc(attendanceRef), dataToSave);
             } else {
                 const newLeaveDoc = doc(leaveRef);
@@ -201,7 +196,6 @@ export default function UserReportDetailPage() {
                     createdAt: serverTimestamp(), approvedBy: currentUser.uid, approvedAt: serverTimestamp()
                 });
             }
-
             await batch.commit();
             invalidateCache();
             toast({ title: 'Berhasil', description: 'Data kehadiran telah diperbarui.' });
@@ -370,7 +364,6 @@ export default function UserReportDetailPage() {
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
                                         const isManual = item.manualEntry === true;
-                                        
                                         const canEdit = isAdmin && (isAlpa || (hasIn && !hasOut) || (!hasIn && hasOut) || isManual);
                                         
                                         return (
@@ -384,16 +377,12 @@ export default function UserReportDetailPage() {
                                                         <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
                                                             {item.status}
                                                         </Badge>
-                                                        
                                                         {canEdit && (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90">
-                                                                        <PencilLine className="h-4 w-4 text-primary" />
-                                                                    </button>
+                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
-                                                                    
                                                                     {hasIn && !hasOut ? (
                                                                         <>
                                                                             <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
