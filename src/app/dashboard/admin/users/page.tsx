@@ -117,7 +117,7 @@ export default function AdminUsersPage() {
         }).sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
     }, [usersData, userFilter, userSearch]);
 
-    // RE-ADDED: Logic to calculate gender statistics
+    // Statistics Calculation
     const userStats = useMemo(() => {
         return filteredUsers.reduce((acc, curr) => {
             acc.total++;
@@ -288,7 +288,7 @@ export default function AdminUsersPage() {
                             </Table>
                         </div>
 
-                        {/* RE-ADDED: Summary statistics at the bottom */}
+                        {/* Summary Statistics */}
                         <div className="mt-8 pt-8 border-t border-muted-foreground/10 grid grid-cols-3 gap-3">
                             <div className="bg-primary/5 p-4 rounded-2xl text-center border border-primary/5">
                                 <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Total Staf</p>

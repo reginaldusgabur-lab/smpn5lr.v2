@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserMonthlyReportData, calculateAttendanceStats, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, MoreVertical, TrendingUp, User, CalendarDays, PieChart as PieIcon, Calendar, FileText, RefreshCw, PencilLine } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +27,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
+import EditAttendanceModal from '@/components/modals/EditAttendanceModal';
 
 const safeFormat = (dateInput: any, formatString: string): string => {
     if (!dateInput) return '-';
@@ -36,19 +36,6 @@ const safeFormat = (dateInput: any, formatString: string): string => {
     else if (dateInput.toDate) date = dateInput.toDate();
     else date = new Date(dateInput);
     return isValid(date) ? format(date, formatString, { locale: id }) : '-';
-};
-
-const cleanDesc = (desc: string) => {
-    if (!desc) return 'Kehadiran penuh';
-    const d = desc.toLowerCase();
-    if (d === 'terlambat') return 'Terlambat';
-    if (d === 'sakit') return 'Sakit';
-    if (d === 'izin' || d === 'izin pribadi') return 'Izin pribadi';
-    if (d === 'dinas pagi') return 'Dinas pagi';
-    if (d === 'dinas siang') return 'Dinas siang';
-    if (d === 'pulang cepat') return 'Pulang cepat';
-    if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
-    return desc.trim() || 'Kehadiran penuh';
 };
 
 export default function UserReportDetailPage() {
@@ -68,6 +55,7 @@ export default function UserReportDetailPage() {
     const [isMutating, setIsMutating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [academicYear, setAcademicYear] = useState("");
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
@@ -117,134 +105,6 @@ export default function UserReportDetailPage() {
         return () => { isMounted.current = false; };
     }, [fetchData, schoolConfigData]);
 
-    const getDailyOutStart = useCallback((date: Date) => {
-        if (!schoolConfigData) return '14:00';
-        const dayOfWeek = date.getDay().toString();
-        const dailyOut = (schoolConfigData as any).dailyCheckOutTimes?.[dayOfWeek];
-        return dailyOut?.start || (schoolConfigData as any).checkOutStartTime || '14:00';
-    }, [schoolConfigData]);
-
-    const generateRandomOutTime = useCallback((date: Date) => {
-        const outStart = getDailyOutStart(date);
-        const [h, m] = outStart.split(':').map(Number);
-        const base = setMinutes(setHours(startOfDay(date), h), m);
-        const randomMins = Math.floor(Math.random() * 20) + 5;
-        const randomSecs = Math.floor(Math.random() * 60);
-        return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
-    }, [getDailyOutStart]);
-
-    const handleStatusChange = async (dateStr: string, newStatus: string, reason: string) => {
-        if (!currentUser || !firestore || isMutating || !schoolConfigData || !userData) return;
-        setIsMutating(true);
-        try {
-            const targetDate = parseISO(dateStr);
-            const now = new Date();
-            const isToday = isSameDay(targetDate, now);
-            const outStart = getDailyOutStart(targetDate);
-            const [hO, mO] = outStart.split(':').map(Number);
-            const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            
-            const fillOut = !isToday || (isToday && now > limitOutStart);
-
-            const batch = writeBatch(firestore);
-            const todayStr = format(targetDate, 'yyyy-MM-dd');
-            
-            const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
-            const qA = query(attendanceRef, where('date', '==', todayStr));
-            const snapA = await getDocs(qA);
-            snapA.forEach(d => batch.delete(d.ref));
-
-            const leaveRef = collection(firestore, 'users', userId, 'leaveRequests');
-            const qL = query(leaveRef, where('startDate', '==', Timestamp.fromDate(startOfDay(targetDate))));
-            const snapL = await getDocs(qL);
-            snapL.forEach(d => batch.delete(d.ref));
-
-            if (['Dinas Pagi', 'Dinas Siang', 'Pulang Cepat', 'Terlambat', 'Kegiatan Luar Sekolah'].includes(newStatus)) {
-                const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
-                const [hE, mE] = inEnd.split(':').map(Number);
-                const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
-                
-                let dataToSave: any = {
-                    userId, date: todayStr,
-                    manualEntry: true, 
-                    reasonForUpdate: reason,
-                    updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
-                };
-
-                if (newStatus === 'Dinas Pagi' || newStatus === 'Terlambat' || newStatus === 'Kegiatan Luar Sekolah') {
-                    dataToSave.checkInTime = null;
-                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
-                } else {
-                    const randomSeconds = Math.floor(Math.random() * 299) + 1; 
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
-                    dataToSave.checkOutTime = null;
-                }
-
-                batch.set(doc(attendanceRef), dataToSave);
-            } else {
-                const newLeaveDoc = doc(leaveRef);
-                batch.set(newLeaveDoc, {
-                    id: newLeaveDoc.id,
-                    userId, userName: userData.name, userRole: userData.role,
-                    type: newStatus === 'Sakit' ? 'Sakit' : 'Izin',
-                    status: 'approved', reason: reason,
-                    startDate: Timestamp.fromDate(startOfDay(targetDate)),
-                    endDate: Timestamp.fromDate(endOfDay(targetDate)),
-                    createdAt: serverTimestamp(), approvedBy: currentUser.uid, approvedAt: serverTimestamp()
-                });
-            }
-
-            await batch.commit();
-            invalidateCache();
-            toast({ title: 'Berhasil', description: `Status diperbarui menjadi ${reason}.` });
-            fetchData();
-        } catch (err: any) { 
-            toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal mengubah status.' }); 
-        } finally { setIsMutating(false); }
-    };
-
-    const handleSetHadir = async (item: MonthlyReportData) => {
-        if (!currentUser || !firestore || !schoolConfigData || isMutating) return;
-        setIsMutating(true);
-        try {
-            const targetDate = parseISO(item.date);
-            const now = new Date();
-            const isToday = isSameDay(targetDate, now);
-            const outStart = getDailyOutStart(targetDate);
-            const [hO, mO] = outStart.split(':').map(Number);
-            const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            
-            const fillOut = !isToday || (isToday && now >= limitOutStart);
-
-            const batch = writeBatch(firestore);
-            const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
-            const [inH, inM] = inEnd.split(':').map(Number);
-            const limitIn = setMinutes(setHours(startOfDay(targetDate), inH), inM);
-
-            const data: any = {
-                userId, date: format(targetDate, 'yyyy-MM-dd'),
-                manualEntry: true, reasonForUpdate: 'Kehadiran penuh', 
-                updatedBy: currentUser.uid, updatedAt: serverTimestamp()
-            };
-
-            const randomSeconds = Math.floor(Math.random() * 299) + 1;
-            data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomSeconds * 1000));
-            data.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
-
-            const q = query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '==', format(targetDate, 'yyyy-MM-dd')));
-            const snap = await getDocs(q);
-
-            if (!snap.empty) batch.update(snap.docs[0].ref, data);
-            else batch.set(doc(collection(firestore, 'users', userId, 'attendanceRecords')), data);
-
-            await batch.commit();
-            invalidateCache();
-            toast({ title: 'Berhasil', description: fillOut ? 'Kehadiran dipulihkan.' : 'Absen masuk diaktifkan.' });
-            fetchData();
-        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memperbarui data.' }); }
-        finally { setIsMutating(false); }
-    };
-
     const handleDownloadPdf = async () => {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
@@ -292,7 +152,13 @@ export default function UserReportDetailPage() {
             styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
             alternateRowStyles: { fillColor: [225, 242, 254] },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 } }
+            columnStyles: { 
+                0: { halign: 'center', cellWidth: 10 }, 
+                2: { halign: 'center', cellWidth: 32 }, 
+                3: { halign: 'center', cellWidth: 32 },
+                4: { halign: 'center', cellWidth: 20 },
+                5: { cellWidth: 'auto' }
+            }
         });
 
         let finalY = (doc as any).lastAutoTable.finalY + 15;
@@ -310,7 +176,7 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, finalY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, finalY + 44);
 
-        doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
+        doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
 
     const isAdmin = currentUser?.role === 'admin';
@@ -367,13 +233,20 @@ export default function UserReportDetailPage() {
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
-                            <div className="flex justify-end"><Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button></div>
+                            <div className="flex justify-end gap-3">
+                                {isAdmin && (
+                                    <Button onClick={() => setIsEditModalOpen(true)} variant="outline" className="font-bold border-primary text-primary hover:bg-primary/5 h-11 rounded-xl text-xs shadow-none">
+                                        <PencilLine className="mr-2 h-4 w-4" />Perbaiki kehadiran
+                                    </Button>
+                                )}
+                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
+                            </div>
                         </div>
 
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
-                                    <TableRow className="border-none">
+                                    <TableRow className="border-none h-11">
                                         <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none h-11">No</TableHead>
                                         <TableHead className="w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
@@ -386,7 +259,7 @@ export default function UserReportDetailPage() {
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => (
                                         <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                             <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                            <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                            <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
                                             <TableCell className='text-center font-mono text-xs font-bold'>{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                             <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                             <TableCell className="text-center">
@@ -401,6 +274,15 @@ export default function UserReportDetailPage() {
                     </CardContent>
                 </Card>
             </div>
+            {isAdmin && userData && (
+                <EditAttendanceModal 
+                    user={{ id: userId, ...userData }}
+                    month={currentMonth}
+                    isOpen={isEditModalOpen}
+                    onClose={() => { setIsEditModalOpen(false); fetchData(); }}
+                    currentUser={currentUser}
+                />
+            )}
         </div>
     );
 }
