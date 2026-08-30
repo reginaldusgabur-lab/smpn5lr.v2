@@ -22,8 +22,8 @@ const cleanDesc = (desc: any) => {
     if (d === 'terlambat') return 'Terlambat';
     if (d === 'sakit') return 'Sakit';
     if (d === 'izin' || d === 'izin pribadi') return 'Izin pribadi';
-    if (d === 'dinas pagi') return 'Dinas pagi';
-    if (d === 'dinas siang') return 'Dinas siang';
+    if (d === 'dinas pagi' || d === 'tugas dinas pagi') return 'Dinas pagi';
+    if (d === 'dinas siang' || d === 'tugas dinas siang') return 'Dinas siang';
     if (d === 'pulang cepat' || d === 'izin pulang cepat') return 'Pulang cepat';
     if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
 
@@ -83,7 +83,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();
         
-        const staffIdsSet = new Set(allStaff.map(s => s.id));
+        const staffIdsSet = new Set(allStaff.map(s => (s as any).id));
         
         attendanceSnap.forEach(doc => {
             const data = doc.data();
@@ -278,6 +278,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         ]);
 
         const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
+        
         const startStr = format(monthStart, 'yyyy-MM-dd');
         const endStr = format(monthEnd, 'yyyy-MM-dd');
 
