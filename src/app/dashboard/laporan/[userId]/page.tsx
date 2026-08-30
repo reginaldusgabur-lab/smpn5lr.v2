@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -109,15 +108,6 @@ export default function UserReportDetailPage() {
         return dailyOut?.start || (schoolConfigData as any).checkOutStartTime || '14:00';
     }, [schoolConfigData]);
 
-    const generateRandomOutTime = useCallback((date: Date) => {
-        const outStart = getDailyOutStart(date);
-        const [h, m] = outStart.split(':').map(Number);
-        const base = setMinutes(setHours(startOfDay(date), h), m);
-        const randomMins = Math.floor(Math.random() * 20) + 5;
-        const randomSecs = Math.floor(Math.random() * 60);
-        return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
-    }, [getDailyOutStart]);
-
     const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat') => {
         if (!currentUser || !firestore || isMutating || !schoolConfigData || !userData) return;
         setIsMutating(true);
@@ -140,6 +130,10 @@ export default function UserReportDetailPage() {
             const [hE, mE] = inEnd.split(':').map(Number);
             const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
 
+            const outStart = getDailyOutStart(targetDate);
+            const [hO, mO] = outStart.split(':').map(Number);
+            const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
+
             if (type !== 'sakit' && type !== 'izin') {
                 let data: any = {
                     userId, date: todayStr,
@@ -149,22 +143,29 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir') {
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
-                    data.checkOutTime = generateRandomOutTime(targetDate);
+                    const randomInSecs = Math.floor(Math.random() * 299) + 1; // acak 5 menit sebelum tutup
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInSecs * 1000));
+                    
+                    const randomOutSecs = Math.floor(Math.random() * 599) + 1; // acak 10 menit setelah buka
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutSecs * 1000));
                 } else if (type === 'terlambat') {
                     data.checkInTime = null;
-                    data.checkOutTime = generateRandomOutTime(targetDate);
+                    const randomOutSecs = Math.floor(Math.random() * 599) + 1;
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutSecs * 1000));
                     data.reasonForUpdate = 'Terlambat';
                 } else if (type === 'dinas-pagi') {
                     data.checkInTime = null;
-                    data.checkOutTime = generateRandomOutTime(targetDate);
+                    const randomOutSecs = Math.floor(Math.random() * 599) + 1;
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutSecs * 1000));
                     data.reasonForUpdate = 'Dinas pagi';
                 } else if (type === 'dinas-siang') {
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    const randomInSecs = Math.floor(Math.random() * 299) + 1;
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInSecs * 1000));
                     data.checkOutTime = null;
                     data.reasonForUpdate = 'Dinas siang';
                 } else if (type === 'pulang-cepat') {
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    const randomInSecs = Math.floor(Math.random() * 299) + 1;
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInSecs * 1000));
                     data.checkOutTime = null;
                     data.reasonForUpdate = 'Pulang cepat';
                 }
@@ -347,44 +348,50 @@ export default function UserReportDetailPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => (
-                                        <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
-                                            <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                            <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
-                                            <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' && !item.checkInTime) ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                            <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
-                                            <TableCell className="text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
-                                                        {item.status}
-                                                    </Badge>
-                                                    
-                                                    {isAdmin && (
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90">
-                                                                    <PencilLine className="h-4 w-4 text-primary" />
-                                                                </button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
-                                                                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
-                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
-                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                                <DropdownMenuSeparator className='my-1.5 opacity-50' />
-                                                                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
-                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin</DropdownMenuItem>
-                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas Siang</DropdownMenuItem>
-                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
-                                        </TableRow>
-                                    )) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
+                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
+                                        const isAlpa = item.status === 'Alpa';
+                                        const isManual = item.manualEntry === true;
+                                        const canEdit = isAdmin && (isAlpa || isManual);
+                                        
+                                        return (
+                                            <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
+                                                <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' && !item.checkInTime) ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
+                                                            {item.status}
+                                                        </Badge>
+                                                        
+                                                        {canEdit && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90">
+                                                                        <PencilLine className="h-4 w-4 text-primary" />
+                                                                    </button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas Siang</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
+                                            </TableRow>
+                                        );
+                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>
@@ -394,4 +401,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
