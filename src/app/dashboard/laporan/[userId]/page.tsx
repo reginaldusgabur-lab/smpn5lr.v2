@@ -370,7 +370,10 @@ export default function UserReportDetailPage() {
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
                                         const isManual = item.manualEntry === true;
-                                        const canEdit = isAdmin && (isAlpa || (hasIn && !hasOut) || (!hasIn && hasOut) || isManual);
+                                        
+                                        // Proteksi Absen Mandiri: Sembunyikan PencilLine jika sudah ada jam masuk & pulang oleh staf sendiri
+                                        const isMandiriSukses = hasIn && hasOut && !isManual;
+                                        const canEdit = isAdmin && !isMandiriSukses;
                                         
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
