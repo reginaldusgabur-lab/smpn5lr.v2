@@ -168,7 +168,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v216_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v217_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -352,27 +352,15 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 }
                 
                 const statusLabel = 'Hadir'; 
-                const lowDesc = description.toLowerCase();
                 const pts = calculatePoints('hadir', description, !!checkInTime, !!checkOutTime);
                 
-                if (['dinas pagi', 'dinas siang', 'pulang cepat', 'terlambat', 'kegiatan luar sekolah'].includes(lowDesc)) {
-                    const isLuarSekolah = lowDesc === 'kegiatan luar sekolah';
-                    return { 
-                        id: attendanceRecord.id, 
-                        date: day, 
-                        checkInTime: isLuarSekolah ? null : checkInTime, 
-                        checkOutTime: isLuarSekolah ? null : checkOutTime, 
-                        status: statusLabel, 
-                        description: description.charAt(0).toUpperCase() + description.slice(1), 
-                        manualEntry: isManual,
-                        points: pts
-                    };
-                }
-
                 return { 
-                    id: attendanceRecord.id, date: day, checkInTime, checkOutTime, 
-                    status: 'Hadir', 
-                    description: !checkOutTime ? 'Belum absen pulang' : description, 
+                    id: attendanceRecord.id, 
+                    date: day, 
+                    checkInTime: checkInTime, 
+                    checkOutTime: checkOutTime, 
+                    status: statusLabel, 
+                    description: description.charAt(0).toUpperCase() + description.slice(1), 
                     manualEntry: isManual,
                     points: pts
                 };
