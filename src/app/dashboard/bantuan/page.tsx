@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ShieldAlert, HelpCircle } from 'lucide-react';
+import { ShieldAlert, HelpCircle, Calculator, TrendingUp } from 'lucide-react';
 
 export default function BantuanPage() {
   return (
@@ -27,6 +27,51 @@ export default function BantuanPage() {
               </AccordionTrigger>
               <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
                 E-SPENLI adalah sistem absensi digital modern untuk SMPN 5 Langke Rembong. Aplikasi ini mendokumentasikan kehadiran secara real-time berdasarkan QR Code, lokasi GPS, dan waktu absensi untuk menjamin akurasi data staf dan guru.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-9" className="border-none mb-2">
+              <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
+                <div className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4 text-primary" />
+                    <span className="font-bold text-sm text-left text-primary">Bagaimana perhitungan persentase kehadiran?</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl space-y-4 text-xs font-medium leading-relaxed text-muted-foreground">
+                <p className="font-bold">Sistem menggunakan nilai poin harian untuk menghitung persentase akhir:</p>
+                <div className="grid grid-cols-1 gap-2">
+                    <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
+                        <span className="font-bold">Hadir / Dinas / Luar Sekolah</span>
+                        <Badge className="bg-green-600">1.0 Poin</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
+                        <span className="font-bold">Terlambat / Pulang Cepat</span>
+                        <Badge className="bg-amber-500">0.95 Poin</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
+                        <span className="font-bold">Sakit (Disetujui)</span>
+                        <Badge className="bg-blue-600">0.9 Poin</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
+                        <span className="font-bold">Izin Pribadi (Disetujui)</span>
+                        <Badge className="bg-blue-400">0.7 Poin</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
+                        <span className="font-bold">Lupa Absen (Masuk saja / Pulang saja)</span>
+                        <Badge className="bg-orange-500">0.5 Poin</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
+                        <span className="font-bold text-destructive">Alpa / Tanpa Keterangan</span>
+                        <Badge variant="destructive">0.0 Poin</Badge>
+                    </div>
+                </div>
+                <div className="bg-primary/10 p-3 rounded-xl border border-primary/20">
+                    <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="h-3 w-3 text-primary" />
+                        <p className="text-[10px] font-black uppercase text-primary tracking-tighter">Rumus Persentase:</p>
+                    </div>
+                    <p className="text-[11px] font-bold italic">(Total Akumulasi Poin ÷ Total Hari Kerja Efektif) x 100%</p>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -132,3 +177,5 @@ export default function BantuanPage() {
     </div>
   );
 }
+
+import { Badge } from '@/components/ui/badge';
