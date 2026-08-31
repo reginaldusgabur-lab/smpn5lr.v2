@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, parseISO, isValid, endOfMonth, endOfDay, startOfDay, addMonths, subMonths, isSameMonth, addMinutes, setHours, setMinutes } from 'date-fns';
+import { format, startOfMonth, parseISO, isValid, endOfMonth, endOfDay, startOfDay, addMonths, subMonths, isBefore, isSameMonth, addMinutes, setHours, setMinutes } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -21,7 +22,7 @@ import {
     DropdownMenuLabel 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User, MoreVertical } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User, MoreVertical, Info, Calculator, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -32,6 +33,7 @@ interface ReportDetail {
   checkOutTime: string | null;
   status: string;
   description: string;
+  points?: number;
 }
 
 interface UserData { name?: string; role?: string; nip?: string; position?: string; }
@@ -42,6 +44,27 @@ interface ClientShellProps {
   initialMonth: string;
   initialSchoolConfig: any;
 }
+
+const PointLegend = () => (
+    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-sm font-black text-green-600">1.0 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
+            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
+            <p className="text-sm font-black text-blue-600">0.9 - 0.7 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
+            <p className="text-sm font-black text-red-600">0.5 - 0.0 Poin</p>
+        </div>
+    </div>
+);
 
 export default function ReportClientShell({ 
     userId, 
@@ -63,6 +86,17 @@ export default function ReportClientShell({
     const parsedInitialMonth = parseISO(initialMonth);
     const [currentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
 
+    const stats = useMemo(() => {
+        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%" };
+        const total = reportDetails.reduce((acc, curr) => acc + (curr.points || 0), 0);
+        const count = reportDetails.length;
+        const perc = (total / (count || 1)) * 100;
+        return {
+            totalPoints: total.toFixed(2),
+            persentase: Math.min(perc, 100).toFixed(1) + "%"
+        };
+    }, [reportDetails]);
+
     const handleMonthChange = (amount: number) => {
         const newMonthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
         router.push(`${pathname}?month=${format(newMonthDate, 'yyyy-MM')}`);
@@ -74,7 +108,7 @@ export default function ReportClientShell({
         return isValid(dateObj) ? format(dateObj, formatString, { locale: indonesiaLocale }) : '-';
     }
 
-    const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat') => {
+    const handleStatusChange = async (dateStr: string, type: string) => {
         if (!authUser || !firestore || isMutating) return;
         setIsMutating(true);
         try {
@@ -82,7 +116,6 @@ export default function ReportClientShell({
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
             
-            // Hapus data lama
             const attendanceRef = collection(firestore, 'users', userId, 'attendanceRecords');
             const qA = query(attendanceRef, where('date', '==', todayStr));
             const snapA = await getDocs(qA);
@@ -97,7 +130,7 @@ export default function ReportClientShell({
             const [hE, mE] = inEnd.split(':').map(Number);
             const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
 
-            if (type === 'hadir' || type === 'terlambat' || type === 'dinas-pagi' || type === 'dinas-siang' || type === 'pulang-cepat') {
+            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                 let data: any = {
                     userId, date: todayStr,
                     manualEntry: true,
@@ -106,8 +139,8 @@ export default function ReportClientShell({
                 };
 
                 if (type === 'hadir') {
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000)); // 5 menit sebelum deadline
-                    data.checkOutTime = Timestamp.fromDate(addMinutes(limitIn, 480)); // +8 jam
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - 300000));
+                    data.checkOutTime = Timestamp.fromDate(addMinutes(limitIn, 480));
                     data.reasonForUpdate = 'Kehadiran penuh';
                 } else if (type === 'terlambat') {
                     data.checkInTime = null;
@@ -343,6 +376,7 @@ export default function ReportClientShell({
                                         <TableHead className="font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Masuk</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Poin</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Status</TableHead>
                                         <TableHead className="font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Keterangan</TableHead>
                                     </TableRow>
@@ -362,12 +396,16 @@ export default function ReportClientShell({
                                                     </TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center">
+                                                        <Badge variant="outline" className="font-black text-[10px] bg-background text-primary border-primary/20">
+                                                            {item.points?.toFixed(2) || "0.00"}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
                                                         <div className="flex items-center justify-center gap-2">
                                                             <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description, !!item.checkOutTime))}>
                                                                 {isManualLate ? 'Hadir' : item.status}
                                                             </Badge>
                                                             
-                                                            {/* Menu Perbaikan Cepat (Ellipsis) */}
                                                             {isProblematic && (
                                                                 <DropdownMenu>
                                                                     <DropdownMenuTrigger asChild>
@@ -397,11 +435,39 @@ export default function ReportClientShell({
                                         })
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data.</TableCell>
+                                            <TableCell colSpan={7} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
+                        </div>
+
+                        {/* PERHITUNGAN DAN LEGENDA DIPINDAH KE AKHIR HALAMAN DETIL (VIEW ADMIN) */}
+                        <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
+                            <div className="flex flex-wrap gap-4">
+                                <div className="bg-primary/10 px-5 py-4 rounded-2xl border border-primary/20 flex items-center gap-4 min-w-[160px]">
+                                    <Calculator className="h-5 w-5 text-primary" />
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] leading-none">Total Akumulasi Poin</p>
+                                        <p className="text-2xl font-black text-primary mt-1.5 tabular-nums">{stats.totalPoints}</p>
+                                    </div>
+                                </div>
+                                <div className="bg-green-500/10 px-5 py-4 rounded-2xl border border-green-500/20 flex items-center gap-4 min-w-[160px]">
+                                    <TrendingUp className="h-5 w-5 text-green-600" />
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] leading-none">Persentase Kehadiran</p>
+                                        <p className="text-2xl font-black text-green-600 mt-1.5 tabular-nums">{stats.persentase}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 px-1">
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                    <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3>
+                                </div>
+                                <PointLegend />
+                            </div>
                         </div>
                     </div>
                 </Card>
@@ -409,4 +475,3 @@ export default function ReportClientShell({
         </div>
     );
 }
-

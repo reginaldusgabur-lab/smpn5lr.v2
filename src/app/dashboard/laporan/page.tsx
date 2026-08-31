@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Info, Calculator } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Info, Calculator, TrendingUp } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -28,12 +29,6 @@ import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/atte
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { 
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface ReportItem {
   id: string;
@@ -48,7 +43,7 @@ interface ReportItem {
 }
 
 const PointLegend = () => (
-    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
             <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
             <p className="text-sm font-black text-green-600">1.0 Poin</p>
@@ -90,7 +85,7 @@ export default function LaporanPage() {
     }
   }, [schoolConfig, academicYear]);
 
-  const cacheKey = useMemo(() => user ? `user_report_v210_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
+  const cacheKey = useMemo(() => user ? `user_report_v215_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
 
   const fetchReport = useCallback(async (forceRefresh = false) => {
     if (!user || !firestore || !schoolConfig || !cacheKey) return;
@@ -248,27 +243,6 @@ export default function LaporanPage() {
                     </div>
                 </div>
 
-                <div className="px-4 py-2 flex flex-wrap gap-3">
-                    <div className="bg-primary/5 px-4 py-3 rounded-2xl border border-primary/10 flex items-center gap-3">
-                        <Calculator className="h-4 w-4 text-primary" />
-                        <div>
-                            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Total Poin</p>
-                            <p className="text-sm font-black text-primary mt-1">{stats?.totalPoints || "0.00"}</p>
-                        </div>
-                    </div>
-                    <div className="bg-green-500/5 px-4 py-3 rounded-2xl border border-green-500/10 flex items-center gap-3">
-                        <TrendingUp className="h-4 w-4 text-green-600" />
-                        <div>
-                            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Persentase</p>
-                            <p className="text-sm font-black text-green-600 mt-1">{stats?.persentase || "0.0%"}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="px-4 mt-4">
-                    <PointLegend />
-                </div>
-
                 <div className="border-t border-muted-foreground/5 overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-muted/30">
@@ -314,29 +288,37 @@ export default function LaporanPage() {
                         </TableBody>
                     </Table>
                 </div>
+                
+                {/* PERHITUNGAN DAN LEGENDA DIPINDAH KE AKHIR HALAMAN */}
+                <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
+                    <div className="flex flex-wrap gap-4">
+                        <div className="bg-primary/10 px-5 py-4 rounded-2xl border border-primary/20 flex items-center gap-4 min-w-[160px]">
+                            <Calculator className="h-5 w-5 text-primary" />
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] leading-none">Total Akumulasi Poin</p>
+                                <p className="text-2xl font-black text-primary mt-1.5 tabular-nums">{stats?.totalPoints || "0.00"}</p>
+                            </div>
+                        </div>
+                        <div className="bg-green-500/10 px-5 py-4 rounded-2xl border border-green-500/20 flex items-center gap-4 min-w-[160px]">
+                            <TrendingUp className="h-5 w-5 text-green-600" />
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] leading-none">Persentase Kehadiran</p>
+                                <p className="text-2xl font-black text-green-600 mt-1.5 tabular-nums">{stats?.persentase || "0.0%"}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-1">
+                            <Info className="h-3 w-3 text-muted-foreground" />
+                            <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3>
+                        </div>
+                        <PointLegend />
+                    </div>
+                </div>
               </CardContent>
             </Card>
         </div>
     </div>
   );
-}
-
-function TrendingUp(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="23 6 13.5 17 8.5 12 1 20" />
-      <polyline points="17 6 23 6 23 12" />
-    </svg>
-  )
 }
