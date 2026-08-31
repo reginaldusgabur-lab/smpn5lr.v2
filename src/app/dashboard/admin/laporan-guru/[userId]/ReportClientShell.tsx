@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -442,21 +441,26 @@ export default function ReportClientShell({
                             </Table>
                         </div>
 
-                        {/* PERHITUNGAN DAN LEGENDA DIPINDAH KE AKHIR HALAMAN DETIL (VIEW ADMIN) */}
                         <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
-                            <div className="flex flex-wrap gap-4">
-                                <div className="bg-primary/10 px-5 py-4 rounded-2xl border border-primary/20 flex items-center gap-4 min-w-[160px]">
-                                    <Calculator className="h-5 w-5 text-primary" />
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] leading-none">Total Akumulasi Poin</p>
-                                        <p className="text-2xl font-black text-primary mt-1.5 tabular-nums">{stats.totalPoints}</p>
+                            <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm max-w-2xl mx-auto">
+                                <div className="grid grid-cols-2">
+                                    <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
+                                        <div className="flex items-center gap-2">
+                                            <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" />
+                                            <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">
+                                                {stats.totalPoints}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="bg-green-500/10 px-5 py-4 rounded-2xl border border-green-500/20 flex items-center gap-4 min-w-[160px]">
-                                    <TrendingUp className="h-5 w-5 text-green-600" />
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] leading-none">Persentase Kehadiran</p>
-                                        <p className="text-2xl font-black text-green-600 mt-1.5 tabular-nums">{stats.persentase}</p>
+                                    <div className="p-5 flex flex-col items-center justify-center text-center">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
+                                        <div className="flex items-center gap-2">
+                                            <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
+                                            <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">
+                                                {stats.persentase}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
