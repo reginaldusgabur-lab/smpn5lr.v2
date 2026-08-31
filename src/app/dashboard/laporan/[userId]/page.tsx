@@ -14,8 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchUserMonthlyReportData, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator } from 'lucide-react';
+import { fetchUserMonthlyReportData, type MonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +39,7 @@ const safeFormat = (dateInput: any, formatString: string): string => {
 };
 
 const PointLegend = () => (
-    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
             <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
             <p className="text-[11px] font-bold text-green-600">1.0 Poin</p>
@@ -70,6 +70,7 @@ export default function UserReportDetailPage() {
 
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData[]>([]);
+    const [stats, setStats] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isMutating, setIsMutating] = useState(false);
@@ -93,10 +94,11 @@ export default function UserReportDetailPage() {
             const userRef = doc(firestore, 'users', userId);
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
             
-            const [userSnap, reportData, monthlyConfigSnap] = await Promise.all([
+            const [userSnap, reportData, monthlyConfigSnap, statsRes] = await Promise.all([
                 getDoc(userRef),
                 fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData),
-                getDoc(monthlyConfigRef)
+                getDoc(monthlyConfigRef),
+                calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })
             ]);
 
             if (!userSnap.exists()) throw new Error('Profil staf tidak ditemukan.');
@@ -104,6 +106,7 @@ export default function UserReportDetailPage() {
             if (isMounted.current) {
                 setUserData(userSnap.data());
                 setMonthlyReportData(reportData);
+                setStats(statsRes);
                 const mData = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
                 setAcademicYear(mData.academicYear || schoolConfigData.academicYear || "");
             }
@@ -369,8 +372,6 @@ export default function UserReportDetailPage() {
                                 </div>
                             </div>
 
-                            <PointLegend />
-
                             <div className="flex justify-end gap-3 px-2 sm:px-0">
                                 <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
                             </div>
@@ -457,6 +458,39 @@ export default function UserReportDetailPage() {
                                     }) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
+                        </div>
+
+                        <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
+                            <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm max-w-2xl mx-auto">
+                                <div className="grid grid-cols-2">
+                                    <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
+                                        <div className="flex items-center gap-2">
+                                            <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" />
+                                            <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">
+                                                {stats?.totalPoints || "0.00"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="p-5 flex flex-col items-center justify-center text-center">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
+                                        <div className="flex items-center gap-2">
+                                            <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
+                                            <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">
+                                                {stats?.persentase || "0.0%"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 px-1">
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                    <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3>
+                                </div>
+                                <PointLegend />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

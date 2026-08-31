@@ -288,7 +288,6 @@ export default function LaporanPage() {
                     </Table>
                 </div>
                 
-                {/* PERHITUNGAN DAN LEGENDA DIPINDAH KE AKHIR HALAMAN */}
                 <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
                     <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm">
                         <div className="grid grid-cols-2">

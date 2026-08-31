@@ -41,7 +41,7 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
     const s = status.toLowerCase();
     const d = description.toLowerCase();
 
-    // 1. Poin Penuh (1.0)
+    // 1. Poin Penuh (1.0): Hadir Penuh, Dinas, atau Kegiatan Luar Sekolah
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
 
@@ -51,13 +51,13 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
     // 3. Poin Sakit (0.9)
     if (s === 'sakit') return 0.9;
 
-    // 4. Poin Izin (0.7)
+    // 4. Poin Izin Pribadi (0.7)
     if (s.includes('izin')) return 0.7;
 
-    // 5. Poin Setengah (Lupa Absen) (0.5)
+    // 5. Poin Setengah (Lupa Absen) (0.5): Hanya absen salah satu
     if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
 
-    // 6. Alpa (0.0)
+    // 6. Alpa (0.0): Tanpa keterangan sama sekali
     return 0.0;
 };
 
@@ -168,7 +168,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v210_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v215_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
