@@ -3,7 +3,8 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ShieldAlert, HelpCircle, Calculator, TrendingUp } from 'lucide-react';
+import { ShieldAlert, HelpCircle, TrendingUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function BantuanPage() {
   return (
@@ -32,13 +33,10 @@ export default function BantuanPage() {
 
             <AccordionItem value="item-9" className="border-none mb-2">
               <AccordionTrigger className="hover:no-underline p-4 bg-muted/30 rounded-2xl transition-all data-[state=open]:rounded-b-none data-[state=open]:bg-primary/5">
-                <div className="flex items-center gap-2">
-                    <Calculator className="h-4 w-4 text-primary" />
-                    <span className="font-bold text-sm text-left text-primary">Bagaimana perhitungan persentase kehadiran?</span>
-                </div>
+                <span className="font-bold text-sm text-left">Bagaimana perhitungan persentase kehadiran?</span>
               </AccordionTrigger>
               <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl space-y-4 text-xs font-medium leading-relaxed text-muted-foreground">
-                <p className="font-bold">Sistem menggunakan nilai poin harian untuk menghitung persentase akhir:</p>
+                <p className="font-bold text-foreground">Sistem menggunakan nilai poin harian untuk menghitung persentase akhir:</p>
                 <div className="grid grid-cols-1 gap-2">
                     <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
                         <span className="font-bold">Hadir / Dinas / Luar Sekolah</span>
@@ -145,7 +143,7 @@ export default function BantuanPage() {
                 <span className="font-bold text-sm text-left">Gagal absen karena masalah lokasi?</span>
               </AccordionTrigger>
               <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
-                Aplikasi mewajibkan Anda berada dalam radius sekolah. Jika gagal, pastikan GPS di HP aktif. Cobalah untuk berpindah ke area yang lebih terbuka agar sinyal satelit dapat mengunci posisi Anda dengan lebih akurat.
+                Aplikasi mewajibkan Anda berada dalam radius sekolah. Jika gagal, pastikan GPS di HP aktif. Cobalah untuk berpindah ke area yang lebih terbuka agar silakan sinyal satelit dapat mengunci posisi Anda dengan lebih akurat.
               </AccordionContent>
             </AccordionItem>
 
@@ -177,5 +175,3 @@ export default function BantuanPage() {
     </div>
   );
 }
-
-import { Badge } from '@/components/ui/badge';
