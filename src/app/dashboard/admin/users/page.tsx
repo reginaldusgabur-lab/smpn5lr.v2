@@ -74,6 +74,8 @@ import { doc, collection } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { resetUserPassword } from '@/app/actions/admin-actions';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/lib/utils';
 
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
@@ -120,6 +122,9 @@ export default function AdminUsersPage() {
 
     const userStats = useMemo(() => {
         return filteredUsers.reduce((acc, curr) => {
+            // JANGAN HITUNG ADMIN AGAR TAU PENGGUNA AKTIF SAJA
+            if (curr.role === 'admin') return acc;
+            
             acc.total++;
             if (curr.gender === 'Laki-laki') acc.lakiLaki++;
             else if (curr.gender === 'Perempuan') acc.perempuan++;
@@ -304,7 +309,18 @@ export default function AdminUsersPage() {
                                     {filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
                                         <TableRow key={u.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
                                             <TableCell className="text-center font-bold text-muted-foreground text-sm">{u.sequenceNumber ?? i + 1}</TableCell>
-                                            <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{u.name}</span><span className="text-[10px] text-muted-foreground font-bold">{u.email}</span></div></TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-9 w-9 border border-muted-foreground/10 shadow-sm">
+                                                        <AvatarImage src={u.photoURL} alt={u.name} className="object-cover" />
+                                                        <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">{getInitials(u.name || '')}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-sm">{u.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground font-bold">{u.email}</span>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
                                             <TableCell><Badge variant="secondary" className="text-[9px] font-bold px-3">{u.role.replace('_', ' ')}</Badge></TableCell>
                                             <TableCell><span className="text-xs font-medium">{u.gender || '-'}</span></TableCell>
                                             <TableCell><div className="flex flex-col"><span className="text-[10px] font-bold">{u.nip || u.nisn || '-'}</span><span className="text-[9px] font-bold text-primary uppercase">{u.position || '-'}</span></div></TableCell>
@@ -328,7 +344,7 @@ export default function AdminUsersPage() {
 
                         <div className="mt-8 pt-8 border-t border-muted-foreground/10 grid grid-cols-3 gap-3">
                             <div className="bg-primary/5 p-4 rounded-2xl text-center border border-primary/5">
-                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Total Staf</p>
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Total Aktif</p>
                                 <p className="text-2xl font-black text-primary leading-none">{userStats.total}</p>
                             </div>
                             <div className="bg-blue-500/5 p-4 rounded-2xl text-center border border-blue-500/10">
@@ -357,10 +373,10 @@ export default function AdminUsersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="role" render={({field}) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel>
+                                            <FormLabel className="text-[10px] font-bold uppercase">Peran Sistem</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30">
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -377,10 +393,10 @@ export default function AdminUsersPage() {
                                     )} />
                                     <FormField control={userForm.control} name="gender" render={({field}) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase">Kelamin</FormLabel>
+                                            <FormLabel className="text-[10px] font-bold uppercase">Jenis Kelamin</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30">
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                 </FormControl>
