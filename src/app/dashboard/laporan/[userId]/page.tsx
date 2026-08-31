@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserMonthlyReportData, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +37,27 @@ const safeFormat = (dateInput: any, formatString: string): string => {
     else date = new Date(dateInput);
     return isValid(date) ? format(date, formatString, { locale: id }) : '-';
 };
+
+const PointLegend = () => (
+    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-[11px] font-bold text-green-600">1.0 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Pulang Cepat</p>
+            <p className="text-[11px] font-bold text-amber-600">0.95 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
+            <p className="text-[11px] font-bold text-blue-600">0.9 - 0.7 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
+            <p className="text-[11px] font-bold text-red-600">0.5 - 0.0 Poin</p>
+        </div>
+    </div>
+);
 
 export default function UserReportDetailPage() {
     const params = useParams();
@@ -144,12 +165,10 @@ export default function UserReportDetailPage() {
                 };
 
                 if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
-                    // ACAK 5 MENIT SEBELUM TUTUP
                     const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                     
                     if (fillOut) {
-                        // ACAK 10 MENIT SETELAH BUKA
                         const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
                         dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                     } else {
@@ -349,6 +368,9 @@ export default function UserReportDetailPage() {
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
+
+                            <PointLegend />
+
                             <div className="flex justify-end gap-3 px-2 sm:px-0">
                                 <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
                             </div>
@@ -362,6 +384,7 @@ export default function UserReportDetailPage() {
                                         <TableHead className="w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Poin</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Status</TableHead>
                                         <TableHead className="font-bold text-xs text-muted-foreground border-none h-11">Keterangan</TableHead>
                                     </TableRow>
@@ -381,6 +404,11 @@ export default function UserReportDetailPage() {
                                                 <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant="outline" className="font-black text-[10px] bg-background text-primary border-primary/20">
+                                                        {item.points?.toFixed(2) || "0.00"}
+                                                    </Badge>
+                                                </TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
@@ -426,7 +454,7 @@ export default function UserReportDetailPage() {
                                                 <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
                                             </TableRow>
                                         );
-                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
+                                    }) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>

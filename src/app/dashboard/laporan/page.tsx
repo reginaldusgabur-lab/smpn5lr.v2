@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, PieChart as PieIcon, FileText, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Info, Calculator } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -28,7 +28,12 @@ import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/atte
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { 
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ReportItem {
   id: string;
@@ -38,8 +43,30 @@ interface ReportItem {
   checkOut: string;
   status: string;
   description: string;
+  points: number;
   approvalStatus?: 'approved' | 'pending' | 'rejected';
 }
+
+const PointLegend = () => (
+    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-sm font-black text-green-600">1.0 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
+            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
+            <p className="text-sm font-black text-blue-600">0.9 - 0.7 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
+            <p className="text-sm font-black text-red-600">0.5 - 0.0 Poin</p>
+        </div>
+    </div>
+);
 
 export default function LaporanPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -63,7 +90,7 @@ export default function LaporanPage() {
     }
   }, [schoolConfig, academicYear]);
 
-  const cacheKey = useMemo(() => user ? `user_report_v2_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
+  const cacheKey = useMemo(() => user ? `user_report_v210_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
 
   const fetchReport = useCallback(async (forceRefresh = false) => {
     if (!user || !firestore || !schoolConfig || !cacheKey) return;
@@ -90,6 +117,7 @@ export default function LaporanPage() {
             checkOut: record.checkOutTime ? format(parseISO(record.checkOutTime), 'HH:mm') : '-',
             status: record.status,
             description: record.description,
+            points: record.points,
             approvalStatus: record.approvalStatus
         }));
 
@@ -220,6 +248,27 @@ export default function LaporanPage() {
                     </div>
                 </div>
 
+                <div className="px-4 py-2 flex flex-wrap gap-3">
+                    <div className="bg-primary/5 px-4 py-3 rounded-2xl border border-primary/10 flex items-center gap-3">
+                        <Calculator className="h-4 w-4 text-primary" />
+                        <div>
+                            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Total Poin</p>
+                            <p className="text-sm font-black text-primary mt-1">{stats?.totalPoints || "0.00"}</p>
+                        </div>
+                    </div>
+                    <div className="bg-green-500/5 px-4 py-3 rounded-2xl border border-green-500/10 flex items-center gap-3">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <div>
+                            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Persentase</p>
+                            <p className="text-sm font-black text-green-600 mt-1">{stats?.persentase || "0.0%"}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="px-4 mt-4">
+                    <PointLegend />
+                </div>
+
                 <div className="border-t border-muted-foreground/5 overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-muted/30">
@@ -228,6 +277,7 @@ export default function LaporanPage() {
                                 <TableHead className="font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
                                 <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
                                 <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Poin</TableHead>
                                 <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Status</TableHead>
                                 <TableHead className="font-bold text-xs text-muted-foreground border-none h-11">Keterangan</TableHead>
                             </TableRow>
@@ -237,9 +287,14 @@ export default function LaporanPage() {
                                 monthlyReportData.map((record, index) => (
                                     <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
                                         <TableCell className="text-center font-bold text-muted-foreground text-sm">{index + 1}</TableCell>
-                                        <TableCell className="font-bold text-sm text-foreground">{record.dateString}</TableCell>
+                                        <TableCell className="font-bold text-sm text-foreground whitespace-nowrap">{record.dateString}</TableCell>
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkIn}</TableCell>
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkOut}</TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge variant="outline" className="font-black text-[10px] bg-background text-primary border-primary/20">
+                                                {record.points.toFixed(2)}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell className="text-center">
                                             <span className={cn(
                                                 "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap",
@@ -253,7 +308,7 @@ export default function LaporanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data.</TableCell>
+                                    <TableCell colSpan={7} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -264,4 +319,24 @@ export default function LaporanPage() {
         </div>
     </div>
   );
+}
+
+function TrendingUp(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="23 6 13.5 17 8.5 12 1 20" />
+      <polyline points="17 6 23 6 23 12" />
+    </svg>
+  )
 }
