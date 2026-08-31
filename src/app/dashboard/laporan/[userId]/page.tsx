@@ -385,7 +385,6 @@ export default function UserReportDetailPage() {
                                         <TableHead className="w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Pulang</TableHead>
-                                        <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Poin</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Status</TableHead>
                                         <TableHead className="font-bold text-xs text-muted-foreground border-none h-11">Keterangan</TableHead>
                                     </TableRow>
@@ -405,11 +404,6 @@ export default function UserReportDetailPage() {
                                                 <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant="outline" className="font-black text-[10px] bg-background text-primary border-primary/20">
-                                                        {item.points?.toFixed(2) || "0.00"}
-                                                    </Badge>
-                                                </TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status))}>
@@ -455,7 +449,7 @@ export default function UserReportDetailPage() {
                                                 <TableCell className="text-[11px] font-medium text-muted-foreground italic whitespace-nowrap">{item.description}</TableCell>
                                             </TableRow>
                                         );
-                                    }) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
+                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>

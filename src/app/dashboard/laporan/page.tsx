@@ -84,7 +84,7 @@ export default function LaporanPage() {
     }
   }, [schoolConfig, academicYear]);
 
-  const cacheKey = useMemo(() => user ? `user_report_v217_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
+  const cacheKey = useMemo(() => user ? `user_report_v218_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
 
   const fetchReport = useCallback(async (forceRefresh = false) => {
     if (!user || !firestore || !schoolConfig || !cacheKey) return;
@@ -250,7 +250,6 @@ export default function LaporanPage() {
                                 <TableHead className="font-bold text-xs text-muted-foreground border-none h-11">Tanggal</TableHead>
                                 <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Masuk</TableHead>
                                 <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Poin</TableHead>
                                 <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Status</TableHead>
                                 <TableHead className="font-bold text-xs text-muted-foreground border-none h-11">Keterangan</TableHead>
                             </TableRow>
@@ -264,11 +263,6 @@ export default function LaporanPage() {
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkIn}</TableCell>
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkOut}</TableCell>
                                         <TableCell className="text-center">
-                                            <Badge variant="outline" className="font-black text-[10px] bg-background text-primary border-primary/20">
-                                                {record.points.toFixed(2)}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-center">
                                             <span className={cn(
                                                 "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap",
                                                 getStatusColorClass(record.status)
@@ -281,7 +275,7 @@ export default function LaporanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data.</TableCell>
+                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -289,7 +283,7 @@ export default function LaporanPage() {
                 </div>
                 
                 <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
-                    <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm">
+                    <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm max-w-2xl mx-auto">
                         <div className="grid grid-cols-2">
                             <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
                                 <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
