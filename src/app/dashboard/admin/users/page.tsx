@@ -355,8 +355,43 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Alamat Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran Sistem</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="guru" className="rounded-lg">Guru</SelectItem><SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem><SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem><SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem><SelectItem value="admin" className="rounded-lg font-bold text-primary">Admin Utama</SelectItem></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Jenis Kelamin</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem><SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem></Select><FormMessage /></FormItem>)} />
+                                    <FormField control={userForm.control} name="role" render={({field}) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[10px] font-bold uppercase">Peran Sistem</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className='border-none shadow-2xl'>
+                                                    <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
+                                                    <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
+                                                    <SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem>
+                                                    <SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem>
+                                                    <SelectItem value="admin" className="rounded-lg font-bold text-primary">Admin Utama</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={userForm.control} name="gender" render={({field}) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[10px] font-bold uppercase">Jenis Kelamin</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className='border-none shadow-2xl'>
+                                                    <SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem>
+                                                    <SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP (Staf)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
