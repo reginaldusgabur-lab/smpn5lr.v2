@@ -40,27 +40,27 @@ export default function BantuanPage() {
                 <div className="grid grid-cols-1 gap-2">
                     <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
                         <span className="font-bold">Hadir / Dinas / Luar Sekolah</span>
-                        <Badge className="bg-green-600">1.0 Poin</Badge>
+                        <Badge className="bg-green-600 border-none shadow-sm h-6 px-3">1.0 Poin</Badge>
                     </div>
                     <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
                         <span className="font-bold">Terlambat / Pulang Cepat</span>
-                        <Badge className="bg-amber-500">0.95 Poin</Badge>
+                        <Badge className="bg-amber-500 border-none shadow-sm h-6 px-3">0.95 Poin</Badge>
                     </div>
                     <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
                         <span className="font-bold">Sakit (Disetujui)</span>
-                        <Badge className="bg-blue-600">0.9 Poin</Badge>
+                        <Badge className="bg-blue-600 border-none shadow-sm h-6 px-3">0.9 Poin</Badge>
                     </div>
                     <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
                         <span className="font-bold">Izin Pribadi (Disetujui)</span>
-                        <Badge className="bg-blue-400">0.7 Poin</Badge>
+                        <Badge className="bg-blue-400 border-none shadow-sm h-6 px-3">0.7 Poin</Badge>
                     </div>
                     <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
                         <span className="font-bold">Lupa Absen (Masuk saja / Pulang saja)</span>
-                        <Badge className="bg-orange-500">0.5 Poin</Badge>
+                        <Badge className="bg-orange-500 border-none shadow-sm h-6 px-3">0.5 Poin</Badge>
                     </div>
                     <div className="flex justify-between items-center p-2 bg-background rounded-lg border">
                         <span className="font-bold text-destructive">Alpa / Tanpa Keterangan</span>
-                        <Badge variant="destructive">0.0 Poin</Badge>
+                        <Badge variant="destructive" className="border-none shadow-sm h-6 px-3">0.0 Poin</Badge>
                     </div>
                 </div>
                 <div className="bg-primary/10 p-3 rounded-xl border border-primary/20">
@@ -68,7 +68,7 @@ export default function BantuanPage() {
                         <TrendingUp className="h-3 w-3 text-primary" />
                         <p className="text-[10px] font-black uppercase text-primary tracking-tighter">Rumus Persentase:</p>
                     </div>
-                    <p className="text-[11px] font-bold italic">(Total Akumulasi Poin ÷ Total Hari Kerja Efektif) x 100%</p>
+                    <p className="text-[11px] font-bold italic text-foreground/80">(Total Akumulasi Poin ÷ Total Hari Kerja Efektif) x 100%</p>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -143,7 +143,7 @@ export default function BantuanPage() {
                 <span className="font-bold text-sm text-left">Gagal absen karena masalah lokasi?</span>
               </AccordionTrigger>
               <AccordionContent className="p-4 bg-primary/5 rounded-b-2xl text-xs font-medium leading-relaxed text-muted-foreground">
-                Aplikasi mewajibkan Anda berada dalam radius sekolah. Jika gagal, pastikan GPS di HP aktif. Cobalah untuk berpindah ke area yang lebih terbuka agar silakan sinyal satelit dapat mengunci posisi Anda dengan lebih akurat.
+                Aplikasi mewajibkan Anda berada dalam radius sekolah. Jika gagal, pastikan GPS di HP aktif. Cobalah untuk berpindah ke area yang lebih terbuka agar sinyal satelit dapat mengunci posisi Anda dengan lebih akurat.
               </AccordionContent>
             </AccordionItem>
 

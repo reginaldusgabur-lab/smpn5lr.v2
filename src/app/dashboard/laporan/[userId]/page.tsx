@@ -42,19 +42,19 @@ const PointLegend = () => (
     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
             <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
-            <p className="text-[11px] font-bold text-green-600">1.0 Poin</p>
+            <p className="text-sm font-black text-green-600">1.0 Poin</p>
         </div>
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Pulang Cepat</p>
-            <p className="text-[11px] font-bold text-amber-600">0.95 Poin</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
+            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
         </div>
         <div className="space-y-1">
             <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
-            <p className="text-[11px] font-bold text-blue-600">0.9 - 0.7 Poin</p>
+            <p className="text-sm font-black text-blue-600">0.9 - 0.7 Poin</p>
         </div>
         <div className="space-y-1">
             <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
-            <p className="text-[11px] font-bold text-red-600">0.5 - 0.0 Poin</p>
+            <p className="text-sm font-black text-red-600">0.5 - 0.0 Poin</p>
         </div>
     </div>
 );
@@ -412,7 +412,7 @@ export default function UserReportDetailPage() {
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
+                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status))}>
                                                             {item.status}
                                                         </Badge>
                                                         {canEdit && (
@@ -452,7 +452,7 @@ export default function UserReportDetailPage() {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
+                                                <TableCell className="text-[11px] font-medium text-muted-foreground italic whitespace-nowrap">{item.description}</TableCell>
                                             </TableRow>
                                         );
                                     }) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
