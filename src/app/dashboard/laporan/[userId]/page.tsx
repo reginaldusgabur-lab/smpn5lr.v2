@@ -313,14 +313,23 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
-        // HOLIDAY NOTES (Above footer line - Only on last page)
-        if (mConfig.isHolidayNotesActive && mConfig.holidayNotesContent) {
+        // HOLIDAY NOTES & WORK DAYS (Above footer line - Only on last page)
+        if (mConfig.isHolidayNotesActive) {
             const notesY = pageHeight - 35;
             doc.setFontSize(8).setFont('times', 'bold');
-            doc.text('Keterangan Hari Libur:', margin, notesY);
-            doc.setFontSize(8).setFont('times', 'normal');
-            const splitNotes = doc.splitTextToSize(mConfig.holidayNotesContent, pageWidth - (margin * 2));
-            doc.text(splitNotes, margin, notesY + 4);
+            doc.text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            
+            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
+                doc.text('Keterangan Hari Libur:', margin, notesY);
+                doc.setFontSize(8).setFont('times', 'normal');
+                let noteLineY = notesY + 4;
+                mConfig.holidayNotes.forEach((note: any, idx: number) => {
+                    const text = `${idx + 1}. ${note.content}`;
+                    const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                    doc.text(splitText, margin, noteLineY);
+                    noteLineY += (splitText.length * 4);
+                });
+            }
         }
 
         const totalPages = (doc as any).internal.getNumberOfPages();
