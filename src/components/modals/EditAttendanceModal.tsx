@@ -49,8 +49,8 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 
                 const problems = reportData.filter(d => 
                     (d.status === 'Alpa') || 
-                    (d.description === 'Belum absen pulang') ||
-                    (d.description === 'Absen pulang (Tanpa masuk)') ||
+                    (d.description.includes('Belum')) ||
+                    (d.description.includes('Tanpa')) ||
                     (d.status === 'Terlambat')
                 );
                 if (isMounted.current) {
@@ -117,7 +117,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         } finally { setIsSaving(false); }
     };
 
-    const handleAlpaConversionToAttendance = async (day: any, type: 'hadir' | 'terlambat' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat' | 'lengkapi-masuk' | 'luar-sekolah') => {
+    const handleAlpaConversionToAttendance = async (day: any, type: string) => {
         if (!currentUser?.uid || !firestore || !schoolConfig || !user) return;
         
         setIsSaving(true);
@@ -143,26 +143,27 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 reasonForUpdate: 'Kehadiran penuh'
             };
 
-            // LOGIKA CERDAS: Preservasi jam masuk jika sudah ada
+            // Preservasi jam masuk
             if (day.checkInTime) {
                 data.checkInTime = Timestamp.fromDate(parseISO(day.checkInTime));
-            } else if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'dinas-siang') {
-                const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
+            } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                const randomOffset = Math.floor(Math.random() * 299) + 1;
+                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffset * 1000));
             } else {
                 data.checkInTime = null;
             }
 
-            // LOGIKA CERDAS: Preservasi jam pulang jika sudah ada
+            // Preservasi jam pulang
             if (day.checkOutTime) {
                 data.checkOutTime = Timestamp.fromDate(parseISO(day.checkOutTime));
-            } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'terlambat' || type === 'dinas-pagi')) {
-                data.checkOutTime = Timestamp.fromDate(addMinutes(limitOutStart, Math.floor(Math.random() * 10) + 1));
+            } else if (fillOut && ['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
+                const randomOffset = Math.floor(Math.random() * 599) + 1;
+                data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOffset * 1000));
             } else {
                 data.checkOutTime = null;
             }
 
-            // Set specific reason
+            // Set reason
             if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
             else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
             else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
@@ -199,25 +200,22 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                     reasonForUpdate: 'Kehadiran penuh', manualEntry: true
                 };
 
-                // Untuk bulk, kita asumsikan hanya Alpa yang dicentang
                 const inEnd = schoolConfig.checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(recordDate), hE), mE);
                 
-                // Gunakan jam yang ada jika tersedia (jika bukan alpa)
                 if (day.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(day.checkInTime));
                 } else {
-                    const randomInSecs = Math.floor(Math.random() * 299) + 1;
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInSecs * 1000));
+                    const rIn = Math.floor(Math.random() * 299) + 1;
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - rIn * 1000));
                 }
 
                 if (day.checkOutTime) {
                     data.checkOutTime = Timestamp.fromDate(parseISO(day.checkOutTime));
                 } else if (fillOut) {
-                    const randomMins = Math.floor(Math.random() * 10) + 1;
-                    const randomSecs = Math.floor(Math.random() * 60);
-                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + (randomMins * 60000) + (randomSecs * 1000)));
+                    const rOut = Math.floor(Math.random() * 599) + 1;
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + rOut * 1000));
                 } else {
                     data.checkOutTime = null;
                 }
@@ -248,12 +246,12 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                             {problematicDays.map(item => {
                                 const hasIn = !!item.checkInTime;
                                 const hasOut = !!item.checkOutTime;
-                                const isNoIn = !hasIn && hasOut;
+                                const isAlpa = item.status === 'Alpa';
                                 const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
                                 
                                 return (
                                     <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 border border-muted-foreground/5 transition-all">
-                                        {(item.status === 'Alpa' && !isManualLate) ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[item.id]} onCheckedChange={() => handleSelectDay(item.id)} />}
+                                        {(isAlpa && !isManualLate) ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[item.id]} onCheckedChange={() => handleSelectDay(item.id)} />}
                                         <div className="flex flex-col grow">
                                             <label className="text-[13px] font-bold text-foreground leading-none">{format(parseISO(item.date), 'eeee, d MMM', { locale: id })}</label>
                                             <span className="text-[9px] font-medium text-muted-foreground mt-1">{item.description}</span>
@@ -266,14 +264,16 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                 <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
-                                                {isNoIn ? (
-                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
-                                                ) : hasIn && !hasOut ? (
+                                                {hasIn && !hasOut ? (
                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
+                                                ) : !hasIn && hasOut ? (
+                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
                                                 ) : (
-                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                    <>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                    </>
                                                 )}
-                                                {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>}
                                                 <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                 <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Ubah Status</DropdownMenuLabel>
                                                 {!hasIn && (

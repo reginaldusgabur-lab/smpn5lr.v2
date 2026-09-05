@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -124,9 +122,7 @@ export default function AdminUsersPage() {
 
     const userStats = useMemo(() => {
         return filteredUsers.reduce((acc, curr) => {
-            // JANGAN HITUNG ADMIN AGAR TAU PENGGUNA AKTIF SAJA
             if (curr.role === 'admin') return acc;
-            
             acc.total++;
             if (curr.gender === 'Laki-laki') acc.lakiLaki++;
             else if (curr.gender === 'Perempuan') acc.perempuan++;
@@ -446,4 +442,3 @@ export default function AdminUsersPage() {
         </div>
     );
 }
-

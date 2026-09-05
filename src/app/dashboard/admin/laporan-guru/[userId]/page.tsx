@@ -1,11 +1,10 @@
-
 'use server';
 
 import { notFound } from 'next/navigation';
 import { adminDb as firestore } from '@/lib/firebase-admin';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ReportClientShell from './ReportClientShell';
-import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay } from 'date-fns';
+import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
 import { Timestamp } from 'firebase-admin/firestore';
 
 interface AttendanceRecord {
@@ -13,6 +12,7 @@ interface AttendanceRecord {
   checkInTime: Timestamp;
   checkOutTime?: Timestamp;
   manualEntry?: boolean;
+  reasonForUpdate?: string;
 }
 
 const getMonthDate = (monthParam: string | undefined): Date => {
@@ -61,32 +61,41 @@ export default async function UserReportDetailPage(props: {
             .where('checkInTime', '>=', monthStart)
             .where('checkInTime', '<=', monthEnd);
             
+        const attendanceFallbackQuery = firestore
+            .collection('users').doc(userId).collection('attendanceRecords')
+            .where('date', '>=', format(monthStart, 'yyyy-MM-dd'))
+            .where('date', '<=', format(monthEnd, 'yyyy-MM-dd'));
+
         const leaveHistoryQuery = firestore
             .collection('users').doc(userId).collection('leaveRequests')
-            .where('status', '==', 'approved')
-            .where('startDate', '<=', monthEnd);
+            .where('status', '==', 'approved');
 
-        const [attendanceHistorySnap, leaveHistorySnap] = await Promise.all([
+        const [attSnap, attFallbackSnap, leaveSnap] = await Promise.all([
             attendanceHistoryQuery.get(),
+            attendanceFallbackQuery.get(),
             leaveHistoryQuery.get(),
         ]);
         
-        const attendanceHistory: AttendanceRecord[] = attendanceHistorySnap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceRecord));
-        const leaveHistory = leaveHistorySnap.docs.map(d => d.data());
+        const attendanceMap = new Map();
+        [...attSnap.docs, ...attFallbackSnap.docs].forEach(d => {
+            const data = d.data();
+            const dStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+            if (dStr && !attendanceMap.has(dStr)) attendanceMap.set(dStr, { id: d.id, ...data });
+        });
 
-        const today = startOfDay(new Date());
-        const offDays: number[] = schoolConfig.offDays ?? [0, 6];
-        const holidays: string[] = monthlyConfig.holidays ?? [];
-
-        const attendanceMap = new Map(attendanceHistory.map(rec => [format(rec.checkInTime.toDate(), 'yyyy-MM-dd'), rec]));
         const leaveMap = new Map<string, any>();
-        leaveHistory.forEach(leave => {
+        leaveSnap.docs.forEach(d => {
+            const leave = d.data();
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 if (isWithinInterval(day, { start: monthStart, end: monthEnd })) {
                     leaveMap.set(format(day, 'yyyy-MM-dd'), leave);
                 }
             });
         });
+
+        const today = startOfDay(new Date());
+        const offDays: number[] = schoolConfig.offDays ?? [0, 6];
+        const holidays: string[] = monthlyConfig.holidays ?? [];
 
         const allDaysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
@@ -97,46 +106,62 @@ export default async function UserReportDetailPage(props: {
             const attendanceRecord = attendanceMap.get(dayStr);
             const leaveRecord = leaveMap.get(dayStr);
 
-            if (!isWorkingDay) {
-                return null;
-            }
+            if (!isWorkingDay) return null;
+            if (isBefore(today, day) && !isToday) return null;
 
             if (attendanceRecord) {
-                const checkInTime = attendanceRecord.checkInTime.toDate();
-                const checkOutTime = attendanceRecord.checkOutTime?.toDate();
-                let description;
+                const checkInTime = attendanceRecord.checkInTime?.toDate() || null;
+                const checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
+                let description = attendanceRecord.reasonForUpdate || 'Kehadiran penuh';
 
-                if (attendanceRecord.manualEntry) {
-                    description = attendanceRecord.reasonForUpdate || 'Kehadiran Penuh';
-                } else {
-                    if (checkOutTime) {
-                        description = 'Kehadiran Penuh';
-                    } else {
-                        description = 'Belum absen pulang';
+                if (checkInTime && schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
+                    const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
+                    const deadline = setMinutes(setHours(startOfDay(checkInTime), h), m);
+                    if (checkInTime > deadline && !description.toLowerCase().includes('dinas')) {
+                        description = 'Terlambat';
                     }
                 }
+
+                const sD = description.toLowerCase();
+                let pts = 0;
+                if (sD.includes('dinas') || sD.includes('luar sekolah') || sD === 'kehadiran penuh') pts = 1.0;
+                else if (sD.includes('telat') || sD.includes('terlambat') || sD.includes('cepat')) pts = 0.95;
+                else if (checkInTime && checkOutTime) pts = 1.0;
+                else pts = 0.5;
+
                 return { 
                     id: attendanceRecord.id, 
                     date: day, 
                     checkInTime, 
                     checkOutTime, 
-                    status: !checkOutTime && !isToday && isBefore(day, today) ? 'Alpa' : 'Hadir', 
-                    description 
+                    status: 'Hadir', 
+                    description,
+                    points: pts
                 };
             }
 
             if (leaveRecord) {
-                return { id: `${leaveRecord.id}-${dayStr}`, date: day, checkInTime: null, checkOutTime: null, status: leaveRecord.type, description: leaveRecord.reason };
+                const pts = leaveRecord.type === 'Sakit' ? 0.9 : 0.7;
+                return { 
+                    id: `${leaveRecord.id}-${dayStr}`, 
+                    date: day, 
+                    checkInTime: null, 
+                    checkOutTime: null, 
+                    status: leaveRecord.type, 
+                    description: leaveRecord.reason || leaveRecord.type,
+                    points: pts
+                };
             }
 
-            if (isToday || (isWorkingDay && isBefore(day, today))) {
+            if (isToday || isBefore(day, today)) {
                 return { 
                     id: dayStr, 
                     date: day, 
                     checkInTime: null, 
                     checkOutTime: null, 
                     status: 'Alpa', 
-                    description: 'Belum absen masuk'
+                    description: 'Tidak ada keterangan',
+                    points: 0.0
                 };
             }
 
@@ -165,16 +190,7 @@ export default async function UserReportDetailPage(props: {
         );
 
     } catch (error) {
-        console.error("Error rendering server component for user report:", error);
-        return (
-            <div className="p-4">
-                <Alert variant="destructive">
-                    <AlertTitle>Gagal Memuat Laporan</AlertTitle>
-                    <AlertDescription>
-                        Terjadi kesalahan saat mengambil data di server. Silakan coba lagi nanti.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
+        console.error("Error User Detail Report:", error);
+        return <div className="p-4"><Alert variant="destructive"><AlertTitle>Gagal</AlertTitle><AlertDescription>Kesalahan server.</AlertDescription></Alert></div>;
     }
 }
