@@ -143,6 +143,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 reasonForUpdate: 'Kehadiran penuh'
             };
 
+            // PROTEKSI: Gunakan jam masuk yang sudah ada jika ada
             if (day.checkInTime) {
                 data.checkInTime = Timestamp.fromDate(parseISO(day.checkInTime));
             } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat'].includes(type)) {
@@ -152,6 +153,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 data.checkInTime = null;
             }
 
+            // PROTEKSI: Gunakan jam pulang yang sudah ada jika ada
             if (day.checkOutTime) {
                 data.checkOutTime = Timestamp.fromDate(parseISO(day.checkOutTime));
             } else if (fillOut && ['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {

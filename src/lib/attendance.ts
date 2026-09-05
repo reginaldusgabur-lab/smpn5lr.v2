@@ -38,12 +38,23 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
     const s = status.toLowerCase();
     const d = description.toLowerCase();
 
+    // 1.0 POIN: Hadir Penuh / Dinas / Luar Sekolah
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
+
+    // 0.95 POIN: Terlambat / Pulang Cepat
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
+
+    // 0.9 POIN: Sakit
     if (s === 'sakit') return 0.9;
+
+    // 0.7 POIN: Izin
     if (s.includes('izin')) return 0.7;
+
+    // 0.5 POIN: Lupa Absen (Hanya Masuk atau Hanya Pulang)
     if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
+
+    // 0.0 POIN: Alpa
     return 0.0;
 };
 
@@ -348,8 +359,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 return { 
                     id: attendanceRecord.id, 
                     date: day, 
-                    checkInTime, 
-                    checkOutTime, 
+                    checkInTime: checkInTime ? checkInTime.toISOString() : null, 
+                    checkOutTime: checkOutTime ? checkOutTime.toISOString() : null, 
                     status: 'Hadir', 
                     description: description.charAt(0).toUpperCase() + description.slice(1), 
                     manualEntry: isManual,
@@ -377,8 +388,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         return report.filter(Boolean).sort((a: any, b: any) => b.date.getTime() - a.date.getTime()).map((item: any) => ({
             ...item,
             date: item.date.toISOString(),
-            checkInTime: item.checkInTime ? item.checkInTime.toISOString() : null,
-            checkOutTime: item.checkOutTime ? item.checkOutTime.toISOString() : null,
         }));
     } catch (e) {
         console.error("Fetch report error:", e);
