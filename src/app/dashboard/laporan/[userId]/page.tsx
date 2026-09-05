@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -164,57 +163,42 @@ export default function UserReportDetailPage() {
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
                 
+                const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
+
                 let dataToSave: any = {
                     userId, date: todayStr,
                     manualEntry: true, 
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang') {
+                // LOGIKA CERDAS: Gunakan jam masuk yang sudah ada jika tersedia
+                if (existingAtt?.checkInTime) {
+                    dataToSave.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
+                } else if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'dinas-siang' || type === 'pulang-cepat') {
                     const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
                     dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
-                    
-                    if (fillOut) {
-                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
-                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
-                    } else {
-                        dataToSave.checkOutTime = null;
-                    }
-                    dataToSave.reasonForUpdate = 'Kehadiran penuh';
-                } else if (type === 'terlambat') {
+                } else {
                     dataToSave.checkInTime = null;
-                    if (fillOut) {
-                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
-                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
-                    } else {
-                        dataToSave.checkOutTime = null;
-                    }
-                    dataToSave.reasonForUpdate = 'Terlambat';
-                } else if (type === 'dinas-pagi') {
-                    dataToSave.checkInTime = null;
-                    if (fillOut) {
-                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
-                        dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
-                    } else {
-                        dataToSave.checkOutTime = null;
-                    }
-                    dataToSave.reasonForUpdate = 'Dinas pagi';
-                } else if (type === 'luar-sekolah') {
-                    dataToSave.checkInTime = null;
-                    dataToSave.checkOutTime = null;
-                    dataToSave.reasonForUpdate = 'Kegiatan luar sekolah';
-                } else if (type === 'dinas-siang') {
-                    const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
-                    dataToSave.checkOutTime = null;
-                    dataToSave.reasonForUpdate = 'Dinas siang';
-                } else if (type === 'pulang-cepat') {
-                    const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
-                    const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = existingAtt?.checkInTime ? Timestamp.fromDate(parseISO(existingAtt.checkInTime)) : Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
-                    dataToSave.checkOutTime = null;
-                    dataToSave.reasonForUpdate = 'Pulang cepat';
                 }
+
+                // LOGIKA CERDAS: Gunakan jam pulang yang sudah ada jika tersedia
+                if (existingAtt?.checkOutTime) {
+                    dataToSave.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
+                } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi')) {
+                    const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
+                    dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                } else {
+                    dataToSave.checkOutTime = null;
+                }
+
+                // Set Reason based on type
+                if (type === 'terlambat') dataToSave.reasonForUpdate = 'Terlambat';
+                else if (type === 'dinas-pagi') dataToSave.reasonForUpdate = 'Dinas pagi';
+                else if (type === 'dinas-siang') dataToSave.reasonForUpdate = 'Dinas siang';
+                else if (type === 'pulang-cepat') dataToSave.reasonForUpdate = 'Pulang cepat';
+                else if (type === 'luar-sekolah') dataToSave.reasonForUpdate = 'Kegiatan luar sekolah';
+                else dataToSave.reasonForUpdate = 'Kehadiran penuh';
+
                 batch.set(doc(attendanceRef), dataToSave);
             } else {
                 const newLeaveDoc = doc(leaveRef);
