@@ -171,7 +171,6 @@ export default function UserReportDetailPage() {
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                // PRESERVASI DATA MANDIRI
                 if (existingAtt?.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
                 } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
@@ -190,7 +189,6 @@ export default function UserReportDetailPage() {
                     data.checkOutTime = null;
                 }
 
-                // Set Keterangan
                 if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
                 else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
                 else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
@@ -214,7 +212,7 @@ export default function UserReportDetailPage() {
             }
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Data kehadiran telah diperbarui.' });
+            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
             fetchData();
         } catch (err) { 
             toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); 
@@ -246,8 +244,7 @@ export default function UserReportDetailPage() {
         doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
         let currentY = 70;
-        doc.setFontSize(11);
-        doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
+        doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
         doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 10;
 
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
@@ -269,39 +266,26 @@ export default function UserReportDetailPage() {
             styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
             alternateRowStyles: { fillColor: [225, 242, 254] },
-            columnStyles: { 
-                0: { halign: 'center', cellWidth: 10 }, 
-                2: { halign: 'center', cellWidth: 32 }, 
-                3: { halign: 'center', cellWidth: 32 },
-                4: { halign: 'center', cellWidth: 20 },
-                5: { cellWidth: 'auto' }
-            }
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
         let finalTableY = (doc as any).lastAutoTable.finalY;
         const pageHeight = doc.internal.pageSize.getHeight();
-        
-        if (finalTableY > pageHeight - 75) {
-            doc.addPage();
-            finalTableY = 20;
-        }
+        if (finalTableY > pageHeight - 75) { doc.addPage(); finalTableY = 20; }
 
-        const signatureY = finalTableY + 15;
-        const signatureX = pageWidth - 85;
+        const sigY = finalTableY + 15;
+        const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setFontSize(10);
-        doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, signatureY);
-        doc.text('Mengetahui,', signatureX, signatureY + 6);
-        doc.text('Kepala Sekolah', signatureX, signatureY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
+        doc.setFontSize(10).text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, sigY);
+        doc.text('Mengetahui,', sigX, sigY + 6);
+        doc.text('Kepala Sekolah', sigX, sigY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, sigY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, sigY + 44);
 
         if (mConfig.isHolidayNotesActive) {
             const notesY = pageHeight - 35;
-            doc.setFontSize(8).setFont('times', 'bold');
-            doc.text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-            
-            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
+            doc.setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            if (mConfig.holidayNotes?.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
                 doc.setFontSize(8).setFont('times', 'normal');
                 let noteLineY = notesY + 4;
@@ -318,15 +302,10 @@ export default function UserReportDetailPage() {
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             const pHeight = doc.internal.pageSize.getHeight();
-            doc.setLineWidth(0.2);
-            doc.setDrawColor(0, 0, 0);
-            doc.line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
-            doc.setFontSize(8).setFont('times', 'italic');
-            doc.text(footerNote, margin, pHeight - 10);
-            doc.setFontSize(9).setFont('times', 'normal');
-            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
+            doc.setLineWidth(0.2).line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, pHeight - 10);
+            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
         }
-
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
 
@@ -363,14 +342,9 @@ export default function UserReportDetailPage() {
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div>
-                                <div className="space-y-0.5">
-                                    <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
-                                    <p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat riwayat kehadiran personil.</p>
-                                </div>
+                                <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat riwayat kehadiran personil.</p></div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={fetchData} disabled={isLoading || isMutating}>
-                                <RefreshCw className={cn("h-4 w-4", (isLoading || isMutating) && "animate-spin")} />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={fetchData} disabled={isLoading || isMutating}><RefreshCw className={cn("h-4 w-4", (isLoading || isMutating) && "animate-spin")} /></Button>
                         </div>
                     </div>
 
@@ -380,21 +354,12 @@ export default function UserReportDetailPage() {
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                                     <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1 min-w-max">
-                                        <CalendarDays className="h-4 w-4 text-primary/70" />
-                                        <div className="flex flex-col">
-                                            <span className="text-[7px] font-bold text-muted-foreground/50 leading-none">Tahun ajaran</span>
-                                            <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
-                                        </div>
+                                        <CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-bold text-muted-foreground/50 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
-                                </div>
+                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
                             </div>
-                            <div className="flex justify-end gap-3 px-2 sm:px-0">
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
-                            </div>
+                            <div className="flex justify-end gap-3 px-2 sm:px-0"><Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button></div>
                         </div>
 
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
@@ -414,9 +379,7 @@ export default function UserReportDetailPage() {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
-                                        const isManual = item.manualEntry === true;
-                                        const canEdit = isAdmin && (isAlpa || isManual || !hasIn || !hasOut);
-                                        
+                                        const canEdit = isAdmin && (isAlpa || !hasIn || !hasOut);
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
@@ -425,44 +388,38 @@ export default function UserReportDetailPage() {
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status))}>
-                                                            {item.status}
-                                                        </Badge>
+                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status))}>{item.status}</Badge>
                                                         {canEdit && (
                                                             <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button>
-                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                     {hasIn && !hasOut ? (
                                                                         <>
-                                                                            <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-pulang')}>Lengkapi absen pulang</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                         </>
                                                                     ) : !hasIn && hasOut ? (
                                                                         <>
-                                                                            <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
                                                                         </>
                                                                     ) : (
                                                                         <>
-                                                                            <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                                            <DropdownMenuSeparator className='my-1.5 opacity-50' />
-                                                                            <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
                                                                         </>
                                                                     )}
+                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         )}
@@ -481,32 +438,15 @@ export default function UserReportDetailPage() {
                                 <div className="grid grid-cols-2">
                                     <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
-                                        <div className="flex items-center gap-2">
-                                            <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" />
-                                            <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">
-                                                {stats?.totalPoints || "0.00"}
-                                            </span>
-                                        </div>
+                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats?.totalPoints || "0.00"}</span></div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
-                                        <div className="flex items-center gap-2">
-                                            <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
-                                            <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">
-                                                {stats?.persentase || "0.0%"}
-                                            </span>
-                                        </div>
+                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats?.persentase || "0.0%"}</span></div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2 px-1">
-                                    <Info className="h-3 w-3 text-muted-foreground" />
-                                    <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3>
-                                </div>
-                                <PointLegend />
-                            </div>
+                            <div className="space-y-3"><div className="flex items-center gap-2 px-1"><Info className="h-3 w-3 text-muted-foreground" /><h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3></div><PointLegend /></div>
                         </div>
                     </CardContent>
                 </Card>

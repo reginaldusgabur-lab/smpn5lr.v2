@@ -143,7 +143,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 reasonForUpdate: 'Kehadiran penuh'
             };
 
-            // Preservasi jam masuk
             if (day.checkInTime) {
                 data.checkInTime = Timestamp.fromDate(parseISO(day.checkInTime));
             } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat'].includes(type)) {
@@ -153,7 +152,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 data.checkInTime = null;
             }
 
-            // Preservasi jam pulang
             if (day.checkOutTime) {
                 data.checkOutTime = Timestamp.fromDate(parseISO(day.checkOutTime));
             } else if (fillOut && ['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
@@ -163,7 +161,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 data.checkOutTime = null;
             }
 
-            // Set reason
             if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
             else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
             else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
@@ -283,7 +280,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                                     </>
                                                 )}
                                                 <DropdownMenuSeparator className='my-1.5 opacity-50' />
-                                                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Ubah Status</DropdownMenuLabel>
+                                                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
                                                 {!hasIn && (
                                                     <>
                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(item, 'Sakit')}>Jadikan Sakit</DropdownMenuItem>

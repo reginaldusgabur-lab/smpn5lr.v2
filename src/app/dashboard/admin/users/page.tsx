@@ -240,8 +240,12 @@ export default function AdminUsersPage() {
 
     if (isAuthLoading || isUsersLoading) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
+                <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
+                </div>
             </div>
         );
     }

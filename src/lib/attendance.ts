@@ -34,30 +34,16 @@ const cleanDesc = (desc: any) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
-/**
- * Menghitung poin berdasarkan deskripsi dan kondisi absen.
- */
 const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
 
-    // 1. Poin Penuh (1.0): Hadir Penuh, Dinas, atau Kegiatan Luar Sekolah
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
-
-    // 2. Poin Terlambat / Pulang Cepat (0.95)
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
-
-    // 3. Poin Sakit (0.9)
     if (s === 'sakit') return 0.9;
-
-    // 4. Poin Izin Pribadi (0.7)
     if (s.includes('izin')) return 0.7;
-
-    // 5. Poin Setengah (Lupa Absen) (0.5): Hanya absen salah satu
     if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
-
-    // 6. Alpa (0.0): Tanpa keterangan sama sekali
     return 0.0;
 };
 
@@ -286,7 +272,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         ]);
 
         const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
-        
         const startStr = format(monthStart, 'yyyy-MM-dd');
         const endStr = format(monthEnd, 'yyyy-MM-dd');
 
@@ -351,23 +336,21 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                     }
                 }
 
-                // FIXED: Logic for missing punches
                 if (!checkOutTime) {
-                    description = isToday ? 'Belum absen pulang' : 'Belum absen pulang';
+                    description = 'Belum absen pulang';
                 }
                 if (!checkInTime && checkOutTime) {
                     description = 'Belum absen masuk';
                 }
                 
-                const statusLabel = 'Hadir'; 
                 const pts = calculatePoints('hadir', description, !!checkInTime, !!checkOutTime);
                 
                 return { 
                     id: attendanceRecord.id, 
                     date: day, 
-                    checkInTime: checkInTime, 
-                    checkOutTime: checkOutTime, 
-                    status: statusLabel, 
+                    checkInTime, 
+                    checkOutTime, 
+                    status: 'Hadir', 
                     description: description.charAt(0).toUpperCase() + description.slice(1), 
                     manualEntry: isManual,
                     points: pts
