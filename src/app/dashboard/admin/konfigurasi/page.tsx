@@ -291,7 +291,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
             <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 px-8 shadow-none" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                SIMPAN PENGATURAN BULANAN
+                SIMPAN PENGATURAN BULAN DAN CATATAN
             </Button>
         </CardFooter>
     </Card>

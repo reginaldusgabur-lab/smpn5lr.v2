@@ -121,14 +121,14 @@ export default function AdminUsersPage() {
     }, [usersData, userFilter, userSearch]);
 
     const userStats = useMemo(() => {
-        return filteredUsers.reduce((acc, curr) => {
+        return (usersData || []).reduce((acc, curr) => {
             if (curr.role === 'admin') return acc;
             acc.total++;
             if (curr.gender === 'Laki-laki') acc.lakiLaki++;
             else if (curr.gender === 'Perempuan') acc.perempuan++;
             return acc;
         }, { total: 0, lakiLaki: 0, perempuan: 0 });
-    }, [filteredUsers]);
+    }, [usersData]);
 
     const userForm = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),

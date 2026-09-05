@@ -19,7 +19,6 @@ function triggerDownload(data: any, fileName: string, fileType: string) {
 // Helper to sanitize position names for PDF
 const sanitizePosition = (pos: string) => {
     if (!pos) return '-';
-    // Menyingkat PPPK Paruh Waktu (PW) menjadi PPPK PW agar hemat ruang
     return pos.replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
 };
 
@@ -95,6 +94,7 @@ export function exportToPdf(
         const doc = new jsPDF();
         const pageCenter = doc.internal.pageSize.getWidth() / 2;
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 14;
 
         const config = reportConfig || {};
@@ -128,10 +128,7 @@ export function exportToPdf(
         doc.text(`Tahun Ajaran: ${tahunAjaran}`, pageCenter, 60, { align: 'center' });
 
         let currentY = 68;
-
-        // Table Headings
         const tableHead = [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']];
-        
         const tableRows = dataToExport.map((user, index) => [
             user.sequenceNumber || index + 1,
             user.name,
@@ -186,9 +183,6 @@ export function exportToPdf(
         });
 
         let finalTableY = (doc as any).lastAutoTable.finalY;
-        const pageHeight = doc.internal.pageSize.getHeight();
-        
-        // CHECK IF ENOUGH ROOM FOR SIGNATURE AND HOLIDAY NOTES
         if (finalTableY > pageHeight - 75) {
             doc.addPage();
             finalTableY = 20;
@@ -198,23 +192,18 @@ export function exportToPdf(
         const signatureX = pageWidth - 85;
         const today = format(new Date(), 'd MMMM yyyy', { locale: id });
 
-        doc.setFontSize(10);
-        doc.setFont('times', 'normal');
+        doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`${kotaLaporan}, ${today}`, signatureX, signatureY);
         doc.text('Mengetahui,', signatureX, signatureY + 6);
         doc.text('Kepala Sekolah', signatureX, signatureY + 12);
-        doc.setFont('times', 'bold');
-        doc.text(namaKepsek, signatureX, signatureY + 38);
-        doc.setFont('times', 'normal');
-        doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
+        doc.setFont('times', 'bold').text(namaKepsek, signatureX, signatureY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
 
-        // HOLIDAY NOTES (Above Footer Line - Only on last page)
+        // HOLIDAY NOTES & EFFECTIVE DAYS (Last Page only)
         if (mConfig.isHolidayNotesActive) {
             const notesY = pageHeight - 35;
-            doc.setFontSize(8).setFont('times', 'bold');
-            doc.text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-            
-            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
+            doc.setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            if (mConfig.holidayNotes?.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
                 doc.setFontSize(8).setFont('times', 'normal');
                 let noteLineY = notesY + 4;
@@ -230,18 +219,12 @@ export function exportToPdf(
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            const pHeight = doc.internal.pageSize.getHeight();
-            doc.setLineWidth(0.2);
-            doc.setDrawColor(0, 0, 0);
-            doc.line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
-            doc.setFontSize(8).setFont('times', 'italic');
-            doc.text(footerNote, margin, pHeight - 10);
-            doc.setFontSize(9).setFont('times', 'normal');
-            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
+            const ph = doc.internal.pageSize.getHeight();
+            doc.setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
+            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
-
         doc.save(fileName);
-
     } catch (error) {
         console.error("Error exporting to PDF:", error);
         alert("Terjadi kesalahan saat mengekspor ke PDF. Silakan coba lagi.");
