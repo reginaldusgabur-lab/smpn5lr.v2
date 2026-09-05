@@ -35,7 +35,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle, CalendarRange } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -112,6 +112,10 @@ export default function PengaturanPage() {
   const [reportCity, setReportCity] = useState('');
   const [academicYear, setAcademicYear] = useState('');
   const [reportFooterNote, setReportFooterNote] = useState('');
+  
+  // Holiday Notes Settings
+  const [isHolidayNotesActive, setIsHolidayNotesActive] = useState(false);
+  const [holidayNotesContent, setHolidayNotesContent] = useState('');
 
   const [isNotificationSaving, setIsNotificationSaving] = useState(false);
   const [notificationTitle, setNotificationTitle] = useState('');
@@ -155,6 +159,8 @@ export default function PengaturanPage() {
       reportCity: string;
       academicYear: string;
       reportFooterNote?: string;
+      isHolidayNotesActive?: boolean;
+      holidayNotesContent?: string;
       notificationTitle?: string;
       notificationContent?: string;
       isNotificationActive?: boolean;
@@ -183,6 +189,8 @@ export default function PengaturanPage() {
       setReportCity(schoolConfigData.reportCity ?? '');
       setAcademicYear(schoolConfigData.academicYear ?? '');
       setReportFooterNote(schoolConfigData.reportFooterNote ?? 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.');
+      setIsHolidayNotesActive(schoolConfigData.isHolidayNotesActive ?? false);
+      setHolidayNotesContent(schoolConfigData.holidayNotesContent ?? '');
       
       setNotificationTitle(schoolConfigData.notificationTitle ?? '');
       setNotificationContent(schoolConfigData.notificationContent ?? '');
@@ -322,7 +330,17 @@ export default function PengaturanPage() {
     if (!schoolConfigRef) return;
     setIsReportSaving(true);
     setDocumentNonBlocking(schoolConfigRef, {
-      governmentAgency, educationAgency, schoolName, address, headmasterName, headmasterNip, reportCity, academicYear, reportFooterNote
+      governmentAgency, 
+      educationAgency, 
+      schoolName, 
+      address, 
+      headmasterName, 
+      headmasterNip, 
+      reportCity, 
+      academicYear, 
+      reportFooterNote,
+      isHolidayNotesActive,
+      holidayNotesContent
     }, { merge: true });
     toast({ title: 'Disimpan', description: 'Data laporan diperbarui.' });
     setIsReportSaving(false);
@@ -482,6 +500,30 @@ export default function PengaturanPage() {
                       </div>
                   </div>
                   
+                  {/* HOLIDAY NOTES SECTION */}
+                  <div className="pt-8 border-t mt-6">
+                      <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <CalendarRange className="h-5 w-5 text-blue-500" />
+                            <div>
+                                <Label className="font-bold text-xs uppercase tracking-widest">Catatan Hari Libur di PDF</Label>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Muncul di atas garis catatan kaki pada laporan PDF.</p>
+                            </div>
+                          </div>
+                          <Switch checked={isHolidayNotesActive} onCheckedChange={setIsHolidayNotesActive} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Rincian Libur (Gunakan baris baru untuk setiap poin)</Label>
+                        <Textarea 
+                            placeholder="Contoh:&#10;1. Tanggal 17 : Libur HUT RI&#10;2. Tanggal 20 - 25 : Libur Semester" 
+                            value={holidayNotesContent} 
+                            onChange={e => setHolidayNotesContent(e.target.value)} 
+                            className="rounded-xl bg-muted/30 shadow-none min-h-[120px] font-bold text-xs" 
+                        />
+                        <p className="text-[9px] text-muted-foreground italic font-medium px-1">Tip: Masukkan rentang tanggal (misal 15-20) untuk menghindari rincian yang terlalu panjang.</p>
+                      </div>
+                  </div>
+                  
                   <div className="pt-8 border-t mt-6">
                       <div className="flex items-center justify-between mb-6">
                           <div className="flex items-center gap-3">
@@ -500,13 +542,11 @@ export default function PengaturanPage() {
                   </div>
 
                   <div className="pt-8 border-t mt-6">
-                      <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <Volume2 className="h-5 w-5 text-primary" />
-                            <div>
-                                <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom (Maks 1MB).</p>
-                            </div>
+                      <div className="flex items-center gap-3 mb-4">
+                          <Volume2 className="h-5 w-5 text-primary" />
+                          <div>
+                              <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
+                              <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom (Maks 1MB).</p>
                           </div>
                       </div>
                       <div className="flex flex-col gap-4 bg-muted/30 p-4 rounded-2xl border border-muted-foreground/10">

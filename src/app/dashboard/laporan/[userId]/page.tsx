@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -266,7 +267,7 @@ export default function UserReportDetailPage() {
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
-            safeFormat(item.date, 'eeee, d MMMM yyyy'),
+            safeFormat(item.date, 'eeee, dd MMMM yyyy'),
             (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
             safeFormat(item.checkOutTime, 'HH:mm:ss'),
             item.status,
@@ -291,20 +292,46 @@ export default function UserReportDetailPage() {
             }
         });
 
-        let finalY = (doc as any).lastAutoTable.finalY + 15;
-        if (finalY > doc.internal.pageSize.getHeight() - 65) {
+        let finalTableY = (doc as any).lastAutoTable.finalY;
+        const pageHeight = doc.internal.pageSize.getHeight();
+        
+        if (finalTableY > pageHeight - 75) {
             doc.addPage();
-            finalY = 20;
+            finalTableY = 20;
         }
 
+        const signatureY = finalTableY + 15;
         const signatureX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setFontSize(10);
-        doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, finalY);
-        doc.text('Mengetahui,', signatureX, finalY + 6);
-        doc.text('Kepala Sekolah', signatureX, finalY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, finalY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, finalY + 44);
+        doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, signatureY);
+        doc.text('Mengetahui,', signatureX, signatureY + 6);
+        doc.text('Kepala Sekolah', signatureX, signatureY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
+
+        // HOLIDAY NOTES (Above footer line)
+        if (config.isHolidayNotesActive && config.holidayNotesContent) {
+            const notesY = pageHeight - 35;
+            doc.setFontSize(8).setFont('times', 'bold');
+            doc.text('Keterangan Hari Libur:', margin, notesY);
+            doc.setFontSize(8).setFont('times', 'normal');
+            const splitNotes = doc.splitTextToSize(config.holidayNotesContent, pageWidth - (margin * 2));
+            doc.text(splitNotes, margin, notesY + 4);
+        }
+
+        const totalPages = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            const pHeight = doc.internal.pageSize.getHeight();
+            doc.setLineWidth(0.2);
+            doc.setDrawColor(0, 0, 0);
+            doc.line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
+            doc.setFontSize(8).setFont('times', 'italic');
+            doc.text(footerNote, margin, pHeight - 10);
+            doc.setFontSize(9).setFont('times', 'normal');
+            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
+        }
 
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
@@ -371,7 +398,6 @@ export default function UserReportDetailPage() {
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                 </div>
                             </div>
-
                             <div className="flex justify-end gap-3 px-2 sm:px-0">
                                 <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
                             </div>
@@ -401,7 +427,7 @@ export default function UserReportDetailPage() {
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">

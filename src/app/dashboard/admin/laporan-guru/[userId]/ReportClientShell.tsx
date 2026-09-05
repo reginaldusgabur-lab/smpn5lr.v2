@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -240,34 +241,47 @@ export default function ReportClientShell({
             columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
         });
 
-        let finalY = (doc as any).lastAutoTable.finalY + 15;
-        if (finalY > doc.internal.pageSize.getHeight() - 65) {
+        let finalTableY = (doc as any).lastAutoTable.finalY;
+        const pageHeight = doc.internal.pageSize.getHeight();
+        
+        if (finalTableY > pageHeight - 75) {
             doc.addPage();
-            finalY = 20;
+            finalTableY = 20;
         }
 
+        const signatureY = finalTableY + 15;
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
         const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
         doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalY);
-        doc.text('Mengetahui,', sigX, finalY + 6);
-        doc.text('Kepala Sekolah', sigX, finalY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, finalY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, finalY + 44);
+        doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, signatureY);
+        doc.text('Mengetahui,', sigX, signatureY + 6);
+        doc.text('Kepala Sekolah', sigX, signatureY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, signatureY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, signatureY + 44);
+
+        // HOLIDAY NOTES (Above Footer Line)
+        if (config.isHolidayNotesActive && config.holidayNotesContent) {
+            const notesY = pageHeight - 35;
+            doc.setFontSize(8).setFont('times', 'bold');
+            doc.text('Keterangan Hari Libur:', margin, notesY);
+            doc.setFontSize(8).setFont('times', 'normal');
+            const splitNotes = doc.splitTextToSize(config.holidayNotesContent, pageWidth - (margin * 2));
+            doc.text(splitNotes, margin, notesY + 4);
+        }
 
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            const pageHeight = doc.internal.pageSize.getHeight();
+            const pHeight = doc.internal.pageSize.getHeight();
             doc.setLineWidth(0.2);
             doc.setDrawColor(0, 0, 0);
-            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+            doc.line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
-            doc.text(footerNote, margin, pageHeight - 10);
+            doc.text(footerNote, margin, pHeight - 10);
             doc.setFontSize(9).setFont('times', 'normal');
-            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
         }
 
         doc.save(`Laporan_${userData.name?.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
@@ -300,23 +314,16 @@ export default function ReportClientShell({
 
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
-                            <FileText className="w-24 h-24 text-white" />
-                        </div>
-                        
+                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><FileText className="w-24 h-24 text-white" /></div>
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
-                                <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
-                                    <Calendar className="h-6 w-6" />
-                                </div>
+                                <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div>
                                 <div className="space-y-0.5">
                                     <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
                                     <p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat rincian catatan harian personil.</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}>
-                                <RefreshCw className={cn("h-4 w-4", isMutating && "animate-spin")} />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}><RefreshCw className={cn("h-4 w-4", isMutating && "animate-spin")} /></Button>
                         </div>
                     </div>
 
@@ -325,15 +332,7 @@ export default function ReportClientShell({
                             <div className="flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <div className="flex items-center">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-10 w-10 rounded-xl shrink-0 shadow-none text-primary hover:bg-white/10" 
-                                            onClick={() => handleMonthChange(-1)} 
-                                            disabled={!canGoPrev}
-                                        >
-                                            <ChevronLeft className="h-5 w-5 text-primary" />
-                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0 shadow-none text-primary hover:bg-white/10" onClick={() => handleMonthChange(-1)} disabled={!canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                                         <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1.5 min-w-max">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
@@ -342,29 +341,13 @@ export default function ReportClientShell({
                                             </div>
                                         </div>
                                     </div>
-                                    
                                     <div className="flex items-center gap-2">
-                                        <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">
-                                            {format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}
-                                        </span>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-10 w-10 rounded-xl shadow-none text-primary hover:bg-white/10" 
-                                            onClick={() => handleMonthChange(1)} 
-                                            disabled={!canGoNext}
-                                        >
-                                            <ChevronRight className="h-5 w-5 text-primary" />
-                                        </Button>
+                                        <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">{format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}</span>
+                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shadow-none text-primary hover:bg-white/10" onClick={() => handleMonthChange(1)} disabled={!canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="flex justify-end">
-                                <Button onClick={handleDownloadPdf} className="w-full sm:w-auto font-bold bg-primary text-white hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all">
-                                    <Download className="mr-2 h-4 w-4" />Unduh PDF
-                                </Button>
-                            </div>
+                            <div className="flex justify-end"><Button onClick={handleDownloadPdf} className="w-full sm:w-auto font-bold bg-primary text-white hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />Unduh PDF</Button></div>
                         </div>
 
                         <div className="overflow-x-auto border-t border-muted-foreground/5">
@@ -385,33 +368,19 @@ export default function ReportClientShell({
                                         reportDetails.map((item, index) => {
                                             const isProblematic = item.status === 'Alpa' || item.description.includes('Belum') || item.description.includes('Tanpa');
                                             const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
-                                            
                                             return (
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className="text-center font-mono text-xs font-bold">
-                                                        {isManualLate && !item.checkInTime ? <span className="text-red-600">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
-                                                    </TableCell>
+                                                    <TableCell className="text-center font-mono text-xs font-bold">{isManualLate && !item.checkInTime ? <span className="text-red-600">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
-                                                    <TableCell className="text-center">
-                                                        <Badge variant="outline" className="font-black text-[10px] bg-background text-primary border-primary/20">
-                                                            {item.points?.toFixed(2) || "0.00"}
-                                                        </Badge>
-                                                    </TableCell>
+                                                    <TableCell className="text-center"><Badge variant="outline" className="font-black text-[10px] bg-background text-primary border-primary/20">{item.points?.toFixed(2) || "0.00"}</Badge></TableCell>
                                                     <TableCell className="text-center">
                                                         <div className="flex items-center justify-center gap-2">
-                                                            <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description, !!item.checkOutTime))}>
-                                                                {isManualLate ? 'Hadir' : item.status}
-                                                            </Badge>
-                                                            
+                                                            <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description, !!item.checkOutTime))}>{isManualLate ? 'Hadir' : item.status}</Badge>
                                                             {isProblematic && (
                                                                 <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-primary/10">
-                                                                            <MoreVertical className="h-4 w-4 text-primary" />
-                                                                        </Button>
-                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-primary/10"><MoreVertical className="h-4 w-4 text-primary" /></Button></DropdownMenuTrigger>
                                                                     <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                         <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
@@ -433,9 +402,7 @@ export default function ReportClientShell({
                                             );
                                         })
                                     ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data.</TableCell>
-                                        </TableRow>
+                                        <TableRow><TableCell colSpan={7} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                             </Table>
@@ -448,28 +415,20 @@ export default function ReportClientShell({
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
                                         <div className="flex items-center gap-2">
                                             <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" />
-                                            <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">
-                                                {stats.totalPoints}
-                                            </span>
+                                            <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats.totalPoints}</span>
                                         </div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
                                         <div className="flex items-center gap-2">
                                             <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
-                                            <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">
-                                                {stats.persentase}
-                                            </span>
+                                            <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats.persentase}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                             <div className="space-y-3">
-                                <div className="flex items-center gap-2 px-1">
-                                    <Info className="h-3 w-3 text-muted-foreground" />
-                                    <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3>
-                                </div>
+                                <div className="flex items-center gap-2 px-1"><Info className="h-3 w-3 text-muted-foreground" /><h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3></div>
                                 <PointLegend />
                             </div>
                         </div>

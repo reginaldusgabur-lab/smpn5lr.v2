@@ -1,3 +1,4 @@
+
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -158,7 +159,7 @@ export function exportToPdf(
                 lineWidth: 0
             },
             alternateRowStyles: {
-                fillColor: [225, 242, 254] // Biru transparan cerah
+                fillColor: [225, 242, 254] 
             },
             styles: { 
               cellPadding: 1.0,
@@ -166,9 +167,9 @@ export function exportToPdf(
               font: 'times', 
               textColor: [0, 0, 0],
               lineColor: [200, 200, 200], 
-              lineWidth: 0, // HILANGKAN SELURUH GARIS
+              lineWidth: 0,
               valign: 'middle',
-              fillColor: [248, 250, 252] // Warna abu-abu kebiruan sangat muda (tidak putih polos)
+              fillColor: [248, 250, 252]
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 8 },
@@ -184,7 +185,10 @@ export function exportToPdf(
         });
 
         let finalTableY = (doc as any).lastAutoTable.finalY;
-        if (finalTableY > doc.internal.pageSize.getHeight() - 65) {
+        const pageHeight = doc.internal.pageSize.getHeight();
+        
+        // CHECK IF ENOUGH ROOM FOR SIGNATURE AND HOLIDAY NOTES
+        if (finalTableY > pageHeight - 75) {
             doc.addPage();
             finalTableY = 20;
         }
@@ -203,17 +207,27 @@ export function exportToPdf(
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
 
+        // HOLIDAY NOTES (Above Footer Line)
+        if (config.isHolidayNotesActive && config.holidayNotesContent) {
+            const notesY = pageHeight - 35;
+            doc.setFontSize(8).setFont('times', 'bold');
+            doc.text('Keterangan Hari Libur:', margin, notesY);
+            doc.setFontSize(8).setFont('times', 'normal');
+            const splitNotes = doc.splitTextToSize(config.holidayNotesContent, pageWidth - (margin * 2));
+            doc.text(splitNotes, margin, notesY + 4);
+        }
+
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            const pageHeight = doc.internal.pageSize.getHeight();
+            const pHeight = doc.internal.pageSize.getHeight();
             doc.setLineWidth(0.2);
             doc.setDrawColor(0, 0, 0);
-            doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+            doc.line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
             doc.setFontSize(8).setFont('times', 'italic');
-            doc.text(footerNote, margin, pageHeight - 10);
+            doc.text(footerNote, margin, pHeight - 10);
             doc.setFontSize(9).setFont('times', 'normal');
-            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+            doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
         }
 
         doc.save(fileName);
