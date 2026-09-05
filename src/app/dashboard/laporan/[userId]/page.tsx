@@ -298,6 +298,7 @@ export default function UserReportDetailPage() {
             }
         }
 
+        const footerNote = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
@@ -342,7 +343,10 @@ export default function UserReportDetailPage() {
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div>
-                                <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat riwayat kehadiran personil.</p></div>
+                                <div className="space-y-0.5">
+                                    <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
+                                    <p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat riwayat kehadiran personil.</p>
+                                </div>
                             </div>
                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={fetchData} disabled={isLoading || isMutating}><RefreshCw className={cn("h-4 w-4", (isLoading || isMutating) && "animate-spin")} /></Button>
                         </div>
