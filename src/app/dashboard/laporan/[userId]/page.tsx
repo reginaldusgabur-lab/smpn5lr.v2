@@ -165,41 +165,40 @@ export default function UserReportDetailPage() {
                 
                 const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
 
-                let dataToSave: any = {
+                let data: any = {
                     userId, date: todayStr,
                     manualEntry: true, 
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                // LOGIKA CERDAS: Gunakan jam masuk yang sudah ada jika tersedia
+                // PRESERVASI DATA MANDIRI
                 if (existingAtt?.checkInTime) {
-                    dataToSave.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
-                } else if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'dinas-siang' || type === 'pulang-cepat') {
+                    data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
+                } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                     const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                 } else {
-                    dataToSave.checkInTime = null;
+                    data.checkInTime = null;
                 }
 
-                // LOGIKA CERDAS: Gunakan jam pulang yang sudah ada jika tersedia
                 if (existingAtt?.checkOutTime) {
-                    dataToSave.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
+                    data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
                 } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi')) {
                     const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
-                    dataToSave.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                 } else {
-                    dataToSave.checkOutTime = null;
+                    data.checkOutTime = null;
                 }
 
-                // Set Reason based on type
-                if (type === 'terlambat') dataToSave.reasonForUpdate = 'Terlambat';
-                else if (type === 'dinas-pagi') dataToSave.reasonForUpdate = 'Dinas pagi';
-                else if (type === 'dinas-siang') dataToSave.reasonForUpdate = 'Dinas siang';
-                else if (type === 'pulang-cepat') dataToSave.reasonForUpdate = 'Pulang cepat';
-                else if (type === 'luar-sekolah') dataToSave.reasonForUpdate = 'Kegiatan luar sekolah';
-                else dataToSave.reasonForUpdate = 'Kehadiran penuh';
+                // Set Keterangan
+                if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
+                else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
+                else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
+                else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
+                else if (type === 'luar-sekolah') data.reasonForUpdate = 'Kegiatan luar sekolah';
+                else data.reasonForUpdate = 'Kehadiran penuh';
 
-                batch.set(doc(attendanceRef), dataToSave);
+                batch.set(doc(attendanceRef), data);
             } else {
                 const newLeaveDoc = doc(leaveRef);
                 batch.set(newLeaveDoc, {
@@ -297,7 +296,6 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
-        // HOLIDAY NOTES & WORK DAYS (Above footer line - Only on last page)
         if (mConfig.isHolidayNotesActive) {
             const notesY = pageHeight - 35;
             doc.setFontSize(8).setFont('times', 'bold');
@@ -417,8 +415,7 @@ export default function UserReportDetailPage() {
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
                                         const isManual = item.manualEntry === true;
-                                        const isMandiriSukses = hasIn && hasOut && !isManual;
-                                        const canEdit = isAdmin && !isMandiriSukses;
+                                        const canEdit = isAdmin && (isAlpa || isManual || !hasIn || !hasOut);
                                         
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
@@ -448,6 +445,8 @@ export default function UserReportDetailPage() {
                                                                         <>
                                                                             <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
                                                                         </>
                                                                     ) : (
                                                                         <>
@@ -460,6 +459,7 @@ export default function UserReportDetailPage() {
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
                                                                         </>
                                                                     )}

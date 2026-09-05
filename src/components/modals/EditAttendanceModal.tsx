@@ -265,9 +265,17 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                             <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                 <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                 {hasIn && !hasOut ? (
-                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
+                                                    <>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                    </>
                                                 ) : !hasIn && hasOut ? (
-                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                    <>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
+                                                    </>
                                                 ) : (
                                                     <>
                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
@@ -299,7 +307,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 </div>
                 <DialogFooter className="p-6 pt-0 gap-2">
                     <DialogClose asChild><Button variant="ghost" className="rounded-xl font-bold shadow-none h-11">Batal</Button></DialogClose>
-                    <Button onClick={handleSaveChanges} className="rounded-xl font-bold bg-primary uppercase text-[10px] tracking-widest shadow-none h-11" disabled={isLoading || isSaving || !Object.values(selectedDays).some(Boolean)}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Lengkapi Terpilih'}</Button>
+                    <Button onClick={handleSaveChanges} className="rounded-xl font-black bg-primary uppercase text-[10px] tracking-widest shadow-none h-11" disabled={isLoading || isSaving || !Object.values(selectedDays).some(Boolean)}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Lengkapi Terpilih'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

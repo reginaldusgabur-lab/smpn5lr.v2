@@ -168,7 +168,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v217_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v221_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -349,6 +349,14 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                         const deadline = setMinutes(setHours(startOfDay(checkInTime), h), m);
                         if (checkInTime > deadline) description = 'Terlambat';
                     }
+                }
+
+                // FIXED: Logic for missing punches
+                if (!checkOutTime) {
+                    description = isToday ? 'Belum absen pulang' : 'Belum absen pulang';
+                }
+                if (!checkInTime && checkOutTime) {
+                    description = 'Belum absen masuk';
                 }
                 
                 const statusLabel = 'Hadir'; 
