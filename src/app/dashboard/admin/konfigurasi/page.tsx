@@ -33,7 +33,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -62,6 +63,8 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [holidays, setHolidays] = useState<Date[]>([]);
   const [academicYear, setAcademicYear] = useState('');
+  const [isHolidayNotesActive, setIsHolidayNotesActive] = useState(false);
+  const [holidayNotesContent, setHolidayNotesContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const monthlyConfigId = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
@@ -83,9 +86,13 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
     if (monthlyConfigData) {
       setHolidays((monthlyConfigData.holidays ?? []).map((d: string) => new Date(`${d}T00:00:00`)));
       setAcademicYear(monthlyConfigData.academicYear || schoolConfig?.academicYear || '');
+      setIsHolidayNotesActive(monthlyConfigData.isHolidayNotesActive ?? false);
+      setHolidayNotesContent(monthlyConfigData.holidayNotesContent ?? '');
     } else {
       setHolidays([]);
       setAcademicYear(schoolConfig?.academicYear || '');
+      setIsHolidayNotesActive(false);
+      setHolidayNotesContent('');
     }
   }, [monthlyConfigData, schoolConfig]);
 
@@ -114,6 +121,8 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         holidays: holidays.map(d => format(d, 'yyyy-MM-dd')),
         manualWorkDays: calculatedWorkDays, 
         academicYear: academicYear,
+        isHolidayNotesActive,
+        holidayNotesContent
       };
       await setDoc(monthlyConfigRef, dataToSave, { merge: true });
       toast({ title: 'Berhasil', description: 'Pengaturan bulanan telah disimpan.' });
@@ -221,9 +230,6 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                         onChange={e => setAcademicYear(e.target.value)}
                         className="h-11 rounded-xl bg-muted/40 font-bold shadow-none"
                     />
-                    <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
-                        Input ini akan menjadi Tahun Ajaran otomatis saat mengunduh laporan bulan ini.
-                    </p>
                 </div>
 
                 <div className="pt-4 border-t border-muted-foreground/10 space-y-4">
@@ -233,10 +239,31 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                         <div className="h-11 w-full rounded-xl bg-muted/40 border border-muted-foreground/10 flex items-center px-4 font-black text-primary shadow-inner">
                             {isMonthlyConfigLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : `${calculatedWorkDays} hari`}
                         </div>
-                        <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
-                            Dihitung otomatis untuk akurasi persentase kehadiran.
-                        </p>
                     </div>
+                </div>
+
+                {/* HOLIDAY NOTES SECTION MOVED HERE */}
+                <div className="pt-4 border-t border-muted-foreground/10 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Catatan Hari Libur (PDF)</Label>
+                        <Switch checked={isHolidayNotesActive} onCheckedChange={setIsHolidayNotesActive} />
+                    </div>
+                    {isHolidayNotesActive && (
+                        <div className="space-y-2">
+                            <Textarea 
+                                placeholder="Contoh:&#10;1. Tanggal 17: HUT RI&#10;2. Tanggal 20-25: Libur Semester" 
+                                value={holidayNotesContent}
+                                onChange={e => setHolidayNotesContent(e.target.value)}
+                                className="rounded-xl bg-muted/40 font-bold text-xs shadow-none min-h-[120px]"
+                            />
+                            <div className="flex items-start gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                                <Info className="h-3 w-3 text-blue-500 shrink-0 mt-0.5" />
+                                <p className="text-[9px] text-blue-600 font-bold leading-tight">
+                                    Catatan ini akan tampil di bagian bawah laporan PDF khusus bulan ini.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </CardContent>

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { notFound } from 'next/navigation';
@@ -159,6 +160,7 @@ export default async function UserReportDetailPage(props: {
                 initialReportData={reportData}
                 initialMonth={currentMonth.toISOString()}
                 initialSchoolConfig={schoolConfig}
+                initialMonthlyConfig={monthlyConfig}
             />
         );
 

@@ -43,6 +43,7 @@ interface ClientShellProps {
   initialReportData: ReportDetail[];
   initialMonth: string;
   initialSchoolConfig: any;
+  initialMonthlyConfig: any;
 }
 
 const PointLegend = () => (
@@ -71,7 +72,8 @@ export default function ReportClientShell({
     initialUserData,
     initialReportData,
     initialMonth,
-    initialSchoolConfig
+    initialSchoolConfig,
+    initialMonthlyConfig
 }: ClientShellProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -189,6 +191,7 @@ export default function ReportClientShell({
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = initialSchoolConfig || ({} as any);
+        const mConfig = initialMonthlyConfig || ({} as any);
 
         doc.setFont('times', 'bold').setFontSize(14);
         doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
@@ -203,7 +206,7 @@ export default function ReportClientShell({
         doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}`, centerX, 54, { align: 'center' });
         doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`Tahun Ajaran: ${config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+        doc.text(`Tahun Ajaran: ${mConfig.academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
         let currentY = 70;
         doc.setFontSize(11).setFont('times', 'normal');
@@ -261,13 +264,13 @@ export default function ReportClientShell({
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, signatureY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, signatureY + 44);
 
-        // HOLIDAY NOTES (Above Footer Line)
-        if (config.isHolidayNotesActive && config.holidayNotesContent) {
+        // MONTHLY HOLIDAY NOTES (Above Footer Line)
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotesContent) {
             const notesY = pageHeight - 35;
             doc.setFontSize(8).setFont('times', 'bold');
             doc.text('Keterangan Hari Libur:', margin, notesY);
             doc.setFontSize(8).setFont('times', 'normal');
-            const splitNotes = doc.splitTextToSize(config.holidayNotesContent, pageWidth - (margin * 2));
+            const splitNotes = doc.splitTextToSize(mConfig.holidayNotesContent, pageWidth - (margin * 2));
             doc.text(splitNotes, margin, notesY + 4);
         }
 
@@ -337,7 +340,7 @@ export default function ReportClientShell({
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
                                                 <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-[0.1em] leading-none">Thn ajaran</span>
-                                                <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{initialSchoolConfig?.academicYear || "-"}</span>
+                                                <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{initialMonthlyConfig?.academicYear || initialSchoolConfig?.academicYear || "-"}</span>
                                             </div>
                                         </div>
                                     </div>
