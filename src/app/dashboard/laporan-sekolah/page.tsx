@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -320,13 +321,22 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, signatureY + 44);
 
             // HOLIDAY NOTES (Above Footer Line - Only on last page)
-            if (mConfig.isHolidayNotesActive && mConfig.holidayNotesContent) {
+            if (mConfig.isHolidayNotesActive) {
                 const notesY = pageHeight - 35;
                 doc.setFontSize(8).setFont('times', 'bold');
-                doc.text('Keterangan Hari Libur:', margin, notesY);
-                doc.setFontSize(8).setFont('times', 'normal');
-                const splitNotes = doc.splitTextToSize(mConfig.holidayNotesContent, pageWidth - (margin * 2));
-                doc.text(splitNotes, margin, notesY + 4);
+                doc.text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+                
+                if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
+                    doc.text('Keterangan Hari Libur:', margin, notesY);
+                    doc.setFontSize(8).setFont('times', 'normal');
+                    let noteLineY = notesY + 4;
+                    mConfig.holidayNotes.forEach((note: any, idx: number) => {
+                        const text = `${idx + 1}. ${note.content}`;
+                        const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                        doc.text(splitText, margin, noteLineY);
+                        noteLineY += (splitText.length * 4);
+                    });
+                }
             }
 
             const totalPages = (doc as any).internal.getNumberOfPages();
@@ -393,7 +403,7 @@ export default function SchoolReportPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label>
-                                    <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none shadow-2xl"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
+                                    <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none shadow-2xl"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
                                 </div>
                                 <div className="space-y-1.5 md:col-span-2">
                                     <Label className="text-[10px] font-bold text-muted-foreground ml-1">Cari nama</Label>
@@ -491,7 +501,7 @@ export default function SchoolReportPage() {
                                         <PieChart>
                                             <Pie data={statsData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">{statsData.pie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Pie>
                                             <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
-                                            <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-[11px] font-medium text-muted-foreground">{v}</span>} />
+                                            <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-xs font-medium text-muted-foreground">{v}</span>} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -517,3 +527,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+
