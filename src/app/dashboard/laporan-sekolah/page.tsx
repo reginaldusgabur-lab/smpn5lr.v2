@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -56,6 +57,7 @@ export default function SchoolReportPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
     const [academicYear, setAcademicYear] = useState("");
+    const [monthlyConfig, setMonthlyConfig] = useState<any>(null);
     const isMounted = useRef(true);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
@@ -90,12 +92,13 @@ export default function SchoolReportPage() {
                 getDocs(usersQuery)
             ]);
 
-            const monthlyConfig = monthlySnap.exists() ? monthlySnap.data() : {};
-            const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
+            const mConfig = monthlySnap.exists() ? monthlySnap.data() : {};
             if (isMounted.current) {
-                setAcademicYear(monthlyConfig.academicYear || schoolConfigData.academicYear || "");
+                setMonthlyConfig(mConfig);
+                setAcademicYear(mConfig.academicYear || schoolConfigData.academicYear || "");
             }
+            
+            const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
             const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('checkInTime', '>=', start), where('checkInTime', '<=', end));
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
@@ -128,7 +131,7 @@ export default function SchoolReportPage() {
             });
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
-            const holidays: string[] = (monthlyConfig as any)?.holidays ?? [];
+            const holidays: string[] = (mConfig as any)?.holidays ?? [];
             const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
             const today = startOfDay(new Date());
@@ -235,9 +238,11 @@ export default function SchoolReportPage() {
         try {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
             const centerX = pageWidth / 2;
             const margin = 14;
             const config = schoolConfigData || ({} as any);
+            const mConfig = monthlyConfig || {};
 
             doc.setFont('times', 'bold').setFontSize(14);
             doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
@@ -296,34 +301,45 @@ export default function SchoolReportPage() {
                 }
             });
 
-            let finalY = (doc as any).lastAutoTable.finalY + 15;
-            if (finalY > doc.internal.pageSize.getHeight() - 65) {
+            let finalY = (doc as any).lastAutoTable.finalY;
+            if (finalY > pageHeight - 75) {
                 doc.addPage();
                 finalY = 20;
             }
 
+            const signatureY = finalY + 15;
             const sigX = pageWidth - 85;
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
             const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
             doc.setFontSize(10).setFont('times', 'normal');
-            doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalY);
-            doc.text('Mengetahui,', sigX, finalY + 6);
-            doc.text('Kepala Sekolah', sigX, finalY + 12);
-            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, finalY + 38);
-            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, finalY + 44);
+            doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, signatureY);
+            doc.text('Mengetahui,', sigX, signatureY + 6);
+            doc.text('Kepala Sekolah', sigX, signatureY + 12);
+            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, signatureY + 38);
+            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, signatureY + 44);
+
+            // HOLIDAY NOTES (Above Footer Line - Only on last page)
+            if (mConfig.isHolidayNotesActive && mConfig.holidayNotesContent) {
+                const notesY = pageHeight - 35;
+                doc.setFontSize(8).setFont('times', 'bold');
+                doc.text('Keterangan Hari Libur:', margin, notesY);
+                doc.setFontSize(8).setFont('times', 'normal');
+                const splitNotes = doc.splitTextToSize(mConfig.holidayNotesContent, pageWidth - (margin * 2));
+                doc.text(splitNotes, margin, notesY + 4);
+            }
 
             const totalPages = (doc as any).internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
-                const pageHeight = doc.internal.pageSize.getHeight();
+                const pHeight = doc.internal.pageSize.getHeight();
                 doc.setLineWidth(0.2);
                 doc.setDrawColor(0, 0, 0);
-                doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+                doc.line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
                 doc.setFontSize(8).setFont('times', 'italic');
-                doc.text(footerNote, margin, pageHeight - 10);
+                doc.text(footerNote, margin, pHeight - 10);
                 doc.setFontSize(9).setFont('times', 'normal');
-                doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+                doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
             }
 
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);

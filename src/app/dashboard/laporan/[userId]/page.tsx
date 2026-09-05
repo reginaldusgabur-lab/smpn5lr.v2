@@ -77,6 +77,7 @@ export default function UserReportDetailPage() {
     const [isMutating, setIsMutating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [academicYear, setAcademicYear] = useState("");
+    const [monthlyConfig, setMonthlyConfig] = useState<any>(null);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
@@ -93,12 +94,12 @@ export default function UserReportDetailPage() {
         setError(null);
         try {
             const userRef = doc(firestore, 'users', userId);
-            const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
+            const mRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
             
             const [userSnap, reportData, monthlyConfigSnap, statsRes] = await Promise.all([
                 getDoc(userRef),
                 fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData),
-                getDoc(monthlyConfigRef),
+                getDoc(mRef),
                 calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })
             ]);
 
@@ -109,6 +110,7 @@ export default function UserReportDetailPage() {
                 setMonthlyReportData(reportData);
                 setStats(statsRes);
                 const mData = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
+                setMonthlyConfig(mData);
                 setAcademicYear(mData.academicYear || schoolConfigData.academicYear || "");
             }
         } catch (err: any) {
@@ -243,6 +245,7 @@ export default function UserReportDetailPage() {
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = schoolConfigData || ({} as any);
+        const mConfig = monthlyConfig || {};
 
         doc.setFont('times', 'bold').setFontSize(14);
         doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
@@ -310,13 +313,13 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, signatureY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, signatureY + 44);
 
-        // HOLIDAY NOTES (Above footer line)
-        if (config.isHolidayNotesActive && config.holidayNotesContent) {
+        // HOLIDAY NOTES (Above footer line - Only on last page)
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotesContent) {
             const notesY = pageHeight - 35;
             doc.setFontSize(8).setFont('times', 'bold');
             doc.text('Keterangan Hari Libur:', margin, notesY);
             doc.setFontSize(8).setFont('times', 'normal');
-            const splitNotes = doc.splitTextToSize(config.holidayNotesContent, pageWidth - (margin * 2));
+            const splitNotes = doc.splitTextToSize(mConfig.holidayNotesContent, pageWidth - (margin * 2));
             doc.text(splitNotes, margin, notesY + 4);
         }
 

@@ -242,7 +242,6 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                     </div>
                 </div>
 
-                {/* HOLIDAY NOTES SECTION MOVED HERE */}
                 <div className="pt-4 border-t border-muted-foreground/10 space-y-4">
                     <div className="flex items-center justify-between">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Catatan Hari Libur (PDF)</Label>
@@ -259,7 +258,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                             <div className="flex items-start gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
                                 <Info className="h-3 w-3 text-blue-500 shrink-0 mt-0.5" />
                                 <p className="text-[9px] text-blue-600 font-bold leading-tight">
-                                    Catatan ini akan tampil di bagian bawah laporan PDF khusus bulan ini.
+                                    Catatan ini akan tampil di bagian bawah laporan PDF khusus bulan ini (Halaman Terakhir).
                                 </p>
                             </div>
                         </div>
@@ -496,12 +495,8 @@ export default function KonfigurasiAbsenPage() {
 
   if (isLoading || !isAdmin) {
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Skeleton className="h-96 rounded-3xl" />
-                <Skeleton className="lg:col-span-2 h-96 rounded-3xl" />
-            </div>
-            <Skeleton className="h-96 rounded-3xl" />
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
     );
   }

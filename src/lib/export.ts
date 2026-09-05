@@ -79,7 +79,8 @@ export function exportToPdf(
   currentMonth: Date,
   activeTab: string,
   reportConfig: any,
-  academicYearOverride?: string
+  academicYearOverride?: string,
+  monthlyConfig?: any
 ) {
     try {
         const monthName = currentMonth.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
@@ -98,6 +99,7 @@ export function exportToPdf(
         const margin = 14;
 
         const config = reportConfig || {};
+        const mConfig = monthlyConfig || {};
         const instansi = (config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase();
         const dinas = (config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase();
         const sekolah = (config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase();
@@ -207,13 +209,13 @@ export function exportToPdf(
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
 
-        // HOLIDAY NOTES (Above Footer Line)
-        if (config.isHolidayNotesActive && config.holidayNotesContent) {
+        // HOLIDAY NOTES (Above Footer Line - Only on last page)
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotesContent) {
             const notesY = pageHeight - 35;
             doc.setFontSize(8).setFont('times', 'bold');
             doc.text('Keterangan Hari Libur:', margin, notesY);
             doc.setFontSize(8).setFont('times', 'normal');
-            const splitNotes = doc.splitTextToSize(config.holidayNotesContent, pageWidth - (margin * 2));
+            const splitNotes = doc.splitTextToSize(mConfig.holidayNotesContent, pageWidth - (margin * 2));
             doc.text(splitNotes, margin, notesY + 4);
         }
 
