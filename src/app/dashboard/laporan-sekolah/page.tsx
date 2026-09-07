@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -313,7 +312,7 @@ export default function SchoolReportPage() {
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
             const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
-            doc.setFontSize(10).setFont('times', 'normal');
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal');
             doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, signatureY);
             doc.text('Mengetahui,', sigX, signatureY + 6);
             doc.text('Kepala Sekolah', sigX, signatureY + 12);
@@ -323,15 +322,23 @@ export default function SchoolReportPage() {
             // HOLIDAY NOTES (Above Footer Line - Only on last page)
             if (mConfig.isHolidayNotesActive) {
                 const notesY = pageHeight - 35;
-                doc.setFontSize(8).setFont('times', 'bold');
+                doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold');
                 doc.text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
                 
                 if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
                     doc.text('Keterangan Hari Libur:', margin, notesY);
-                    doc.setFontSize(8).setFont('times', 'normal');
                     let noteLineY = notesY + 4;
                     mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                        const text = `${idx + 1}. ${note.content}`;
+                        // Set color based on isRed flag
+                        if (note.isRed) {
+                            doc.setTextColor(255, 0, 0); // Red
+                            doc.setFont('times', 'bold');
+                        } else {
+                            doc.setTextColor(0, 0, 0); // Black
+                            doc.setFont('times', 'normal');
+                        }
+
+                        const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
                         const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
                         doc.text(splitText, margin, noteLineY);
                         noteLineY += (splitText.length * 4);
@@ -343,7 +350,7 @@ export default function SchoolReportPage() {
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
                 const pHeight = doc.internal.pageSize.getHeight();
-                doc.setLineWidth(0.2);
+                doc.setTextColor(0, 0, 0).setLineWidth(0.2);
                 doc.setDrawColor(0, 0, 0);
                 doc.line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
                 doc.setFontSize(8).setFont('times', 'italic');
@@ -501,7 +508,7 @@ export default function SchoolReportPage() {
                                         <PieChart>
                                             <Pie data={statsData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">{statsData.pie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Pie>
                                             <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
-                                            <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-xs font-medium text-muted-foreground">{v}</span>} />
+                                            <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-[11px] font-medium text-muted-foreground">{v}</span>} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -527,4 +534,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-

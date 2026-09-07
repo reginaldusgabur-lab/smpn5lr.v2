@@ -20,6 +20,7 @@ function triggerDownload(data: any, fileName: string, fileType: string) {
 // Helper to sanitize position names for PDF
 const sanitizePosition = (pos: string) => {
     if (!pos) return '-';
+    // Menyingkat PPPK Paruh Waktu (PW) menjadi PPPK PW agar hemat ruang
     return pos.replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
 };
 
@@ -193,7 +194,7 @@ export function exportToPdf(
         const signatureX = pageWidth - 85;
         const today = format(new Date(), 'd MMMM yyyy', { locale: id });
 
-        doc.setFontSize(10).setFont('times', 'normal');
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal');
         doc.text(`${kotaLaporan}, ${today}`, signatureX, signatureY);
         doc.text('Mengetahui,', signatureX, signatureY + 6);
         doc.text('Kepala Sekolah', signatureX, signatureY + 12);
@@ -206,17 +207,20 @@ export function exportToPdf(
         if (mConfig.isHolidayNotesActive) {
             const notesY = pageHeight - 35;
             doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-            
             if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
                 let noteLineY = notesY + 4;
                 mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
+                    // Set color and font style based on isRed flag
+                    if (note.isRed) {
+                        doc.setTextColor(255, 0, 0); // Red
+                        doc.setFont('times', 'bold');
+                    } else {
+                        doc.setTextColor(0, 0, 0); // Black
+                        doc.setFont('times', 'normal');
+                    }
                     
-                    // Apply Red Color if requested
-                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-
+                    const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
                     const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
                     doc.text(splitText, margin, noteLineY);
                     noteLineY += (splitText.length * 4);
@@ -228,8 +232,8 @@ export function exportToPdf(
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
-            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'italic').setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.text(footerNote, margin, ph - 10);
+            doc.setTextColor(0, 0, 0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(fileName);
