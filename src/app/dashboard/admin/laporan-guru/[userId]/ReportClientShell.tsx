@@ -243,7 +243,7 @@ export default function ReportClientShell({
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 40 },
+            margin: { bottom: 65 },
             styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
             alternateRowStyles: { fillColor: [225, 242, 254] },
@@ -251,7 +251,7 @@ export default function ReportClientShell({
         });
 
         let finalTableY = (doc as any).lastAutoTable.finalY;
-        if (finalTableY > pageHeight - 75) {
+        if (finalTableY > pageHeight - 95) {
             doc.addPage();
             finalTableY = 20;
         }
@@ -267,7 +267,7 @@ export default function ReportClientShell({
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, finalTableY + 59);
 
         if (mConfig.isHolidayNotesActive) {
-            const notesY = pageHeight - 35;
+            const notesY = pageHeight - 58;
             doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
             if (mConfig.holidayNotes?.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
@@ -319,7 +319,7 @@ export default function ReportClientShell({
                     </div>
                 </div>
 
-                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-2xl p-0">
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl p-0">
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
                         <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><FileText className="w-24 h-24 text-white" /></div>
                         <div className="flex items-center justify-between relative z-10">

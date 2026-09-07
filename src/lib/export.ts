@@ -20,7 +20,6 @@ function triggerDownload(data: any, fileName: string, fileType: string) {
 // Helper to sanitize position names for PDF
 const sanitizePosition = (pos: string) => {
     if (!pos) return '-';
-    // Menyingkat PPPK Paruh Waktu (PW) menjadi PPPK PW agar hemat ruang
     return pos.replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
 };
 
@@ -111,7 +110,6 @@ export function exportToPdf(
         const tahunAjaran = academicYearOverride || config.academicYear || '-';
         const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
-        // Header (Kop Surat)
         doc.setFont('times', 'bold').setFontSize(14);
         doc.text(instansi, pageCenter, 15, { align: 'center' });
         doc.text(dinas, pageCenter, 21, { align: 'center' });
@@ -122,7 +120,6 @@ export function exportToPdf(
         doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-        // Judul Laporan
         doc.setFont('times', 'bold').setFontSize(12);
         doc.text('LAPORAN KEHADIRAN GURU/TENDIK', pageCenter, 48, { align: 'center' });
         doc.text(`Bulan ${monthName}`, pageCenter, 54, { align: 'center' });
@@ -148,7 +145,7 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 40 },
+            margin: { bottom: 65 },
             headStyles: { 
                 fillColor: [52, 152, 219], 
                 textColor: 255, 
@@ -185,7 +182,8 @@ export function exportToPdf(
         });
 
         let finalTableY = (doc as any).lastAutoTable.finalY;
-        if (finalTableY > pageHeight - 75) {
+        // MENAMBAH THRESHOLD AGAR TIDAK TERPOTONG FOOTER
+        if (finalTableY > pageHeight - 95) {
             doc.addPage();
             finalTableY = 20;
         }
@@ -203,21 +201,18 @@ export function exportToPdf(
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
 
-        // HOLIDAY NOTES & EFFECTIVE DAYS (Last Page only)
+        // HOLIDAY NOTES & EFFECTIVE DAYS (Last Page only) - DINAIKKAN AGAR TIDAK TERPOTONG GARIS
         if (mConfig.isHolidayNotesActive) {
-            const notesY = pageHeight - 35;
+            const notesY = pageHeight - 58; // NAIK DARI 35 KE 58
             doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
             if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
                 let noteLineY = notesY + 4;
                 mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    // Set color and font style based on isRed flag
                     if (note.isRed) {
-                        doc.setTextColor(255, 0, 0); // Red
-                        doc.setFont('times', 'bold');
+                        doc.setTextColor(255, 0, 0).setFont('times', 'bold');
                     } else {
-                        doc.setTextColor(0, 0, 0); // Black
-                        doc.setFont('times', 'normal');
+                        doc.setTextColor(0, 0, 0).setFont('times', 'normal');
                     }
                     
                     const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;

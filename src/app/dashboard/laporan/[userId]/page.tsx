@@ -224,22 +224,26 @@ export default function UserReportDetailPage() {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
+        const pHeight = doc.internal.pageSize.getHeight();
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = schoolConfigData || ({} as any);
         const mConfig = monthlyConfig || {};
 
-        doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+        doc.setFont('times', 'bold').setFontSize(14);
+        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
         doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
-        doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
-        doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
+        doc.setFont('times', 'normal').setFontSize(9);
+        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
         doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
         doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
-        doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+        doc.setFontSize(10).setFont('times', 'normal');
+        doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
         let currentY = 70;
         doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
@@ -260,7 +264,7 @@ export default function UserReportDetailPage() {
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 40 },
+            margin: { bottom: 65 },
             styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
             alternateRowStyles: { fillColor: [225, 242, 254] },
@@ -268,7 +272,8 @@ export default function UserReportDetailPage() {
         });
 
         let finalTableY = (doc as any).lastAutoTable.finalY;
-        if (finalTableY > pageHeight - 75) { doc.addPage(); finalTableY = 20; }
+        // MENINGKATKAN JARAK AMAN
+        if (finalTableY > pHeight - 95) { doc.addPage(); finalTableY = 20; }
 
         const sigY = finalTableY + 15;
         const sigX = pageWidth - 85;
@@ -280,7 +285,7 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, sigY + 44);
 
         if (mConfig.isHolidayNotesActive) {
-            const notesY = pageHeight - 35;
+            const notesY = pHeight - 58; // NAIK KE 58 DARI 35
             doc.setTextColor(0,0,0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
             if (mConfig.holidayNotes?.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
@@ -394,8 +399,8 @@ export default function UserReportDetailPage() {
                                                         {canEdit && (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
-                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                    <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                     {hasIn && !hasOut ? (
                                                                         <>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-pulang')}>Lengkapi absen pulang</DropdownMenuItem>
@@ -447,7 +452,7 @@ export default function UserReportDetailPage() {
                                         <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats?.totalPoints || "0.00"}</span></div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 Kalender leading-none">Persentase Kehadiran</p>
                                         <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats?.persentase || "0.0%"}</span></div>
                                     </div>
                                 </div>
