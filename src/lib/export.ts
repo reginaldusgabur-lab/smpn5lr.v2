@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -135,7 +134,7 @@ export function exportToPdf(
             user.name,
             user.nip || '-',
             sanitizePosition(user.position || '-'),
-            user.hadir, 
+            Math.ceil(user.hadir), 
             user.izin, 
             user.sakit, 
             user.alpa, 
@@ -165,7 +164,6 @@ export function exportToPdf(
               fontSize: 10,
               font: 'times', 
               textColor: [0, 0, 0],
-              lineColor: [200, 200, 200], 
               lineWidth: 0,
               valign: 'middle',
               fillColor: [248, 250, 252]
@@ -183,65 +181,58 @@ export function exportToPdf(
             }
         });
 
-        // --- SMART PAGE LOGIC ---
-        // Calculate needed space for footer blocks
+        // --- SMART BOTTOM ANCHOR LOGIC ---
+        const footerLineY = pageHeight - 15;
+        const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
         const notesLineHeight = 5;
-        const notesHeaderHeight = 12;
-        let notesHeight = 0;
-        if (mConfig.isHolidayNotesActive) {
-            notesHeight = notesHeaderHeight + (mConfig.holidayNotes?.length || 0) * notesLineHeight;
-        }
+        const labelAreaHeight = 16; 
         
-        const totalFooterSpaceNeeded = signatureHeight + notesHeight + 15; // 15 buffer
-        const currentYPos = (doc as any).lastAutoTable.finalY;
-        const bottomSafeLimit = pageHeight - 20;
+        let totalNotesHeight = 0;
+        const processedNotes = [];
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
+            mConfig.holidayNotes.forEach((n: any, idx: number) => {
+                const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                totalNotesHeight += (split.length * notesLineHeight);
+                processedNotes.push({ split, isRed: n.isRed });
+            });
+        }
 
-        if (currentYPos + totalFooterSpaceNeeded > bottomSafeLimit) {
+        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        const finalTableY = (doc as any).lastAutoTable.finalY;
+
+        let closureStartY;
+        if (finalTableY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
             doc.addPage();
-            currentY = 20;
+            closureStartY = 20;
         } else {
-            currentY = currentYPos + 10;
-        }
-
-        // Print Effective Days and Holiday Notes
-        if (mConfig.isHolidayNotesActive) {
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
-            currentY += 8;
-            
-            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
-                doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
-                currentY += 5;
-                mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    if (note.isRed) {
-                        doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    } else {
-                        doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    }
-                    
-                    const noteText = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
-                    const splitText = doc.splitTextToSize(noteText, pageWidth - (margin * 2));
-                    doc.text(splitText, margin, currentY);
-                    currentY += (splitText.length * notesLineHeight);
-                });
-            }
-        }
-
-        // Signature block placement
-        currentY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
-        // Ensure signature also doesn't hit the bottom
-        if (currentY + signatureHeight > bottomSafeLimit) {
-            doc.addPage();
-            currentY = 20;
+            closureStartY = finalTableY + 10;
         }
 
         const signatureX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${kotaLaporan}, ${todayStr}`, signatureX, currentY);
-        doc.text('Mengetahui,', signatureX, currentY + 6);
-        doc.text('Kepala Sekolah', signatureX, currentY + 12);
-        doc.setFont('times', 'bold').text(namaKepsek, signatureX, currentY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, currentY + 44);
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${kotaLaporan}, ${todayStr}`, signatureX, closureStartY);
+        doc.text('Mengetahui,', signatureX, closureStartY + 6);
+        doc.text('Kepala Sekolah', signatureX, closureStartY + 12);
+        doc.setFont('times', 'bold').text(namaKepsek, signatureX, closureStartY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, closureStartY + 44);
+
+        if (mConfig.isHolidayNotesActive) {
+            const listItemsStartY = bottomSafeLimit - totalNotesHeight;
+            const labelsStartY = listItemsStartY - labelAreaHeight + 2;
+
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+
+            let noteCursorY = listItemsStartY;
+            processedNotes.forEach((note) => {
+                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                doc.text(note.split, margin, noteCursorY);
+                noteCursorY += note.split.length * notesLineHeight;
+            });
+        }
 
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
@@ -253,7 +244,6 @@ export function exportToPdf(
         }
         doc.save(fileName);
     } catch (error) {
-        console.error("Error exporting to PDF:", error);
-        alert("Terjadi kesalahan saat mengekspor ke PDF. Silakan coba lagi.");
+        console.error("Error exporting PDF:", error);
     }
 }

@@ -1,9 +1,8 @@
-
 'use server';
 /**
  * @fileOverview AI Flow untuk menghasilkan kutipan motivasi yang SANGAT UNIK per pengguna.
- * Menggunakan kombinasi ID Pengguna (userId), Nama, Tanggal, dan Seed Kreatif (creativeSeed) 
- * untuk menjamin variasi yang berbeda antar personil pada hari yang sama.
+ * Menggunakan identitas unik pengguna (userId & userName) untuk menjamin variasi yang berbeda 
+ * antar personil meskipun pada hari dan status absen yang sama.
  */
 
 import { ai } from '../genkit';
@@ -28,23 +27,23 @@ export type QuoteInput = z.infer<typeof QuoteInputSchema>;
 export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
 /**
- * Kutipan cadangan (fallback) berbasis hash untuk menjamin keunikan 
+ * Kutipan cadangan berbasis hash untuk menjamin keunikan 
  * bahkan saat kondisi offline atau kegagalan API AI.
  */
 const fallbacks = {
   in: [
-    "Kopi pertama adalah doa, mengajar adalah ibadah. Semangat menyinari kelas!",
-    "Setiap pagi adalah kesempatan untuk menjadi inspirasi bagi murid-murid Anda.",
-    "Dedikasi Anda hari ini adalah pondasi masa depan mereka. Selamat mengabdi.",
-    "Awali dengan senyum, akhiri dengan kepuasan telah berbagi ilmu.",
-    "Pagi yang cerah untuk jiwa-jiwa yang ikhlas mendidik. Selamat bertugas!"
+    "Pagi adalah awal baru untuk jiwa yang ikhlas mendidik. Semangat menyinari kelas!",
+    "Kopi pagi ini adalah doa, pengabdian adalah ibadah. Selamat bertugas.",
+    "Setiap murid adalah kanvas kosong, jadilah kuas yang memberi warna hari ini.",
+    "Dedikasi Anda adalah pondasi masa depan mereka. Mari menyapa kelas dengan senyum.",
+    "Tantangan hari ini adalah peluang untuk memberi inspirasi. Selamat mengabdi."
   ],
   out: [
-    "Tuntas sudah perjuangan hari ini. Waktunya mengisi ulang energi di rumah.",
-    "Istirahatlah dengan tenang, besok dunia butuh semangat Anda kembali.",
-    "Hati-hati di jalan, keluarga tercinta menanti cerita hebat Anda hari ini.",
-    "Satu hari luar biasa telah terlewati. Terima kasih atas ketulusan Anda.",
-    "Rebahan adalah apresiasi terbaik untuk diri sendiri sore ini. Selamat bersantai!"
+    "Tuntas sudah perjuangan hari ini. Waktunya pulang dan mengisi ulang energi.",
+    "Istirahatlah dengan tenang, keluarga menanti cerita hebat Anda di rumah.",
+    "Beban kerja tuntas, kehangatan keluarga menunggu. Hati-hati di jalan.",
+    "Terima kasih atas ketulusan Anda mengabdi hari ini. Selamat bersantai.",
+    "Besok adalah petualangan baru, sore ini adalah kemenangan untuk diri sendiri."
   ]
 };
 
@@ -80,13 +79,13 @@ const generateQuoteFlow = ai.defineFlow(
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.5, // Meningkatkan kreativitas maksimal untuk variasi kata
+          temperature: 1.5, // Maksimal kreativitas untuk variasi kata tak terduga
           topP: 0.95,
           topK: 60,
           maxOutputTokens: 300,
         },
         system: `Anda adalah "E-SPENLI Muse", generator kutipan yang SANGAT personal, cerdas, dan variatif. 
-TUGAS: Buat SATU kutipan pendek (maks 25 kata) yang BENAR-BENAR UNIK untuk satu personil spesifik.
+TUGAS: Buat SATU kutipan pendek (maks 25 kata) yang BENAR-BENAR UNIK untuk personil spesifik.
 
 STRATEGI KEUNIKAN MUTLAK:
 1. Gunakan ID UNIK (${input.userId}) dan NAMA (${input.userName}) sebagai benih (anchor) gaya bahasa Anda.
@@ -98,15 +97,13 @@ STRATEGI KEUNIKAN MUTLAK:
 7. JANGAN MENYURUH ISTIRAHAT SAAT MASUK. JANGAN MENYURUH KERJA SAAT PULANG.
 
 ATURAN KETAT:
-- Jangan gunakan emoji.
-- Jangan buat pantun atau puisi panjang.
-- Fokus pada esensi profesi ${input.role} di sekolah.
-- Pastikan kalimat terasa segar, baru, dan "HANYA" untuk pengguna tersebut.`,
+- Jangan gunakan emoji. Jangan buat pantun.
+- Pastikan kalimat terasa segar, baru, dan "HANYA" untuk pengguna tersebut hari ini.`,
         prompt: `BUAT KUTIPAN EKSKLUSIF DAN UNIK SEKARANG:
 - Target Personil: ${input.userName}
 - ID Keamanan Unik: ${input.userId}
-- Waktu Sesi: ${isEntry ? 'Absen Masuk (Mulai)' : 'Absen Pulang (Selesai)'}
-- Tanggal Berjalan: ${input.date}
+- Waktu Sesi: ${isEntry ? 'Absen Masuk' : 'Absen Pulang'}
+- Tanggal: ${input.date}
 - Token Variasi: ${input.creativeSeed}
 
 Gunakan semua parameter di atas untuk meramu kalimat yang belum pernah Anda keluarkan sebelumnya. Pastikan kutipan untuk ${input.userName} berbeda dengan kutipan untuk orang lain di hari yang sama.`,

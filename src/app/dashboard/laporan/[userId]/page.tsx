@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -224,7 +223,7 @@ export default function UserReportDetailPage() {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
+        const pHeight = doc.internal.pageSize.getHeight();
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = schoolConfigData || ({} as any);
@@ -245,9 +244,9 @@ export default function UserReportDetailPage() {
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
-        let currentY = 70;
-        doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
-        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 10;
+        let currentYStart = 70;
+        doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentYStart); currentYStart += 6;
+        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentYStart); currentYStart += 10;
 
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = monthlyReportData.map((item, index) => [
@@ -260,62 +259,80 @@ export default function UserReportDetailPage() {
         ]);
 
         autoTable(doc, {
-            startY: currentY,
+            startY: currentYStart,
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 40 },
+            margin: { bottom: 65 },
             styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
             alternateRowStyles: { fillColor: [225, 242, 254] },
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
-        let finalTableY = (doc as any).lastAutoTable.finalY;
-        const pHeight = doc.internal.pageSize.getHeight();
-        if (finalTableY > pHeight - 75) { doc.addPage(); finalTableY = 20; }
-
-        const sigY = finalTableY + 15;
-        const sigX = pageWidth - 85;
-        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setTextColor(0,0,0).setFontSize(10).text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, sigY);
-        doc.text('Mengetahui,', sigX, sigY + 6);
-        doc.text('Kepala Sekolah', sigX, sigY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, sigY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, sigY + 44);
-
-        if (mConfig.isHolidayNotesActive) {
-            const notesY = pHeight - 35;
-            doc.setTextColor(0,0,0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-            if (mConfig.holidayNotes?.length > 0) {
-                doc.text('Keterangan Hari Libur:', margin, notesY);
-                let noteLineY = notesY + 4;
-                mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    // Cek warna merah
-                    if (note.isRed) {
-                        doc.setTextColor(255, 0, 0); // Merah
-                        doc.setFont('times', 'bold');
-                    } else {
-                        doc.setTextColor(0, 0, 0); // Hitam
-                        doc.setFont('times', 'normal');
-                    }
-                    
-                    const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
-                    const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
-                    doc.text(splitText, margin, noteLineY);
-                    noteLineY += (splitText.length * 4);
-                });
-            }
+        // --- SMART BOTTOM ANCHOR LOGIC ---
+        const footerLineY = pHeight - 15;
+        const bottomSafeLimit = footerLineY - 2; 
+        const signatureHeight = 45;
+        const notesLineHeight = 5;
+        const labelAreaHeight = 16; 
+        
+        let totalNotesHeight = 0;
+        const processedNotes = [];
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
+            mConfig.holidayNotes.forEach((n: any, idx: number) => {
+                const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                totalNotesHeight += (split.length * notesLineHeight);
+                processedNotes.push({ split, isRed: n.isRed });
+            });
         }
 
-        const footerNote = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
-        const totalPages = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
+        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        const finalTableY = (doc as any).lastAutoTable.finalY;
+
+        let closureStartY;
+        if (finalTableY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
+            doc.addPage();
+            closureStartY = 20;
+        } else {
+            closureStartY = finalTableY + 10;
+        }
+
+        // Render Signature (Top part of closure)
+        const sigX = pageWidth - 85;
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+        doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
+        doc.text('Mengetahui,', sigX, closureStartY + 6);
+        doc.text('Kepala Sekolah', sigX, closureStartY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
+
+        // Render Notes (ANCHORED TO BOTTOM LINE)
+        if (mConfig.isHolidayNotesActive) {
+            const listItemsStartY = bottomSafeLimit - totalNotesHeight;
+            const labelsStartY = listItemsStartY - labelAreaHeight + 2;
+
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7.5);
+
+            let noteCursorY = listItemsStartY;
+            processedNotes.forEach((note) => {
+                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                doc.text(note.split, margin, noteCursorY);
+                noteCursorY += note.split.length * notesLineHeight;
+            });
+        }
+
+        const footerNoteText = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
+        const totalPagesCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPagesCount; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
             doc.setTextColor(0,0,0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
-            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNoteText, margin, ph - 10);
+            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPagesCount}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
@@ -472,4 +489,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
