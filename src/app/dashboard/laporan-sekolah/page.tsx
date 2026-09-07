@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -79,16 +80,10 @@ export default function SchoolReportPage() {
             const monthId = format(currentMonth, 'yyyy-MM');
 
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthId);
-            const usersQuery = query(
-                collection(firestore, 'users'), 
-                where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-                where('status', '==', 'Aktif')
-            );
             
-            const [monthlySnap, usersSnap] = await Promise.all([
-                getDoc(monthlyConfigRef),
-                getDocs(usersQuery)
-            ]);
+            // Robust user fetching: Fetch all and filter roles in memory to avoid missing index issues
+            const usersSnap = await getDocs(collection(firestore, 'users'));
+            const monthlySnap = await getDoc(monthlyConfigRef);
 
             const mConfig = monthlySnap.exists() ? monthlySnap.data() : {};
             if (isMounted.current) {
@@ -96,7 +91,9 @@ export default function SchoolReportPage() {
                 setAcademicYear(mConfig.academicYear || schoolConfigData.academicYear || "");
             }
             
-            const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const allUsers = usersSnap.docs
+                .map(d => ({ id: d.id, ...d.data() } as any))
+                .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
 
             const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('checkInTime', '>=', start), where('checkInTime', '<=', end));
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
@@ -111,7 +108,7 @@ export default function SchoolReportPage() {
             const attendanceByUserId: Record<string, any[]> = {};
             [...attSnap.docs, ...attFallbackSnap.docs].forEach(d => {
                 const data = d.data();
-                const uid = data.userId || d.ref.parent.parent?.id;
+                const uid = data.userId || d.ref.parent.parent?.id || d.ref.path.split('/')[1];
                 if (uid) {
                     const existing = attendanceByUserId[uid] || [];
                     const dStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : null);
@@ -124,7 +121,7 @@ export default function SchoolReportPage() {
             const leaveByUserId: Record<string, any[]> = {};
             leaveSnap.docs.forEach(d => {
                 const data = d.data();
-                const uid = data.userId || d.ref.parent.parent?.id;
+                const uid = data.userId || d.ref.parent.parent?.id || d.ref.path.split('/')[1];
                 if (uid) (leaveByUserId[uid] = leaveByUserId[uid] || []).push(data);
             });
 
@@ -254,7 +251,6 @@ export default function SchoolReportPage() {
                 columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 8: { halign: 'right', cellWidth: 15 } }
             });
 
-            // --- BOTTOM ANCHOR LOGIC ---
             const footerLineY = pageHeight - 15;
             const bottomSafeLimit = footerLineY - 2; 
             const signatureHeight = 45;
@@ -283,7 +279,6 @@ export default function SchoolReportPage() {
                 closureStartY = currentTableEndY + 10;
             }
 
-            // Render Signature (Top part of closure)
             const signatureX = pageWidth - 85;
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
             doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, closureStartY);
@@ -292,13 +287,12 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, closureStartY + 38);
             doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, closureStartY + 44);
 
-            // Render Notes (ANCHORED TO BOTTOM LINE)
             if (mConfig.isHolidayNotesActive) {
                 const listItemsStartY = bottomSafeLimit - totalNotesHeight;
                 const labelsStartY = listItemsStartY - labelAreaHeight + 2;
 
                 doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7.5);
+                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
 
                 let noteCursorY = listItemsStartY;
                 processedNotes.forEach((note) => {
@@ -455,4 +449,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-

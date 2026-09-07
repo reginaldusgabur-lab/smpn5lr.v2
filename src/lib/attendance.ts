@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
@@ -38,23 +39,12 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
     const s = status.toLowerCase();
     const d = description.toLowerCase();
 
-    // 1.0 POIN: Hadir Penuh / Dinas / Luar Sekolah
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
-
-    // 0.95 POIN: Terlambat / Pulang Cepat
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
-
-    // 0.9 POIN: Sakit
     if (s === 'sakit') return 0.9;
-
-    // 0.7 POIN: Izin
     if (s.includes('izin')) return 0.7;
-
-    // 0.5 POIN: Lupa Absen (Hanya Masuk atau Hanya Pulang)
     if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
-
-    // 0.0 POIN: Alpa
     return 0.0;
 };
 
@@ -84,22 +74,20 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
         const isHoliday = !isManualOff && (isCalendarHoliday || isRecurringOff);
 
+        // Fetch all potential users first to be more robust
+        const usersSnap = await getDocs(collection(firestore, 'users'));
+        const allStaff = usersSnap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as any))
+            .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
+
         if (isManualOff || isHoliday) {
             return { 
-                totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, 
+                totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, 
                 isHoliday: isHoliday, 
                 isCalendarHoliday: isCalendarHoliday,
                 isManualDisabled: isManualOff 
             };
         }
-
-        const usersQuery = query(
-            collection(firestore, 'users'), 
-            where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-            where('status', '==', 'Aktif')
-        );
-        const usersSnap = await getDocs(usersQuery);
-        const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         const attendanceQuery = query(
             collectionGroup(firestore, 'attendanceRecords'),
@@ -165,7 +153,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v228_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v302_${userId}_${format(start, 'yyyyMM')}`;
     
     const cachedStats = getFromCache(cacheKey);
     if (cachedStats) return cachedStats;
@@ -283,6 +271,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         ]);
 
         const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
+        
         const startStr = format(monthStart, 'yyyy-MM-dd');
         const endStr = format(monthEnd, 'yyyy-MM-dd');
 
