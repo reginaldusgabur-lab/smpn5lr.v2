@@ -8,7 +8,7 @@ import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMont
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, PieChart as PieIcon, Award, AlertCircle, Thermometer, FileText, RefreshCw } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, Eye, CalendarDays, RefreshCw, FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Label } from '@/components/ui/label';
 import {
@@ -23,7 +23,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -165,8 +164,8 @@ export default function SchoolReportPage() {
 
                 (leaveByUserId[u.id] || []).forEach(leave => {
                     eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
-                        const dayStr = format(day, 'yyyy-MM-dd');
-                        if (workingDaysSet.has(dayStr) && !processedDates.has(dayStr)) {
+                        const dStr = format(day, 'yyyy-MM-dd');
+                        if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
                             let p = 0;
                             if (leave.type === 'Sakit') { p = 0.9; sakitCount++; }
                             else if (leave.type === 'Izin' || leave.type === 'Izin Pribadi') { p = 0.7; izinCount++; }
@@ -207,29 +206,6 @@ export default function SchoolReportPage() {
     }, [loadData, user?.uid, isUserLoading, schoolConfigData]);
 
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
-
-    const statsData = useMemo(() => {
-        const totals = filteredReports.reduce((acc, curr) => {
-            acc.hadir += curr.totalHadir;
-            acc.izin += curr.totalIzin;
-            acc.sakit += curr.totalSakit;
-            acc.alpa += curr.totalAlpa;
-            return acc;
-        }, { hadir: 0, izin: 0, sakit: 0, alpa: 0 });
-
-        const pie = [
-            { name: 'Hadir', value: Math.round(totals.hadir), color: '#22c55e' },
-            { name: 'Izin', value: totals.izin, color: '#f59e0b' },
-            { name: 'Sakit', value: totals.sakit, color: '#f97316' },
-            { name: 'Alpa', value: totals.alpa, color: '#ef4444' },
-        ];
-
-        const topRajin = [...filteredReports].sort((a, b) => b.persentaseNum - a.persentaseNum).slice(0, 3);
-        const topSakit = [...filteredReports].sort((a, b) => b.totalSakit - a.totalSakit).slice(0, 3);
-        const topAlpa = [...filteredReports].sort((a, b) => b.totalAlpa - a.totalAlpa).slice(0, 3);
-
-        return { pie, topRajin, topSakit, topAlpa };
-    }, [filteredReports]);
 
     const handleDownloadPdf = async () => {
         if (!filteredReports.length || isExporting) return;
@@ -282,7 +258,7 @@ export default function SchoolReportPage() {
             const footerLineY = pageHeight - 15;
             const bottomSafeLimit = footerLineY - 2; 
             const signatureHeight = 45;
-            const notesLineHeight = 4;
+            const notesLineHeight = 5;
             const labelAreaHeight = 16; 
             
             let totalNotesHeight = 0;
@@ -322,7 +298,7 @@ export default function SchoolReportPage() {
                 const labelsStartY = listItemsStartY - labelAreaHeight + 2;
 
                 doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 6.5);
+                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7.5);
 
                 let noteCursorY = listItemsStartY;
                 processedNotes.forEach((note) => {
@@ -411,7 +387,7 @@ export default function SchoolReportPage() {
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
-                                    <TableRow className="border-none">
+                                    <TableRow className="border-none h-11">
                                         <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none h-11">No</TableHead>
                                         <TableHead className="min-w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Nama & Nip</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Hadir</TableHead>
@@ -475,44 +451,6 @@ export default function SchoolReportPage() {
                         </div>
                     </CardContent>
                 </Card>
-
-                {!isReportLoading && filteredReports.length > 0 && (
-                    <Card className="border border-muted-foreground/10 shadow-md rounded-xl overflow-hidden bg-card">
-                        <CardHeader className="p-6 border-b border-muted-foreground/5">
-                            <div className="flex items-center gap-3">
-                                <PieIcon className="h-5 w-5 text-primary" />
-                                <div><CardTitle className="text-lg font-bold">Statistik Kehadiran</CardTitle><CardDescription className="text-xs font-medium">Rekapitulasi performa bulan ini.</CardDescription></div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                                <div className="h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie data={statsData.pie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">{statsData.pie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Pie>
-                                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} hari`, 'Jumlah']} />
-                                            <Legend verticalAlign="bottom" height={36} formatter={(v) => <span className="text-[11px] font-medium text-muted-foreground">{v}</span>} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex items-start gap-4">
-                                        <Award className="h-6 w-6 text-green-600 mt-1" />
-                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-green-600/60">Paling rajin (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topRajin.map((u, idx) => u.persentaseNum > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-green-600">{u.persentase}</span></div>)}</div></div>
-                                    </div>
-                                    <div className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-start gap-4">
-                                        <Thermometer className="h-6 w-6 text-orange-600 mt-1" />
-                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-orange-600/60">Sering sakit (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topSakit.map((u, idx) => u.totalSakit > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-orange-600">{u.totalSakit} hari</span></div>)}</div></div>
-                                    </div>
-                                    <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-start gap-4">
-                                        <AlertCircle className="h-6 w-6 text-red-600 mt-1" />
-                                        <div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-widest text-red-600/60">Sering alpa (Top 3)</p><div className="mt-2 space-y-1.5">{statsData.topAlpa.map((u, idx) => u.totalAlpa > 0 && <div key={u.uid} className="flex justify-between items-center"><span className="font-bold text-sm truncate max-w-[180px]">{idx + 1}. {u.name}</span><span className="text-[10px] font-black text-red-600">{u.totalAlpa} hari</span></div>)}</div></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
             </div>
         </div>
     );
