@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -56,6 +57,7 @@ export default function SchoolReportPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
     const [academicYear, setAcademicYear] = useState("");
+    const [monthlyConfig, setMonthlyConfig] = useState<any>(null);
     const isMounted = useRef(true);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
@@ -90,12 +92,13 @@ export default function SchoolReportPage() {
                 getDocs(usersQuery)
             ]);
 
-            const monthlyConfig = monthlySnap.exists() ? monthlySnap.data() : {};
-            const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
+            const mConfig = monthlySnap.exists() ? monthlySnap.data() : {};
             if (isMounted.current) {
-                setAcademicYear(monthlyConfig.academicYear || schoolConfigData.academicYear || "");
+                setMonthlyConfig(mConfig);
+                setAcademicYear(mConfig.academicYear || schoolConfigData.academicYear || "");
             }
+            
+            const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
             const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('checkInTime', '>=', start), where('checkInTime', '<=', end));
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
@@ -128,7 +131,7 @@ export default function SchoolReportPage() {
             });
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
-            const holidays: string[] = (monthlyConfig as any)?.holidays ?? [];
+            const holidays: string[] = (mConfig as any)?.holidays ?? [];
             const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
             const today = startOfDay(new Date());
@@ -235,25 +238,22 @@ export default function SchoolReportPage() {
         try {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
             const centerX = pageWidth / 2;
             const margin = 14;
             const config = schoolConfigData || ({} as any);
+            const mConfig = monthlyConfig || {};
 
-            doc.setFont('times', 'bold').setFontSize(14);
-            doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+            doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
             doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
-            doc.setFontSize(12);
-            doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
-            doc.setFont('times', 'normal').setFontSize(9);
-            doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+            doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
+            doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
             doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
             doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-            doc.setFont('times', 'bold').setFontSize(12);
-            doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
+            doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
             doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
-            doc.setFontSize(10).setFont('times', 'normal');
-            doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+            doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
             const tableRows = filteredReports.map((item, index) => [
               item.sequenceNumber || index + 1, 
@@ -266,64 +266,75 @@ export default function SchoolReportPage() {
               item.totalAlpa, 
               item.persentase
             ]);
+
             autoTable(doc, {
                 startY: 68,
                 head: [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']],
                 body: tableRows,
                 theme: 'striped',
-                margin: { bottom: 40 },
-                styles: { 
-                    font: 'times', 
-                    fontSize: 10, 
-                    cellPadding: 1.0, 
-                    valign: 'middle', 
-                    textColor: [0, 0, 0], 
-                    lineColor: [200, 200, 200], 
-                    lineWidth: 0 
-                },
+                margin: { bottom: 65 },
+                styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
                 alternateRowStyles: { fillColor: [235, 245, 255] },
-                columnStyles: { 
-                  0: { halign: 'center', cellWidth: 8 }, 
-                  1: { cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 36 }, 
-                  3: { halign: 'center', cellWidth: 14 }, 
-                  4: { halign: 'center', cellWidth: 13 }, 
-                  5: { halign: 'center', cellWidth: 10 }, 
-                  6: { halign: 'center', cellWidth: 13 }, 
-                  7: { halign: 'center', cellWidth: 10 }, 
-                  8: { halign: 'right', cellWidth: 15 } 
-                }
+                columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 8: { halign: 'right', cellWidth: 15 } }
             });
 
-            let finalY = (doc as any).lastAutoTable.finalY + 15;
-            if (finalY > doc.internal.pageSize.getHeight() - 65) {
+            // --- SMART PAGE LOGIC ---
+            const signatureHeight = 45;
+            const notesLineHeight = 5;
+            const notesHeaderHeight = 12;
+            let notesHeight = 0;
+            if (mConfig.isHolidayNotesActive) {
+                notesHeight = notesHeaderHeight + (mConfig.holidayNotes?.length || 0) * notesLineHeight;
+            }
+            
+            const totalFooterSpaceNeeded = signatureHeight + notesHeight + 15;
+            const currentYPos = (doc as any).lastAutoTable.finalY;
+            const bottomSafeLimit = pageHeight - 20;
+
+            let currentY = 0;
+            if (currentYPos + totalFooterSpaceNeeded > bottomSafeLimit) {
                 doc.addPage();
-                finalY = 20;
+                currentY = 20;
+            } else {
+                currentY = currentYPos + 10;
             }
 
+            if (mConfig.isHolidayNotesActive) {
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
+                currentY += 8;
+                
+                if (mConfig.holidayNotes?.length > 0) {
+                    doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
+                    currentY += 5;
+                    mConfig.holidayNotes.forEach((note: any, idx: number) => {
+                        if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                        else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+
+                        const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
+                        const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                        doc.text(splitText, margin, currentY);
+                        currentY += (splitText.length * notesLineHeight);
+                    });
+                }
+            }
+
+            const signatureY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
             const sigX = pageWidth - 85;
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-            const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
-
-            doc.setFontSize(10).setFont('times', 'normal');
-            doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalY);
-            doc.text('Mengetahui,', sigX, finalY + 6);
-            doc.text('Kepala Sekolah', sigX, finalY + 12);
-            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, finalY + 38);
-            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, finalY + 44);
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, signatureY);
+            doc.text('Mengetahui,', sigX, signatureY + 6);
+            doc.text('Kepala Sekolah', sigX, signatureY + 12);
+            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, signatureY + 38);
+            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, signatureY + 44);
 
             const totalPages = (doc as any).internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
-                const pageHeight = doc.internal.pageSize.getHeight();
-                doc.setLineWidth(0.2);
-                doc.setDrawColor(0, 0, 0);
-                doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-                doc.setFontSize(8).setFont('times', 'italic');
-                doc.text(footerNote, margin, pageHeight - 10);
-                doc.setFontSize(9).setFont('times', 'normal');
-                doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+                const ph = doc.internal.pageSize.getHeight();
+                doc.setTextColor(0, 0, 0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+                doc.setFontSize(8).setFont('times', 'italic').text(config.reportFooterNote || 'Dokumen otomatis.', margin, ph - 10);
+                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
             }
 
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
@@ -377,7 +388,7 @@ export default function SchoolReportPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label>
-                                    <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none shadow-2xl"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
+                                    <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none shadow-2xl"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
                                 </div>
                                 <div className="space-y-1.5 md:col-span-2">
                                     <Label className="text-[10px] font-bold text-muted-foreground ml-1">Cari nama</Label>

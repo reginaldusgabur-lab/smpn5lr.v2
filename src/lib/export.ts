@@ -20,7 +20,6 @@ function triggerDownload(data: any, fileName: string, fileType: string) {
 // Helper to sanitize position names for PDF
 const sanitizePosition = (pos: string) => {
     if (!pos) return '-';
-    // Menyingkat PPPK Paruh Waktu (PW) menjadi PPPK PW agar hemat ruang
     return pos.replace('PPPK Paruh Waktu (PW)', 'PPPK PW');
 };
 
@@ -148,7 +147,7 @@ export function exportToPdf(
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 40 },
+            margin: { bottom: 65 },
             headStyles: { 
                 fillColor: [52, 152, 219], 
                 textColor: 255, 
@@ -184,47 +183,71 @@ export function exportToPdf(
             }
         });
 
-        let finalTableY = (doc as any).lastAutoTable.finalY;
-        if (finalTableY > pageHeight - 75) {
+        // --- SMART PAGE LOGIC ---
+        // Calculate needed space for footer blocks
+        const signatureHeight = 45;
+        const notesLineHeight = 5;
+        const notesHeaderHeight = 12;
+        let notesHeight = 0;
+        if (mConfig.isHolidayNotesActive) {
+            notesHeight = notesHeaderHeight + (mConfig.holidayNotes?.length || 0) * notesLineHeight;
+        }
+        
+        const totalFooterSpaceNeeded = signatureHeight + notesHeight + 15; // 15 buffer
+        const currentYPos = (doc as any).lastAutoTable.finalY;
+        const bottomSafeLimit = pageHeight - 20;
+
+        if (currentYPos + totalFooterSpaceNeeded > bottomSafeLimit) {
             doc.addPage();
-            finalTableY = 20;
+            currentY = 20;
+        } else {
+            currentY = currentYPos + 10;
         }
 
-        const signatureY = finalTableY + 15;
-        const signatureX = pageWidth - 85;
-        const today = format(new Date(), 'd MMMM yyyy', { locale: id });
-
-        doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`${kotaLaporan}, ${today}`, signatureX, signatureY);
-        doc.text('Mengetahui,', signatureX, signatureY + 6);
-        doc.text('Kepala Sekolah', signatureX, signatureY + 12);
-        doc.setFont('times', 'bold');
-        doc.text(namaKepsek, signatureX, signatureY + 38);
-        doc.setFont('times', 'normal');
-        doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
-
-        // HOLIDAY NOTES & EFFECTIVE DAYS (Last Page only)
+        // Print Effective Days and Holiday Notes
         if (mConfig.isHolidayNotesActive) {
-            const notesY = pageHeight - 35;
-            doc.setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-            if (mConfig.holidayNotes?.length > 0) {
-                doc.text('Keterangan Hari Libur:', margin, notesY);
-                doc.setFontSize(8).setFont('times', 'normal');
-                let noteLineY = notesY + 4;
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
+            currentY += 8;
+            
+            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
+                doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
+                currentY += 5;
                 mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    const text = `${idx + 1}. ${note.content}`;
-                    const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
-                    doc.text(splitText, margin, noteLineY);
-                    noteLineY += (splitText.length * 4);
+                    if (note.isRed) {
+                        doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    } else {
+                        doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    }
+                    
+                    const noteText = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
+                    const splitText = doc.splitTextToSize(noteText, pageWidth - (margin * 2));
+                    doc.text(splitText, margin, currentY);
+                    currentY += (splitText.length * notesLineHeight);
                 });
             }
         }
+
+        // Signature block placement
+        currentY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
+        // Ensure signature also doesn't hit the bottom
+        if (currentY + signatureHeight > bottomSafeLimit) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        const signatureX = pageWidth - 85;
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${kotaLaporan}, ${todayStr}`, signatureX, currentY);
+        doc.text('Mengetahui,', signatureX, currentY + 6);
+        doc.text('Kepala Sekolah', signatureX, currentY + 12);
+        doc.setFont('times', 'bold').text(namaKepsek, signatureX, currentY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, currentY + 44);
 
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
-            doc.setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+            doc.setTextColor(0, 0, 0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
             doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }

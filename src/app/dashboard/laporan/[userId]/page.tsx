@@ -224,6 +224,7 @@ export default function UserReportDetailPage() {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = schoolConfigData || ({} as any);
@@ -271,27 +272,35 @@ export default function UserReportDetailPage() {
         });
 
         let finalTableY = (doc as any).lastAutoTable.finalY;
-        const pageHeight = doc.internal.pageSize.getHeight();
-        if (finalTableY > pageHeight - 75) { doc.addPage(); finalTableY = 20; }
+        const pHeight = doc.internal.pageSize.getHeight();
+        if (finalTableY > pHeight - 75) { doc.addPage(); finalTableY = 20; }
 
         const sigY = finalTableY + 15;
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setFontSize(10).text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, sigY);
+        doc.setTextColor(0,0,0).setFontSize(10).text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, sigY);
         doc.text('Mengetahui,', sigX, sigY + 6);
         doc.text('Kepala Sekolah', sigX, sigY + 12);
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, sigY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, sigY + 44);
 
         if (mConfig.isHolidayNotesActive) {
-            const notesY = pageHeight - 35;
-            doc.setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            const notesY = pHeight - 35;
+            doc.setTextColor(0,0,0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
             if (mConfig.holidayNotes?.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
-                doc.setFontSize(8).setFont('times', 'normal');
                 let noteLineY = notesY + 4;
                 mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    const text = `${idx + 1}. ${note.content}`;
+                    // Cek warna merah
+                    if (note.isRed) {
+                        doc.setTextColor(255, 0, 0); // Merah
+                        doc.setFont('times', 'bold');
+                    } else {
+                        doc.setTextColor(0, 0, 0); // Hitam
+                        doc.setFont('times', 'normal');
+                    }
+                    
+                    const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
                     const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
                     doc.text(splitText, margin, noteLineY);
                     noteLineY += (splitText.length * 4);
@@ -303,10 +312,10 @@ export default function UserReportDetailPage() {
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            const pHeight = doc.internal.pageSize.getHeight();
-            doc.setLineWidth(0.2).line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, pHeight - 10);
-            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
+            const ph = doc.internal.pageSize.getHeight();
+            doc.setTextColor(0,0,0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
+            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
@@ -463,3 +472,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+
