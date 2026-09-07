@@ -271,43 +271,70 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
-        let finalTableY = (doc as any).lastAutoTable.finalY;
-        // MENINGKATKAN JARAK AMAN
-        if (finalTableY > pHeight - 95) { doc.addPage(); finalTableY = 20; }
+        // --- SMART PAGE LOGIC ---
+        const signatureHeight = 45;
+        const notesLineHeight = 5;
+        const notesHeaderHeight = 15;
+        let notesContentHeight = 0;
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
+            mConfig.holidayNotes.forEach((n: any) => {
+                const txt = `Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const lines = doc.splitTextToSize(txt, pageWidth - (margin * 2)).length;
+                notesContentHeight += lines * notesLineHeight;
+            });
+        }
+        
+        const totalPenutupHeight = notesHeaderHeight + notesContentHeight + signatureHeight + 15;
+        const currentYPos = (doc as any).lastAutoTable.finalY;
+        const footerLineY = pHeight - 15;
+        const bottomSafeLimit = footerLineY - 5;
 
-        const sigY = finalTableY + 15;
-        const sigX = pageWidth - 85;
-        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setTextColor(0,0,0).setFontSize(10).text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, sigY);
-        doc.text('Mengetahui,', sigX, sigY + 6);
-        doc.text('Kepala Sekolah', sigX, sigY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, sigY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, sigY + 44);
+        if (currentYPos + totalPenutupHeight > bottomSafeLimit) {
+            doc.addPage();
+            currentY = 20;
+        } else {
+            currentY = currentYPos + 10;
+        }
 
         if (mConfig.isHolidayNotesActive) {
-            const notesY = pHeight - 58; // NAIK KE 58 DARI 35
-            doc.setTextColor(0,0,0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-            if (mConfig.holidayNotes?.length > 0) {
-                doc.text('Keterangan Hari Libur:', margin, notesY);
-                let nY = notesY + 4;
-                mConfig.holidayNotes.forEach((n: any, i: number) => {
-                    const txt = `${i + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+            doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
+            currentY += 8;
+            
+            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
+                doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
+                currentY += 5;
+                mConfig.holidayNotes.forEach((n: any, idx: number) => {
                     if (n.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
                     else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    const split = doc.splitTextToSize(txt, pageWidth - (margin * 2));
-                    doc.text(split, margin, nY);
-                    nY += (split.length * 4);
+                    
+                    const noteText = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                    const splitText = doc.splitTextToSize(noteText, pageWidth - (margin * 2));
+                    doc.text(splitText, margin, currentY);
+                    currentY += (splitText.length * notesLineHeight);
                 });
             }
         }
 
-        const footerNote = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
+        currentY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
+        if (currentY + signatureHeight > bottomSafeLimit) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        const sigX = pageWidth - 85;
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+        doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, currentY);
+        doc.text('Mengetahui,', sigX, currentY + 6);
+        doc.text('Kepala Sekolah', sigX, currentY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, currentY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, currentY + 44);
+
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
             doc.setTextColor(0,0,0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
+            doc.setFontSize(8).setFont('times', 'italic').text(config.reportFooterNote || "Dokumen otomatis.", margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
@@ -399,17 +426,17 @@ export default function UserReportDetailPage() {
                                                         {canEdit && (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
-                                                                    <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                     {hasIn && !hasOut ? (
                                                                         <>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-pulang')}>Lengkapi absen pulang</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                         </>
                                                                     ) : !hasIn && hasOut ? (
                                                                         <>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
                                                                         </>
@@ -430,7 +457,7 @@ export default function UserReportDetailPage() {
                                                                     )}
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+                                                                    {!hasIn && <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>}
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         )}
@@ -452,7 +479,7 @@ export default function UserReportDetailPage() {
                                         <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats?.totalPoints || "0.00"}</span></div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 Kalender leading-none">Persentase Kehadiran</p>
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
                                         <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats?.persentase || "0.0%"}</span></div>
                                     </div>
                                 </div>

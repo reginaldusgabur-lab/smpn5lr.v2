@@ -110,6 +110,7 @@ export function exportToPdf(
         const tahunAjaran = academicYearOverride || config.academicYear || '-';
         const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
+        // Header (Kop Surat)
         doc.setFont('times', 'bold').setFontSize(14);
         doc.text(instansi, pageCenter, 15, { align: 'center' });
         doc.text(dinas, pageCenter, 21, { align: 'center' });
@@ -120,6 +121,7 @@ export function exportToPdf(
         doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
+        // Judul Laporan
         doc.setFont('times', 'bold').setFontSize(12);
         doc.text('LAPORAN KEHADIRAN GURU/TENDIK', pageCenter, 48, { align: 'center' });
         doc.text(`Bulan ${monthName}`, pageCenter, 54, { align: 'center' });
@@ -181,47 +183,65 @@ export function exportToPdf(
             }
         });
 
-        let finalTableY = (doc as any).lastAutoTable.finalY;
-        // MENAMBAH THRESHOLD AGAR TIDAK TERPOTONG FOOTER
-        if (finalTableY > pageHeight - 95) {
+        // --- SMART PAGE LOGIC ---
+        const signatureHeight = 45;
+        const notesLineHeight = 5;
+        const notesHeaderHeight = 15;
+        let notesContentHeight = 0;
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
+            mConfig.holidayNotes.forEach((n: any) => {
+                const txt = `Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const lines = doc.splitTextToSize(txt, pageWidth - (margin * 2)).length;
+                notesContentHeight += lines * notesLineHeight;
+            });
+        }
+        
+        const totalPenutupHeight = notesHeaderHeight + notesContentHeight + signatureHeight + 15;
+        const currentYPos = (doc as any).lastAutoTable.finalY;
+        const footerLineY = pageHeight - 15;
+        const bottomSafeLimit = footerLineY - 5;
+
+        if (currentYPos + totalPenutupHeight > bottomSafeLimit) {
             doc.addPage();
-            finalTableY = 20;
+            currentY = 20;
+        } else {
+            currentY = currentYPos + 10;
         }
 
-        const signatureY = finalTableY + 15;
-        const signatureX = pageWidth - 85;
-        const today = format(new Date(), 'd MMMM yyyy', { locale: id });
-
-        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal');
-        doc.text(`${kotaLaporan}, ${today}`, signatureX, signatureY);
-        doc.text('Mengetahui,', signatureX, signatureY + 6);
-        doc.text('Kepala Sekolah', signatureX, signatureY + 12);
-        doc.setFont('times', 'bold');
-        doc.text(namaKepsek, signatureX, signatureY + 38);
-        doc.setFont('times', 'normal');
-        doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
-
-        // HOLIDAY NOTES & EFFECTIVE DAYS (Last Page only) - DINAIKKAN AGAR TIDAK TERPOTONG GARIS
+        // Print Effective Days and Holiday Notes
         if (mConfig.isHolidayNotesActive) {
-            const notesY = pageHeight - 58; // NAIK DARI 35 KE 58
-            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
+            currentY += 8;
+            
             if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
-                doc.text('Keterangan Hari Libur:', margin, notesY);
-                let noteLineY = notesY + 4;
+                doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
+                currentY += 5;
                 mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    if (note.isRed) {
-                        doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    } else {
-                        doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    }
+                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
                     
-                    const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
-                    const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
-                    doc.text(splitText, margin, noteLineY);
-                    noteLineY += (splitText.length * 4);
+                    const noteText = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
+                    const splitText = doc.splitTextToSize(noteText, pageWidth - (margin * 2));
+                    doc.text(splitText, margin, currentY);
+                    currentY += (splitText.length * notesLineHeight);
                 });
             }
         }
+
+        // Signature block placement
+        currentY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
+        if (currentY + signatureHeight > bottomSafeLimit) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        const signatureX = pageWidth - 85;
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${kotaLaporan}, ${todayStr}`, signatureX, currentY);
+        doc.text('Mengetahui,', signatureX, currentY + 6);
+        doc.text('Kepala Sekolah', signatureX, currentY + 12);
+        doc.setFont('times', 'bold').text(namaKepsek, signatureX, currentY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, currentY + 44);
 
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
