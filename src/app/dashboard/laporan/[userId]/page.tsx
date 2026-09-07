@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -223,25 +224,22 @@ export default function UserReportDetailPage() {
         if (!userData || monthlyReportData.length === 0) return;
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = schoolConfigData || ({} as any);
         const mConfig = monthlyConfig || {};
 
-        doc.setFont('times', 'bold').setFontSize(14);
-        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+        doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
         doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
-        doc.setFontSize(12);
-        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
-        doc.setFont('times', 'normal').setFontSize(9);
-        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+        doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
+        doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
         doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
         doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
-        doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+        doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
         let currentY = 70;
         doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
@@ -270,13 +268,12 @@ export default function UserReportDetailPage() {
         });
 
         let finalTableY = (doc as any).lastAutoTable.finalY;
-        const pageHeight = doc.internal.pageSize.getHeight();
         if (finalTableY > pageHeight - 75) { doc.addPage(); finalTableY = 20; }
 
         const sigY = finalTableY + 15;
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setFontSize(10).text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, sigY);
+        doc.setTextColor(0,0,0).setFontSize(10).text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, sigY);
         doc.text('Mengetahui,', sigX, sigY + 6);
         doc.text('Kepala Sekolah', sigX, sigY + 12);
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, sigY + 38);
@@ -284,16 +281,17 @@ export default function UserReportDetailPage() {
 
         if (mConfig.isHolidayNotesActive) {
             const notesY = pageHeight - 35;
-            doc.setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            doc.setTextColor(0,0,0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
             if (mConfig.holidayNotes?.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
-                doc.setFontSize(8).setFont('times', 'normal');
-                let noteLineY = notesY + 4;
-                mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    const text = `${idx + 1}. ${note.content}`;
-                    const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
-                    doc.text(splitText, margin, noteLineY);
-                    noteLineY += (splitText.length * 4);
+                let nY = notesY + 4;
+                mConfig.holidayNotes.forEach((n: any, i: number) => {
+                    const txt = `${i + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                    if (n.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    const split = doc.splitTextToSize(txt, pageWidth - (margin * 2));
+                    doc.text(split, margin, nY);
+                    nY += (split.length * 4);
                 });
             }
         }
@@ -302,10 +300,10 @@ export default function UserReportDetailPage() {
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            const pHeight = doc.internal.pageSize.getHeight();
-            doc.setLineWidth(0.2).line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, pHeight - 10);
-            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
+            const ph = doc.internal.pageSize.getHeight();
+            doc.setTextColor(0,0,0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
+            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
@@ -400,13 +398,13 @@ export default function UserReportDetailPage() {
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                     {hasIn && !hasOut ? (
                                                                         <>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-pulang')}>Lengkapi absen pulang</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                         </>
                                                                     ) : !hasIn && hasOut ? (
                                                                         <>
-                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
                                                                         </>
@@ -418,9 +416,13 @@ export default function UserReportDetailPage() {
                                                                     )}
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                    {!hasIn && (
+                                                                        <>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                        </>
+                                                                    )}
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -155,7 +156,6 @@ export default function ReportClientShell({
                     updatedAt: serverTimestamp()
                 };
 
-                // Preservasi jam masuk
                 if (currentItem?.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(currentItem.checkInTime));
                 } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat'].includes(type)) {
@@ -165,7 +165,6 @@ export default function ReportClientShell({
                     data.checkInTime = null;
                 }
 
-                // Preservasi jam pulang
                 if (currentItem?.checkOutTime) {
                     data.checkOutTime = Timestamp.fromDate(parseISO(currentItem.checkOutTime));
                 } else if (fillOut && ['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
@@ -175,7 +174,6 @@ export default function ReportClientShell({
                     data.checkOutTime = null;
                 }
 
-                // Set reason
                 if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
                 else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
                 else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
@@ -215,20 +213,16 @@ export default function ReportClientShell({
         const config = initialSchoolConfig || ({} as any);
         const mConfig = initialMonthlyConfig || ({} as any);
 
-        doc.setFont('times', 'bold').setFontSize(14);
-        doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+        doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
         doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
-        doc.setFontSize(12);
-        doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
-        doc.setFont('times', 'normal').setFontSize(9);
-        doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+        doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
+        doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
         doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
         doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
         doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}`, centerX, 54, { align: 'center' });
-        doc.setFontSize(10).setFont('times', 'normal');
-        doc.text(`Tahun Ajaran: ${mConfig.academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+        doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${mConfig.academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
         let currentY = 70;
         doc.setFontSize(11).setFont('times', 'normal').text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
@@ -266,7 +260,7 @@ export default function ReportClientShell({
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
         const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
-        doc.setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalTableY + 15);
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalTableY + 15);
         doc.text('Mengetahui,', sigX, finalTableY + 21);
         doc.text('Kepala Sekolah', sigX, finalTableY + 27);
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, finalTableY + 53);
@@ -274,13 +268,14 @@ export default function ReportClientShell({
 
         if (mConfig.isHolidayNotesActive) {
             const notesY = pageHeight - 35;
-            doc.setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
             if (mConfig.holidayNotes?.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
-                doc.setFontSize(8).setFont('times', 'normal');
                 let nY = notesY + 4;
                 mConfig.holidayNotes.forEach((n: any, i: number) => {
-                    const txt = `${i + 1}. ${n.content}`;
+                    const txt = `${i + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                    if (n.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
                     const split = doc.splitTextToSize(txt, pageWidth - (margin * 2));
                     doc.text(split, margin, nY);
                     nY += (split.length * 4);
@@ -292,8 +287,8 @@ export default function ReportClientShell({
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
-            doc.setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
+            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'italic').setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+            doc.text(footerNote, margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_${userData.name?.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
@@ -307,6 +302,9 @@ export default function ReportClientShell({
         if (s === 'hadir') return hasOut ? "bg-emerald-500 text-white" : "bg-blue-600 text-white";
         return "bg-primary text-white";
     };
+
+    const canGoPrev = currentMonth > new Date(2026, 0, 1);
+    const canGoNext = !isSameMonth(currentMonth, new Date());
 
     return (
         <div className="flex-1 pt-0 pb-24 md:pt-0 md:px-8 md:pb-24">
@@ -342,7 +340,7 @@ export default function ReportClientShell({
                                 <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <div className="flex items-center">
                                         <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0 shadow-none text-primary hover:bg-white/10" onClick={() => handleMonthChange(-1)} disabled={!canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                                        <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1.5 min-w-max">
+                                        <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1 min-w-max">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
                                                 <span className="text-[7px] font-bold uppercase text-muted-foreground/50 tracking-[0.1em] leading-none">Thn ajaran</span>
@@ -432,17 +430,11 @@ export default function ReportClientShell({
                                 <div className="grid grid-cols-2">
                                     <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
-                                        <div className="flex items-center gap-2">
-                                            <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" />
-                                            <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats.totalPoints}</span>
-                                        </div>
+                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats.totalPoints}</span></div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
-                                        <div className="flex items-center gap-2">
-                                            <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
-                                            <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats.persentase}</span>
-                                        </div>
+                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats.persentase}</span></div>
                                     </div>
                                 </div>
                             </div>

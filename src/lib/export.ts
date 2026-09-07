@@ -1,3 +1,4 @@
+
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -196,19 +197,26 @@ export function exportToPdf(
         doc.text(`${kotaLaporan}, ${today}`, signatureX, signatureY);
         doc.text('Mengetahui,', signatureX, signatureY + 6);
         doc.text('Kepala Sekolah', signatureX, signatureY + 12);
-        doc.setFont('times', 'bold').text(namaKepsek, signatureX, signatureY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
+        doc.setFont('times', 'bold');
+        doc.text(namaKepsek, signatureX, signatureY + 38);
+        doc.setFont('times', 'normal');
+        doc.text(`NIP. ${nipKepsek}`, signatureX, signatureY + 44);
 
         // HOLIDAY NOTES & EFFECTIVE DAYS (Last Page only)
         if (mConfig.isHolidayNotesActive) {
             const notesY = pageHeight - 35;
-            doc.setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-            if (mConfig.holidayNotes?.length > 0) {
+            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            
+            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
                 doc.text('Keterangan Hari Libur:', margin, notesY);
-                doc.setFontSize(8).setFont('times', 'normal');
                 let noteLineY = notesY + 4;
                 mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    const text = `${idx + 1}. ${note.content}`;
+                    const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
+                    
+                    // Apply Red Color if requested
+                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+
                     const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
                     doc.text(splitText, margin, noteLineY);
                     noteLineY += (splitText.length * 4);
@@ -220,8 +228,8 @@ export function exportToPdf(
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
-            doc.setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
+            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'italic').setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+            doc.text(footerNote, margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(fileName);
