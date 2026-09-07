@@ -245,9 +245,9 @@ export default function UserReportDetailPage() {
         doc.setFontSize(10).setFont('times', 'normal');
         doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
-        let currentY = 70;
-        doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
-        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 10;
+        let sigCurrentY = 70;
+        doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, sigCurrentY); sigCurrentY += 6;
+        doc.text(`NIP : ${userData.nip || '-'}`, margin, sigCurrentY); sigCurrentY += 10;
 
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = monthlyReportData.map((item, index) => [
@@ -260,7 +260,7 @@ export default function UserReportDetailPage() {
         ]);
 
         autoTable(doc, {
-            startY: currentY,
+            startY: sigCurrentY,
             head: tableHead,
             body: tableRows,
             theme: 'striped',
@@ -289,32 +289,32 @@ export default function UserReportDetailPage() {
             });
         }
 
-        const notesFullHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
-        const currentTableEndY = (doc as any).lastAutoTable.finalY;
+        const notesBlockHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
+        const finalTableY = (doc as any).lastAutoTable.finalY;
 
-        // Check for page break
-        if (currentTableEndY + signatureHeight + notesFullHeight + 10 > bottomSafeLimit) {
+        let closureStartY;
+        if (finalTableY + signatureHeight + notesBlockHeight + 10 > bottomSafeLimit) {
             doc.addPage();
-            currentY = 20;
+            closureStartY = 20;
         } else {
-            currentY = currentTableEndY + 10;
+            closureStartY = finalTableY + 10;
         }
 
-        // 1. Render Signature Block (Higher up)
+        // Render Signature
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, currentY);
-        doc.text('Mengetahui,', sigX, currentY + 6);
-        doc.text('Kepala Sekolah', sigX, currentY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, currentY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, currentY + 44);
+        doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
+        doc.text('Mengetahui,', sigX, closureStartY + 6);
+        doc.text('Kepala Sekolah', sigX, closureStartY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
-        // 2. Render Notes Block (Anchored to footer line)
+        // Render Notes (ANCHORED TO BOTTOM)
         if (mConfig.isHolidayNotesActive) {
             let noteCursorY = bottomSafeLimit - totalNotesHeight;
             let noteHeaderY = noteCursorY - headerSpacing + 3;
 
-            doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, noteHeaderY);
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, noteHeaderY);
             doc.text('Keterangan Hari Libur:', margin, noteHeaderY + 4);
 
             processedNotes.forEach((note) => {
@@ -325,7 +325,6 @@ export default function UserReportDetailPage() {
             });
         }
 
-        // Footer Metadata
         const footerNote = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
@@ -490,5 +489,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
 

@@ -297,10 +297,11 @@ export default function SchoolReportPage() {
                 });
             }
 
-            const notesFullHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
+            const notesBlockHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
             const currentTableEndY = (doc as any).lastAutoTable.finalY;
 
-            if (currentTableEndY + signatureHeight + notesFullHeight + 10 > bottomSafeLimit) {
+            let currentY;
+            if (currentTableEndY + signatureHeight + notesBlockHeight + 10 > bottomSafeLimit) {
                 doc.addPage();
                 currentY = 20;
             } else {

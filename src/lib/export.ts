@@ -207,22 +207,22 @@ export function exportToPdf(
         const notesBlockHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
         const currentTableEndY = (doc as any).lastAutoTable.finalY;
 
-        // Check if signature + notes fit in current page
+        let closureStartY;
         if (currentTableEndY + signatureHeight + notesBlockHeight + 10 > bottomSafeLimit) {
             doc.addPage();
-            currentY = 20;
+            closureStartY = 20;
         } else {
-            currentY = currentTableEndY + 10;
+            closureStartY = currentTableEndY + 10;
         }
 
         // Render Signature (Upper part of penutup)
         const signatureX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${kotaLaporan}, ${todayStr}`, signatureX, currentY);
-        doc.text('Mengetahui,', signatureX, currentY + 6);
-        doc.text('Kepala Sekolah', signatureX, currentY + 12);
-        doc.setFont('times', 'bold').text(namaKepsek, signatureX, currentY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, currentY + 44);
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${kotaLaporan}, ${todayStr}`, signatureX, closureStartY);
+        doc.text('Mengetahui,', signatureX, closureStartY + 6);
+        doc.text('Kepala Sekolah', signatureX, closureStartY + 12);
+        doc.setFont('times', 'bold').text(namaKepsek, signatureX, closureStartY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, closureStartY + 44);
 
         // Render Notes (Lower part, ANCHORED TO BOTTOM LINE)
         if (mConfig.isHolidayNotesActive) {

@@ -224,9 +224,9 @@ export default function ReportClientShell({
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}`, centerX, 54, { align: 'center' });
         doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${mConfig.academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
-        let currentY = 70;
-        doc.setFontSize(11).setFont('times', 'normal').text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
-        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 10;
+        let currentYPos = 70;
+        doc.setFontSize(11).setFont('times', 'normal').text(`Nama : ${userData.name}`, margin, currentYPos); currentYPos += 6;
+        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentYPos); currentYPos += 10;
 
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = reportDetails.map((item, index) => [
@@ -239,7 +239,7 @@ export default function ReportClientShell({
         ]);
 
         autoTable(doc, {
-            startY: currentY,
+            startY: currentYPos,
             head: tableHead,
             body: tableRows,
             theme: 'striped',
@@ -250,71 +250,64 @@ export default function ReportClientShell({
             columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
         });
 
-        // --- DYNAMIC PENUTUP LOGIC ---
+        // --- SMART ANCHOR LOGIC ---
+        const footerLineY = pageHeight - 15;
+        const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
-        const notesLineHeight = 5;
-        const notesHeaderHeight = 15;
-        let notesContentHeight = 0;
+        const notesLineHeight = 4;
+        const headerSpacing = 8;
+        
+        let totalNotesHeight = 0;
+        const processedNotes = [];
         if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
-            mConfig.holidayNotes.forEach((n: any) => {
-                const txt = `Tanggal ${n.date || '-'}: ${n.content || '-'}`;
-                const lines = doc.splitTextToSize(txt, pageWidth - (margin * 2)).length;
-                notesContentHeight += lines * notesLineHeight;
+            mConfig.holidayNotes.forEach((n: any, idx: number) => {
+                const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                totalNotesHeight += (split.length * notesLineHeight);
+                processedNotes.push({ split, isRed: n.isRed });
             });
         }
-        
-        const totalPenutupHeight = notesHeaderHeight + notesContentHeight + signatureHeight + 15;
-        const currentYPos = (doc as any).lastAutoTable.finalY;
-        const footerLineY = pageHeight - 15;
-        const bottomSafeLimit = footerLineY - 5;
 
-        if (currentYPos + totalPenutupHeight > bottomSafeLimit) {
+        const notesBlockHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
+        const finalTableY = (doc as any).lastAutoTable.finalY;
+
+        let closureStartY;
+        if (finalTableY + signatureHeight + notesBlockHeight + 10 > bottomSafeLimit) {
             doc.addPage();
-            currentY = 20;
+            closureStartY = 20;
         } else {
-            currentY = currentYPos + 10;
-        }
-
-        if (mConfig.isHolidayNotesActive) {
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
-            currentY += 8;
-            
-            if (mConfig.holidayNotes?.length > 0) {
-                doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
-                currentY += 5;
-                mConfig.holidayNotes.forEach((n: any, i: number) => {
-                    const txt = `${i + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
-                    if (n.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    const split = doc.splitTextToSize(txt, pageWidth - (margin * 2));
-                    doc.text(split, margin, currentY);
-                    currentY += (split.length * notesLineHeight);
-                });
-            }
-        }
-
-        currentY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
-        if (currentY + signatureHeight > bottomSafeLimit) {
-            doc.addPage();
-            currentY = 20;
+            closureStartY = finalTableY + 10;
         }
 
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
-        const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
+        doc.text('Mengetahui,', sigX, closureStartY + 6);
+        doc.text('Kepala Sekolah', sigX, closureStartY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
-        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, currentY);
-        doc.text('Mengetahui,', sigX, currentY + 6);
-        doc.text('Kepala Sekolah', sigX, currentY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, currentY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, currentY + 44);
+        if (mConfig.isHolidayNotesActive) {
+            let noteCursorY = bottomSafeLimit - totalNotesHeight;
+            let noteHeaderY = noteCursorY - headerSpacing + 3;
+
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, noteHeaderY);
+            doc.text('Keterangan Hari Libur:', margin, noteHeaderY + 4);
+
+            processedNotes.forEach((note) => {
+                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                doc.text(note.split, margin, noteCursorY);
+                noteCursorY += note.split.length * notesLineHeight;
+            });
+        }
 
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
             doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'italic').setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.text(footerNote, margin, ph - 10);
+            doc.text(config.reportFooterNote || "Dokumen otomatis.", margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_${userData.name?.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
@@ -445,7 +438,7 @@ export default function ReportClientShell({
                                             );
                                         })
                                     ) : (
-                                        <TableRow><TableCell colSpan={7} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="h-24 text-center">Tidak ada data.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                             </Table>
