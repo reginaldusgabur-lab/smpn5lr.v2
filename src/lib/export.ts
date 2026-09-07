@@ -183,7 +183,7 @@ export function exportToPdf(
             }
         });
 
-        // --- SMART PAGE LOGIC ---
+        // --- DYNAMIC PAGE LOGIC ---
         const signatureHeight = 45;
         const notesLineHeight = 5;
         const notesHeaderHeight = 15;
@@ -217,8 +217,11 @@ export function exportToPdf(
                 doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
                 currentY += 5;
                 mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    if (note.isRed) {
+                        doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    } else {
+                        doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    }
                     
                     const noteText = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
                     const splitText = doc.splitTextToSize(noteText, pageWidth - (margin * 2));

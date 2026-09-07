@@ -250,38 +250,64 @@ export default function ReportClientShell({
             columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
         });
 
-        let finalTableY = (doc as any).lastAutoTable.finalY;
-        if (finalTableY > pageHeight - 95) {
+        // --- DYNAMIC PENUTUP LOGIC ---
+        const signatureHeight = 45;
+        const notesLineHeight = 5;
+        const notesHeaderHeight = 15;
+        let notesContentHeight = 0;
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
+            mConfig.holidayNotes.forEach((n: any) => {
+                const txt = `Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const lines = doc.splitTextToSize(txt, pageWidth - (margin * 2)).length;
+                notesContentHeight += lines * notesLineHeight;
+            });
+        }
+        
+        const totalPenutupHeight = notesHeaderHeight + notesContentHeight + signatureHeight + 15;
+        const currentYPos = (doc as any).lastAutoTable.finalY;
+        const footerLineY = pageHeight - 15;
+        const bottomSafeLimit = footerLineY - 5;
+
+        if (currentYPos + totalPenutupHeight > bottomSafeLimit) {
             doc.addPage();
-            finalTableY = 20;
+            currentY = 20;
+        } else {
+            currentY = currentYPos + 10;
+        }
+
+        if (mConfig.isHolidayNotesActive) {
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
+            currentY += 8;
+            
+            if (mConfig.holidayNotes?.length > 0) {
+                doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
+                currentY += 5;
+                mConfig.holidayNotes.forEach((n: any, i: number) => {
+                    const txt = `${i + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                    if (n.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    const split = doc.splitTextToSize(txt, pageWidth - (margin * 2));
+                    doc.text(split, margin, currentY);
+                    currentY += (split.length * notesLineHeight);
+                });
+            }
+        }
+
+        currentY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
+        if (currentY + signatureHeight > bottomSafeLimit) {
+            doc.addPage();
+            currentY = 20;
         }
 
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
         const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
 
-        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, finalTableY + 15);
-        doc.text('Mengetahui,', sigX, finalTableY + 21);
-        doc.text('Kepala Sekolah', sigX, finalTableY + 27);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, finalTableY + 53);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, finalTableY + 59);
-
-        if (mConfig.isHolidayNotesActive) {
-            const notesY = pageHeight - 58;
-            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-            if (mConfig.holidayNotes?.length > 0) {
-                doc.text('Keterangan Hari Libur:', margin, notesY);
-                let nY = notesY + 4;
-                mConfig.holidayNotes.forEach((n: any, i: number) => {
-                    const txt = `${i + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
-                    if (n.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    const split = doc.splitTextToSize(txt, pageWidth - (margin * 2));
-                    doc.text(split, margin, nY);
-                    nY += (split.length * 4);
-                });
-            }
-        }
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, currentY);
+        doc.text('Mengetahui,', sigX, currentY + 6);
+        doc.text('Kepala Sekolah', sigX, currentY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, currentY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, currentY + 44);
 
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
@@ -390,7 +416,7 @@ export default function ReportClientShell({
                                                             {isProblematic && (
                                                                 <DropdownMenu>
                                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-primary/10"><MoreVertical className="h-4 w-4 text-primary" /></Button></DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                    <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                         <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                         {hasIn && !hasOut ? (
                                                                             <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-pulang')}>Lengkapi absen pulang</DropdownMenuItem>
@@ -407,7 +433,7 @@ export default function ReportClientShell({
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas Siang</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
                                                                     </DropdownMenuContent>
                                                                 </DropdownMenu>
@@ -449,3 +475,4 @@ export default function ReportClientShell({
         </div>
     );
 }
+

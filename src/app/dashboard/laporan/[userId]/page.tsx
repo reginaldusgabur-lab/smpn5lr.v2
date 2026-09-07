@@ -271,7 +271,7 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
-        // --- SMART PAGE LOGIC ---
+        // --- DYNAMIC PAGE LOGIC ---
         const signatureHeight = 45;
         const notesLineHeight = 5;
         const notesHeaderHeight = 15;
@@ -492,3 +492,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+
