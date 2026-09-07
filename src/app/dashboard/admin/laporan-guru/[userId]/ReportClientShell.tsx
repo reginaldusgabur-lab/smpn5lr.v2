@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -255,7 +254,7 @@ export default function ReportClientShell({
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
         const notesLineHeight = 4;
-        const labelAreaHeight = 12; 
+        const labelAreaHeight = 16; 
         
         let totalNotesHeight = 0;
         const processedNotes = [];
@@ -289,10 +288,10 @@ export default function ReportClientShell({
 
         if (mConfig.isHolidayNotesActive) {
             const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-            const labelsStartY = listItemsStartY - labelAreaHeight + 3;
+            const labelsStartY = listItemsStartY - labelAreaHeight + 2;
 
             doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 5);
+            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 6.5);
 
             let noteCursorY = listItemsStartY;
             processedNotes.forEach((note) => {

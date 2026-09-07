@@ -1,7 +1,8 @@
 'use server';
 /**
- * @fileOverview AI Flow untuk menghasilkan kutipan motivasi yang random, humoris, dan luas.
- * Fokus pada dunia pendidikan dan kerja secara umum agar tidak membosankan.
+ * @fileOverview AI Flow untuk menghasilkan kutipan motivasi yang SANGAT UNIK per pengguna.
+ * Menggunakan identitas unik pengguna (userId & userName) untuk menjamin variasi yang berbeda 
+ * antar personil meskipun pada hari dan status absen yang sama.
  */
 
 import { ai } from '../genkit';
@@ -26,22 +27,23 @@ export type QuoteInput = z.infer<typeof QuoteInputSchema>;
 export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
 /**
- * Kutipan cadangan yang lebih humoris dan general tentang dunia kerja/pendidikan.
+ * Kutipan cadangan berbasis hash untuk menjamin keunikan 
+ * bahkan saat kondisi offline atau kegagalan API AI.
  */
 const fallbacks = {
   in: [
-    "Pagi! Ingat, kopi pertama hari ini adalah investasi masa depan, sisanya baru pengabdian.",
-    "Semangat mengajar! Ingat, murid yang paling bandel biasanya yang paling ingat jasa kita pas udah sukses nanti.",
-    "Kerja itu ibadah, tapi kalau liat tanggal tua emang butuh kesabaran ekstra. Yuk, senyum dulu!",
-    "Awali pagi dengan optimis. Kalau spidol habis, anggap saja itu kode alam buat istirahat sebentar.",
-    "Jadi guru itu keren. Kita satu-satunya profesi yang ditanya 'Pak, halaman berapa?' padahal udah ditulis segede gaban di papan tulis."
+    "Pagi adalah awal baru untuk jiwa yang ikhlas mendidik. Semangat!",
+    "Kopi pagi ini adalah doa, pengabdian adalah ibadah. Selamat bertugas.",
+    "Setiap murid adalah kanvas kosong, jadilah kuas yang memberi warna hari ini.",
+    "Dedikasi Anda adalah pondasi masa depan mereka. Mari menyapa kelas dengan senyum.",
+    "Tantangan hari ini adalah peluang untuk memberi inspirasi. Selamat mengabdi."
   ],
   out: [
-    "Pulang! Lepaskan beban pikiran, tapi jangan lepaskan kunci motor di laci meja ya.",
-    "Perjuangan hari ini tuntas. Selamat beristirahat, biarkan mimpi indah menggantikan daftar nilai yang belum selesai.",
-    "Baterai HP boleh 5%, tapi semangat pulang harus tetap 100%. Hati-hati di jalan!",
-    "Terima kasih atas dedikasinya hari ini. Rebahan sudah menunggumu dengan tangan terbuka lebar.",
-    "Keluar dari gerbang sekolah adalah kemenangan kecil. Ingat, besok masih ada petualangan baru!"
+    "Tuntas sudah perjuangan hari ini. Waktunya pulang dan mengisi ulang energi.",
+    "Istirahatlah dengan tenang, keluarga menanti cerita hebat Anda di rumah.",
+    "Beban kerja tuntas, kehangatan keluarga menunggu. Hati-hati di jalan.",
+    "Terima kasih atas ketulusan Anda mengabdi hari ini. Selamat bersantai.",
+    "Besok adalah petualangan baru, sore ini adalah kemenangan untuk diri sendiri."
   ]
 };
 
@@ -68,8 +70,6 @@ const generateQuoteFlow = ai.defineFlow(
   async (input) => {
     const isEntry = input.attendanceType === 'in';
     const hash = getHash(`${input.userId}|${input.date}|${input.creativeSeed}`);
-    
-    // Pilih fallback yang sesuai dengan konteks absen
     const fallbackList = isEntry ? fallbacks.in : fallbacks.out;
     const selectedFallback = fallbackList[hash % fallbackList.length];
 
@@ -77,28 +77,36 @@ const generateQuoteFlow = ai.defineFlow(
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.2, // Menaikkan kreativitas agar tidak membosankan
-          maxOutputTokens: 150,
+          temperature: 1.5, // Maksimal kreativitas untuk variasi kata
+          topP: 0.95,
+          maxOutputTokens: 300,
         },
-        system: `Anda adalah stand-up comedian yang merangkap jadi motivator pendidikan paling hits.
-TUGAS: Buat SATU kutipan (quote) yang lucu, segar, "relate" banget sama guru/staf, dan tetap inspiratif.
-TEMA: Dunia pendidikan, perjuangan di kelas, suka duka admin sekolah, dan kehidupan kerja secara umum.
+        system: `Anda adalah "E-SPENLI Muse", motivator pendidikan yang cerdas dan personal. 
+TUGAS: Buat SATU kutipan pendek (maks 25 kata) yang BENAR-BENAR UNIK untuk pengguna tertentu.
 
-ATURAN MAIN:
-1. JANGAN terus-terusan nyebut "SMPN 5" atau "Langke Rembong". Fokus ke esensi profesi mereka (Guru, Staf, Pekerja).
-2. Jika ABSEN MASUK: Kasih semangat yang dibumbui humor (tentang kopi, semangat pagi, atau menghadapi murid/tugas).
-3. Jika ABSEN PULANG: Kasih ucapan selamat istirahat yang lucu (tentang rebahan, lupakan cicilan sebentar, atau macetnya jalan).
-4. Gaya bahasa santai tapi tetap berkelas (Quotes gaya sosmed).
-5. Maksimal 25 kata. JANGAN gunakan emoji. JANGAN buat pantun.
-6. Pastikan setiap hasil BERBEDA (Random) dan sangat unik.`,
-        prompt: `Buat satu kutipan eksklusif dan humoris untuk ${input.userName} (${input.role}) yang baru saja absen ${isEntry ? 'masuk pagi' : 'pulang sore'}. Seed: ${input.creativeSeed}`,
+STRATEGI KEUNIKAN MUTLAK:
+1. Gunakan ID UNIK (${input.userId}) dan NAMA (${input.userName}) sebagai benih gaya bahasa.
+2. JANGAN gunakan pola kalimat yang sama untuk pengguna yang berbeda.
+3. Eksplorasi nada acak: puitis, motivasi stoik, jenaka, atau sangat formal.
+4. Gunakan metafora yang berbeda setiap kali dipanggil (pelita, pelaut, orkestra, dsb).
+5. Konteks MASUK: Fokus pada semangat, kopi pagi, atau misi mendidik.
+6. Konteks PULANG: Fokus pada istirahat, apresiasi diri, dan keluarga.
+7. JANGAN buat pantun. Jangan gunakan emoji.
+8. Pastikan kalimat terasa segar dan "HANYA" khusus untuk pengguna tersebut hari ini.`,
+        prompt: `BUAT KUTIPAN EKSKLUSIF SEKARANG:
+- Target: ${input.userName}
+- ID Keamanan: ${input.userId}
+- Sesi: ${isEntry ? 'Absen Masuk' : 'Absen Pulang'}
+- Tanggal: ${input.date}
+- Token Variasi: ${input.creativeSeed}
+
+Gunakan semua parameter di atas untuk meramu kalimat yang belum pernah Anda keluarkan sebelumnya.`,
         output: { schema: QuoteOutputSchema },
       });
 
       if (!response.output) throw new Error('AI_EMPTY_RESPONSE');
       return response.output;
     } catch (err: any) {
-      console.error('[AI_FLOW_ERROR]:', err.message);
       return {
         quote: selectedFallback,
         author: "AI E-SPENLI"

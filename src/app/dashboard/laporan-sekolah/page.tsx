@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -284,7 +283,7 @@ export default function SchoolReportPage() {
             const bottomSafeLimit = footerLineY - 2; 
             const signatureHeight = 45;
             const notesLineHeight = 4;
-            const labelAreaHeight = 16; // Increased from 12 for more space
+            const labelAreaHeight = 16; 
             
             let totalNotesHeight = 0;
             const processedNotes = [];
@@ -308,14 +307,14 @@ export default function SchoolReportPage() {
                 closureStartY = currentTableEndY + 10;
             }
 
-            // Render Signature (Upper part of penutup)
-            const sigX = pageWidth - 85;
+            // Render Signature (Top part of closure)
+            const signatureX = pageWidth - 85;
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
-            doc.text('Mengetahui,', sigX, closureStartY + 6);
-            doc.text('Kepala Sekolah', sigX, closureStartY + 12);
-            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
-            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, closureStartY);
+            doc.text('Mengetahui,', signatureX, closureStartY + 6);
+            doc.text('Kepala Sekolah', signatureX, closureStartY + 12);
+            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, closureStartY + 38);
+            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, closureStartY + 44);
 
             // Render Notes (ANCHORED TO BOTTOM LINE)
             if (mConfig.isHolidayNotesActive) {
