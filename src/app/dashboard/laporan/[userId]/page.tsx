@@ -276,7 +276,7 @@ export default function UserReportDetailPage() {
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
         const notesLineHeight = 4;
-        const headerSpacing = 8;
+        const labelHeight = 12;
         
         let totalNotesHeight = 0;
         const processedNotes = [];
@@ -289,18 +289,18 @@ export default function UserReportDetailPage() {
             });
         }
 
-        const notesBlockHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
+        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelHeight + totalNotesHeight) : 0;
         const finalTableY = (doc as any).lastAutoTable.finalY;
 
         let closureStartY;
-        if (finalTableY + signatureHeight + notesBlockHeight + 10 > bottomSafeLimit) {
+        if (finalTableY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
             doc.addPage();
             closureStartY = 20;
         } else {
             closureStartY = finalTableY + 10;
         }
 
-        // Render Signature
+        // Render Signature (Upper part of penutup)
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
@@ -311,12 +311,13 @@ export default function UserReportDetailPage() {
 
         // Render Notes (ANCHORED TO BOTTOM)
         if (mConfig.isHolidayNotesActive) {
-            let noteCursorY = bottomSafeLimit - totalNotesHeight;
-            let noteHeaderY = noteCursorY - headerSpacing + 3;
+            const listItemsStartY = bottomSafeLimit - totalNotesHeight;
+            const labelsStartY = listItemsStartY - labelHeight + 3;
 
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, noteHeaderY);
-            doc.text('Keterangan Hari Libur:', margin, noteHeaderY + 4);
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 5);
 
+            let noteCursorY = listItemsStartY;
             processedNotes.forEach((note) => {
                 if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
                 else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
@@ -414,7 +415,7 @@ export default function UserReportDetailPage() {
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
@@ -489,4 +490,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
