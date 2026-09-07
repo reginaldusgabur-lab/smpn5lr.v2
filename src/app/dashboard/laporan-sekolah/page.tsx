@@ -284,7 +284,7 @@ export default function SchoolReportPage() {
             const bottomSafeLimit = footerLineY - 2; 
             const signatureHeight = 45;
             const notesLineHeight = 4;
-            const headerSpacing = 8;
+            const labelAreaHeight = 12; 
             
             let totalNotesHeight = 0;
             const processedNotes = [];
@@ -297,34 +297,35 @@ export default function SchoolReportPage() {
                 });
             }
 
-            const notesBlockHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
+            const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
             const currentTableEndY = (doc as any).lastAutoTable.finalY;
 
-            let currentY;
-            if (currentTableEndY + signatureHeight + notesBlockHeight + 10 > bottomSafeLimit) {
+            let closureStartY;
+            if (currentTableEndY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
                 doc.addPage();
-                currentY = 20;
+                closureStartY = 20;
             } else {
-                currentY = currentTableEndY + 10;
+                closureStartY = currentTableEndY + 10;
             }
 
-            // Render Signature (Top part of closure)
+            // Render Signature (Upper part of penutup)
             const sigX = pageWidth - 85;
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, currentY);
-            doc.text('Mengetahui,', sigX, currentY + 6);
-            doc.text('Kepala Sekolah', sigX, currentY + 12);
-            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, currentY + 38);
-            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, currentY + 44);
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
+            doc.text('Mengetahui,', sigX, closureStartY + 6);
+            doc.text('Kepala Sekolah', sigX, closureStartY + 12);
+            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
+            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
-            // Render Notes (ANCHORED TO BOTTOM)
+            // Render Notes (ANCHORED TO BOTTOM LINE)
             if (mConfig.isHolidayNotesActive) {
-                let noteCursorY = bottomSafeLimit - totalNotesHeight;
-                let noteHeaderY = noteCursorY - headerSpacing + 3;
+                const listItemsStartY = bottomSafeLimit - totalNotesHeight;
+                const labelsStartY = listItemsStartY - labelAreaHeight + 3;
 
-                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, noteHeaderY);
-                doc.text('Keterangan Hari Libur:', margin, noteHeaderY + 4);
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 5);
 
+                let noteCursorY = listItemsStartY;
                 processedNotes.forEach((note) => {
                     if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
                     else doc.setTextColor(0, 0, 0).setFont('times', 'normal');

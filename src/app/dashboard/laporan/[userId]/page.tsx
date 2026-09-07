@@ -271,12 +271,12 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
-        // --- BOTTOM ANCHOR LOGIC ---
+        // --- SMART BOTTOM ANCHOR LOGIC ---
         const footerLineY = pHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
         const notesLineHeight = 4;
-        const labelHeight = 12;
+        const labelAreaHeight = 12; 
         
         let totalNotesHeight = 0;
         const processedNotes = [];
@@ -289,7 +289,7 @@ export default function UserReportDetailPage() {
             });
         }
 
-        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelHeight + totalNotesHeight) : 0;
+        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
         const finalTableY = (doc as any).lastAutoTable.finalY;
 
         let closureStartY;
@@ -300,7 +300,7 @@ export default function UserReportDetailPage() {
             closureStartY = finalTableY + 10;
         }
 
-        // Render Signature (Upper part of penutup)
+        // Render Signature (Top part of closure)
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
@@ -309,10 +309,10 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
-        // Render Notes (ANCHORED TO BOTTOM)
+        // Render Notes (ANCHORED TO BOTTOM LINE)
         if (mConfig.isHolidayNotesActive) {
             const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-            const labelsStartY = listItemsStartY - labelHeight + 3;
+            const labelsStartY = listItemsStartY - labelAreaHeight + 3;
 
             doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
             doc.text('Keterangan Hari Libur:', margin, labelsStartY + 5);
@@ -415,7 +415,7 @@ export default function UserReportDetailPage() {
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
@@ -490,3 +490,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+

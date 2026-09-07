@@ -255,7 +255,7 @@ export default function ReportClientShell({
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
         const notesLineHeight = 4;
-        const labelHeight = 12;
+        const labelAreaHeight = 12; 
         
         let totalNotesHeight = 0;
         const processedNotes = [];
@@ -268,7 +268,7 @@ export default function ReportClientShell({
             });
         }
 
-        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelHeight + totalNotesHeight) : 0;
+        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
         const finalTableY = (doc as any).lastAutoTable.finalY;
 
         let closureStartY;
@@ -289,7 +289,7 @@ export default function ReportClientShell({
 
         if (mConfig.isHolidayNotesActive) {
             const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-            const labelsStartY = listItemsStartY - labelHeight + 3;
+            const labelsStartY = listItemsStartY - labelAreaHeight + 3;
 
             doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
             doc.text('Keterangan Hari Libur:', margin, labelsStartY + 5);
@@ -477,3 +477,4 @@ export default function ReportClientShell({
         </div>
     );
 }
+
