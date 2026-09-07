@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -14,8 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchUserMonthlyReportData, type MonthlyReportData } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar } from 'lucide-react';
+import { fetchUserMonthlyReportData, type MonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,27 @@ const safeFormat = (dateInput: any, formatString: string): string => {
     return isValid(date) ? format(date, formatString, { locale: id }) : '-';
 };
 
+const PointLegend = () => (
+    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-sm font-black text-green-600">1.0 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
+            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
+            <p className="text-sm font-black text-blue-600">0.9 - 0.7 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
+            <p className="text-sm font-black text-red-600">0.5 - 0.0 Poin</p>
+        </div>
+    </div>
+);
+
 export default function UserReportDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -49,11 +71,13 @@ export default function UserReportDetailPage() {
 
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData[]>([]);
+    const [stats, setStats] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isMutating, setIsMutating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [academicYear, setAcademicYear] = useState("");
+    const [monthlyConfig, setMonthlyConfig] = useState<any>(null);
 
     const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
     const { data: schoolConfigData } = useDoc(currentUser, schoolConfigRef);
@@ -70,12 +94,13 @@ export default function UserReportDetailPage() {
         setError(null);
         try {
             const userRef = doc(firestore, 'users', userId);
-            const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
+            const mRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
             
-            const [userSnap, reportData, monthlyConfigSnap] = await Promise.all([
+            const [userSnap, reportData, monthlyConfigSnap, statsRes] = await Promise.all([
                 getDoc(userRef),
                 fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfigData),
-                getDoc(monthlyConfigRef)
+                getDoc(mRef),
+                calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })
             ]);
 
             if (!userSnap.exists()) throw new Error('Profil staf tidak ditemukan.');
@@ -83,8 +108,9 @@ export default function UserReportDetailPage() {
             if (isMounted.current) {
                 setUserData(userSnap.data());
                 setMonthlyReportData(reportData);
-                
+                setStats(statsRes);
                 const mData = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
+                setMonthlyConfig(mData);
                 setAcademicYear(mData.academicYear || schoolConfigData.academicYear || "");
             }
         } catch (err: any) {
@@ -108,17 +134,7 @@ export default function UserReportDetailPage() {
         return dailyOut?.start || (schoolConfigData as any).checkOutStartTime || '14:00';
     }, [schoolConfigData]);
 
-    const generateRandomOutTime = useCallback((date: Date) => {
-        const outStart = getDailyOutStart(date);
-        const [h, m] = outStart.split(':').map(Number);
-        const base = setMinutes(setHours(startOfDay(date), h), m);
-        // ACAK 10 MENIT SETELAH ABSEN DIBUKA
-        const randomMins = Math.floor(Math.random() * 10) + 1;
-        const randomSecs = Math.floor(Math.random() * 60);
-        return Timestamp.fromDate(addMinutes(new Date(base.getTime() + randomSecs * 1000), randomMins));
-    }, [getDailyOutStart]);
-
-    const handleStatusChange = async (dateStr: string, type: 'hadir' | 'terlambat' | 'sakit' | 'izin' | 'dinas-pagi' | 'dinas-siang' | 'pulang-cepat' | 'luar-sekolah') => {
+    const handleStatusChange = async (dateStr: string, type: string) => {
         if (!currentUser || !firestore || isMutating || !schoolConfigData || !userData) return;
         setIsMutating(true);
         try {
@@ -128,7 +144,6 @@ export default function UserReportDetailPage() {
             const outStart = getDailyOutStart(targetDate);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            
             const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const batch = writeBatch(firestore);
@@ -144,48 +159,45 @@ export default function UserReportDetailPage() {
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
+            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah', 'lengkapi-masuk', 'lengkapi-pulang'].includes(type)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
                 
-                let dataToSave: any = {
+                const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
+
+                let data: any = {
                     userId, date: todayStr,
                     manualEntry: true, 
-                    reasonForUpdate: 'Kehadiran penuh',
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                if (type === 'hadir') {
-                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
-                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
-                    dataToSave.reasonForUpdate = 'Kehadiran penuh';
-                } else if (type === 'terlambat') {
-                    dataToSave.checkInTime = null;
-                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
-                    dataToSave.reasonForUpdate = 'Terlambat';
-                } else if (type === 'dinas-pagi') {
-                    dataToSave.checkInTime = null;
-                    dataToSave.checkOutTime = fillOut ? generateRandomOutTime(targetDate) : null;
-                    dataToSave.reasonForUpdate = 'Dinas pagi';
-                } else if (type === 'luar-sekolah') {
-                    dataToSave.checkInTime = null;
-                    dataToSave.checkOutTime = null;
-                    dataToSave.reasonForUpdate = 'Kegiatan luar sekolah';
-                } else if (type === 'dinas-siang') {
-                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
-                    dataToSave.checkOutTime = null;
-                    dataToSave.reasonForUpdate = 'Dinas siang';
-                } else if (type === 'pulang-cepat') {
-                    const randomOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    dataToSave.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffsetSecs * 1000));
-                    dataToSave.checkOutTime = null;
-                    dataToSave.reasonForUpdate = 'Pulang cepat';
+                if (existingAtt?.checkInTime) {
+                    data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
+                } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                    const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
+                } else {
+                    data.checkInTime = null;
                 }
 
-                batch.set(doc(attendanceRef), dataToSave);
+                if (existingAtt?.checkOutTime) {
+                    data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
+                } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi')) {
+                    const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                } else {
+                    data.checkOutTime = null;
+                }
+
+                if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
+                else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
+                else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
+                else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
+                else if (type === 'luar-sekolah') data.reasonForUpdate = 'Kegiatan luar sekolah';
+                else data.reasonForUpdate = 'Kehadiran penuh';
+
+                batch.set(doc(attendanceRef), data);
             } else {
                 const newLeaveDoc = doc(leaveRef);
                 batch.set(newLeaveDoc, {
@@ -199,10 +211,9 @@ export default function UserReportDetailPage() {
                     createdAt: serverTimestamp(), approvedBy: currentUser.uid, approvedAt: serverTimestamp()
                 });
             }
-
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Data kehadiran telah diperbarui.' });
+            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
             fetchData();
         } catch (err) { 
             toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); 
@@ -216,6 +227,7 @@ export default function UserReportDetailPage() {
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = schoolConfigData || ({} as any);
+        const mConfig = monthlyConfig || {};
 
         doc.setFont('times', 'bold').setFontSize(14);
         doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
@@ -233,8 +245,7 @@ export default function UserReportDetailPage() {
         doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
         let currentY = 70;
-        doc.setFontSize(11);
-        doc.text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
+        doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
         doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 10;
 
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
@@ -256,30 +267,47 @@ export default function UserReportDetailPage() {
             styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
             headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
             alternateRowStyles: { fillColor: [225, 242, 254] },
-            columnStyles: { 
-                0: { halign: 'center', cellWidth: 10 }, 
-                2: { halign: 'center', cellWidth: 32 }, 
-                3: { halign: 'center', cellWidth: 32 },
-                4: { halign: 'center', cellWidth: 20 },
-                5: { cellWidth: 'auto' }
-            }
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
-        let finalY = (doc as any).lastAutoTable.finalY + 15;
-        if (finalY > doc.internal.pageSize.getHeight() - 65) {
-            doc.addPage();
-            finalY = 20;
+        let finalTableY = (doc as any).lastAutoTable.finalY;
+        const pageHeight = doc.internal.pageSize.getHeight();
+        if (finalTableY > pageHeight - 75) { doc.addPage(); finalTableY = 20; }
+
+        const sigY = finalTableY + 15;
+        const sigX = pageWidth - 85;
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+        doc.setFontSize(10).text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, sigY);
+        doc.text('Mengetahui,', sigX, sigY + 6);
+        doc.text('Kepala Sekolah', sigX, sigY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, sigY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, sigY + 44);
+
+        if (mConfig.isHolidayNotesActive) {
+            const notesY = pageHeight - 35;
+            doc.setFontSize(8).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
+            if (mConfig.holidayNotes?.length > 0) {
+                doc.text('Keterangan Hari Libur:', margin, notesY);
+                doc.setFontSize(8).setFont('times', 'normal');
+                let noteLineY = notesY + 4;
+                mConfig.holidayNotes.forEach((note: any, idx: number) => {
+                    const text = `${idx + 1}. ${note.content}`;
+                    const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                    doc.text(splitText, margin, noteLineY);
+                    noteLineY += (splitText.length * 4);
+                });
+            }
         }
 
-        const signatureX = pageWidth - 85;
-        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-        doc.setFontSize(10);
-        doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, finalY);
-        doc.text('Mengetahui,', signatureX, finalY + 6);
-        doc.text('Kepala Sekolah', signatureX, finalY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, finalY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, finalY + 44);
-
+        const footerNote = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
+        const totalPages = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            const pHeight = doc.internal.pageSize.getHeight();
+            doc.setLineWidth(0.2).line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, pHeight - 10);
+            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
+        }
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
 
@@ -321,9 +349,7 @@ export default function UserReportDetailPage() {
                                     <p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat riwayat kehadiran personil.</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={fetchData} disabled={isLoading || isMutating}>
-                                <RefreshCw className={cn("h-4 w-4", (isLoading || isMutating) && "animate-spin")} />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={fetchData} disabled={isLoading || isMutating}><RefreshCw className={cn("h-4 w-4", (isLoading || isMutating) && "animate-spin")} /></Button>
                         </div>
                     </div>
 
@@ -332,22 +358,13 @@ export default function UserReportDetailPage() {
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                                    <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1.5 min-w-max">
-                                        <CalendarDays className="h-4 w-4 text-primary/70" />
-                                        <div className="flex flex-col">
-                                            <span className="text-[7px] font-bold text-muted-foreground/50 leading-none">Tahun ajaran</span>
-                                            <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
-                                        </div>
+                                    <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1 min-w-max">
+                                        <CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-bold text-muted-foreground/50 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
-                                </div>
+                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[120px]">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
                             </div>
-                            <div className="flex justify-end gap-3 px-2 sm:px-0">
-                                <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button>
-                            </div>
+                            <div className="flex justify-end gap-3 px-2 sm:px-0"><Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0 || isLoading || isMutating} className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 h-11 rounded-xl text-xs shadow-none active:scale-[0.98] transition-all"><Download className="mr-2 h-4 w-4" />unduh pdf</Button></div>
                         </div>
 
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
@@ -364,10 +381,10 @@ export default function UserReportDetailPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
+                                        const hasIn = !!item.checkInTime;
+                                        const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
-                                        const isManual = item.manualEntry === true;
-                                        const canEdit = isAdmin && (isAlpa || isManual);
-                                        
+                                        const canEdit = isAdmin && (isAlpa || !hasIn || !hasOut);
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
@@ -376,40 +393,69 @@ export default function UserReportDetailPage() {
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight", getStatusColorClass(item.status))}>
-                                                            {item.status}
-                                                        </Badge>
-                                                        
+                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status))}>{item.status}</Badge>
                                                         {canEdit && (
                                                             <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90">
-                                                                        <PencilLine className="h-4 w-4 text-primary" />
-                                                                    </button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                    {hasIn && !hasOut ? (
+                                                                        <>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                                        </>
+                                                                    ) : !hasIn && hasOut ? (
+                                                                        <>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                        </>
+                                                                    )}
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                    {!hasIn && (
+                                                                        <>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                        </>
+                                                                    )}
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan Luar Sekolah</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-[11px] font-medium text-muted-foreground italic">{item.description}</TableCell>
+                                                <TableCell className="text-[11px] font-medium text-muted-foreground italic whitespace-nowrap">{item.description}</TableCell>
                                             </TableRow>
                                         );
                                     }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
+                        </div>
+
+                        <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
+                            <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm max-w-2xl mx-auto">
+                                <div className="grid grid-cols-2">
+                                    <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
+                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats?.totalPoints || "0.00"}</span></div>
+                                    </div>
+                                    <div className="p-5 flex flex-col items-center justify-center text-center">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
+                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats?.persentase || "0.0%"}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-3"><div className="flex items-center gap-2 px-1"><Info className="h-3 w-3 text-muted-foreground" /><h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3></div><PointLegend /></div>
                         </div>
                     </CardContent>
                 </Card>

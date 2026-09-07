@@ -33,7 +33,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -62,6 +62,8 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [holidays, setHolidays] = useState<Date[]>([]);
   const [academicYear, setAcademicYear] = useState('');
+  const [isHolidayNotesActive, setIsHolidayNotesActive] = useState(false);
+  const [holidayNotes, setHolidayNotes] = useState<{id: string, content: string}[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   const monthlyConfigId = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
@@ -83,9 +85,13 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
     if (monthlyConfigData) {
       setHolidays((monthlyConfigData.holidays ?? []).map((d: string) => new Date(`${d}T00:00:00`)));
       setAcademicYear(monthlyConfigData.academicYear || schoolConfig?.academicYear || '');
+      setIsHolidayNotesActive(monthlyConfigData.isHolidayNotesActive ?? false);
+      setHolidayNotes(monthlyConfigData.holidayNotes || []);
     } else {
       setHolidays([]);
       setAcademicYear(schoolConfig?.academicYear || '');
+      setIsHolidayNotesActive(false);
+      setHolidayNotes([]);
     }
   }, [monthlyConfigData, schoolConfig]);
 
@@ -114,6 +120,8 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         holidays: holidays.map(d => format(d, 'yyyy-MM-dd')),
         manualWorkDays: calculatedWorkDays, 
         academicYear: academicYear,
+        isHolidayNotesActive,
+        holidayNotes: holidayNotes.filter(n => n.content.trim() !== '')
       };
       await setDoc(monthlyConfigRef, dataToSave, { merge: true });
       toast({ title: 'Berhasil', description: 'Pengaturan bulanan telah disimpan.' });
@@ -131,6 +139,18 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         ? [...prev, day]
         : prev.filter(d => format(d, 'yyyy-MM-dd') !== format(day, 'yyyy-MM-dd'))
     );
+  };
+
+  const addNote = () => {
+    setHolidayNotes(prev => [...prev, { id: Math.random().toString(36).substring(7), content: '' }]);
+  };
+
+  const removeNote = (id: string) => {
+    setHolidayNotes(prev => prev.filter(n => n.id !== id));
+  };
+
+  const updateNote = (id: string, content: string) => {
+    setHolidayNotes(prev => prev.map(n => n.id === id ? { ...n, content } : n));
   };
   
   return (
@@ -221,9 +241,6 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                         onChange={e => setAcademicYear(e.target.value)}
                         className="h-11 rounded-xl bg-muted/40 font-bold shadow-none"
                     />
-                    <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
-                        Input ini akan menjadi Tahun Ajaran otomatis saat mengunduh laporan bulan ini.
-                    </p>
                 </div>
 
                 <div className="pt-4 border-t border-muted-foreground/10 space-y-4">
@@ -233,17 +250,49 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                         <div className="h-11 w-full rounded-xl bg-muted/40 border border-muted-foreground/10 flex items-center px-4 font-black text-primary shadow-inner">
                             {isMonthlyConfigLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : `${calculatedWorkDays} hari`}
                         </div>
-                        <p className="text-[10px] font-bold text-muted-foreground leading-tight italic">
-                            Dihitung otomatis untuk akurasi persentase kehadiran.
-                        </p>
                     </div>
+                </div>
+
+                <div className="pt-4 border-t border-muted-foreground/10 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Keterangan Libur (PDF)</Label>
+                        <Switch checked={isHolidayNotesActive} onCheckedChange={setIsHolidayNotesActive} />
+                    </div>
+                    {isHolidayNotesActive && (
+                        <div className="space-y-3">
+                            <div className="space-y-2">
+                                {holidayNotes.map((note) => (
+                                    <div key={note.id} className="flex gap-2 group">
+                                        <Input 
+                                            placeholder="Contoh: Tanggal 17 Libur HUT RI" 
+                                            value={note.content}
+                                            onChange={e => updateNote(note.id, e.target.value)}
+                                            className="h-9 rounded-lg bg-muted/40 font-bold text-[11px] shadow-none"
+                                        />
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10" onClick={() => removeNote(note.id)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                <Button variant="outline" size="sm" className="w-full h-9 rounded-lg border-dashed font-bold text-[10px] uppercase tracking-wider" onClick={addNote}>
+                                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Tambah Keterangan
+                                </Button>
+                            </div>
+                            <div className="flex items-start gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                                <Info className="h-3 w-3 text-blue-500 shrink-0 mt-0.5" />
+                                <p className="text-[9px] text-blue-600 font-bold leading-tight">
+                                    Akan tampil berurutan di halaman terakhir laporan PDF.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </CardContent>
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
             <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 px-8 shadow-none" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                SIMPAN PENGATURAN BULANAN
+                SIMPAN PENGATURAN BULAN DAN CATATAN
             </Button>
         </CardFooter>
     </Card>
@@ -469,12 +518,8 @@ export default function KonfigurasiAbsenPage() {
 
   if (isLoading || !isAdmin) {
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Skeleton className="h-96 rounded-3xl" />
-                <Skeleton className="lg:col-span-2 h-96 rounded-3xl" />
-            </div>
-            <Skeleton className="h-96 rounded-3xl" />
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
     );
   }
@@ -689,10 +734,10 @@ export default function KonfigurasiAbsenPage() {
           </div>
         </CardContent>
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
-           <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 shadow-none" disabled={isSaving}>
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Simpan pengaturan umum
-          </Button>
+            <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 px-8 shadow-none" disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                SIMPAN PENGATURAN UMUM
+            </Button>
         </CardFooter>
       </Card>
 
