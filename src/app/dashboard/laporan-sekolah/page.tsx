@@ -244,21 +244,16 @@ export default function SchoolReportPage() {
             const config = schoolConfigData || ({} as any);
             const mConfig = monthlyConfig || {};
 
-            doc.setFont('times', 'bold').setFontSize(14);
-            doc.text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+            doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
             doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
-            doc.setFontSize(12);
-            doc.text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
-            doc.setFont('times', 'normal').setFontSize(9);
-            doc.text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+            doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
+            doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
             doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
             doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-            doc.setFont('times', 'bold').setFontSize(12);
-            doc.text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
+            doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
             doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
-            doc.setFontSize(10).setFont('times', 'normal');
-            doc.text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+            doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
             const tableRows = filteredReports.map((item, index) => [
               item.sequenceNumber || index + 1, 
@@ -271,92 +266,79 @@ export default function SchoolReportPage() {
               item.totalAlpa, 
               item.persentase
             ]);
+
             autoTable(doc, {
                 startY: 68,
                 head: [['No', 'Nama', 'NIP', 'Status', 'Hadir', 'Izin', 'Sakit', 'Alpa', '%']],
                 body: tableRows,
                 theme: 'striped',
-                margin: { bottom: 40 },
-                styles: { 
-                    font: 'times', 
-                    fontSize: 10, 
-                    cellPadding: 1.0, 
-                    valign: 'middle', 
-                    textColor: [0, 0, 0], 
-                    lineColor: [200, 200, 200], 
-                    lineWidth: 0 
-                },
+                margin: { bottom: 65 },
+                styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
                 headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
                 alternateRowStyles: { fillColor: [235, 245, 255] },
-                columnStyles: { 
-                  0: { halign: 'center', cellWidth: 8 }, 
-                  1: { cellWidth: 'auto' }, 
-                  2: { halign: 'left', cellWidth: 36 }, 
-                  3: { halign: 'center', cellWidth: 14 }, 
-                  4: { halign: 'center', cellWidth: 13 }, 
-                  5: { halign: 'center', cellWidth: 10 }, 
-                  6: { halign: 'center', cellWidth: 13 }, 
-                  7: { halign: 'center', cellWidth: 10 }, 
-                  8: { halign: 'right', cellWidth: 15 } 
-                }
+                columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 8: { halign: 'right', cellWidth: 15 } }
             });
 
-            let finalY = (doc as any).lastAutoTable.finalY;
-            if (finalY > pageHeight - 75) {
-                doc.addPage();
-                finalY = 20;
+            // --- BOTTOM ANCHOR LOGIC ---
+            const footerLineY = pageHeight - 15;
+            const bottomSafeLimit = footerLineY - 2; 
+            const signatureHeight = 45;
+            const notesLineHeight = 4;
+            const headerSpacing = 8;
+            
+            let totalNotesHeight = 0;
+            const processedNotes = [];
+            if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
+                mConfig.holidayNotes.forEach((n: any, idx: number) => {
+                    const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                    const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                    totalNotesHeight += (split.length * notesLineHeight);
+                    processedNotes.push({ split, isRed: n.isRed });
+                });
             }
 
-            const signatureY = finalY + 15;
+            const notesFullHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
+            const currentTableEndY = (doc as any).lastAutoTable.finalY;
+
+            if (currentTableEndY + signatureHeight + notesFullHeight + 10 > bottomSafeLimit) {
+                doc.addPage();
+                currentY = 20;
+            } else {
+                currentY = currentTableEndY + 10;
+            }
+
+            // Render Signature (Top part of closure)
             const sigX = pageWidth - 85;
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-            const footerNote = config.reportFooterNote || 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.';
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, currentY);
+            doc.text('Mengetahui,', sigX, currentY + 6);
+            doc.text('Kepala Sekolah', sigX, currentY + 12);
+            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, currentY + 38);
+            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, currentY + 44);
 
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal');
-            doc.text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, signatureY);
-            doc.text('Mengetahui,', sigX, signatureY + 6);
-            doc.text('Kepala Sekolah', sigX, signatureY + 12);
-            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, signatureY + 38);
-            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, signatureY + 44);
-
-            // HOLIDAY NOTES (Above Footer Line - Only on last page)
+            // Render Notes (ANCHORED TO BOTTOM)
             if (mConfig.isHolidayNotesActive) {
-                const notesY = pageHeight - 35;
-                doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'bold');
-                doc.text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesY - 6);
-                
-                if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
-                    doc.text('Keterangan Hari Libur:', margin, notesY);
-                    let noteLineY = notesY + 4;
-                    mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                        // Set color based on isRed flag
-                        if (note.isRed) {
-                            doc.setTextColor(255, 0, 0); // Red
-                            doc.setFont('times', 'bold');
-                        } else {
-                            doc.setTextColor(0, 0, 0); // Black
-                            doc.setFont('times', 'normal');
-                        }
+                let noteCursorY = bottomSafeLimit - totalNotesHeight;
+                let noteHeaderY = noteCursorY - headerSpacing + 3;
 
-                        const text = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
-                        const splitText = doc.splitTextToSize(text, pageWidth - (margin * 2));
-                        doc.text(splitText, margin, noteLineY);
-                        noteLineY += (splitText.length * 4);
-                    });
-                }
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, noteHeaderY);
+                doc.text('Keterangan Hari Libur:', margin, noteHeaderY + 4);
+
+                processedNotes.forEach((note) => {
+                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    doc.text(note.split, margin, noteCursorY);
+                    noteCursorY += note.split.length * notesLineHeight;
+                });
             }
 
             const totalPages = (doc as any).internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
-                const pHeight = doc.internal.pageSize.getHeight();
-                doc.setTextColor(0, 0, 0).setLineWidth(0.2);
-                doc.setDrawColor(0, 0, 0);
-                doc.line(margin, pHeight - 15, pageWidth - margin, pHeight - 15);
-                doc.setFontSize(8).setFont('times', 'italic');
-                doc.text(footerNote, margin, pHeight - 10);
-                doc.setFontSize(9).setFont('times', 'normal');
-                doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, pHeight - 10, { align: 'right' });
+                const ph = doc.internal.pageSize.getHeight();
+                doc.setTextColor(0, 0, 0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+                doc.setFontSize(8).setFont('times', 'italic').text(config.reportFooterNote || 'Dokumen otomatis.', margin, ph - 10);
+                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
             }
 
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
@@ -534,3 +516,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+

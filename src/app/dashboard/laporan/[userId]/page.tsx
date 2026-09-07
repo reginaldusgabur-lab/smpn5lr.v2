@@ -271,56 +271,36 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
-        // --- DYNAMIC PAGE LOGIC ---
+        // --- BOTTOM ANCHOR LOGIC ---
+        const footerLineY = pHeight - 15;
+        const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
-        const notesLineHeight = 5;
-        const notesHeaderHeight = 15;
-        let notesContentHeight = 0;
+        const notesLineHeight = 4;
+        const headerSpacing = 8;
+        
+        let totalNotesHeight = 0;
+        const processedNotes = [];
         if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
-            mConfig.holidayNotes.forEach((n: any) => {
-                const txt = `Tanggal ${n.date || '-'}: ${n.content || '-'}`;
-                const lines = doc.splitTextToSize(txt, pageWidth - (margin * 2)).length;
-                notesContentHeight += lines * notesLineHeight;
+            mConfig.holidayNotes.forEach((n: any, idx: number) => {
+                const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                totalNotesHeight += (split.length * notesLineHeight);
+                processedNotes.push({ split, isRed: n.isRed });
             });
         }
-        
-        const totalPenutupHeight = notesHeaderHeight + notesContentHeight + signatureHeight + 15;
-        const currentYPos = (doc as any).lastAutoTable.finalY;
-        const footerLineY = pHeight - 15;
-        const bottomSafeLimit = footerLineY - 5;
 
-        if (currentYPos + totalPenutupHeight > bottomSafeLimit) {
+        const notesFullHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
+        const currentTableEndY = (doc as any).lastAutoTable.finalY;
+
+        // Check for page break
+        if (currentTableEndY + signatureHeight + notesFullHeight + 10 > bottomSafeLimit) {
             doc.addPage();
             currentY = 20;
         } else {
-            currentY = currentYPos + 10;
+            currentY = currentTableEndY + 10;
         }
 
-        if (mConfig.isHolidayNotesActive) {
-            doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
-            currentY += 8;
-            
-            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
-                doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
-                currentY += 5;
-                mConfig.holidayNotes.forEach((n: any, idx: number) => {
-                    if (n.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    
-                    const noteText = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
-                    const splitText = doc.splitTextToSize(noteText, pageWidth - (margin * 2));
-                    doc.text(splitText, margin, currentY);
-                    currentY += (splitText.length * notesLineHeight);
-                });
-            }
-        }
-
-        currentY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
-        if (currentY + signatureHeight > bottomSafeLimit) {
-            doc.addPage();
-            currentY = 20;
-        }
-
+        // 1. Render Signature Block (Higher up)
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, currentY);
@@ -329,12 +309,30 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, currentY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, currentY + 44);
 
+        // 2. Render Notes Block (Anchored to footer line)
+        if (mConfig.isHolidayNotesActive) {
+            let noteCursorY = bottomSafeLimit - totalNotesHeight;
+            let noteHeaderY = noteCursorY - headerSpacing + 3;
+
+            doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, noteHeaderY);
+            doc.text('Keterangan Hari Libur:', margin, noteHeaderY + 4);
+
+            processedNotes.forEach((note) => {
+                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                doc.text(note.split, margin, noteCursorY);
+                noteCursorY += note.split.length * notesLineHeight;
+            });
+        }
+
+        // Footer Metadata
+        const footerNote = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
             doc.setTextColor(0,0,0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(config.reportFooterNote || "Dokumen otomatis.", margin, ph - 10);
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNote, margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
@@ -492,4 +490,5 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+
 

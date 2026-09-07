@@ -183,61 +183,39 @@ export function exportToPdf(
             }
         });
 
-        // --- DYNAMIC PAGE LOGIC ---
+        // --- SMART ANCHOR LOGIC ---
+        const footerLineY = pageHeight - 15;
+        const bottomSafeLimit = footerLineY - 2; // Anchor precisely above the line
         const signatureHeight = 45;
-        const notesLineHeight = 5;
-        const notesHeaderHeight = 15;
-        let notesContentHeight = 0;
+
+        // 1. Calculate Notes Height first
+        let totalNotesHeight = 0;
+        const notesLineHeight = 4;
+        const headerSpacing = 8;
+        const processedNotes = [];
+
         if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
-            mConfig.holidayNotes.forEach((n: any) => {
-                const txt = `Tanggal ${n.date || '-'}: ${n.content || '-'}`;
-                const lines = doc.splitTextToSize(txt, pageWidth - (margin * 2)).length;
-                notesContentHeight += lines * notesLineHeight;
+            mConfig.holidayNotes.forEach((n: any, idx: number) => {
+                const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                const height = split.length * notesLineHeight;
+                totalNotesHeight += height;
+                processedNotes.push({ split, isRed: n.isRed });
             });
         }
-        
-        const totalPenutupHeight = notesHeaderHeight + notesContentHeight + signatureHeight + 15;
-        const currentYPos = (doc as any).lastAutoTable.finalY;
-        const footerLineY = pageHeight - 15;
-        const bottomSafeLimit = footerLineY - 5;
 
-        if (currentYPos + totalPenutupHeight > bottomSafeLimit) {
+        const notesBlockHeight = mConfig.isHolidayNotesActive ? (headerSpacing + totalNotesHeight) : 0;
+        const currentTableEndY = (doc as any).lastAutoTable.finalY;
+
+        // Check if signature + notes fit in current page
+        if (currentTableEndY + signatureHeight + notesBlockHeight + 10 > bottomSafeLimit) {
             doc.addPage();
             currentY = 20;
         } else {
-            currentY = currentYPos + 10;
+            currentY = currentTableEndY + 10;
         }
 
-        // Print Effective Days and Holiday Notes
-        if (mConfig.isHolidayNotesActive) {
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, currentY);
-            currentY += 8;
-            
-            if (mConfig.holidayNotes && mConfig.holidayNotes.length > 0) {
-                doc.setFontSize(10).text('Keterangan Hari Libur:', margin, currentY);
-                currentY += 5;
-                mConfig.holidayNotes.forEach((note: any, idx: number) => {
-                    if (note.isRed) {
-                        doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    } else {
-                        doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    }
-                    
-                    const noteText = `${idx + 1}. Tanggal ${note.date || '-'}: ${note.content || '-'}`;
-                    const splitText = doc.splitTextToSize(noteText, pageWidth - (margin * 2));
-                    doc.text(splitText, margin, currentY);
-                    currentY += (splitText.length * notesLineHeight);
-                });
-            }
-        }
-
-        // Signature block placement
-        currentY = Math.max(currentY, (doc as any).lastAutoTable.finalY + 15);
-        if (currentY + signatureHeight > bottomSafeLimit) {
-            doc.addPage();
-            currentY = 20;
-        }
-
+        // Render Signature (Upper part of penutup)
         const signatureX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${kotaLaporan}, ${todayStr}`, signatureX, currentY);
@@ -246,6 +224,24 @@ export function exportToPdf(
         doc.setFont('times', 'bold').text(namaKepsek, signatureX, currentY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, currentY + 44);
 
+        // Render Notes (Lower part, ANCHORED TO BOTTOM LINE)
+        if (mConfig.isHolidayNotesActive) {
+            let notesStartY = bottomSafeLimit - totalNotesHeight;
+            let notesHeaderY = notesStartY - headerSpacing + 3;
+
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, notesHeaderY);
+            doc.text('Keterangan Hari Libur:', margin, notesHeaderY + 4);
+
+            let noteCursorY = notesStartY;
+            processedNotes.forEach((note) => {
+                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                doc.text(note.split, margin, noteCursorY);
+                noteCursorY += note.split.length * notesLineHeight;
+            });
+        }
+
+        // Global Page Footer
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
