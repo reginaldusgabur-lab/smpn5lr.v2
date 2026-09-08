@@ -134,7 +134,7 @@ export function exportToPdf(
             user.name,
             user.nip || '-',
             sanitizePosition(user.position || '-'),
-            Math.ceil(user.hadir), 
+            user.hadir, 
             user.izin, 
             user.sakit, 
             user.alpa, 
@@ -164,6 +164,7 @@ export function exportToPdf(
               fontSize: 10,
               font: 'times', 
               textColor: [0, 0, 0],
+              lineColor: [200, 200, 200], 
               lineWidth: 0,
               valign: 'middle',
               fillColor: [248, 250, 252]
@@ -185,7 +186,7 @@ export function exportToPdf(
         const footerLineY = pageHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
-        const notesLineHeight = 5;
+        const notesLineHeight = 4;
         const labelAreaHeight = 16; 
         
         let totalNotesHeight = 0;
@@ -200,16 +201,17 @@ export function exportToPdf(
         }
 
         const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
-        const finalTableY = (doc as any).lastAutoTable.finalY;
+        const currentTableEndY = (doc as any).lastAutoTable.finalY;
 
         let closureStartY;
-        if (finalTableY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
+        if (currentTableEndY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
             doc.addPage();
             closureStartY = 20;
         } else {
-            closureStartY = finalTableY + 10;
+            closureStartY = currentTableEndY + 10;
         }
 
+        // Render Signature (Top part of closure)
         const signatureX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${kotaLaporan}, ${todayStr}`, signatureX, closureStartY);
@@ -218,12 +220,13 @@ export function exportToPdf(
         doc.setFont('times', 'bold').text(namaKepsek, signatureX, closureStartY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${nipKepsek}`, signatureX, closureStartY + 44);
 
+        // Render Notes (ANCHORED TO BOTTOM LINE)
         if (mConfig.isHolidayNotesActive) {
             const listItemsStartY = bottomSafeLimit - totalNotesHeight;
             const labelsStartY = listItemsStartY - labelAreaHeight + 2;
 
             doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7.5);
 
             let noteCursorY = listItemsStartY;
             processedNotes.forEach((note) => {
@@ -234,6 +237,7 @@ export function exportToPdf(
             });
         }
 
+        // Global Page Footer
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
@@ -244,6 +248,7 @@ export function exportToPdf(
         }
         doc.save(fileName);
     } catch (error) {
-        console.error("Error exporting PDF:", error);
+        console.error("Error exporting to PDF:", error);
+        alert("Terjadi kesalahan saat mengekspor ke PDF. Silakan coba lagi.");
     }
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -79,16 +80,9 @@ export default function SchoolReportPage() {
             const monthId = format(currentMonth, 'yyyy-MM');
 
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthId);
-            const usersQuery = query(
-                collection(firestore, 'users'), 
-                where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-                where('status', '==', 'Aktif')
-            );
             
-            const [monthlySnap, usersSnap] = await Promise.all([
-                getDoc(monthlyConfigRef),
-                getDocs(usersQuery)
-            ]);
+            const usersSnap = await getDocs(collection(firestore, 'users'));
+            const monthlySnap = await getDoc(monthlyConfigRef);
 
             const mConfig = monthlySnap.exists() ? monthlySnap.data() : {};
             if (isMounted.current) {
@@ -96,7 +90,9 @@ export default function SchoolReportPage() {
                 setAcademicYear(mConfig.academicYear || schoolConfigData.academicYear || "");
             }
             
-            const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const allUsers = usersSnap.docs
+                .map(d => ({ id: d.id, ...d.data() } as any))
+                .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
 
             const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('checkInTime', '>=', start), where('checkInTime', '<=', end));
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
@@ -111,7 +107,7 @@ export default function SchoolReportPage() {
             const attendanceByUserId: Record<string, any[]> = {};
             [...attSnap.docs, ...attFallbackSnap.docs].forEach(d => {
                 const data = d.data();
-                const uid = data.userId || d.ref.parent.parent?.id;
+                const uid = data.userId || d.ref.parent.parent?.id || d.ref.path.split('/')[1];
                 if (uid) {
                     const existing = attendanceByUserId[uid] || [];
                     const dStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : null);
@@ -124,12 +120,12 @@ export default function SchoolReportPage() {
             const leaveByUserId: Record<string, any[]> = {};
             leaveSnap.docs.forEach(d => {
                 const data = d.data();
-                const uid = data.userId || d.ref.parent.parent?.id;
+                const uid = data.userId || d.ref.parent.parent?.id || d.ref.path.split('/')[1];
                 if (uid) (leaveByUserId[uid] = leaveByUserId[uid] || []).push(data);
             });
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
-            const holidays: string[] = (mConfig as any)?.holidays ?? [];
+            const holidays: string[] = (mConfig as any)?.holidays ?? [].map((d: any) => d.toString());
             const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
             const today = startOfDay(new Date());
@@ -170,7 +166,7 @@ export default function SchoolReportPage() {
                             if (leave.type === 'Sakit') { p = 0.9; sakitCount++; }
                             else if (leave.type === 'Izin' || leave.type === 'Izin Pribadi') { p = 0.7; izinCount++; }
                             else { p = 1.0; hadirCount++; }
-                            points += p; processedDates.add(dayStr);
+                            points += p; processedDates.add(dStr);
                         }
                     });
                 });
@@ -254,11 +250,10 @@ export default function SchoolReportPage() {
                 columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 8: { halign: 'right', cellWidth: 15 } }
             });
 
-            // --- BOTTOM ANCHOR LOGIC ---
             const footerLineY = pageHeight - 15;
             const bottomSafeLimit = footerLineY - 2; 
             const signatureHeight = 45;
-            const notesLineHeight = 5;
+            const notesLineHeight = 4;
             const labelAreaHeight = 16; 
             
             let totalNotesHeight = 0;
@@ -283,7 +278,6 @@ export default function SchoolReportPage() {
                 closureStartY = currentTableEndY + 10;
             }
 
-            // Render Signature (Top part of closure)
             const signatureX = pageWidth - 85;
             const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
             doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, closureStartY);
@@ -292,7 +286,6 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, closureStartY + 38);
             doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, closureStartY + 44);
 
-            // Render Notes (ANCHORED TO BOTTOM LINE)
             if (mConfig.isHolidayNotesActive) {
                 const listItemsStartY = bottomSafeLimit - totalNotesHeight;
                 const labelsStartY = listItemsStartY - labelAreaHeight + 2;
@@ -387,7 +380,7 @@ export default function SchoolReportPage() {
                         <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
                                 <TableHeader className="bg-muted/30">
-                                    <TableRow className="border-none">
+                                    <TableRow className="border-none h-11">
                                         <TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none h-11">No</TableHead>
                                         <TableHead className="min-w-[200px] font-bold text-xs text-muted-foreground border-none h-11">Nama & Nip</TableHead>
                                         <TableHead className="text-center font-bold text-xs text-muted-foreground border-none h-11">Hadir</TableHead>
@@ -428,7 +421,7 @@ export default function SchoolReportPage() {
                                                     {item.totalAlpa}
                                                 </TableCell>
                                                 <TableCell className="text-center font-black text-primary">
-                                                    {item.persentase}
+                                                    {item.presentasi}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>

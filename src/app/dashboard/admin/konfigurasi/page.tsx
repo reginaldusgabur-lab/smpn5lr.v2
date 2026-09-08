@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -33,12 +32,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { Checkbox } from '@/components/ui/checkbox';
 import { format, getDaysInMonth, startOfMonth, eachDayOfInterval, startOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -63,7 +62,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   const [holidays, setHolidays] = useState<Date[]>([]);
   const [academicYear, setAcademicYear] = useState('');
   const [isHolidayNotesActive, setIsHolidayNotesActive] = useState(false);
-  const [holidayNotes, setHolidayNotes] = useState<{id: string, content: string}[]>([]);
+  const [holidayNotes, setHolidayNotes] = useState<{id: string, date: string, content: string, isRed: boolean}[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   const monthlyConfigId = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
@@ -121,7 +120,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
         manualWorkDays: calculatedWorkDays, 
         academicYear: academicYear,
         isHolidayNotesActive,
-        holidayNotes: holidayNotes.filter(n => n.content.trim() !== '')
+        holidayNotes: holidayNotes.filter(n => n.date.trim() !== '' || n.content.trim() !== '')
       };
       await setDoc(monthlyConfigRef, dataToSave, { merge: true });
       toast({ title: 'Berhasil', description: 'Pengaturan bulanan telah disimpan.' });
@@ -142,15 +141,15 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   };
 
   const addNote = () => {
-    setHolidayNotes(prev => [...prev, { id: Math.random().toString(36).substring(7), content: '' }]);
+    setHolidayNotes(prev => [...prev, { id: Math.random().toString(36).substring(7), date: '', content: '', isRed: false }]);
   };
 
   const removeNote = (id: string) => {
     setHolidayNotes(prev => prev.filter(n => n.id !== id));
   };
 
-  const updateNote = (id: string, content: string) => {
-    setHolidayNotes(prev => prev.map(n => n.id === id ? { ...n, content } : n));
+  const updateNote = (id: string, field: 'date' | 'content' | 'isRed', value: any) => {
+    setHolidayNotes(prev => prev.map(n => n.id === id ? { ...n, [field]: value } : n));
   };
   
   return (
@@ -259,29 +258,55 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                         <Switch checked={isHolidayNotesActive} onCheckedChange={setIsHolidayNotesActive} />
                     </div>
                     {isHolidayNotesActive && (
-                        <div className="space-y-3">
-                            <div className="space-y-2">
+                        <div className="space-y-4">
+                            <div className="space-y-3">
                                 {holidayNotes.map((note) => (
-                                    <div key={note.id} className="flex gap-2 group">
-                                        <Input 
-                                            placeholder="Contoh: Tanggal 17 Libur HUT RI" 
-                                            value={note.content}
-                                            onChange={e => updateNote(note.id, e.target.value)}
-                                            className="h-9 rounded-lg bg-muted/40 font-bold text-[11px] shadow-none"
-                                        />
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10" onClick={() => removeNote(note.id)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                    <div key={note.id} className="p-3 rounded-xl bg-muted/30 border border-muted-foreground/10 space-y-3 relative group">
+                                        <div className="grid grid-cols-1 gap-2">
+                                            <div>
+                                                <Label className="text-[8px] font-bold uppercase text-muted-foreground ml-1">Tgl/Rentang</Label>
+                                                <Input 
+                                                    placeholder="Contoh: 15-20" 
+                                                    value={note.date}
+                                                    onChange={e => updateNote(note.id, 'date', e.target.value)}
+                                                    className="h-8 rounded-lg bg-background font-bold text-[10px] shadow-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[8px] font-bold uppercase text-muted-foreground ml-1">Keterangan</Label>
+                                                <Input 
+                                                    placeholder="Nama hari libur" 
+                                                    value={note.content}
+                                                    onChange={e => updateNote(note.id, 'content', e.target.value)}
+                                                    className="h-8 rounded-lg bg-background font-bold text-[10px] shadow-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between pt-1">
+                                            <div className="flex items-center gap-2">
+                                                <Checkbox 
+                                                    id={`red-${note.id}`} 
+                                                    checked={note.isRed} 
+                                                    onCheckedChange={(checked) => updateNote(note.id, 'isRed', !!checked)} 
+                                                />
+                                                <Label htmlFor={`red-${note.id}`} className="text-[9px] font-bold text-destructive flex items-center gap-1">
+                                                    <AlertCircle className="h-2.5 w-2.5" /> Tandai Merah
+                                                </Label>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => removeNote(id)}>
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))}
                                 <Button variant="outline" size="sm" className="w-full h-9 rounded-lg border-dashed font-bold text-[10px] uppercase tracking-wider" onClick={addNote}>
-                                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Tambah Keterangan
+                                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Tambah Baris Catatan
                                 </Button>
                             </div>
                             <div className="flex items-start gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
                                 <Info className="h-3 w-3 text-blue-500 shrink-0 mt-0.5" />
                                 <p className="text-[9px] text-blue-600 font-bold leading-tight">
-                                    Akan tampil berurutan di halaman terakhir laporan PDF.
+                                    Dua kolom akan tercetak rapi di halaman terakhir laporan PDF. Gunakan ceklis merah untuk hari libur nasional atau penting.
                                 </p>
                             </div>
                         </div>
@@ -292,7 +317,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
             <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 px-8 shadow-none" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                SIMPAN PENGATURAN BULAN DAN CATATAN
+                SIMPAN PENGATURAN BULANAN
             </Button>
         </CardFooter>
     </Card>
@@ -745,3 +770,4 @@ export default function KonfigurasiAbsenPage() {
     </div>
   );
 }
+
