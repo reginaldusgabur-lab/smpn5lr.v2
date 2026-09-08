@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -227,7 +226,7 @@ export function exportToPdf(
             const labelsStartY = listItemsStartY - labelAreaHeight + 2;
 
             doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 6.5);
+            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7.5);
 
             let noteCursorY = listItemsStartY;
             processedNotes.forEach((note) => {
