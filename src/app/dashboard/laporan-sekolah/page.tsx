@@ -81,7 +81,6 @@ export default function SchoolReportPage() {
 
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthId);
             
-            // Robust user fetching: Fetch all and filter roles in memory to avoid missing index issues
             const usersSnap = await getDocs(collection(firestore, 'users'));
             const monthlySnap = await getDoc(monthlyConfigRef);
 
@@ -167,7 +166,7 @@ export default function SchoolReportPage() {
                             if (leave.type === 'Sakit') { p = 0.9; sakitCount++; }
                             else if (leave.type === 'Izin' || leave.type === 'Izin Pribadi') { p = 0.7; izinCount++; }
                             else { p = 1.0; hadirCount++; }
-                            points += p; processedDates.add(dayStr);
+                            points += p; processedDates.add(dStr);
                         }
                     });
                 });
@@ -254,7 +253,7 @@ export default function SchoolReportPage() {
             const footerLineY = pageHeight - 15;
             const bottomSafeLimit = footerLineY - 2; 
             const signatureHeight = 45;
-            const notesLineHeight = 5;
+            const notesLineHeight = 4;
             const labelAreaHeight = 16; 
             
             let totalNotesHeight = 0;
@@ -422,7 +421,7 @@ export default function SchoolReportPage() {
                                                     {item.totalAlpa}
                                                 </TableCell>
                                                 <TableCell className="text-center font-black text-primary">
-                                                    {item.persentase}
+                                                    {item.presentasi}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>
