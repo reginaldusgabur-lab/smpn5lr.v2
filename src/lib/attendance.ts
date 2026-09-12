@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -25,20 +26,28 @@ const cleanDesc = (desc: any) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
-const calculatePoints = (status: string, description: string, s1In: boolean, s1Out: boolean, s2In: boolean, s2Out: boolean): number => {
+const calculatePoints = (status: string, description: string, s1In: boolean, s1Out: boolean, s2In: boolean, s2Out: boolean, isSesi2Active: boolean): number => {
     const d = description.toLowerCase();
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
     
-    // Logika Poin Sesi Ganda: Max 1.0
-    // Sesi 1 (0.5) + Sesi 2 (0.5)
-    let p = 0;
-    if (s1In && s1Out) p += 0.5; else if (s1In || s1Out) p += 0.25;
-    if (s2In && s2Out) p += 0.5; else if (s2In || s2Out) p += 0.25;
-    
-    if (status.toLowerCase() === 'sakit') return 0.9;
-    if (status.toLowerCase().includes('izin')) return 0.7;
-    
-    return p;
+    if (isSesi2Active) {
+        // Logika Poin Sesi Ganda: Max 1.0
+        // Sesi 1 (0.5) + Sesi 2 (0.5)
+        let p = 0;
+        if (s1In && s1Out) p += 0.5; else if (s1In || s1Out) p += 0.25;
+        if (s2In && s2Out) p += 0.5; else if (s2In || s2Out) p += 0.25;
+        
+        if (status.toLowerCase() === 'sakit') return 0.9;
+        if (status.toLowerCase().includes('izin')) return 0.7;
+        return p;
+    } else {
+        // Logika Standar (Sesi 1 Saja)
+        if (s1In && s1Out) return 1.0;
+        if (s1In || s1Out) return 0.5;
+        if (status.toLowerCase() === 'sakit') return 0.9;
+        if (status.toLowerCase().includes('izin')) return 0.7;
+        return 0;
+    }
 };
 
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
@@ -64,7 +73,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_s2_v1_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_s2_toggled_v1_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
 
     try {
@@ -76,6 +85,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         ]);
         const config = configSnap.data() || {};
         const mConfig = monthlySnap.data() || {};
+        const isSesi2Active = !!config.isSesi2Active;
+
         const todayStr = format(new Date(), 'yyyy-MM-dd');
         const workingDays = eachDayOfInterval({ start, end }).filter(d => !(config.offDays || [0, 6]).includes(d.getDay()) && !mConfig.holidays?.includes(format(d, 'yyyy-MM-dd')));
         const workingDaysSet = new Set(workingDays.map(d => format(d, 'yyyy-MM-dd')));
@@ -87,7 +98,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             const att = d.data();
             const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
             if (workingDaysSet.has(dStr)) {
-                totalPoints += calculatePoints('hadir', att.reasonForUpdate || '', !!att.checkInTime, !!att.checkOutTime, !!att.s2CheckInTime, !!att.s2CheckOutTime);
+                totalPoints += calculatePoints('hadir', att.reasonForUpdate || '', !!att.checkInTime, !!att.checkOutTime, !!att.s2CheckInTime, !!att.s2CheckOutTime, isSesi2Active);
                 processedDates.add(dStr);
             }
         });
@@ -97,7 +108,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 const dStr = format(day, 'yyyy-MM-dd');
                 if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
-                    totalPoints += calculatePoints(leave.type, leave.reason || leave.type, false, false, false, false);
+                    totalPoints += calculatePoints(leave.type, leave.reason || leave.type, false, false, false, false, isSesi2Active);
                     processedDates.add(dStr);
                 }
             });
@@ -109,7 +120,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 }
 
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
+    if (!schoolConfig) return [];
     const start = startOfMonth(currentMonth); const end = endOfMonth(currentMonth);
+    const isSesi2Active = !!schoolConfig.isSesi2Active;
+
     try {
         const [mConfigSnap, attSnap, leaveSnap] = await Promise.all([
             getDoc(doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'))),
@@ -135,11 +149,11 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (dStr > todayStr) return null;
             const att = attMap.get(dStr); const leave = leaveMap.get(dStr);
             if (att) {
-                const pts = calculatePoints('hadir', att.reasonForUpdate || '', !!att.checkInTime, !!att.checkOutTime, !!att.s2CheckInTime, !!att.s2CheckOutTime);
+                const pts = calculatePoints('hadir', att.reasonForUpdate || '', !!att.checkInTime, !!att.checkOutTime, !!att.s2CheckInTime, !!att.s2CheckOutTime, isSesi2Active);
                 return { id: att.id, date: dStr, checkInTime: att.checkInTime?.toDate().toISOString() || null, checkOutTime: att.checkOutTime?.toDate().toISOString() || null, s2CheckInTime: att.s2CheckInTime?.toDate().toISOString() || null, s2CheckOutTime: att.s2CheckOutTime?.toDate().toISOString() || null, status: 'Hadir', description: cleanDesc(att.reasonForUpdate), points: pts };
             }
             if (leave) {
-                const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false, false, false);
+                const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false, false, false, isSesi2Active);
                 return { id: leave.id, date: dStr, status: leave.type, description: leave.reason || leave.type, points: pts };
             }
             return { id: dStr, date: dStr, status: 'Alpa', description: 'Tanpa Keterangan', points: 0 };

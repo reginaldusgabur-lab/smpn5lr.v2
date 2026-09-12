@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -27,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle, Clock } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle, Clock, QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -164,6 +165,7 @@ export default function KonfigurasiAbsenPage() {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   
   const [holidayMode, setHolidayMode] = useState(false);
+  const [isSesi2Active, setIsSesi2Active] = useState(false);
   const [offDays, setOffDays] = useState<number[]>([0, 6]);
   const [useLocationValidation, setUseLocationValidation] = useState(true);
   const [lat, setLat] = useState('-8.58333');
@@ -190,7 +192,9 @@ export default function KonfigurasiAbsenPage() {
 
   useEffect(() => {
     if (config) {
-      setHolidayMode(config.isAttendanceActive === false); setOffDays(config.offDays ?? [0, 6]);
+      setHolidayMode(config.isAttendanceActive === false); 
+      setIsSesi2Active(config.isSesi2Active ?? false);
+      setOffDays(config.offDays ?? [0, 6]);
       setUseLocationValidation(config.useLocationValidation ?? true);
       setLat(config.latitude?.toString() ?? '-8.58333'); setLon(config.longitude?.toString() ?? '120.46667');
       setRadius(config.radius ?? 100);
@@ -207,7 +211,9 @@ export default function KonfigurasiAbsenPage() {
     setIsSaving(true);
     try {
       await setDoc(schoolConfigRef, {
-        isAttendanceActive: !holidayMode, offDays, useLocationValidation,
+        isAttendanceActive: !holidayMode, 
+        isSesi2Active,
+        offDays, useLocationValidation,
         latitude: parseFloat(lat), longitude: parseFloat(lon), radius: Number(radius),
         checkInStartTime: s1InStart, checkInEndTime: s1InEnd, checkOutStartTime: s1OutStart, checkOutEndTime: s1OutEnd,
         s2CheckInStartTime: s2InStart, s2CheckInEndTime: s2InEnd, s2CheckOutStartTime: s2OutStart, s2CheckOutEndTime: s2OutEnd,
@@ -237,6 +243,14 @@ export default function KonfigurasiAbsenPage() {
         <Card className="lg:col-span-2 rounded-2xl border-none bg-card shadow-none overflow-hidden">
           <CardHeader className="bg-muted/20 border-b border-muted-foreground/10 text-primary"><CardTitle className="font-bold text-sm uppercase tracking-widest">Pengaturan Jam Kerja & Lokasi</CardTitle></CardHeader>
           <CardContent className="p-6 space-y-8">
+            <div className="rounded-2xl border p-4 bg-primary/5 flex items-center justify-between">
+                <div>
+                    <Label className="font-black text-xs uppercase tracking-widest text-primary">Sistem Sesi Ganda (S1 & S2)</Label>
+                    <p className="text-[10px] font-bold text-muted-foreground mt-1">Aktifkan untuk absensi pagi dan siang yang terpisah.</p>
+                </div>
+                <Switch checked={isSesi2Active} onCheckedChange={setIsSesi2Active} />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <Label className="text-primary font-black uppercase text-[10px] tracking-[0.2em] flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Sesi 1 (Pagi)</Label>
@@ -247,7 +261,7 @@ export default function KonfigurasiAbsenPage() {
                   <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Pulang</Label><Input type="time" value={s1OutEnd} onChange={e => setS1OutEnd(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className={cn("space-y-4 transition-opacity", !isSesi2Active && "opacity-30 pointer-events-none")}>
                 <Label className="text-primary font-black uppercase text-[10px] tracking-[0.2em] flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Sesi 2 (Siang/Sore)</Label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Masuk</Label><Input type="time" value={s2InStart} onChange={e => setS2InStart(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>

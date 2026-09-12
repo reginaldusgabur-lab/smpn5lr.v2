@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from "react";
@@ -5,11 +6,12 @@ import { useCache } from "@/context/CacheContext";
 import { format } from "date-fns";
 
 /**
- * Hook useAttendanceWindow versi Sesi Ganda yang stabil.
+ * Hook useAttendanceWindow dengan dukungan Toggle Sesi Ganda.
  */
 
 export interface SchoolConfig {
   isAttendanceActive?: boolean;
+  isSesi2Active?: boolean; // Toggle untuk mengaktifkan sesi 2
   useTimeValidation?: boolean;
   checkInStartTime?: string;
   checkInEndTime?: string;
@@ -82,6 +84,7 @@ export const useAttendanceWindow = (): AttendanceStatus => {
             return h * 60 + m;
         };
 
+        // Logika Sesi 1
         const s1InStart = parseToMinutes(config.checkInStartTime) ?? 360;
         const s1InEnd = parseToMinutes(config.checkInEndTime) ?? 480;
         const s1OutStart = parseToMinutes(config.checkOutStartTime) ?? 720;
@@ -93,18 +96,24 @@ export const useAttendanceWindow = (): AttendanceStatus => {
         else if (currentTime >= s1OutStart && currentTime <= s1OutEnd) s1Status = "OUT_OPEN";
         else if (currentTime > s1OutEnd) s1Status = "CLOSED";
 
-        const s2InStart = parseToMinutes(config.s2CheckInStartTime) ?? 780;
-        const s2InEnd = parseToMinutes(config.s2CheckInEndTime) ?? 840;
-        const s2OutStart = parseToMinutes(config.s2CheckOutStartTime) ?? 900;
-        const s2OutEnd = parseToMinutes(config.s2CheckOutEndTime) ?? 1020;
-
+        // Logika Sesi 2 (Hanya diproses jika aktif)
         let s2Status: SessionStatus = "BEFORE";
-        if (currentTime >= s2InStart && currentTime <= s2InEnd) s2Status = "IN_OPEN";
-        else if (currentTime > s2InEnd && currentTime < s2OutStart) s2Status = "IN_CLOSED";
-        else if (currentTime >= s2OutStart && currentTime <= s2OutEnd) s2Status = "OUT_OPEN";
-        else if (currentTime > s2OutEnd) s2Status = "CLOSED";
+        let activeSession: 1 | 2 = 1;
 
-        const activeSession = currentTime >= s2InStart ? 2 : 1;
+        if (config.isSesi2Active) {
+            const s2InStart = parseToMinutes(config.s2CheckInStartTime) ?? 780;
+            const s2InEnd = parseToMinutes(config.s2CheckInEndTime) ?? 840;
+            const s2OutStart = parseToMinutes(config.s2CheckOutStartTime) ?? 900;
+            const s2OutEnd = parseToMinutes(config.s2CheckOutEndTime) ?? 1020;
+
+            if (currentTime >= s2InStart && currentTime <= s2InEnd) s2Status = "IN_OPEN";
+            else if (currentTime > s2InEnd && currentTime < s2OutStart) s2Status = "IN_CLOSED";
+            else if (currentTime >= s2OutStart && currentTime <= s2OutEnd) s2Status = "OUT_OPEN";
+            else if (currentTime > s2OutEnd) s2Status = "CLOSED";
+
+            // Tentukan sesi mana yang sedang aktif tampil di UI
+            if (currentTime >= s2InStart) activeSession = 2;
+        }
 
         if (
             stateRef.current.status !== "ACTIVE" ||

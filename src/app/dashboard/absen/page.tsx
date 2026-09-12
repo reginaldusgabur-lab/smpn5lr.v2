@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -78,7 +79,7 @@ export default function AbsenPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isScannerReady, setIsScannerReady] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-  const readerId = "qr-reader-fullscreen-dashboard";
+  const readerId = "qr-reader-fullscreen-v2";
 
   useEffect(() => { setIsClient(true); }, []);
 
@@ -199,8 +200,10 @@ export default function AbsenPage() {
     <div className="fixed inset-0 z-40 bg-background overflow-hidden">
         {showScanner && <div id={readerId} className="w-full h-full" />}
         <div className="absolute top-8 left-0 right-0 z-50 text-center pointer-events-none">
-            <h2 className="text-white text-2xl font-bold drop-shadow-lg uppercase tracking-tighter">ABSENSI SESI {activeSession}</h2>
-            <p className="text-white/70 text-[10px] font-bold mt-1">SISTEM E-SPENLI</p>
+            <h2 className="text-white text-2xl font-bold drop-shadow-lg uppercase tracking-tighter">
+                {schoolConfig?.isSesi2Active ? `ABSENSI SESI ${activeSession}` : 'ABSENSI SEKOLAH'}
+            </h2>
+            <p className="text-white/70 text-[10px] font-bold mt-1 uppercase tracking-widest">Sistem E-SPENLI</p>
         </div>
         <div className="absolute inset-0 z-10 pointer-events-none">
             {isScannerReady && <div className="absolute left-0 right-0 h-16 animate-scan-line bg-gradient-to-b from-transparent via-primary/40 to-transparent" />}
@@ -210,6 +213,7 @@ export default function AbsenPage() {
             <StatusFeedbackOverlay 
                 status={effectiveStatus} 
                 session={activeSession}
+                isSesi2Active={schoolConfig?.isSesi2Active}
                 onClose={() => effectiveStatus.includes('success') || effectiveStatus.includes('info') ? router.push('/dashboard') : setStatus('idle')} 
                 userData={userData} 
             />
@@ -218,20 +222,21 @@ export default function AbsenPage() {
   );
 }
 
-const StatusFeedbackOverlay = ({ status, session, onClose, userData }: any) => {
+const StatusFeedbackOverlay = ({ status, session, onClose, userData, isSesi2Active }: any) => {
     const feedback = useMemo(() => {
         const iconSize = "h-12 w-12";
+        const label = isSesi2Active ? ` SESI ${session}` : '';
         switch (status) {
-            case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: `MASUK SESI ${session} BERHASIL`, desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
-            case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: `PULANG SESI ${session} BERHASIL`, desc: 'Absen pulang terekam. Hati-hati di jalan!' };
+            case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: `MASUK${label} BERHASIL`, desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
+            case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: `PULANG${label} BERHASIL`, desc: 'Absen pulang terekam. Hati-hati di jalan!' };
             case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di area sekolah.' };
-            case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'WAKTU HABIS', desc: `Sesi absensi ${session} sudah ditutup.` };
+            case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'WAKTU HABIS', desc: `Jadwal absensi${label} sudah ditutup.` };
             case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'BATAS MASUK BERAKHIR', desc: 'Waktu masuk berakhir, silakan tunggu absen pulang.' };
             case 'info_holiday': return { icon: <CalendarOff className={cn(iconSize, "text-amber-500")} />, title: 'HARI LIBUR', desc: 'Sistem absensi tidak aktif hari ini.' };
-            case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: `ABSENSI S${session} SELESAI`, desc: 'Anda sudah tuntas untuk sesi ini.' };
+            case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: `ABSENSI${label} SELESAI`, desc: 'Anda sudah tuntas untuk sesi ini.' };
             default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'GAGAL', desc: 'Terjadi kesalahan sistem.' };
         }
-    }, [status, session]);
+    }, [status, session, isSesi2Active]);
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 backdrop-blur-xl px-10">
