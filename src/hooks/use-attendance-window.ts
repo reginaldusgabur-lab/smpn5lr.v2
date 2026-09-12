@@ -6,7 +6,7 @@ import { useCache } from "@/context/CacheContext";
 import { format } from "date-fns";
 
 /**
- * Hook useAttendanceWindow dengan dukungan Toggle Sesi Ganda.
+ * Hook useAttendanceWindow dengan dukungan Sesi 2 Mandiri.
  */
 
 export interface SchoolConfig {
@@ -86,7 +86,7 @@ export const useAttendanceWindow = (): AttendanceStatus => {
             return h * 60 + m;
         };
 
-        // --- SESI 1 ---
+        // --- SESI 1 LOGIC ---
         const s1InStart = parseToMinutes(config.checkInStartTime) ?? 360;
         const s1InEnd = parseToMinutes(config.checkInEndTime) ?? 480;
         const s1OutStart = parseToMinutes(config.checkOutStartTime) ?? 720;
@@ -99,7 +99,7 @@ export const useAttendanceWindow = (): AttendanceStatus => {
         else if (currentTime >= s1OutStart && currentTime <= s1OutEnd) s1Status = "OUT_OPEN";
         else s1Status = "CLOSED";
 
-        // --- SESI 2 (Opsional) ---
+        // --- SESI 2 LOGIC (Independen) ---
         let s2Status: SessionStatus = "BEFORE";
         let activeSession: 1 | 2 = 1;
         let activeSessionStatus: SessionStatus = s1Status;
@@ -116,14 +116,10 @@ export const useAttendanceWindow = (): AttendanceStatus => {
             else if (currentTime >= s2OutStart && currentTime <= s2OutEnd) s2Status = "OUT_OPEN";
             else s2Status = "CLOSED";
 
-            // Tentukan sesi mana yang aktif berdasarkan waktu
-            // Jika sudah masuk waktu Sesi 2 (dimulai dari s2InStart), maka beralih ke Sesi 2
+            // Aturan: Sesi 2 aktif jika waktu sudah memasuki s2InStart
             if (currentTime >= s2InStart) {
                 activeSession = 2;
                 activeSessionStatus = s2Status;
-            } else {
-                activeSession = 1;
-                activeSessionStatus = s1Status;
             }
         }
 
