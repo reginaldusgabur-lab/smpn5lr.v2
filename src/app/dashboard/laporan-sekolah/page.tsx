@@ -125,7 +125,7 @@ export default function SchoolReportPage() {
             });
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
-            const holidays: string[] = (mConfig as any)?.holidays ?? [].map((d: any) => d.toString());
+            const holidays: string[] = (mConfig as any)?.holidays ?? [];
             const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
             const today = startOfDay(new Date());
@@ -421,7 +421,7 @@ export default function SchoolReportPage() {
                                                     {item.totalAlpa}
                                                 </TableCell>
                                                 <TableCell className="text-center font-black text-primary">
-                                                    {item.presentasi}
+                                                    {item.persentase}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}>
