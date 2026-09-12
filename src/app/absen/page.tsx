@@ -82,13 +82,23 @@ export default function AbsenPage() {
 
   useEffect(() => { setIsClient(true); }, []);
 
-  const { data: userData } = useDoc(user, user ? doc(firestore, 'users', user.uid) : null);
+  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userData } = useDoc(user, userDocRef);
   
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, user ? query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', todayStr)) : null);
+  const todaysAttendanceQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', todayStr));
+  }, [user, firestore, todayStr]);
+  const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
   const todaysRecord = todaysAttendance?.[0];
 
-  const { data: activeLeaves, isLoading: isLeaveLoading } = useCollection(user, user ? query(collection(firestore, 'users', user.uid, 'leaveRequests'), where('status', '==', 'approved')) : null);
+  const activeLeavesQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'users', user.uid, 'leaveRequests'), where('status', '==', 'approved'));
+  }, [user, firestore]);
+  const { data: activeLeaves, isLoading: isLeaveLoading } = useCollection(user, activeLeavesQuery);
+
   const currentActiveLeave = useMemo(() => {
       if (!activeLeaves || !isClient) return null;
       const now = new Date();
