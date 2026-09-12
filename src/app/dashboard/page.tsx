@@ -71,7 +71,7 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const { status: windowStatus, activeSession, s1Status, s2Status } = useAttendanceWindow();
+  const { status: windowStatus } = useAttendanceWindow();
   const isMounted = useRef(true);
   const [isClient, setIsClient] = useState(false);
 
@@ -184,29 +184,26 @@ export default function DashboardPage() {
 
   const renderAttendanceButton = () => {
     const record = todaysAttendance?.[0];
-    const isS1Done = record?.checkInTime && record?.checkOutTime;
-    const isS2Done = record?.s2CheckInTime && record?.s2CheckOutTime;
+    const isCheckedIn = !!record?.checkInTime;
+    const isCheckedOut = !!record?.checkOutTime;
     
     const disabledStyle = "w-full bg-primary/10 text-primary/40 border border-primary/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none shadow-none";
 
     if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat...</div>;
     if (currentActiveLeave) return <div className="w-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm">{currentActiveLeave.type} Disetujui</div>;
     
+    if (isCheckedOut) return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
+
     if (windowStatus === 'DISABLED' || stats.isManualDisabled) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Sistem Non-Aktif</div>;
     if (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Hari Libur</div>;
 
-    const currentStatus = activeSession === 1 ? s1Status : s2Status;
-    const hasIn = activeSession === 1 ? !!record?.checkInTime : !!record?.s2CheckInTime;
-    const hasOut = activeSession === 1 ? !!record?.checkOutTime : !!record?.s2CheckOutTime;
+    if (windowStatus === 'CHECK_OUT_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-none active:scale-95 transition-all bg-blue-600 hover:bg-blue-700 text-white"><Link href="/dashboard/absen">Absen pulang sekarang</Link></Button>;
 
-    if (hasIn && hasOut) return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><Sparkles className="mr-2 w-4 h-4" /> Sesi {activeSession} Selesai</div>;
-
-    if (currentStatus === 'IN_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Masuk S{activeSession}</Link></Button>;
-    if (currentStatus === 'OUT_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang S{activeSession}</Link></Button>;
-    
-    if (currentStatus === 'IN_CLOSED') return <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Batas Masuk S{activeSession} Berakhir</div>;
-    if (currentStatus === 'BEFORE') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Sesi {activeSession} Belum Dibuka</div>;
-    if (currentStatus === 'CLOSED') return <div className={disabledStyle}><AlertCircle className="mr-2 h-4 w-4" /> Sesi {activeSession} Berakhir</div>;
+    if (!isCheckedIn) {
+        if (windowStatus === 'BEFORE_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
+        if (windowStatus === 'CHECK_IN_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-none active:scale-95 transition-all"><Link href="/dashboard/absen">Absen masuk sekarang</Link></Button>;
+        if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
+    }
 
     return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Menunggu Jadwal</div>;
   };
@@ -232,7 +229,7 @@ export default function DashboardPage() {
                     <CardContent className="p-6 relative z-10">
                         <div className="flex items-center gap-4">
                             <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div>
-                            <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi sesi ganda dengan mudah.</p></div>
+                            <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi harian Anda dengan mudah.</p></div>
                         </div>
                     </CardContent>
                 </Card>
@@ -243,11 +240,11 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4">
                             <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
                                 <div className="bg-green-500 p-2.5 rounded-full text-white shrink-0"><LogIn className="h-4 w-4" /></div>
-                                <div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk S{activeSession}</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (activeSession === 1 ? (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--') : (todaysAttendance?.[0]?.s2CheckInTime ? format(todaysAttendance[0].s2CheckInTime.toDate(), 'HH:mm') : '--:--'))}</p></div>
+                                <div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}</p></div>
                             </div>
                             <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
                                 <div className="bg-blue-500 p-2.5 rounded-full text-white shrink-0"><LogOut className="h-4 w-4" /></div>
-                                <div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang S{activeSession}</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (activeSession === 1 ? (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--') : (todaysAttendance?.[0]?.s2CheckOutTime ? format(todaysAttendance[0].s2CheckOutTime.toDate(), 'HH:mm') : '--:--'))}</p></div>
+                                <div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}</p></div>
                             </div>
                         </div>
                         <div className="flex flex-col items-stretch gap-3">

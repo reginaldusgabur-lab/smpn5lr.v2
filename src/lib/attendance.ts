@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
@@ -11,8 +10,6 @@ export interface MonthlyReportData {
     date: string;
     checkInTime: string | null;
     checkOutTime: string | null;
-    s2CheckInTime: string | null;
-    s2CheckOutTime: string | null;
     status: string;
     description: string;
     manualEntry: boolean;
@@ -26,9 +23,9 @@ const cleanDesc = (desc: any) => {
     if (d === 'terlambat') return 'Terlambat';
     if (d === 'sakit') return 'Sakit';
     if (d === 'izin' || d === 'izin pribadi') return 'Izin pribadi';
-    if (d === 'dinas pagi') return 'Dinas pagi';
-    if (d === 'dinas siang') return 'Dinas siang';
-    if (d === 'pulang cepat') return 'Pulang cepat';
+    if (d === 'dinas pagi' || d === 'tugas dinas pagi') return 'Dinas pagi';
+    if (d === 'dinas siang' || d === 'tugas dinas siang') return 'Dinas siang';
+    if (d === 'pulang cepat' || d === 'izin pulang cepat') return 'Pulang cepat';
     if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
 
     if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi')) {
@@ -37,35 +34,17 @@ const cleanDesc = (desc: any) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
-/**
- * Menghitung poin berdasarkan Sesi 1 dan Sesi 2 (Jika aktif).
- */
-const calculatePoints = (status: string, description: string, s1In: boolean, s1Out: boolean, s2In: boolean, s2Out: boolean, isSesi2Active: boolean): number => {
+const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
 
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
-    
-    if (isSesi2Active) {
-        // Skema Sesi Ganda: Max 1.0
-        // S1 (0.5) + S2 (0.5)
-        let p = 0;
-        if (s1In && s1Out) p += 0.5; else if (s1In || s1Out) p += 0.25;
-        if (s2In && s2Out) p += 0.5; else if (s2In || s2Out) p += 0.25;
-
-        if (s === 'sakit') return 0.9;
-        if (s.includes('izin')) return 0.7;
-        if (d === 'terlambat' || d.includes('cepat')) return Math.max(0, p - 0.05);
-        return p;
-    } else {
-        // Skema Standar (Sesi 1 Saja)
-        if (s1In && s1Out) return 1.0;
-        if (s1In || s1Out) return 0.5;
-        if (s === 'sakit') return 0.9;
-        if (s.includes('izin')) return 0.7;
-        if (d === 'terlambat' || d.includes('cepat')) return 0.95;
-        return 0.0;
-    }
+    if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
+    if (d === 'terlambat' || d.includes('cepat')) return 0.95;
+    if (s === 'sakit') return 0.9;
+    if (s.includes('izin')) return 0.7;
+    if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
+    return 0.0;
 };
 
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
@@ -78,8 +57,8 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             getDoc(doc(firestore, 'monthlyConfigs', format(today, 'yyyy-MM')))
         ]);
 
-        const schoolConfig = schoolConfigSnap.data() || {};
-        const monthlyConfig = monthlyConfigSnap.data() || {};
+        const schoolConfig = schoolConfigSnap.exists() ? schoolConfigSnap.data() : {};
+        const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
 
         const isManualOff = schoolConfig.isAttendanceActive === false;
         const holidays = monthlyConfig.holidays || [];
@@ -153,7 +132,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_s2_toggled_v1_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v302_single_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
 
     try {
@@ -166,7 +145,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         const config = configSnap.data() || {};
         const mConfig = monthlySnap.data() || {};
-        const isSesi2Active = !!config.isSesi2Active;
         const todayStr = format(new Date(), 'yyyy-MM-dd');
 
         const workingDays = eachDayOfInterval({ start, end }).filter(day => 
@@ -184,9 +162,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             const att = d.data();
             const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
             if (workingDaysSet.has(dStr)) {
-                const s1In = !!att.checkInTime, s1Out = !!att.checkOutTime;
-                const s2In = !!att.s2CheckInTime, s2Out = !!att.s2CheckOutTime;
-                totalPoints += calculatePoints('hadir', att.reasonForUpdate || '', s1In, s1Out, s2In, s2Out, isSesi2Active);
+                totalPoints += calculatePoints('hadir', att.reasonForUpdate || '', !!att.checkInTime, !!att.checkOutTime);
                 hadirCount++;
                 processedDates.add(dStr);
             }
@@ -197,7 +173,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 const dStr = format(day, 'yyyy-MM-dd');
                 if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
-                    totalPoints += calculatePoints(leave.type, leave.reason || leave.type, false, false, false, false, isSesi2Active);
+                    totalPoints += calculatePoints(leave.type, leave.reason || leave.type, false, false);
                     if (leave.type === 'Sakit') sakitCount++; else izinCount++;
                     processedDates.add(dStr);
                 }
@@ -221,7 +197,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
     if (!schoolConfig) return [];
     const start = startOfMonth(currentMonth); const end = endOfMonth(currentMonth);
-    const isSesi2Active = !!schoolConfig.isSesi2Active;
 
     try {
         const [mConfigSnap, attSnap, leaveSnap] = await Promise.all([
@@ -239,7 +214,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         });
 
         const leaveMap = new Map();
-        leaveSnap.docs.forEach(d => {
+        leaveHistorySnap.docs.forEach(d => {
             const l = d.data();
             eachDayOfInterval({ start: l.startDate.toDate(), end: l.endDate.toDate() }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), l));
         });
@@ -253,20 +228,17 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const att = attMap.get(dStr); const leave = leaveMap.get(dStr);
 
             if (att) {
-                const s1In = !!att.checkInTime, s1Out = !!att.checkOutTime;
-                const s2In = !!att.s2CheckInTime, s2Out = !!att.s2CheckOutTime;
-                const pts = calculatePoints('hadir', att.reasonForUpdate || '', s1In, s1Out, s2In, s2Out, isSesi2Active);
+                const hasIn = !!att.checkInTime, hasOut = !!att.checkOutTime;
+                const pts = calculatePoints('hadir', att.reasonForUpdate || '', hasIn, hasOut);
                 return { 
                     id: att.id, date: dStr, 
                     checkInTime: att.checkInTime?.toDate().toISOString() || null, 
                     checkOutTime: att.checkOutTime?.toDate().toISOString() || null,
-                    s2CheckInTime: att.s2CheckInTime?.toDate().toISOString() || null,
-                    s2CheckOutTime: att.s2CheckOutTime?.toDate().toISOString() || null,
                     status: 'Hadir', description: cleanDesc(att.reasonForUpdate), points: pts 
                 };
             }
             if (leave) {
-                const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false, false, false, isSesi2Active);
+                const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false);
                 return { id: leave.id, date: dStr, status: leave.type, description: leave.reason || leave.type, points: pts };
             }
             return { id: dStr, date: dStr, status: 'Alpa', description: 'Tanpa Keterangan', points: 0 };

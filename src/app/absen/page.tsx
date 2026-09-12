@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Html5Qrcode } from 'html5-qrcode';
-import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle, Lock, Sparkles } from 'lucide-react';
+import { X, Loader2, CameraOff, CalendarOff, MapPin, Clock as ClockIcon, CheckCircle, Lock, FileText, Sparkles } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -71,7 +70,7 @@ const playSuccessFeedback = async (customAudioBase64?: string) => {
             setTimeout(() => context.close(), 1000);
         }
     } catch (e) {
-        console.warn("Feedback failed", e);
+        console.warn("Feedback audio/vibration failed", e);
     }
 };
 
@@ -81,11 +80,11 @@ export default function AbsenPage() {
   const [status, setStatus] = useState<FeedbackStatus>('idle');
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
-  const { status: globalStatus, activeSession, activeSessionStatus, config: schoolConfig } = useAttendanceWindow();
+  const { status: windowStatus, config: schoolConfig } = useAttendanceWindow();
   
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isScannerReady, setIsScannerReady] = useState(false);
@@ -120,126 +119,88 @@ export default function AbsenPage() {
       return activeLeaves.find(l => isWithinInterval(now, { start: startOfDay(l.startDate.toDate()), end: endOfDay(l.endDate.toDate()) }));
   }, [activeLeaves, isClient]);
 
-  const isDataLoading = !isClient || isAttendanceLoading || isLeaveLoading || globalStatus === 'LOADING';
+  const isDataLoading = !isClient || isUserLoading || isAttendanceLoading || isLeaveLoading || windowStatus === 'LOADING';
   const isCameraInitializing = hasCameraPermission === null;
-  
-  const hasIn = useMemo(() => {
-      if (!todaysRecord) return false;
-      return activeSession === 1 ? !!todaysRecord.checkInTime : !!todaysRecord.s2CheckInTime;
-  }, [todaysRecord, activeSession]);
-
-  const hasOut = useMemo(() => {
-      if (!todaysRecord) return false;
-      return activeSession === 1 ? !!todaysRecord.checkOutTime : !!todaysRecord.s2CheckOutTime;
-  }, [todaysRecord, activeSession]);
+  const isHoliday = windowStatus === 'SESSION_INACTIVE';
+  const isManualDisabled = windowStatus === 'DISABLED';
+  const hasCompletedAttendance = useMemo(() => !!(todaysRecord?.checkInTime && todaysRecord?.checkOutTime), [todaysRecord]);
 
   const effectiveStatus: FeedbackStatus = useMemo(() => {
       if (status !== 'idle') return status;
       if (isDataLoading) return 'idle';
       if (currentActiveLeave) return 'info_leave';
-      if (globalStatus === 'DISABLED') return 'info_disabled';
-      if (globalStatus === 'SESSION_INACTIVE') return 'info_holiday';
-      
-      if (hasIn && hasOut) return 'info_checked_out';
-      if (activeSessionStatus === 'IN_CLOSED') return 'error_checkin_closed';
-      if (activeSessionStatus === 'BEFORE' || activeSessionStatus === 'CLOSED') return 'error_time';
+      if (hasCompletedAttendance) return 'info_checked_out';
+      if (isManualDisabled) return 'info_disabled';
+      if (isHoliday) return 'info_holiday';
+      if (windowStatus === 'AFTER_IN') return 'error_checkin_closed';
+      if (windowStatus === 'BEFORE_IN' || windowStatus === 'CLOSED') return 'error_time';
       if (hasCameraPermission === false) return 'info_no_camera';
       return 'idle';
-  }, [status, isDataLoading, currentActiveLeave, globalStatus, activeSessionStatus, hasIn, hasOut, hasCameraPermission]);
+  }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
 
-  const showScanner = isClient && !isDataLoading && hasCameraPermission && globalStatus === 'ACTIVE' && (activeSessionStatus === 'IN_OPEN' || activeSessionStatus === 'OUT_OPEN');
+  const showScanner = isClient && !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
+  const showLoader = isDataLoading || (isClient && isCameraInitializing) || (showScanner && !isScannerReady);
 
   const handleAttendance = useCallback(async () => {
-    if (!user || !firestore || !schoolConfig || !activeSession) return;
-    
+    setLocationError(null);
+    if (!user || !firestore || !schoolConfig) {
+        setStatus('error_generic');
+        return;
+    }
+    if (windowStatus !== 'CHECK_IN_OPEN' && windowStatus !== 'CHECK_OUT_OPEN') {
+        setStatus(windowStatus === 'AFTER_IN' ? 'error_checkin_closed' : 'error_time');
+        return;
+    }
     setStatus('processing');
     try {
-        let lat = null, lon = null;
+        let latitude: number | null = null, longitude: number | null = null;
         if (schoolConfig.useLocationValidation) {
             setStatus('locating');
             try {
-                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
-                lat = pos.coords.latitude; lon = pos.coords.longitude;
-                if (getDistance(lat, lon, schoolConfig.latitude!, schoolConfig.longitude!) > schoolConfig.radius!) {
-                    return setStatus('error_radius');
+                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+                latitude = pos.coords.latitude; longitude = pos.coords.longitude;
+                if (schoolConfig.radius && schoolConfig.latitude && schoolConfig.longitude) {
+                    if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) return setStatus('error_radius');
                 }
-            } catch (e) {
-                return setStatus('error_location');
+            } catch (error: any) {
+                let specificError = 'Gagal mendapatkan lokasi.';
+                if (error.code === 1) specificError = 'Akses lokasi ditolak.';
+                setLocationError(specificError); return setStatus('error_location');
             }
         }
-
         const now = new Date();
-        const recordRef = todaysRecord ? doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id) : null;
-        
-        if (activeSessionStatus === 'IN_OPEN') {
-            const checkField = activeSession === 1 ? 'checkInTime' : 's2CheckInTime';
-            const latField = activeSession === 1 ? 'checkInLatitude' : 's2CheckInLatitude';
-            const lonField = activeSession === 1 ? 'checkInLongitude' : 's2CheckInLongitude';
-
-            if (recordRef) {
-                await updateDoc(recordRef, { [checkField]: now, [latField]: lat, [lonField]: lon });
+        const todayStr = format(now, 'yyyy-MM-dd');
+        if (windowStatus === 'CHECK_IN_OPEN') {
+            if (todaysRecord?.checkInTime) return setStatus('error_already_in');
+            if (todaysRecord) {
+                await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude });
             } else {
-                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { 
-                    userId: user.uid, 
-                    date: todayStr, 
-                    [checkField]: now, 
-                    [latField]: lat, 
-                    [lonField]: lon 
-                });
+                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
             }
+            invalidateCache();
+            playSuccessFeedback((schoolConfig as any).successSoundUrl);
             setStatus('success_in');
-        } else if (activeSessionStatus === 'OUT_OPEN') {
-            const checkField = activeSession === 1 ? 'checkOutTime' : 's2CheckOutTime';
-            const latField = activeSession === 1 ? 'checkOutLatitude' : 's2CheckOutLatitude';
-            const lonField = activeSession === 1 ? 'checkOutLongitude' : 's2CheckOutLongitude';
-
-            if (recordRef) {
-                await updateDoc(recordRef, { [checkField]: now, [latField]: lat, [lonField]: lon });
+        } else if (windowStatus === 'CHECK_OUT_OPEN') {
+            if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
+            if (!todaysRecord) {
+                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude, reasonForUpdate: 'Absen pulang (Tanpa masuk)' });
             } else {
-                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { 
-                    userId: user.uid, 
-                    date: todayStr, 
-                    [checkField]: now, 
-                    [latField]: lat, 
-                    [lonField]: lon,
-                    reasonForUpdate: `Absen Pulang S${activeSession} (Tanpa Masuk)`
-                });
+                await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
             }
+            invalidateCache();
+            playSuccessFeedback((schoolConfig as any).successSoundUrl);
             setStatus('success_out');
         }
-        invalidateCache();
-        playSuccessFeedback((schoolConfig as any).successSoundUrl);
-    } catch (e) {
+    } catch (error) {
         setStatus('error_generic');
     }
-}, [user, firestore, schoolConfig, todaysRecord, activeSessionStatus, activeSession, todayStr]);
-
-  const onScanSuccess = useCallback((decoded: string) => {
-    if (status === 'idle' && decoded === schoolConfig?.qrCodeValue) {
-        handleAttendance();
-    } else if (decoded !== schoolConfig?.qrCodeValue) {
-        toast({ variant: 'destructive', title: 'QR Code tidak valid' });
-    }
-  }, [schoolConfig, status, handleAttendance, toast]);
+}, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
+  
+  const statusRef = useRef(status); statusRef.current = status;
+  const handleAttendanceRef = useRef(handleAttendance); handleAttendanceRef.current = handleAttendance;
 
   useEffect(() => {
-    if (showScanner && status === 'idle') {
-        const qr = html5QrCodeRef.current || new Html5Qrcode(readerId);
-        html5QrCodeRef.current = qr;
-        if (qr.getState() !== 2) {
-            setIsScannerReady(false);
-            qr.start({ facingMode: 'environment' }, { fps: 30 }, onScanSuccess, undefined)
-              .then(() => setIsScannerReady(true)).catch(() => setIsScannerReady(false));
-        }
-    } 
-    return () => {
-        if (html5QrCodeRef.current?.isScanning) {
-            html5QrCodeRef.current.stop().catch(e => console.warn(e));
-        }
-    };
-  }, [showScanner, status, onScanSuccess]);
-
-  useEffect(() => {
+    if (!isClient) return;
     let isMounted = true;
     const checkCameras = async () => {
         try {
@@ -251,33 +212,69 @@ export default function AbsenPage() {
     }
     checkCameras();
     return () => { isMounted = false; };
-  }, []);
+  }, [isClient]);
+
+  const onScanSuccess = useCallback((decodedText: string) => {
+    if (statusRef.current === 'idle' && schoolConfig?.qrCodeValue) {
+        if (decodedText === schoolConfig.qrCodeValue) {
+            handleAttendanceRef.current();
+        } else {
+            toast({ variant: 'destructive', title: 'QR Code tidak valid' });
+        }
+    }
+  }, [schoolConfig?.qrCodeValue, toast]);
+
+  useEffect(() => {
+    if (showScanner && status === 'idle') {
+        const qrCode = html5QrCodeRef.current || new Html5Qrcode(readerId, { verbose: false });
+        html5QrCodeRef.current = qrCode;
+        if (qrCode.getState() !== 2) {
+            setIsScannerReady(false);
+            qrCode.start(
+                { facingMode: 'environment' }, 
+                { fps: 30, disableFlip: true }, 
+                onScanSuccess, 
+                undefined
+            )
+            .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
+            .catch(() => setIsScannerReady(false));
+        }
+    } 
+    return () => {
+        if (html5QrCodeRef.current?.isScanning) {
+            html5QrCodeRef.current.stop().catch(err => console.warn(err));
+            html5QrCodeRef.current = null;
+            setIsScannerReady(false);
+        }
+    };
+  }, [showScanner, status, onScanSuccess]);
 
   if (!isClient) return null;
 
   return (
     <div className="fixed inset-0 z-40 bg-background overflow-hidden" style={{ touchAction: 'none' }}>
-        {showScanner && (
+        {(showScanner || isCameraInitializing) && (
             <div className="absolute inset-0">
                 <div id={readerId} className="w-full h-full" />
                 <style>{`
-                    #${readerId} > video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+                    #${readerId} > video { width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: ${isScannerReady ? 1 : 0.5}; transition: opacity 0.3s ease-in-out; }
                     #${readerId}__scan_region, #${readerId}__dashboard_section_csr { display: none !important; }
                     #${readerId} { border: none !important; }
                 `}</style>
             </div>
         )}
-        <div className="absolute top-8 left-0 right-0 z-50 text-center pointer-events-none px-8">
-            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md uppercase tracking-tighter">
-                {schoolConfig?.isSesi2Active ? `Pindai QR Sesi ${activeSession}` : 'Pindai QR Code'}
-            </h2>
-            <p className="text-white/60 text-[10px] font-bold tracking-widest uppercase">E-SPENLI Digital Mandiri</p>
+        <div className="absolute top-8 left-0 right-0 z-50 px-8 text-center pointer-events-none transition-all">
+            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Pindai QR Code</h2>
+            <p className="text-white/60 text-xs font-medium">Tempatkan kamera tepat di depan QR Code</p>
         </div>
         <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
             {isScannerReady && (
-                <div className="absolute left-0 right-0 h-16 transition-all duration-700 animate-scan-line z-20 pointer-events-none bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
+                <div className={cn(
+                    "absolute left-0 right-0 h-16 transition-all duration-700 animate-scan-line z-20 pointer-events-none",
+                    status === 'idle' ? "bg-gradient-to-b from-transparent via-primary/40 to-transparent" : "bg-gradient-to-b from-transparent via-green-500/40 to-transparent"
+                )} />
             )}
-            {isDataLoading && (
+            {showLoader && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
                     <Loader2 className="h-10 w-10 animate-spin text-white" />
                 </div>
@@ -286,8 +283,9 @@ export default function AbsenPage() {
         {effectiveStatus !== 'idle' && (
             <StatusFeedbackOverlay 
                 status={effectiveStatus} 
-                session={activeSession}
-                onClose={() => effectiveStatus.includes('success') || effectiveStatus.includes('info') ? router.push('/dashboard') : setStatus('idle')} 
+                locationError={locationError} 
+                leaveType={currentActiveLeave?.type}
+                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') || effectiveStatus === 'error_time' || effectiveStatus === 'error_checkin_closed' || effectiveStatus === 'info_holiday' || effectiveStatus === 'info_disabled' || effectiveStatus === 'info_leave' ? router.push('/dashboard') : setStatus('idle')} 
                 userData={userData} 
             />
         )}
@@ -295,27 +293,23 @@ export default function AbsenPage() {
   );
 }
 
-const StatusFeedbackOverlay = ({ status, session, onClose, userData }: any) => {
+const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leaveType }: { status: FeedbackStatus, locationError: string | null, onClose: () => void, userData: any, leaveType?: string }) => {
     const feedback = useMemo(() => {
         const iconSize = "h-12 w-12";
-        const labelS = session ? ` Sesi ${session}` : '';
         switch (status) {
-            case 'processing': return { icon: <Loader2 className={cn(iconSize, "animate-spin text-primary")} />, title: 'MEMPROSES...', desc: 'Sedang memvalidasi absensi Anda.' };
-            case 'locating': return { icon: <Loader2 className={cn(iconSize, "animate-spin text-primary")} />, title: 'MENCARI LOKASI...', desc: 'Sedang mendapatkan data GPS.' };
-            case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: `ABSEN MASUK${labelS.toUpperCase()} BERHASIL`, desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
-            case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: `ABSEN PULANG${labelS.toUpperCase()} BERHASIL`, desc: 'Absen pulang terekam. Hati-hati di jalan!' };
-            case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di area sekolah.' };
-            case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'JADWAL TUTUP', desc: `Sesi absensi${labelS} sedang tidak aktif.` };
-            case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'BATAS MASUK BERAKHIR', desc: 'Waktu masuk berakhir, silakan tunggu absen pulang.' };
-            case 'error_already_in': return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'SUDAH ABSEN MASUK', desc: `Anda sudah absen masuk untuk${labelS} hari ini.` };
-            case 'error_already_out': return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'SUDAH ABSEN PULANG', desc: `Anda sudah absen pulang untuk${labelS} hari ini.` };
+            case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'ABSEN MASUK BERHASIL', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
+            case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'ABSEN PULANG BERHASIL', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
+            case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
+            case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'JADWAL TUTUP', desc: 'Sesi absensi untuk saat ini telah ditutup.' };
+            case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'BATAS MASUK BERAKHIR', desc: 'Waktu absen masuk berakhir, silahkan tunggu absen pulang.' };
+            case 'error_location': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'LOKASI ERROR', desc: locationError || 'Pastikan GPS aktif.' };
             case 'info_holiday': return { icon: <CalendarOff className={cn(iconSize, "text-amber-500")} />, title: 'HARI LIBUR', desc: 'Sistem absensi tidak aktif hari ini.' };
-            case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: `ABSENSI${labelS.toUpperCase()} SELESAI`, desc: 'Data kehadiran hari ini telah tuntas.' };
+            case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: 'ABSENSI SELESAI', desc: 'Absensi Anda hari ini telah tuntas.' };
             case 'info_no_camera': return { icon: <CameraOff className={cn(iconSize, "text-red-500")} />, title: 'KAMERA ERROR', desc: 'Izinkan akses kamera di browser.' };
-            case 'info_leave': return { icon: <ClockIcon className={cn(iconSize, "text-blue-500")} />, title: 'IZIN DISETUJUI', desc: 'Anda memiliki izin sah untuk hari ini.' };
-            default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'GAGAL', desc: 'Terjadi kesalahan sistem.' };
+            case 'info_leave': return { icon: <FileText className={cn(iconSize, "text-blue-500")} />, title: `${leaveType} DISETUJUI`, desc: `Anda memiliki izin/sakit sah hari ini.` };
+            default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'GAGAL', desc: 'Kesalahan sistem. Coba lagi.' };
         }
-    }, [status, session]);
+    }, [status, locationError, leaveType]);
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 backdrop-blur-xl px-10">
@@ -325,7 +319,7 @@ const StatusFeedbackOverlay = ({ status, session, onClose, userData }: any) => {
                 </button>
                 <div className="flex flex-col items-center">
                     <div className="mb-4">{feedback.icon}</div>
-                    <h3 className="text-xl font-black tracking-tighter mb-2">{feedback.title}</h3>
+                    <h3 className="text-xl font-black tracking-tighter mb-2 uppercase">{feedback.title}</h3>
                     <p className="text-muted-foreground text-xs font-bold leading-relaxed px-4 mb-6">{feedback.desc}</p>
                     {(status === 'success_in' || status === 'success_out') && (
                         <div className="w-full">

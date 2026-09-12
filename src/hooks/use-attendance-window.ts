@@ -1,26 +1,21 @@
-
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useCache } from "@/context/CacheContext";
 import { format } from "date-fns";
 
 /**
- * Hook useAttendanceWindow dengan dukungan Sesi 2 Mandiri.
+ * Hook useAttendanceWindow menggunakan data dari CacheContext.
+ * Mengelola status jendela absensi harian tunggal.
  */
 
 export interface SchoolConfig {
   isAttendanceActive?: boolean;
-  isSesi2Active?: boolean; 
   useTimeValidation?: boolean;
   checkInStartTime?: string;
   checkInEndTime?: string;
   checkOutStartTime?: string;
   checkOutEndTime?: string;
-  s2CheckInStartTime?: string;
-  s2CheckInEndTime?: string;
-  s2CheckOutStartTime?: string;
-  s2CheckOutEndTime?: string;
   dailyCheckOutTimes?: Record<string, { start: string, end: string }>;
   offDays?: number[];
   qrCodeValue?: string;
@@ -29,38 +24,29 @@ export interface SchoolConfig {
   radius?: number;
 }
 
-export type SessionStatus = "BEFORE" | "IN_OPEN" | "IN_CLOSED" | "OUT_OPEN" | "CLOSED";
+export type AttendanceWindowStatus =
+  | "LOADING"          // Keadaan awal
+  | "DISABLED"         // Dinonaktifkan secara manual oleh Admin
+  | "SESSION_INACTIVE" // Hari libur terjadwal (rutin atau kalender)
+  | "BEFORE_IN"        // Belum jam masuk
+  | "CHECK_IN_OPEN"    // Jendela masuk terbuka
+  | "AFTER_IN"         // Batas jam masuk berakhir (menunggu jam pulang)
+  | "CHECK_OUT_OPEN"   // Jendela pulang terbuka
+  | "CLOSED";          // Sesi hari ini berakhir
 
-export interface AttendanceStatus {
-    status: "LOADING" | "DISABLED" | "SESSION_INACTIVE" | "ACTIVE";
-    activeSession: 1 | 2 | null;
-    s1Status: SessionStatus;
-    s2Status: SessionStatus;
-    config: SchoolConfig | null;
-    activeSessionStatus: SessionStatus;
-}
-
-export const useAttendanceWindow = (): AttendanceStatus => {
+export const useAttendanceWindow = () => {
   const { schoolConfig: config, monthlyConfig: mConfig, isCacheLoading: configLoading } = useCache();
-  const [state, setState] = useState<AttendanceStatus>({
-    status: "LOADING",
-    activeSession: null,
-    s1Status: "BEFORE",
-    s2Status: "BEFORE",
-    config: null,
-    activeSessionStatus: "BEFORE"
-  });
-
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const [status, setStatus] = useState<AttendanceWindowStatus>("LOADING");
 
   useEffect(() => {
-    if (configLoading || !config) return;
+    if (configLoading || !config) {
+      setStatus("LOADING");
+      return;
+    }
 
+    // 1. Cek apakah dinonaktifkan manual oleh Admin
     if (config.isAttendanceActive === false) {
-      if (stateRef.current.status !== "DISABLED") {
-        setState(prev => ({ ...prev, status: "DISABLED", config: config as SchoolConfig }));
-      }
+      setStatus("DISABLED"); 
       return;
     }
 
@@ -70,82 +56,54 @@ export const useAttendanceWindow = (): AttendanceStatus => {
         const dayOfWeek = now.getDay();
         const todayStr = format(now, 'yyyy-MM-dd');
         
+        // 2. Cek hari libur rutin DAN kalender
         const offDays = (config as any).offDays ?? [0, 6];
         const isSpecificHoliday = (mConfig as any)?.holidays?.includes(todayStr);
 
         if (offDays.includes(dayOfWeek) || isSpecificHoliday) {
-            if (stateRef.current.status !== "SESSION_INACTIVE") {
-                setState(prev => ({ ...prev, status: "SESSION_INACTIVE", config: config as SchoolConfig }));
-            }
+            setStatus("SESSION_INACTIVE");
             return;
         }
 
-        const parseToMinutes = (timeStr: string | undefined) => {
-            if (!timeStr) return null;
+        // 3. Jika validasi waktu dimatikan (mode bebas)
+        if (config.useTimeValidation === false) {
+            setStatus("CHECK_IN_OPEN");
+            return;
+        }
+
+        const parseToMinutes = (timeStr: string) => {
+            if (!timeStr) return 0;
             const [h, m] = timeStr.split(':').map(Number);
             return h * 60 + m;
         };
 
-        // --- SESI 1 LOGIC ---
-        const s1InStart = parseToMinutes(config.checkInStartTime) ?? 360;
-        const s1InEnd = parseToMinutes(config.checkInEndTime) ?? 480;
-        const s1OutStart = parseToMinutes(config.checkOutStartTime) ?? 720;
-        const s1OutEnd = parseToMinutes(config.checkOutEndTime) ?? 810;
+        const inStart = parseToMinutes(config.checkInStartTime || "06:00");
+        const inEnd = parseToMinutes(config.checkInEndTime || "08:00");
+        
+        // Dapatkan jadwal pulang dinamis sesuai hari
+        const dailyOut = (config as any).dailyCheckOutTimes?.[dayOfWeek.toString()];
+        const outStart = parseToMinutes(dailyOut?.start || config.checkOutStartTime || "14:00");
+        const outEnd = parseToMinutes(dailyOut?.end || config.checkOutEndTime || "16:00");
 
-        let s1Status: SessionStatus = "BEFORE";
-        if (currentTime < s1InStart) s1Status = "BEFORE";
-        else if (currentTime >= s1InStart && currentTime <= s1InEnd) s1Status = "IN_OPEN";
-        else if (currentTime > s1InEnd && currentTime < s1OutStart) s1Status = "IN_CLOSED";
-        else if (currentTime >= s1OutStart && currentTime <= s1OutEnd) s1Status = "OUT_OPEN";
-        else s1Status = "CLOSED";
-
-        // --- SESI 2 LOGIC (Independen) ---
-        let s2Status: SessionStatus = "BEFORE";
-        let activeSession: 1 | 2 = 1;
-        let activeSessionStatus: SessionStatus = s1Status;
-
-        if (config.isSesi2Active) {
-            const s2InStart = parseToMinutes(config.s2CheckInStartTime) ?? 780;
-            const s2InEnd = parseToMinutes(config.s2CheckInEndTime) ?? 840;
-            const s2OutStart = parseToMinutes(config.s2CheckOutStartTime) ?? 900;
-            const s2OutEnd = parseToMinutes(config.s2CheckOutEndTime) ?? 1020;
-
-            if (currentTime < s2InStart) s2Status = "BEFORE";
-            else if (currentTime >= s2InStart && currentTime <= s2InEnd) s2Status = "IN_OPEN";
-            else if (currentTime > s2InEnd && currentTime < s2OutStart) s2Status = "IN_CLOSED";
-            else if (currentTime >= s2OutStart && currentTime <= s2OutEnd) s2Status = "OUT_OPEN";
-            else s2Status = "CLOSED";
-
-            // Aturan: Sesi 2 aktif jika waktu sudah memasuki s2InStart
-            if (currentTime >= s2InStart) {
-                activeSession = 2;
-                activeSessionStatus = s2Status;
-            }
-        }
-
-        if (
-            stateRef.current.status !== "ACTIVE" ||
-            stateRef.current.activeSession !== activeSession ||
-            stateRef.current.s1Status !== s1Status ||
-            stateRef.current.s2Status !== s2Status ||
-            stateRef.current.activeSessionStatus !== activeSessionStatus
-        ) {
-            setState({
-                status: "ACTIVE",
-                activeSession,
-                s1Status,
-                s2Status,
-                activeSessionStatus,
-                config: config as SchoolConfig
-            });
+        if (currentTime < inStart) {
+            setStatus("BEFORE_IN");
+        } else if (currentTime >= inStart && currentTime <= inEnd) {
+            setStatus("CHECK_IN_OPEN");
+        } else if (currentTime > inEnd && currentTime < outStart) {
+            setStatus("AFTER_IN");
+        } else if (currentTime >= outStart && currentTime <= outEnd) {
+            setStatus("CHECK_OUT_OPEN");
+        } else {
+            setStatus("CLOSED");
         }
     };
 
     checkStatus();
-    const intervalId = setInterval(checkStatus, 15000); 
+    const intervalId = setInterval(checkStatus, 30000); 
+
     return () => clearInterval(intervalId);
     
   }, [config, mConfig, configLoading]);
 
-  return state;
+  return { status, config: config as SchoolConfig | null, monthlyConfig: mConfig };
 };
