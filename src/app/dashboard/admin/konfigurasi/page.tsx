@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -28,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle, Clock, QrCode } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle, Clock, QrCode as QrIcon, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -97,19 +96,19 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   const updateNote = (id: string, field: string, value: any) => setHolidayNotes(prev => prev.map(n => n.id === id ? { ...n, [field]: value } : n));
   
   return (
-    <Card className="lg:col-span-3 border-none shadow-none rounded-2xl bg-card">
-        <CardHeader className="p-6 border-b border-muted-foreground/10 text-primary">
-            <CardTitle className="font-bold text-sm uppercase tracking-widest">Kalender Kerja & Hari Libur</CardTitle>
-            <CardDescription className="text-muted-foreground font-medium">Tentukan hari libur spesifik dan tahun ajaran untuk bulan ini.</CardDescription>
+    <Card className="border shadow-none rounded-xl overflow-hidden mt-6">
+        <CardHeader className="border-b border-muted-foreground/10">
+            <CardTitle className="text-blue-600 font-bold text-base">Kalender Kerja & Hari Libur</CardTitle>
+            <CardDescription className="font-bold">Tentukan hari libur spesifik untuk bulan ini.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8 p-6">
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
             <div className="md:col-span-2 space-y-4">
-                <div className="flex items-center justify-between bg-muted/30 p-2 rounded-2xl">
-                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}><ChevronLeft /></Button>
-                    <span className="font-black text-sm uppercase tracking-tight">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}><ChevronRight /></Button>
+                <div className="flex items-center justify-between bg-muted/20 p-2 rounded-xl border">
+                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                    <span className="font-bold text-sm uppercase">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
                 </div>
-                <ScrollArea className="h-[500px] rounded-2xl border bg-muted/5">
+                <ScrollArea className="h-[400px] rounded-xl border bg-muted/5">
                     <Table>
                         <TableBody>
                             {allDaysInMonth.map((day) => {
@@ -128,29 +127,29 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                 </ScrollArea>
             </div>
             <div className="space-y-6">
-                <div className="space-y-2"><Label className="text-[10px] font-black uppercase tracking-widest text-primary">Tahun Ajaran</Label><Input value={academicYear} onChange={e => setAcademicYear(e.target.value)} className="h-12 rounded-xl bg-muted/40 font-bold" /></div>
-                <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10"><Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Hari Kerja Efektif</Label><p className="text-3xl font-black text-primary mt-1">{calculatedWorkDays} HARI</p></div>
+                <div className="space-y-2"><Label className="text-[10px] font-bold uppercase text-blue-600">Tahun Ajaran</Label><Input value={academicYear} onChange={e => setAcademicYear(e.target.value)} className="h-10 rounded-xl bg-muted/30 font-bold border-muted-foreground/10" /></div>
+                <div className="p-4 bg-primary/5 rounded-xl border border-primary/10"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Hari Kerja Efektif</Label><p className="text-2xl font-black text-primary mt-1">{calculatedWorkDays} HARI</p></div>
                 <div className="space-y-4 pt-4 border-t">
-                    <div className="flex items-center justify-between"><Label className="text-[10px] font-black uppercase tracking-widest">Catatan Libur (PDF)</Label><Switch checked={isHolidayNotesActive} onCheckedChange={setIsHolidayNotesActive} /></div>
+                    <div className="flex items-center justify-between"><Label className="font-bold text-xs">Catatan Libur (PDF)</Label><Switch checked={isHolidayNotesActive} onCheckedChange={setIsHolidayNotesActive} /></div>
                     {isHolidayNotesActive && (
                         <div className="space-y-3">
                             {holidayNotes.map(n => (
-                                <div key={n.id} className="p-3 bg-muted/20 rounded-xl border space-y-2 relative">
-                                    <Input placeholder="Tgl (misal: 15-17)" value={n.date} onChange={e => updateNote(n.id, 'date', e.target.value)} className="h-8 text-[10px] font-bold" />
-                                    <Input placeholder="Keterangan" value={n.content} onChange={e => updateNote(n.id, 'content', e.target.value)} className="h-8 text-[10px] font-bold" />
+                                <div key={n.id} className="p-3 bg-muted/20 rounded-xl border space-y-2">
+                                    <Input placeholder="Tgl (misal: 15-17)" value={n.date} onChange={e => updateNote(n.id, 'date', e.target.value)} className="h-8 text-[10px] font-bold bg-background" />
+                                    <Input placeholder="Keterangan" value={n.content} onChange={e => updateNote(n.id, 'content', e.target.value)} className="h-8 text-[10px] font-bold bg-background" />
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2"><Checkbox checked={n.isRed} onCheckedChange={c => updateNote(n.id, 'isRed', !!c)} /><Label className="text-[9px] font-bold text-destructive">Merah</Label></div>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setHolidayNotes(prev => prev.filter(x => x.id !== n.id))}><Trash2 className="h-3 w-3" /></Button>
                                     </div>
                                 </div>
                             ))}
-                            <Button variant="outline" className="w-full h-10 border-dashed rounded-xl text-[10px] font-bold" onClick={() => setHolidayNotes(p => [...p, { id: Math.random().toString(), date: '', content: '', isRed: false }])}>TAMBAH CATATAN</Button>
+                            <Button variant="outline" className="w-full h-9 border-dashed rounded-xl text-[10px] font-bold" onClick={() => setHolidayNotes(p => [...p, { id: Math.random().toString(), date: '', content: '', isRed: false }])}><Plus className="h-3 w-3 mr-2" />TAMBAH CATATAN</Button>
                         </div>
                     )}
                 </div>
             </div>
         </CardContent>
-        <CardFooter className="p-6 border-t bg-muted/5"><Button onClick={handleSave} className="w-full h-12 rounded-xl font-black tracking-widest uppercase text-xs" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin" /> : 'Simpan Kalender Bulanan'}</Button></CardFooter>
+        <CardFooter className="p-6 border-t bg-muted/5 flex justify-end"><Button onClick={handleSave} className="rounded-xl font-bold px-8 shadow-none" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'SIMPAN PENGATURAN BULANAN'}</Button></CardFooter>
     </Card>
   );
 }
@@ -166,29 +165,24 @@ export default function KonfigurasiAbsenPage() {
   
   const [holidayMode, setHolidayMode] = useState(false);
   const [isSesi2Active, setIsSesi2Active] = useState(false);
-  const [offDays, setOffDays] = useState<number[]>([0, 6]);
+  const [offDays, setOffDays] = useState<number[]>([]);
   const [useLocationValidation, setUseLocationValidation] = useState(true);
   const [lat, setLat] = useState('-8.58333');
   const [lon, setLon] = useState('120.46667');
   const [radius, setRadius] = useState(100);
   
-  // Sesi 1
   const [s1InStart, setS1InStart] = useState('06:00');
   const [s1InEnd, setS1InEnd] = useState('07:30');
   const [s1OutStart, setS1OutStart] = useState('12:00');
   const [s1OutEnd, setS1OutEnd] = useState('13:30');
   
-  // Sesi 2
   const [s2InStart, setS2InStart] = useState('13:00');
   const [s2InEnd, setS2InEnd] = useState('14:30');
   const [s2OutStart, setS2OutStart] = useState('15:30');
   const [s2OutEnd, setS2OutEnd] = useState('17:00');
 
   const schoolConfigRef = useMemoFirebase(() => user ? doc(firestore, 'schoolConfig', 'default') : null, [user?.uid, firestore]);
-  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [user?.uid, firestore]);
-
   const { data: config, isLoading } = useDoc(user, schoolConfigRef);
-  const { data: userData } = useDoc(user, userDocRef);
 
   useEffect(() => {
     if (config) {
@@ -202,7 +196,7 @@ export default function KonfigurasiAbsenPage() {
       setS1OutStart(config.checkOutStartTime ?? '12:00'); setS1OutEnd(config.checkOutEndTime ?? '13:30');
       setS2InStart(config.s2CheckInStartTime ?? '13:00'); setS2InEnd(config.s2CheckInEndTime ?? '14:30');
       setS2OutStart(config.s2CheckOutStartTime ?? '15:30'); setS2OutEnd(config.s2CheckOutEndTime ?? '17:00');
-      if (config.qrCodeValue) QRCode.toDataURL(config.qrCodeValue, { width: 300 }).then(setQrCodeDataUrl);
+      if (config.qrCodeValue) QRCode.toDataURL(config.qrCodeValue, { width: 300, margin: 2 }).then(setQrCodeDataUrl);
     }
   }, [config]);
 
@@ -211,92 +205,151 @@ export default function KonfigurasiAbsenPage() {
     setIsSaving(true);
     try {
       await setDoc(schoolConfigRef, {
-        isAttendanceActive: !holidayMode, 
-        isSesi2Active,
-        offDays, useLocationValidation,
+        isAttendanceActive: !holidayMode, isSesi2Active, offDays, useLocationValidation,
         latitude: parseFloat(lat), longitude: parseFloat(lon), radius: Number(radius),
         checkInStartTime: s1InStart, checkInEndTime: s1InEnd, checkOutStartTime: s1OutStart, checkOutEndTime: s1OutEnd,
         s2CheckInStartTime: s2InStart, s2CheckInEndTime: s2InEnd, s2CheckOutStartTime: s2OutStart, s2CheckOutEndTime: s2OutEnd,
       }, { merge: true });
-      toast({ title: 'Berhasil', description: 'Konfigurasi umum disimpan.' });
-    } catch (e) { toast({ variant: 'destructive', title: 'Gagal' }); }
+      invalidateCache();
+      toast({ title: 'Berhasil', description: 'Konfigurasi telah disimpan.' });
+    } catch (e) { toast({ variant: 'destructive', title: 'Gagal menyimpan' }); }
     finally { setIsSaving(false); }
   };
 
-  if (isLoading || userData?.role !== 'admin') return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  const handleGenerateNewQr = async () => {
+      if (!schoolConfigRef) return;
+      const newVal = Math.random().toString(36).substring(2, 15);
+      await setDoc(schoolConfigRef, { qrCodeValue: newVal }, { merge: true });
+      QRCode.toDataURL(newVal, { width: 300, margin: 2 }).then(setQrCodeDataUrl);
+      toast({ title: 'QR Code baru telah dibuat' });
+  };
+
+  const downloadPNG = () => {
+    if (!qrCodeDataUrl) return;
+    const link = document.createElement('a');
+    link.href = qrCodeDataUrl;
+    link.download = 'qrcode-absen-espenli.png';
+    link.click();
+  };
+
+  if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-20">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1 rounded-2xl border-none bg-card shadow-none overflow-hidden">
-          <CardHeader className="bg-muted/20 border-b border-muted-foreground/10 text-primary">
-            <CardTitle className="font-bold text-sm uppercase tracking-widest">QR Code Absensi</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center p-8 gap-6">
-            <div className="p-4 bg-white rounded-2xl shadow-inner border w-full max-w-[240px] aspect-square flex items-center justify-center">
-              {qrCodeDataUrl ? <Image src={qrCodeDataUrl} alt="QR" width={200} height={200} /> : <Skeleton className="w-full h-full" />}
+    <div className="max-w-4xl mx-auto space-y-6 pb-24">
+      {/* KARTU 1: QR CODE (Gaya Screenshot) */}
+      <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
+        <CardHeader className="p-6 pb-2">
+            <CardTitle className="text-blue-600 font-bold text-sm">Kode QR absensi</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground text-xs">Gunakan kode QR ini untuk absensi harian.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center p-8">
+            <div className="border border-muted-foreground/10 rounded-2xl p-6 bg-white shadow-sm mb-6">
+                {qrCodeDataUrl ? (
+                    <Image src={qrCodeDataUrl} alt="QR" width={240} height={240} className="object-contain" />
+                ) : (
+                    <div className="w-60 h-60 bg-muted animate-pulse rounded-lg" />
+                )}
             </div>
-            <Button variant="outline" className="w-full h-11 rounded-xl font-bold border-primary/20 text-primary uppercase text-[10px] tracking-widest">Ubah QR Code</Button>
-          </CardContent>
-        </Card>
+            <Button variant="outline" className="w-full max-w-sm rounded-xl font-bold h-11 border-muted-foreground/10" onClick={handleGenerateNewQr}>Buat QR baru</Button>
+        </CardContent>
+        <CardFooter className="border-t border-muted-foreground/10 p-4 bg-muted/5">
+            <Button variant="outline" className="w-full rounded-xl font-bold h-12 border-muted-foreground/10" onClick={downloadPNG}>Unduh PNG</Button>
+        </CardFooter>
+      </Card>
 
-        <Card className="lg:col-span-2 rounded-2xl border-none bg-card shadow-none overflow-hidden">
-          <CardHeader className="bg-muted/20 border-b border-muted-foreground/10 text-primary"><CardTitle className="font-bold text-sm uppercase tracking-widest">Pengaturan Jam Kerja & Lokasi</CardTitle></CardHeader>
-          <CardContent className="p-6 space-y-8">
-            <div className="rounded-2xl border p-4 bg-primary/5 flex items-center justify-between">
-                <div>
-                    <Label className="font-black text-xs uppercase tracking-widest text-primary">Sistem Sesi Ganda (S1 & S2)</Label>
-                    <p className="text-[10px] font-bold text-muted-foreground mt-1">Aktifkan untuk absensi pagi dan siang yang terpisah.</p>
+      {/* KARTU 2: PENGATURAN UMUM */}
+      <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-card">
+        <CardHeader className="p-6 pb-2">
+            <CardTitle className="text-blue-600 font-bold text-sm">Pengaturan umum</CardTitle>
+            <CardDescription className="font-bold text-muted-foreground text-xs">Atur parameter sistem absensi sekolah.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 space-y-6">
+            <div className="border border-muted-foreground/10 rounded-2xl p-5 flex items-center justify-between bg-muted/5">
+                <div className="space-y-1">
+                    <Label className="font-bold text-sm">Nonaktifkan absensi</Label>
+                    <p className="text-[11px] text-muted-foreground font-bold">Sistem absensi akan dinonaktifkan sementara untuk semua.</p>
                 </div>
-                <Switch checked={isSesi2Active} onCheckedChange={setIsSesi2Active} />
+                <Switch checked={holidayMode} onCheckedChange={setHolidayMode} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <Label className="text-primary font-black uppercase text-[10px] tracking-[0.2em] flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Sesi 1 (Pagi)</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Masuk</Label><Input type="time" value={s1InStart} onChange={e => setS1InStart(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
-                  <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Masuk</Label><Input type="time" value={s1InEnd} onChange={e => setS1InEnd(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
-                  <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Pulang</Label><Input type="time" value={s1OutStart} onChange={e => setS1OutStart(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
-                  <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Pulang</Label><Input type="time" value={s1OutEnd} onChange={e => setS1OutEnd(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
+            <div className="space-y-4 pt-4">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-600 ml-1">Hari Libur Rutin</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {daysOfWeek.map(d => (
+                        <div key={d.value} className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl border border-transparent hover:border-primary/20 transition-all">
+                            <Checkbox checked={offDays.includes(d.value)} onCheckedChange={c => setOffDays(p => c ? [...p, d.value].sort() : p.filter(x => x !== d.value))} />
+                            <span className="text-xs font-bold">{d.label}</span>
+                        </div>
+                    ))}
                 </div>
-              </div>
-              <div className={cn("space-y-4 transition-opacity", !isSesi2Active && "opacity-30 pointer-events-none")}>
-                <Label className="text-primary font-black uppercase text-[10px] tracking-[0.2em] flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Sesi 2 (Siang/Sore)</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Masuk</Label><Input type="time" value={s2InStart} onChange={e => setS2InStart(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
-                  <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Masuk</Label><Input type="time" value={s2InEnd} onChange={e => setS2InEnd(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
-                  <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Pulang</Label><Input type="time" value={s2OutStart} onChange={e => setS2OutStart(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
-                  <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Pulang</Label><Input type="time" value={s2OutEnd} onChange={e => setS2OutEnd(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
-                </div>
-              </div>
             </div>
-            <div className="pt-6 border-t grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between"><Label className="font-bold text-xs uppercase">Validasi Lokasi (GPS)</Label><Switch checked={useLocationValidation} onCheckedChange={setUseLocationValidation} /></div>
-                    <div className="grid grid-cols-2 gap-3 opacity-80">
-                        <div className="space-y-1.5"><Label className="text-[9px] font-bold">Latitude</Label><Input value={lat} onChange={e => setLat(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
-                        <div className="space-y-1.5"><Label className="text-[9px] font-bold">Longitude</Label><Input value={lon} onChange={e => setLon(e.target.value)} className="h-10 rounded-lg bg-muted/40" /></div>
+
+            <div className="space-y-6 pt-6 border-t border-muted-foreground/10">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <Label className="font-bold text-sm">Validasi Lokasi (GPS)</Label>
+                        <p className="text-[11px] text-muted-foreground font-bold">Wajibkan personil berada di area sekolah.</p>
+                    </div>
+                    <Switch checked={useLocationValidation} onCheckedChange={setUseLocationValidation} />
+                </div>
+                {useLocationValidation && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-1.5"><Label className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Latitude</Label><Input value={lat} onChange={e => setLat(e.target.value)} className="h-10 rounded-xl bg-muted/30 font-bold border-muted-foreground/10" /></div>
+                        <div className="space-y-1.5"><Label className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Longitude</Label><Input value={lon} onChange={e => setLon(e.target.value)} className="h-10 rounded-xl bg-muted/30 font-bold border-muted-foreground/10" /></div>
+                        <div className="space-y-1.5"><Label className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Radius (M)</Label><Input type="number" value={radius} onChange={e => setRadius(Number(e.target.value))} className="h-10 rounded-xl bg-muted/30 font-bold border-muted-foreground/10" /></div>
+                    </div>
+                )}
+            </div>
+
+            <div className="space-y-6 pt-6 border-t border-muted-foreground/10">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <Label className="font-bold text-sm">Absensi Sesi Ganda (Siang/Sore)</Label>
+                        <p className="text-[11px] text-muted-foreground font-bold">Gunakan absensi kedua yang independen.</p>
+                    </div>
+                    <Switch checked={isSesi2Active} onCheckedChange={setIsSesi2Active} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-5 bg-blue-50/30 rounded-2xl border border-blue-100/50 space-y-4">
+                        <Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Jadwal Sesi 1 (Pagi)</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Masuk</Label><Input type="time" value={s1InStart} onChange={e => setS1InStart(e.target.value)} className="h-10 rounded-lg bg-background font-bold border-muted-foreground/10" /></div>
+                            <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Masuk</Label><Input type="time" value={s1InEnd} onChange={e => setS1InEnd(e.target.value)} className="h-10 rounded-lg bg-background font-bold border-muted-foreground/10" /></div>
+                            <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Pulang</Label><Input type="time" value={s1OutStart} onChange={e => setS1OutStart(e.target.value)} className="h-10 rounded-lg bg-background font-bold border-muted-foreground/10" /></div>
+                            <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Pulang</Label><Input type="time" value={s1OutEnd} onChange={e => setS1OutEnd(e.target.value)} className="h-10 rounded-lg bg-background font-bold border-muted-foreground/10" /></div>
+                        </div>
+                    </div>
+
+                    <div className={cn("p-5 rounded-2xl border transition-all duration-500", isSesi2Active ? "bg-orange-50/30 border-orange-100/50" : "bg-muted/20 opacity-30 grayscale pointer-events-none")}>
+                        <Label className="text-orange-600 font-black uppercase text-[10px] tracking-widest flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Jadwal Sesi 2 (Siang)</Label>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Masuk</Label><Input type="time" value={s2InStart} onChange={e => setS2InStart(e.target.value)} className="h-10 rounded-lg bg-background font-bold border-muted-foreground/10" /></div>
+                            <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Masuk</Label><Input type="time" value={s2InEnd} onChange={e => setS2InEnd(e.target.value)} className="h-10 rounded-lg bg-background font-bold border-muted-foreground/10" /></div>
+                            <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Mulai Pulang</Label><Input type="time" value={s2OutStart} onChange={e => setS2OutStart(e.target.value)} className="h-10 rounded-lg bg-background font-bold border-muted-foreground/10" /></div>
+                            <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-muted-foreground">Batas Pulang</Label><Input type="time" value={s2OutEnd} onChange={e => setS2OutEnd(e.target.value)} className="h-10 rounded-lg bg-background font-bold border-muted-foreground/10" /></div>
+                        </div>
                     </div>
                 </div>
-                <div className="space-y-4">
-                    <Label className="font-bold text-xs uppercase">Radius & Libur Rutin</Label>
-                    <Input type="number" value={radius} onChange={e => setRadius(Number(e.target.value))} className="h-10 rounded-lg bg-muted/40" placeholder="Radius (meter)" />
-                    <div className="flex flex-wrap gap-2">
-                        {daysOfWeek.map(d => (
-                            <div key={d.value} className="flex items-center gap-1.5 px-2 py-1 bg-muted/30 rounded-lg border">
-                                <Checkbox checked={offDays.includes(d.value)} onCheckedChange={c => setOffDays(p => c ? [...p, d.value] : p.filter(x => x !== d.value))} />
-                                <span className="text-[10px] font-bold">{d.label.substring(0,3)}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             </div>
-          </CardContent>
-          <CardFooter className="p-6 border-t bg-muted/5"><Button onClick={handleSaveCommon} className="w-full h-12 rounded-xl font-black tracking-widest uppercase text-xs" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin" /> : 'Simpan Konfigurasi Umum'}</Button></CardFooter>
-        </Card>
-      </div>
+        </CardContent>
+        <CardFooter className="p-6 border-t bg-muted/5 flex justify-end">
+            <Button onClick={handleSaveCommon} className="rounded-xl font-bold px-10 h-12 active:scale-95 transition-all shadow-lg shadow-primary/20" disabled={isSaving}>
+                {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
+                SIMPAN KONFIGURASI
+            </Button>
+        </CardFooter>
+      </Card>
+
       <MonthlyConfigCalendar user={user} schoolConfig={config} />
     </div>
   );
+}
+
+function invalidateCache() {
+    if (typeof window !== 'undefined') {
+        Object.keys(sessionStorage).forEach(k => {
+            if (k.startsWith('espenli_cache_')) sessionStorage.removeItem(k);
+        });
+    }
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from "react";
@@ -11,7 +10,7 @@ import { format } from "date-fns";
 
 export interface SchoolConfig {
   isAttendanceActive?: boolean;
-  isSesi2Active?: boolean; // Toggle untuk mengaktifkan sesi 2
+  isSesi2Active?: boolean; 
   useTimeValidation?: boolean;
   checkInStartTime?: string;
   checkInEndTime?: string;
@@ -84,7 +83,6 @@ export const useAttendanceWindow = (): AttendanceStatus => {
             return h * 60 + m;
         };
 
-        // Logika Sesi 1
         const s1InStart = parseToMinutes(config.checkInStartTime) ?? 360;
         const s1InEnd = parseToMinutes(config.checkInEndTime) ?? 480;
         const s1OutStart = parseToMinutes(config.checkOutStartTime) ?? 720;
@@ -96,7 +94,6 @@ export const useAttendanceWindow = (): AttendanceStatus => {
         else if (currentTime >= s1OutStart && currentTime <= s1OutEnd) s1Status = "OUT_OPEN";
         else if (currentTime > s1OutEnd) s1Status = "CLOSED";
 
-        // Logika Sesi 2 (Hanya diproses jika aktif)
         let s2Status: SessionStatus = "BEFORE";
         let activeSession: 1 | 2 = 1;
 
@@ -111,7 +108,6 @@ export const useAttendanceWindow = (): AttendanceStatus => {
             else if (currentTime >= s2OutStart && currentTime <= s2OutEnd) s2Status = "OUT_OPEN";
             else if (currentTime > s2OutEnd) s2Status = "CLOSED";
 
-            // Tentukan sesi mana yang sedang aktif tampil di UI
             if (currentTime >= s2InStart) activeSession = 2;
         }
 
