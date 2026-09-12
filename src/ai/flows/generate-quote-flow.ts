@@ -90,21 +90,23 @@ TUGAS: Buat SATU kutipan pendek (maks 25 kata) yang BENAR-BENAR UNIK untuk perso
 STRATEGI KEUNIKAN MUTLAK:
 1. Gunakan ID UNIK (${input.userId}) dan NAMA (${input.userName}) sebagai benih (anchor) gaya bahasa Anda.
 2. JANGAN gunakan pola kalimat yang sama untuk pengguna yang berbeda.
-3. Eksplorasi berbagai nada secara acak: santai, puitis, motivasi stoik, jenaka (lucu), atau sangat formal.
-4. Gunakan metafora yang berbeda setiap kali dipanggil (misal: tentang pelita, pelaut, kanvas, pahlawan sunyi, orkestra ilmu, dsb).
-5. Konteks MASUK: Fokus pada semangat, kopi pagi, misi mendidik, atau tantangan baru.
-6. Konteks PULANG: Fokus pada istirahat, kelegaan, apresiasi diri, dan kehangatan keluarga.
-7. JANGAN MENYURUH ISTIRAHAT SAAT MASUK. JANGAN MENYURUH KERJA SAAT PULANG.
+3. Gunakan Meta-Entropy: Jika ID pengguna mengandung angka genap, gunakan nada puitis. Jika ganjil, gunakan nada stoik atau praktis. Jika mengandung banyak huruf, gunakan nada jenaka atau santai.
+4. Eksplorasi berbagai nada secara acak namun konsisten dengan identitas: puitis, motivasi stoik, jenaka (lucu), atau sangat formal.
+5. Gunakan metafora yang berbeda setiap kali dipanggil (misal: tentang pelita, pelaut, kanvas, pahlawan sunyi, orkestra ilmu, dsb).
+6. Konteks MASUK: Fokus pada semangat, kopi pagi, misi mendidik, atau tantangan baru.
+7. Konteks PULANG: Fokus pada istirahat, kelegaan, apresiasi diri, dan kehangatan keluarga.
+8. JANGAN MENYURUH ISTIRAHAT SAAT MASUK. JANGAN MENYURUH KERJA SAAT PULANG.
 
 ATURAN KETAT:
 - Jangan gunakan emoji. Jangan buat pantun.
-- Pastikan kalimat terasa segar, baru, dan "HANYA" untuk pengguna tersebut hari ini.`,
+- Pastikan kalimat terasa segar, baru, dan "HANYA" untuk pengguna tersebut hari ini.
+- Hindari frasa klise seperti "Masa depan bangsa" atau "Pahlawan tanpa tanda jasa" jika tidak dikemas secara sangat unik.`,
         prompt: `BUAT KUTIPAN EKSKLUSIF DAN UNIK SEKARANG:
 - Target Personil: ${input.userName}
-- ID Keamanan Unik: ${input.userId}
-- Waktu Sesi: ${isEntry ? 'Absen Masuk' : 'Absen Pulang'}
+- ID Keamanan Unik (Gunakan ini sebagai Seed Karakter): ${input.userId}
+- Waktu Sesi: ${isEntry ? 'Absen Masuk (Pagi/Mulai)' : 'Absen Pulang (Sore/Selesai)'}
 - Tanggal: ${input.date}
-- Token Variasi: ${input.creativeSeed}
+- Token Variasi Kosakata: ${input.creativeSeed}
 
 Gunakan semua parameter di atas untuk meramu kalimat yang belum pernah Anda keluarkan sebelumnya. Pastikan kutipan untuk ${input.userName} berbeda dengan kutipan untuk orang lain di hari yang sama.`,
         output: { schema: QuoteOutputSchema },
