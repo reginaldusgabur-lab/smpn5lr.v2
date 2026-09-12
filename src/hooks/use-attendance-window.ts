@@ -47,7 +47,6 @@ export const useAttendanceWindow = (): AttendanceStatus => {
     config: null
   });
 
-  // Gunakan ref untuk melacak state terakhir guna menghindari loop saat perbandingan objek
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -107,7 +106,6 @@ export const useAttendanceWindow = (): AttendanceStatus => {
 
         const activeSession = currentTime >= s2InStart ? 2 : 1;
 
-        // Hanya update jika ada perubahan nyata untuk memutus infinite loop
         if (
             stateRef.current.status !== "ACTIVE" ||
             stateRef.current.activeSession !== activeSession ||

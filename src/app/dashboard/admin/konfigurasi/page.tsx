@@ -55,7 +55,13 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
   const [isSaving, setIsSaving] = useState(false);
 
   const monthlyConfigId = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
-  const { data: monthlyConfigData, isLoading: isMonthlyConfigLoading } = useDoc(user, user ? doc(firestore, 'monthlyConfigs', monthlyConfigId) : null);
+  
+  const monthlyConfigRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'monthlyConfigs', monthlyConfigId);
+  }, [user?.uid, firestore, monthlyConfigId]);
+  
+  const { data: monthlyConfigData, isLoading: isMonthlyConfigLoading } = useDoc(user, monthlyConfigRef);
   
   const allDaysInMonth = useMemo(() => eachDayOfInterval({ start: startOfMonth(currentMonth), end: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0) }), [currentMonth]);
 
@@ -68,20 +74,20 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
     } else {
       setHolidays([]); setAcademicYear(schoolConfig?.academicYear || ''); setIsHolidayNotesActive(false); setHolidayNotes([]);
     }
-  }, [monthlyConfigData, schoolConfig]);
+  }, [monthlyConfigData, schoolConfig?.academicYear]);
 
   const calculatedWorkDays = useMemo(() => {
     if (!schoolConfig) return 0;
     const recurringOffDays: number[] = schoolConfig.offDays ?? [0, 6];
     const specificHolidays = new Set(holidays.map(d => format(d, 'yyyy-MM-dd')));
     return allDaysInMonth.filter(day => !recurringOffDays.includes(day.getDay()) && !specificHolidays.has(format(day, 'yyyy-MM-dd'))).length;
-  }, [allDaysInMonth, holidays, schoolConfig]);
+  }, [allDaysInMonth, holidays, schoolConfig?.offDays]);
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || !monthlyConfigRef) return;
     setIsSaving(true);
     try {
-      await setDoc(doc(firestore, 'monthlyConfigs', monthlyConfigId), { id: monthlyConfigId, holidays: holidays.map(d => format(d, 'yyyy-MM-dd')), manualWorkDays: calculatedWorkDays, academicYear, isHolidayNotesActive, holidayNotes: holidayNotes.filter(n => n.date.trim() !== '' || n.content.trim() !== '') }, { merge: true });
+      await setDoc(monthlyConfigRef, { id: monthlyConfigId, holidays: holidays.map(d => format(d, 'yyyy-MM-dd')), manualWorkDays: calculatedWorkDays, academicYear, isHolidayNotesActive, holidayNotes: holidayNotes.filter(n => n.date.trim() !== '' || n.content.trim() !== '') }, { merge: true });
       toast({ title: 'Berhasil', description: 'Pengaturan bulanan disimpan.' });
     } catch (e) { toast({ variant: 'destructive', title: 'Gagal' }); }
     finally { setIsSaving(false); }
@@ -176,8 +182,11 @@ export default function KonfigurasiAbsenPage() {
   const [s2OutStart, setS2OutStart] = useState('15:30');
   const [s2OutEnd, setS2OutEnd] = useState('17:00');
 
-  const { data: config, isLoading } = useDoc(user, user ? doc(firestore, 'schoolConfig', 'default') : null);
-  const { data: userData } = useDoc(user, user ? doc(firestore, 'users', user.uid) : null);
+  const schoolConfigRef = useMemoFirebase(() => user ? doc(firestore, 'schoolConfig', 'default') : null, [user?.uid, firestore]);
+  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [user?.uid, firestore]);
+
+  const { data: config, isLoading } = useDoc(user, schoolConfigRef);
+  const { data: userData } = useDoc(user, userDocRef);
 
   useEffect(() => {
     if (config) {
@@ -194,9 +203,10 @@ export default function KonfigurasiAbsenPage() {
   }, [config]);
 
   const handleSaveCommon = async () => {
+    if (!schoolConfigRef) return;
     setIsSaving(true);
     try {
-      await setDoc(doc(firestore, 'schoolConfig', 'default'), {
+      await setDoc(schoolConfigRef, {
         isAttendanceActive: !holidayMode, offDays, useLocationValidation,
         latitude: parseFloat(lat), longitude: parseFloat(lon), radius: Number(radius),
         checkInStartTime: s1InStart, checkInEndTime: s1InEnd, checkOutStartTime: s1OutStart, checkOutEndTime: s1OutEnd,
@@ -204,7 +214,7 @@ export default function KonfigurasiAbsenPage() {
       }, { merge: true });
       toast({ title: 'Berhasil', description: 'Konfigurasi umum disimpan.' });
     } catch (e) { toast({ variant: 'destructive', title: 'Gagal' }); }
-    finally { setIsSaving(true); setIsSaving(false); }
+    finally { setIsSaving(false); }
   };
 
   if (isLoading || userData?.role !== 'admin') return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;

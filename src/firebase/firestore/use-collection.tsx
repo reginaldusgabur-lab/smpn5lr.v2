@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Query,
   onSnapshot,
@@ -40,67 +40,58 @@ export function useCollection<T = any>(
     error: null,
   });
 
+  const lastQueryKey = useRef<string | null>(null);
+
   useEffect(() => {
-    setResult({ data: null, isLoading: true, error: null });
-    let isMounted = true; // Flag to track mount status
+    let isMounted = true;
 
     if (!memoizedTargetRefOrQuery) {
-      if (isMounted) {
-        setResult({ data: null, isLoading: false, error: null });
-      }
+      setResult({ data: null, isLoading: false, error: null });
+      lastQueryKey.current = null;
       return;
     }
+
+    // Identifikasi kueri secara unik untuk memutus loop
+    let currentKey: string;
+    if (memoizedTargetRefOrQuery.type === 'collection') {
+        currentKey = (memoizedTargetRefOrQuery as CollectionReference).path;
+    } else {
+        currentKey = (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString() || 'query';
+    }
+
+    if (currentKey !== lastQueryKey.current) {
+        setResult({ data: null, isLoading: true, error: null });
+        lastQueryKey.current = currentKey;
+    }
     
-    // Capture the UID for which this subscription is being made.
     const subscriptionUid = userForSubscription?.uid;
 
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
-        if (!isMounted) return; // Prevent state update on unmounted component
+        if (!isMounted) return;
 
-        // Before processing the data, ensure the user hasn't changed.
         const currentAuthUser = getAuth().currentUser;
-        if (currentAuthUser?.uid !== subscriptionUid) {
-            // This is a stale result from a previous user's subscription. Ignore it.
-            return;
-        }
+        if (currentAuthUser?.uid !== subscriptionUid) return;
         
         const results: WithId<T>[] = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
         setResult({ data: results, isLoading: false, error: null });
       },
       (error: FirestoreError) => {
-        if (!isMounted) return; // Prevent state update on unmounted component
+        if (!isMounted) return;
 
-        // In the error callback, we explicitly check if the user has changed since
-        // the subscription was created. This is the core of the race condition fix.
         const currentAuthUser = getAuth().currentUser;
-        if (currentAuthUser?.uid !== subscriptionUid) {
-            console.warn('Ignoring stale Firestore error after user change.', {
-                subscriptionUid,
-                currentUid: currentAuthUser?.uid,
-            });
-            // If the user has changed, this is not a "real" error for the current session.
-            // We can safely ignore it to prevent the app from crashing.
-            return;
-        }
+        if (currentAuthUser?.uid !== subscriptionUid) return;
 
-        // Do not throw a permission error for CollectionGroup queries, as they might just need an index.
         const internalQuery = (memoizedTargetRefOrQuery as unknown as InternalQuery)._query;
         if (internalQuery?.collectionGroup) {
           setResult({ data: null, isLoading: false, error });
           return;
         }
 
-
-        let path: string;
-        if (memoizedTargetRefOrQuery.type === 'collection') {
-          path = (memoizedTargetRefOrQuery as CollectionReference).path;
-        } else if (internalQuery) {
-          path = internalQuery.path.canonicalString();
-        } else {
-          path = '[unknown path]';
-        }
+        let path = memoizedTargetRefOrQuery.type === 'collection' 
+            ? (memoizedTargetRefOrQuery as CollectionReference).path 
+            : (internalQuery?.path?.canonicalString() || '[query]');
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',
@@ -115,7 +106,7 @@ export function useCollection<T = any>(
       isMounted = false;
       unsubscribe();
     };
-  }, [memoizedTargetRefOrQuery, userForSubscription]);
+  }, [memoizedTargetRefOrQuery, userForSubscription?.uid]); // Gunakan UID untuk stabilitas
 
   return result;
 }
