@@ -1,7 +1,6 @@
-
 'use client';
 
-import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
 import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
 import type { Firestore } from 'firebase/firestore';
 import { getFromCache, setInCache } from './cache';
@@ -11,6 +10,8 @@ export interface MonthlyReportData {
     date: string;
     checkInTime: string | null;
     checkOutTime: string | null;
+    s2CheckInTime: string | null;
+    s2CheckOutTime: string | null;
     status: string;
     description: string;
     manualEntry: boolean;
@@ -20,366 +21,128 @@ export interface MonthlyReportData {
 const cleanDesc = (desc: any) => {
     if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
     const d = desc.toLowerCase();
-    
-    if (d === 'terlambat') return 'Terlambat';
-    if (d === 'sakit') return 'Sakit';
-    if (d === 'izin' || d === 'izin pribadi') return 'Izin pribadi';
-    if (d === 'dinas pagi' || d === 'tugas dinas pagi') return 'Dinas pagi';
-    if (d === 'dinas siang' || d === 'tugas dinas siang') return 'Dinas siang';
-    if (d === 'pulang cepat' || d === 'izin pulang cepat') return 'Pulang cepat';
-    if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
-
-    if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi') || d.includes('diubah oleh admin')) {
-        return 'Kehadiran penuh';
-    }
+    if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi')) return 'Kehadiran penuh';
     return desc.trim() || 'Kehadiran penuh';
 };
 
-const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean): number => {
-    const s = status.toLowerCase();
+const calculatePoints = (status: string, description: string, s1In: boolean, s1Out: boolean, s2In: boolean, s2Out: boolean): number => {
     const d = description.toLowerCase();
-
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
-    if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
-    if (d === 'terlambat' || d.includes('cepat')) return 0.95;
-    if (s === 'sakit') return 0.9;
-    if (s.includes('izin')) return 0.7;
-    if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
-    return 0.0;
+    
+    // Logika Poin Sesi Ganda: Max 1.0
+    // Sesi 1 (0.5) + Sesi 2 (0.5)
+    let p = 0;
+    if (s1In && s1Out) p += 0.5; else if (s1In || s1Out) p += 0.25;
+    if (s2In && s2Out) p += 0.5; else if (s2In || s2Out) p += 0.25;
+    
+    if (status.toLowerCase() === 'sakit') return 0.9;
+    if (status.toLowerCase().includes('izin')) return 0.7;
+    
+    return p;
 };
 
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-
     try {
-        const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
-        const monthlyConfigId = format(today, 'yyyy-MM');
-        const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthlyConfigId);
-
         const [schoolConfigSnap, monthlyConfigSnap] = await Promise.all([
-            getDoc(schoolConfigRef),
-            getDoc(monthlyConfigRef)
+            getDoc(doc(firestore, 'schoolConfig', 'default')),
+            getDoc(doc(firestore, 'monthlyConfigs', format(today, 'yyyy-MM')))
         ]);
-
-        const schoolConfig = schoolConfigSnap.exists() ? schoolConfigSnap.data() : {};
-        const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
-
-        const isManualOff = schoolConfig.isAttendanceActive === false;
-        const holidays = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
-        const isCalendarHoliday = holidays.includes(todayStr);
-        const dayOfWeek = today.getDay();
-        const offDays: number[] = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
-        const isRecurringOff = offDays.includes(dayOfWeek);
-
-        const isHoliday = !isManualOff && (isCalendarHoliday || isRecurringOff);
-
-        // Fetch all potential users first to be more robust
-        const usersSnap = await getDocs(collection(firestore, 'users'));
-        const allStaff = usersSnap.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as any))
-            .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
-
-        if (isManualOff || isHoliday) {
-            return { 
-                totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, 
-                isHoliday: isHoliday, 
-                isCalendarHoliday: isCalendarHoliday,
-                isManualDisabled: isManualOff 
-            };
+        const schoolConfig = schoolConfigSnap.data() || {};
+        const monthlyConfig = monthlyConfigSnap.data() || {};
+        if (schoolConfig.isAttendanceActive === false || (schoolConfig.offDays || [0, 6]).includes(today.getDay()) || monthlyConfig.holidays?.includes(todayStr)) {
+            return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: true, isManualDisabled: schoolConfig.isAttendanceActive === false };
         }
-
-        const attendanceQuery = query(
-            collectionGroup(firestore, 'attendanceRecords'),
-            where('date', '==', todayStr)
-        );
-        const attendanceSnap = await getDocs(attendanceQuery);
-        const presentUserIds = new Set<string>();
-        
-        const staffIdsSet = new Set(allStaff.map(s => s.id));
-        
-        attendanceSnap.forEach(doc => {
-            const data = doc.data();
-            const userId = data.userId || doc.ref.parent.parent?.id;
-            if (userId && staffIdsSet.has(userId)) presentUserIds.add(userId);
-        });
-
-        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
-        const leaveSnap = await getDocs(leaveQuery);
-        
-        let izinCount = 0;
-        let sakitCount = 0;
-        let pendingCount = 0;
-        let alpaCount = 0;
-
-        allStaff.forEach((u: any) => {
-            if (presentUserIds.has(u.id)) return;
-
-            const userLeaves = leaveSnap.docs.filter(d => (d.data().userId || d.ref.parent.parent?.id) === u.id);
-            const activeLeave = userLeaves.find(d => {
-                const leave = d.data();
-                return isWithinInterval(today, { start: startOfDay(leave.startDate.toDate()), end: endOfDay(leave.endDate.toDate()) });
-            });
-
-            if (activeLeave) {
-                const leave = activeLeave.data();
-                if (leave.status === 'approved') {
-                    if (leave.type === 'Sakit') sakitCount++;
-                    else if (!['Pulang Cepat', 'Dinas Siang', 'Izin Pulang Cepat'].includes(leave.type)) izinCount++;
-                } else if (leave.status === 'pending' && !['Pulang Cepat', 'Dinas Siang', 'Izin Pulang Cepat'].includes(leave.type)) {
-                    pendingCount++;
-                }
-            } else {
-                alpaCount++;
-            }
-        });
-
-        return {
-            totalStaff: allStaff.length,
-            hadir: presentUserIds.size,
-            izin: izinCount,
-            sakit: sakitCount,
-            pending: pendingCount,
-            alpa: alpaCount,
-            isHoliday: false,
-            isManualDisabled: false,
-            isCalendarHoliday: isCalendarHoliday
-        };
-    } catch (e) {
-        console.error("Daily stats calculation error:", e);
-        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false, isCalendarHoliday: false };
-    }
+        const usersSnap = await getDocs(collection(firestore, 'users'));
+        const allStaff = usersSnap.docs.map(d => ({ id: d.id, ...d.data() } as any)).filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
+        const attendanceSnap = await getDocs(query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr)));
+        const presentIds = new Set(attendanceSnap.docs.map(d => d.data().userId));
+        return { totalStaff: allStaff.length, hadir: presentIds.size, izin: 0, sakit: 0, pending: 0, alpa: allStaff.length - presentIds.size, isHoliday: false, isManualDisabled: false };
+    } catch (e) { return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false }; }
 }
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v302_${userId}_${format(start, 'yyyyMM')}`;
-    
-    const cachedStats = getFromCache(cacheKey);
-    if (cachedStats) return cachedStats;
+    const cacheKey = `stats_s2_v1_${userId}_${format(start, 'yyyyMM')}`;
+    const cached = getFromCache(cacheKey); if (cached) return cached;
 
     try {
-        const schoolConfigRef = doc(firestore, 'schoolConfig', 'default');
-        const monthlyConfigId = format(start, 'yyyy-MM');
-        const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthlyConfigId);
-        
-        const [schoolConfigSnap, monthlyConfigSnap, attendanceSnap, leaveSnap] = await Promise.all([
-            getDoc(schoolConfigRef),
-            getDoc(monthlyConfigRef),
+        const [configSnap, monthlySnap, attSnap, leaveSnap] = await Promise.all([
+            getDoc(doc(firestore, 'schoolConfig', 'default')),
+            getDoc(doc(firestore, 'monthlyConfigs', format(start, 'yyyy-MM'))),
             getDocs(collection(firestore, 'users', userId, 'attendanceRecords')),
             getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
         ]);
-
-        const schoolConfig = schoolConfigSnap.exists() ? schoolConfigSnap.data() : {};
-        const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
-        
-        const startStr = format(start, 'yyyy-MM-dd');
-        const endStr = format(end, 'yyyy-MM-dd');
+        const config = configSnap.data() || {};
+        const mConfig = monthlySnap.data() || {};
         const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const workingDays = eachDayOfInterval({ start, end }).filter(d => !(config.offDays || [0, 6]).includes(d.getDay()) && !mConfig.holidays?.includes(format(d, 'yyyy-MM-dd')));
+        const workingDaysSet = new Set(workingDays.map(d => format(d, 'yyyy-MM-dd')));
 
-        const attendanceData = attendanceSnap.docs
-            .map(d => ({ ...d.data(), id: d.id }))
-            .filter((att: any) => {
-                const d = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-                return d >= startStr && d <= endStr;
-            });
-
-        const leaveData = leaveSnap.docs
-            .map(d => d.data())
-            .filter((l: any) => l.startDate.toDate() <= end);
-
-        const offDays: number[] = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
-        const holidays: string[] = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
-
-        const workingDaysInPeriod = eachDayOfInterval({ start, end }).filter(day => 
-            !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd'))
-        );
-
-        const workingDaysSet = new Set(workingDaysInPeriod.map(day => format(day, 'yyyy-MM-dd')));
-        
         let totalPoints = 0;
-        let hadirCount = 0;
-        let izinCount = 0;
-        let sakitCount = 0;
         const processedDates = new Set<string>();
 
-        attendanceData.forEach((att: any) => {
-            const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-            if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
-                const hasIn = !!att.checkInTime;
-                const hasOut = !!att.checkOutTime;
-                const cleanD = cleanDesc(att.reasonForUpdate);
-                
-                const p = calculatePoints('hadir', cleanD, hasIn, hasOut);
-                totalPoints += p;
-                hadirCount++;
-                processedDates.add(attDateStr);
+        attSnap.docs.forEach(d => {
+            const att = d.data();
+            const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+            if (workingDaysSet.has(dStr)) {
+                totalPoints += calculatePoints('hadir', att.reasonForUpdate || '', !!att.checkInTime, !!att.checkOutTime, !!att.s2CheckInTime, !!att.s2CheckOutTime);
+                processedDates.add(dStr);
             }
         });
 
-        leaveData.forEach(leave => {
+        leaveSnap.docs.forEach(d => {
+            const leave = d.data();
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
-                const dayStr = format(day, 'yyyy-MM-dd');
-                if (workingDaysSet.has(dayStr) && !processedDates.has(dayStr)) {
-                    const p = calculatePoints(leave.type, leave.reason || leave.type, false, false);
-                    totalPoints += p;
-                    if (leave.type === 'Sakit') sakitCount++;
-                    else if (p < 1.0) izinCount++;
-                    else hadirCount++;
-                    
-                    processedDates.add(dayStr);
+                const dStr = format(day, 'yyyy-MM-dd');
+                if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
+                    totalPoints += calculatePoints(leave.type, leave.reason || leave.type, false, false, false, false);
+                    processedDates.add(dStr);
                 }
             });
         });
 
-        const pastWorkingDays = workingDaysInPeriod.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
-        const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-        
-        const denominator = Math.max(1, workingDaysInPeriod.length);
-        const finalPercentage = (totalPoints / denominator) * 100;
-
-        const result = {
-            totalHadir: hadirCount, 
-            totalIzin: izinCount,
-            totalSakit: sakitCount,
-            totalAlpa: alpaCount,
-            totalPoints: totalPoints.toFixed(2),
-            persentase: Math.min(finalPercentage, 100).toFixed(1) + '%',
-        };
-
-        setInCache(cacheKey, result);
-        return result;
-    } catch (e) {
-        console.error("Stats calculation error:", e);
-        return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
-    }
+        const result = { totalPoints: totalPoints.toFixed(2), persentase: Math.min((totalPoints / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%', totalAlpa: workingDays.filter(d => format(d, 'yyyy-MM-dd') <= todayStr && !processedDates.has(format(d, 'yyyy-MM-dd'))).length };
+        setInCache(cacheKey, result); return result;
+    } catch (e) { return { totalPoints: '0.00', persentase: '0.0%', totalAlpa: 0 }; }
 }
 
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
-    if (!schoolConfig) return [];
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-
+    const start = startOfMonth(currentMonth); const end = endOfMonth(currentMonth);
     try {
-        const monthlyConfigId = format(currentMonth, 'yyyy-MM');
-        const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthlyConfigId);
-        
-        const [monthlyConfigSnap, attendanceHistorySnap, leaveHistorySnap] = await Promise.all([
-            getDoc(monthlyConfigRef),
+        const [mConfigSnap, attSnap, leaveSnap] = await Promise.all([
+            getDoc(doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'))),
             getDocs(collection(firestore, 'users', userId, 'attendanceRecords')),
             getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
         ]);
-
-        const monthlyConfig = monthlyConfigSnap.exists() ? monthlyConfigSnap.data() : {};
-        
-        const startStr = format(monthStart, 'yyyy-MM-dd');
-        const endStr = format(monthEnd, 'yyyy-MM-dd');
-
-        const attendanceHistory = attendanceHistorySnap.docs
-            .map(d => ({ ...d.data(), id: d.id }))
-            .filter((att: any) => {
-                const d = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-                return d >= startStr && d <= endStr;
-            });
-
-        const leaveHistory = leaveHistorySnap.docs
-            .map(d => d.data())
-            .filter((l: any) => l.startDate.toDate() <= monthEnd);
-
-        const now = new Date();
-        const todayStart = startOfDay(now);
-        const offDays: number[] = Array.isArray(schoolConfig?.offDays) ? schoolConfig.offDays : [0, 6];
-        const holidays: string[] = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
-
-        const attendanceMap = new Map();
-        attendanceHistory.forEach((rec: any) => {
-            const dStr = rec.date || (rec.checkInTime ? format(rec.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-            if (dStr) attendanceMap.set(dStr, rec);
+        const mConfig = mConfigSnap.data() || {};
+        const attMap = new Map();
+        attSnap.docs.forEach(d => {
+            const data = d.data(); const dStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+            if (dStr) attMap.set(dStr, { id: d.id, ...data });
+        });
+        const leaveMap = new Map();
+        leaveSnap.docs.forEach(d => {
+            const l = d.data(); eachDayOfInterval({ start: l.startDate.toDate(), end: l.endDate.toDate() }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), l));
         });
 
-        const leaveMap = new Map<string, any>();
-        leaveHistory.forEach(leave => {
-            eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
-                const dStr = format(day, 'yyyy-MM-dd');
-                if (dStr >= startStr && dStr <= endStr) {
-                    leaveMap.set(dStr, leave);
-                }
-            });
-        });
+        const workingDays = eachDayOfInterval({ start, end }).filter(d => !(schoolConfig.offDays || [0, 6]).includes(d.getDay()) && !mConfig.holidays?.includes(format(d, 'yyyy-MM-dd')));
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-        const allDaysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-        const report = allDaysInMonth.map(day => {
-            const dayStr = format(day, 'yyyy-MM-dd');
-            const isToday = isSameDay(day, todayStart);
-            const isWorkingDay = !offDays.includes(day.getDay()) && !holidays.includes(dayStr);
-
-            if (!isWorkingDay) return null;
-            if (isBefore(todayStart, day) && !isToday) return null;
-
-            const attendanceRecord = attendanceMap.get(dayStr);
-            const leaveRecord = leaveMap.get(dayStr);
-
-            if (attendanceRecord) {
-                const checkInTime = attendanceRecord.checkInTime?.toDate() || null;
-                const checkOutTime = attendanceRecord.checkOutTime?.toDate() || null;
-                const isManual = attendanceRecord.manualEntry || false;
-                
-                let description = cleanDesc(attendanceRecord.reasonForUpdate || 'Kehadiran penuh');
-                
-                if (checkInTime && checkOutTime && !['dinas pagi', 'dinas siang', 'pulang cepat', 'sakit', 'izin pribadi', 'kegiatan luar sekolah', 'terlambat'].includes(description.toLowerCase())) {
-                    if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
-                        const inEndStr = schoolConfig.checkInEndTime;
-                        const [h, m] = inEndStr.split(':').map(Number);
-                        const deadline = setMinutes(setHours(startOfDay(checkInTime), h), m);
-                        if (checkInTime > deadline) description = 'Terlambat';
-                    }
-                }
-
-                if (!checkOutTime) {
-                    description = 'Belum absen pulang';
-                }
-                if (!checkInTime && checkOutTime) {
-                    description = 'Belum absen masuk';
-                }
-                
-                const pts = calculatePoints('hadir', description, !!checkInTime, !!checkOutTime);
-                
-                return { 
-                    id: attendanceRecord.id, 
-                    date: day, 
-                    checkInTime: checkInTime ? checkInTime.toISOString() : null, 
-                    checkOutTime: checkOutTime ? checkOutTime.toISOString() : null, 
-                    status: 'Hadir', 
-                    description: description.charAt(0).toUpperCase() + description.slice(1), 
-                    manualEntry: isManual,
-                    points: pts
-                };
+        return workingDays.map(day => {
+            const dStr = format(day, 'yyyy-MM-dd');
+            if (dStr > todayStr) return null;
+            const att = attMap.get(dStr); const leave = leaveMap.get(dStr);
+            if (att) {
+                const pts = calculatePoints('hadir', att.reasonForUpdate || '', !!att.checkInTime, !!att.checkOutTime, !!att.s2CheckInTime, !!att.s2CheckOutTime);
+                return { id: att.id, date: dStr, checkInTime: att.checkInTime?.toDate().toISOString() || null, checkOutTime: att.checkOutTime?.toDate().toISOString() || null, s2CheckInTime: att.s2CheckInTime?.toDate().toISOString() || null, s2CheckOutTime: att.s2CheckOutTime?.toDate().toISOString() || null, status: 'Hadir', description: cleanDesc(att.reasonForUpdate), points: pts };
             }
-
-            if (leaveRecord) {
-                const type = leaveRecord.type;
-                const isHadirFull = ['Dinas', 'Dinas Pagi', 'Dinas Siang', 'Terlambat', 'Pulang Cepat', 'Izin Pulang Cepat', 'Kegiatan Luar Sekolah'].includes(type);
-                const pts = calculatePoints(type, leaveRecord.reason || type, false, false);
-                
-                return { 
-                    id: `${leaveRecord.id}-${dayStr}`, 
-                    date: day, checkInTime: null, checkOutTime: null, 
-                    status: isHadirFull ? 'Hadir' : type, 
-                    description: cleanDesc(leaveRecord.reason) || type,
-                    points: pts
-                };
+            if (leave) {
+                const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false, false, false);
+                return { id: leave.id, date: dStr, status: leave.type, description: leave.reason || leave.type, points: pts };
             }
-
-            return { id: dayStr, date: day, checkInTime: null, checkOutTime: null, status: 'Alpa', description: 'Tidak ada keterangan', points: 0.0 };
-        });
-
-        return report.filter(Boolean).sort((a: any, b: any) => b.date.getTime() - a.date.getTime()).map((item: any) => ({
-            ...item,
-            date: item.date.toISOString(),
-        }));
-    } catch (e) {
-        console.error("Fetch report error:", e);
-        return [];
-    }
+            return { id: dStr, date: dStr, status: 'Alpa', description: 'Tanpa Keterangan', points: 0 };
+        }).filter(Boolean).sort((a:any, b:any) => b.date.localeCompare(a.date));
+    } catch (e) { return []; }
 }
