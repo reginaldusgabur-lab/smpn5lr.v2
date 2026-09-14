@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'E-SPENLI',
     short_name: 'E-SPENLI',
     description: 'Aplikasi Absensi Digital Modern SMPN 5 Langke Rembong',
-    start_url: '/',
+    start_url: '/dashboard',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
