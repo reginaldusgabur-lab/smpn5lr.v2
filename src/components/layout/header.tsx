@@ -72,9 +72,6 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
 
   return (
     <header className={headerClasses}>
-      {/* Dynamic Spacer for Android/iOS Status Bar Blending */}
-      <div className="h-[env(safe-area-inset-top)] w-full bg-background" />
-      
       <div className="flex h-16 w-full items-center justify-between px-4 sm:px-6">
         {/* Left: User Profile Dropdown */}
         <div className="flex items-center gap-3 min-w-0 max-w-[70%]">
