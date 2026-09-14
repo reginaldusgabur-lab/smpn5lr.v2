@@ -69,58 +69,69 @@ const generateQuoteFlow = ai.defineFlow(
   },
   async (input) => {
     const isEntry = input.attendanceType === 'in';
-    const hash = getHash(`${input.userId}|${input.date}|${input.creativeSeed}`);
+    const hash = getHash(`${input.userId}|${input.creativeSeed}`);
     
-    // Tentukan Persona berdasarkan Hash untuk variasi radikal
+    // Tentukan Persona berdasarkan Hash untuk variasi radikal antar user
     const personas = [
-      "Filosof Stoik (fokus pada ketenangan, logika, dan tugas mulia)",
-      "Penyair Kontemporer (fokus pada metafora alam, cahaya, dan harmoni)",
-      "Arsitek Visi (fokus pada struktur, pondasi masa depan, dan presisi)",
-      "Rekan Energik (fokus pada antusiasme, keceriaan, dan aksi nyata)",
-      "Navigator Bijak (fokus pada arah, kompas moral, dan perjalanan ilmu)"
+      "Filosof Stoik (fokus pada ketenangan, logika, dan tugas mulia sebagai pengabdian)",
+      "Penyair Kontemporer (fokus pada metafora alam, cahaya, dan harmoni dalam pendidikan)",
+      "Arsitek Visi (fokus pada struktur, pondasi masa depan, dan presisi dalam bekerja)",
+      "Rekan Energik (fokus pada antusiasme, keceriaan, dan aksi nyata yang berdampak)",
+      "Navigator Bijak (fokus pada arah, kompas moral, dan perjalanan panjang ilmu pengetahuan)"
     ];
     const selectedPersona = personas[hash % personas.length];
 
     const fallbackList = isEntry ? fallbacks.in : fallbacks.out;
     const selectedFallback = fallbackList[hash % fallbackList.length];
 
+    // Petunjuk tema berdasarkan Role
+    let roleTheme = "";
+    const r = input.role.toLowerCase();
+    if (r === 'kepala_sekolah') {
+      roleTheme = "Fokus pada kepemimpinan, visi sekolah, integritas, dan orkestrasi kebijakan yang melayani.";
+    } else if (r === 'guru') {
+      roleTheme = "Fokus pada inspirasi kelas, kesabaran mendampingi murid, cahaya ilmu, dan keteladanan moral.";
+    } else if (r === 'pegawai') {
+      roleTheme = "Fokus pada efisiensi sistem, detak jantung administrasi, profesionalisme, dan harmoni pelayanan.";
+    } else {
+      roleTheme = "Fokus pada disiplin, pertumbuhan diri, dan kontribusi positif bagi lingkungan sekolah.";
+    }
+
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.5,
-          topP: 0.98,
-          topK: 65,
-          maxOutputTokens: 250,
+          temperature: 1.4, // Suhu tinggi untuk mencegah repetisi kata
+          topP: 0.95,
+          maxOutputTokens: 150,
         },
-        system: `Anda adalah "E-SPENLI Muse", generator kutipan yang sangat personal dan anti-mainstream.
-TUGAS: Buat SATU kutipan pendek (15-22 kata) yang disesuaikan khusus untuk individu ini.
+        system: `Anda adalah "E-SPENLI Muse", generator kutipan yang sangat personal dan cerdas untuk personil sekolah.
+TUGAS: Buat SATU kutipan pendek (15-25 kata) yang disesuaikan khusus untuk identitas pengguna ini.
 
-GAYA BAHASA SAAT INI: Anda harus menulis sebagai "${selectedPersona}".
+GAYA BAHASA ANDA SAAT INI: Tuliskan kutipan dengan gaya sebagai "${selectedPersona}".
 
-STRATEGI ANTI-REPETISI:
-1. Gunakan ${input.userId} dan ${input.creativeSeed} sebagai jangkar keunikan.
-2. JANGAN memulai kalimat dengan kata standar seperti "Setiap", "Hari ini", "Mari", atau "Jadilah".
-3. Eksplorasi metafora dari domain: Astronomi, Navigasi Laut, Tenun Tradisional, Arsitektur, atau Simfoni.
-4. KONTEKS PERAN:
-   - Kepala Sekolah (${input.role}): Fokus pada kemudi, integritas, dan orkestrasi sekolah.
-   - Guru (${input.role}): Fokus pada percikan rasa ingin tahu, arsitektur mimpi, dan keteladanan.
-   - Pegawai (${input.role}): Fokus pada roda efisiensi, detak jantung sistem, dan profesionalisme.
+KONTEKS PERAN (Wajib dipatuhi):
+${roleTheme}
+
+PEMBEDA SESI:
+- Jika Masuk (IN): Fokus pada kesiapan mental, niat baik, dan energi awal untuk mulai berkarya.
+- Jika Pulang (OUT): Fokus pada refleksi, rasa syukur atas tugas yang tuntas, dan peralihan ke waktu istirahat bersama keluarga.
 
 DAFTAR TERLARANG (JANGAN GUNAKAN):
-- "Pahlawan tanpa tanda jasa", "Masa depan bangsa", "Semangat pagi", "Pantang menyerah", "Teruslah melangkah".
+"Pahlawan tanpa tanda jasa", "Masa depan bangsa", "Semangat pagi", "Pantang menyerah", "Setiap hari adalah", "Mari kita".
 
 ATURAN KETAT:
-- Tanpa emoji. Tanpa pantun. Tanpa sajak berima.
-- Pastikan kalimat terasa segar, tajam, dan hanya masuk akal untuk pengguna ini hari ini.`,
+- Jangan sebutkan nama peran secara eksplisit (misal: "Wahai Kepala Sekolah"). Biarkan konteksnya saja yang terasa.
+- Gunakan metafora yang segar (misal: tentang tenun, arus air, navigasi bintang, atau simfoni).
+- Tanpa emoji. Tanpa sajak berima. Tanpa pantun.`,
         prompt: `PARAMETER UNIK:
-- Nama: ${input.userName}
-- ID Benih: ${input.userId}
-- Sesi: ${isEntry ? 'Masuk (Fajar/Mulai)' : 'Masuk (Senja/Selesai)'}
+- Nama Pengguna: ${input.userName}
+- Identitas Benih (Seed): ${input.userId}
+- Sesi Absensi: ${isEntry ? 'MASUK (Fajar/Mulai)' : 'PULANG (Senja/Selesai)'}
 - Tanggal: ${input.date}
 - Varian Entropi: ${input.creativeSeed}
 
-Buat kalimat yang belum pernah Anda buat sebelumnya. Pastikan kutipan untuk ${input.userName} berbeda total dengan kutipan orang lain.`,
+Buatlah kalimat yang benar-benar baru, tajam, dan hanya terasa relevan untuk personil ini pada sesi ${isEntry ? 'pagi' : 'sore'} ini. JANGAN pernah mengulang pola kalimat sebelumnya.`,
         output: { schema: QuoteOutputSchema },
       });
 
