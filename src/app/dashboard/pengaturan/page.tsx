@@ -35,7 +35,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle, Sparkles } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -94,7 +94,7 @@ export default function PengaturanPage() {
   const [nisn, setNisn] = useState('');
   const [position, setPosition] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  fileInputRef = useRef<HTMLInputElement>(null);
 
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
@@ -119,6 +119,9 @@ export default function PengaturanPage() {
   const [isNotificationActive, setIsNotificationActive] = useState(false);
   const [notificationInterval, setNotificationInterval] = useState(3);
 
+  const [isManualQuoteActive, setIsManualQuoteActive] = useState(false);
+  const [manualQuoteContent, setManualQuoteContent] = useState('');
+
   const [isAudioSaving, setIsAudioSaving] = useState(false);
   const [successSoundBase64, setSuccessSoundBase64] = useState<string | null>(null);
   const [successSoundName, setSuccessSoundName] = useState<string>('');
@@ -128,12 +131,12 @@ export default function PengaturanPage() {
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const schoolConfigRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'schoolConfig', 'default');
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: userData, isLoading: isUserDataLoading } = useDoc<{ 
       name: string;
@@ -159,6 +162,8 @@ export default function PengaturanPage() {
       notificationContent?: string;
       isNotificationActive?: boolean;
       notificationInterval?: number;
+      isManualQuoteActive?: boolean;
+      manualQuoteContent?: string;
       successSoundUrl?: string;
       successSoundName?: string;
   }>(user, schoolConfigRef);
@@ -188,6 +193,10 @@ export default function PengaturanPage() {
       setNotificationContent(schoolConfigData.notificationContent ?? '');
       setIsNotificationActive(schoolConfigData.isNotificationActive ?? false);
       setNotificationInterval(schoolConfigData.notificationInterval ?? 3);
+
+      setIsManualQuoteActive(schoolConfigData.isManualQuoteActive ?? false);
+      setManualQuoteContent(schoolConfigData.manualQuoteContent ?? '');
+
       setSuccessSoundBase64(schoolConfigData.successSoundUrl ?? null);
       setSuccessSoundName(schoolConfigData.successSoundName ?? '');
     }
@@ -332,9 +341,14 @@ export default function PengaturanPage() {
     if (!schoolConfigRef) return;
     setIsNotificationSaving(true);
     setDocumentNonBlocking(schoolConfigRef, {
-      notificationTitle, notificationContent, isNotificationActive, notificationInterval: Number(notificationInterval),
+      notificationTitle, 
+      notificationContent, 
+      isNotificationActive, 
+      notificationInterval: Number(notificationInterval),
+      isManualQuoteActive,
+      manualQuoteContent: manualQuoteContent.trim()
     }, { merge: true });
-    toast({ title: 'Disimpan', description: 'Pengumuman diperbarui.' });
+    toast({ title: 'Disimpan', description: 'Pengumuman dan Kutipan manual diperbarui.' });
     setIsNotificationSaving(false);
   };
 
@@ -500,6 +514,30 @@ export default function PengaturanPage() {
                   </div>
 
                   <div className="pt-8 border-t mt-6">
+                      <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-3">
+                            <Sparkles className="h-5 w-5 text-blue-500" />
+                            <div>
+                                <Label className="font-bold text-xs uppercase tracking-widest">Kutipan Manual</Label>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Override kutipan AI dengan teks buatan Admin.</p>
+                            </div>
+                          </div>
+                          <Switch checked={isManualQuoteActive} onCheckedChange={setIsManualQuoteActive} />
+                      </div>
+                      <div className="space-y-4">
+                        <Textarea 
+                          placeholder="Tuliskan kutipan manual di sini..." 
+                          value={manualQuoteContent} 
+                          onChange={e => setManualQuoteContent(e.target.value)} 
+                          className="rounded-xl bg-muted/30 shadow-none min-h-[100px] font-medium" 
+                        />
+                        <p className="text-[10px] text-muted-foreground font-bold italic">
+                          Jika diaktifkan, kutipan ini akan muncul setelah absensi. Jika kosong atau dinonaktifkan, sistem kembali menggunakan AI.
+                        </p>
+                      </div>
+                  </div>
+
+                  <div className="pt-8 border-t mt-6">
                       <div className="flex items-center gap-3 mb-4">
                           <Volume2 className="h-5 w-5 text-primary" />
                           <div>
@@ -537,7 +575,7 @@ export default function PengaturanPage() {
               </CardContent>
               <CardFooter className="border-t px-6 py-5 bg-muted/5 flex flex-wrap gap-3">
                   <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-6 shadow-none">SIMPAN DATA PDF</Button>
-                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN</Button>
+                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN & KUTIPAN</Button>
                   <Button onClick={handleAudioSettingsSave} disabled={isAudioSaving} variant="secondary" className="font-bold rounded-xl h-11 px-6 shadow-none bg-primary/10 text-primary hover:bg-primary/20">SIMPAN NADA</Button>
               </CardFooter>
           </Card>
