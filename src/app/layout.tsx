@@ -20,6 +20,9 @@ export const metadata: Metadata = {
     icon: '/logo-3d.png',
     apple: '/logo-3d.png',
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  }
 };
 
 export const viewport: Viewport = {
