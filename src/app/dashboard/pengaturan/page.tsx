@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button'
@@ -94,7 +93,7 @@ export default function PengaturanPage() {
   const [nisn, setNisn] = useState('');
   const [position, setPosition] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
