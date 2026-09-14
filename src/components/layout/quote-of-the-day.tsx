@@ -24,6 +24,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const isFetched = useRef(false);
 
+  // Pastikan kita mendapatkan data profil terbaru termasuk role yang tepat
   const userDocRef = useMemoFirebase(() => 
     user ? doc(firestore, 'users', user.uid) : null, 
     [firestore, user?.uid]
@@ -31,6 +32,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   const { data: userData } = useDoc(user, userDocRef);
 
   useEffect(() => {
+    // Tunggu sampai data user dan tipe absensi benar-benar tersedia
     if (!userData || !attendanceType || isFetched.current) {
         if (!attendanceType) setIsLoading(false);
         return;
@@ -44,17 +46,20 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
       
-      // Seed yang jauh lebih acak dan presisi hingga milidetik
-      const creativeSeed = `RAND-${now.getTime()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      // Seed yang jauh lebih acak dan presisi hingga milidetik untuk memecah pola cache AI
+      const creativeSeed = `ENTROPY-${now.getTime()}-${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
 
       try {
         const response = await fetch('/api/quote', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          },
           body: JSON.stringify({ 
-            userName: userData.name,
+            userName: userData.name || user?.displayName || 'Personil',
             userId: user?.uid,
-            role: userData.role,
+            role: userData.role || category || 'pegawai',
             attendanceType,
             day: dayStr,
             date: dateStr,
@@ -69,8 +74,11 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('AI_FAILURE');
         }
       } catch (e: any) {
+        console.error("Failed to fetch unique quote:", e);
         setQuote({
-          quote: "Tetap tenang dan teruskan berkarya di lingkungan SMPN 5 Langke Rembong.",
+          quote: attendanceType === 'in' 
+            ? "Awali hari dengan ketulusan untuk melayani di lingkungan SMPN 5 Langke Rembong." 
+            : "Terima kasih atas dedikasi Anda hari ini. Selamat beristirahat bersama keluarga.",
           author: "Sistem E-SPENLI"
         });
       } finally {
@@ -79,7 +87,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
     };
 
     fetchQuote();
-  }, [userData, attendanceType, user?.uid]);
+  }, [userData, attendanceType, user?.uid, category]);
 
   if (!attendanceType) return null;
 
