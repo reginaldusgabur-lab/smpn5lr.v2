@@ -69,9 +69,18 @@ const generateQuoteFlow = ai.defineFlow(
   },
   async (input) => {
     const isEntry = input.attendanceType === 'in';
-    
-    // Logika hash untuk memastikan fallback pun tetap unik per user
     const hash = getHash(`${input.userId}|${input.date}|${input.creativeSeed}`);
+    
+    // Tentukan Persona berdasarkan Hash untuk variasi radikal
+    const personas = [
+      "Filosof Stoik (fokus pada ketenangan, logika, dan tugas mulia)",
+      "Penyair Kontemporer (fokus pada metafora alam, cahaya, dan harmoni)",
+      "Arsitek Visi (fokus pada struktur, pondasi masa depan, dan presisi)",
+      "Rekan Energik (fokus pada antusiasme, keceriaan, dan aksi nyata)",
+      "Navigator Bijak (fokus pada arah, kompas moral, dan perjalanan ilmu)"
+    ];
+    const selectedPersona = personas[hash % personas.length];
+
     const fallbackList = isEntry ? fallbacks.in : fallbacks.out;
     const selectedFallback = fallbackList[hash % fallbackList.length];
 
@@ -79,36 +88,39 @@ const generateQuoteFlow = ai.defineFlow(
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.5, // Maksimal kreativitas untuk variasi kata tak terduga
-          topP: 0.95,
-          topK: 60,
-          maxOutputTokens: 300,
+          temperature: 1.5,
+          topP: 0.98,
+          topK: 65,
+          maxOutputTokens: 250,
         },
-        system: `Anda adalah "E-SPENLI Muse", generator kutipan yang SANGAT personal, cerdas, dan variatif. 
-TUGAS: Buat SATU kutipan pendek (maks 25 kata) yang BENAR-BENAR UNIK untuk personil spesifik.
+        system: `Anda adalah "E-SPENLI Muse", generator kutipan yang sangat personal dan anti-mainstream.
+TUGAS: Buat SATU kutipan pendek (15-22 kata) yang disesuaikan khusus untuk individu ini.
 
-STRATEGI KEUNIKAN MUTLAK:
-1. Gunakan ID UNIK (${input.userId}) dan NAMA (${input.userName}) sebagai benih (anchor) gaya bahasa Anda.
-2. JANGAN gunakan pola kalimat yang sama untuk pengguna yang berbeda.
-3. Gunakan Meta-Entropy: Jika ID pengguna mengandung angka genap, gunakan nada puitis. Jika ganjil, gunakan nada stoik atau praktis. Jika mengandung banyak huruf, gunakan nada jenaka atau santai.
-4. Eksplorasi berbagai nada secara acak namun konsisten dengan identitas: puitis, motivasi stoik, jenaka (lucu), atau sangat formal.
-5. Gunakan metafora yang berbeda setiap kali dipanggil (misal: tentang pelita, pelaut, kanvas, pahlawan sunyi, orkestra ilmu, dsb).
-6. Konteks MASUK: Fokus pada semangat, kopi pagi, misi mendidik, atau tantangan baru.
-7. Konteks PULANG: Fokus pada istirahat, kelegaan, apresiasi diri, dan kehangatan keluarga.
-8. JANGAN MENYURUH ISTIRAHAT SAAT MASUK. JANGAN MENYURUH KERJA SAAT PULANG.
+GAYA BAHASA SAAT INI: Anda harus menulis sebagai "${selectedPersona}".
+
+STRATEGI ANTI-REPETISI:
+1. Gunakan ${input.userId} dan ${input.creativeSeed} sebagai jangkar keunikan.
+2. JANGAN memulai kalimat dengan kata standar seperti "Setiap", "Hari ini", "Mari", atau "Jadilah".
+3. Eksplorasi metafora dari domain: Astronomi, Navigasi Laut, Tenun Tradisional, Arsitektur, atau Simfoni.
+4. KONTEKS PERAN:
+   - Kepala Sekolah (${input.role}): Fokus pada kemudi, integritas, dan orkestrasi sekolah.
+   - Guru (${input.role}): Fokus pada percikan rasa ingin tahu, arsitektur mimpi, dan keteladanan.
+   - Pegawai (${input.role}): Fokus pada roda efisiensi, detak jantung sistem, dan profesionalisme.
+
+DAFTAR TERLARANG (JANGAN GUNAKAN):
+- "Pahlawan tanpa tanda jasa", "Masa depan bangsa", "Semangat pagi", "Pantang menyerah", "Teruslah melangkah".
 
 ATURAN KETAT:
-- Jangan gunakan emoji. Jangan buat pantun.
-- Pastikan kalimat terasa segar, baru, dan "HANYA" untuk pengguna tersebut hari ini.
-- Hindari frasa klise seperti "Masa depan bangsa" atau "Pahlawan tanpa tanda jasa" jika tidak dikemas secara sangat unik.`,
-        prompt: `BUAT KUTIPAN EKSKLUSIF DAN UNIK SEKARANG:
-- Target Personil: ${input.userName}
-- ID Keamanan Unik (Gunakan ini sebagai Seed Karakter): ${input.userId}
-- Waktu Sesi: ${isEntry ? 'Absen Masuk (Pagi/Mulai)' : 'Absen Pulang (Sore/Selesai)'}
+- Tanpa emoji. Tanpa pantun. Tanpa sajak berima.
+- Pastikan kalimat terasa segar, tajam, dan hanya masuk akal untuk pengguna ini hari ini.`,
+        prompt: `PARAMETER UNIK:
+- Nama: ${input.userName}
+- ID Benih: ${input.userId}
+- Sesi: ${isEntry ? 'Masuk (Fajar/Mulai)' : 'Masuk (Senja/Selesai)'}
 - Tanggal: ${input.date}
-- Token Variasi Kosakata: ${input.creativeSeed}
+- Varian Entropi: ${input.creativeSeed}
 
-Gunakan semua parameter di atas untuk meramu kalimat yang belum pernah Anda keluarkan sebelumnya. Pastikan kutipan untuk ${input.userName} berbeda dengan kutipan untuk orang lain di hari yang sama.`,
+Buat kalimat yang belum pernah Anda buat sebelumnya. Pastikan kutipan untuk ${input.userName} berbeda total dengan kutipan orang lain.`,
         output: { schema: QuoteOutputSchema },
       });
 
