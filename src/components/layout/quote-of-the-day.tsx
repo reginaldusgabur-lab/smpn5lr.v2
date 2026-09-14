@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -31,17 +32,38 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   );
   const { data: userData } = useDoc(user, userDocRef);
 
+  // Ambil konfigurasi sekolah untuk mengecek override manual
+  const schoolConfigRef = useMemoFirebase(() => 
+    firestore ? doc(firestore, 'schoolConfig', 'default') : null, 
+    [firestore]
+  );
+  const { data: schoolConfig, isLoading: isConfigLoading } = useDoc<{
+    isManualQuoteActive?: boolean;
+    manualQuoteContent?: string;
+  }>(user, schoolConfigRef);
+
   useEffect(() => {
-    // Tunggu sampai data user dan tipe absensi benar-benar tersedia
-    if (!userData || !attendanceType || isFetched.current) {
-        if (!attendanceType) setIsLoading(false);
+    // Tunggu sampai data user, tipe absensi, dan config sekolah benar-benar tersedia
+    if (isConfigLoading || !userData || !attendanceType || isFetched.current) {
+        if (!attendanceType && !isConfigLoading) setIsLoading(false);
         return;
     }
 
     const fetchQuote = async () => {
       setIsLoading(true);
       isFetched.current = true;
+
+      // 1. PRIORITAS UTAMA: Cek Override Manual dari Admin
+      if (schoolConfig?.isManualQuoteActive && schoolConfig?.manualQuoteContent?.trim()) {
+          setQuote({
+              quote: schoolConfig.manualQuoteContent.trim(),
+              author: "AI E-SPENLI" // Sesuai permintaan, author tetap AI E-SPENLI
+          });
+          setIsLoading(false);
+          return;
+      }
       
+      // 2. JALUR NORMAL: Fetch dari AI Flow
       const now = new Date();
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
@@ -87,7 +109,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
     };
 
     fetchQuote();
-  }, [userData, attendanceType, user?.uid, category]);
+  }, [userData, attendanceType, user?.uid, category, schoolConfig, isConfigLoading]);
 
   if (!attendanceType) return null;
 
