@@ -34,7 +34,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: userData, isLoading: isUserDataLoading } = useDoc<{ name: string, role: string, photoURL?: string }>(user, userDocRef);
 
@@ -66,7 +66,7 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const isProfileLoading = isUserLoading || isUserDataLoading;
 
   const headerClasses = cn(
-    "sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b bg-background/95 backdrop-blur-md px-4 sm:px-6 transition-all duration-300",
+    "sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/40 bg-background/95 backdrop-blur-md px-4 sm:px-6 transition-all duration-300",
     isTransparent ? "opacity-0 pointer-events-none" : "opacity-100"
   );
 
