@@ -26,7 +26,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
 
   const userDocRef = useMemoFirebase(() => 
     user ? doc(firestore, 'users', user.uid) : null, 
-    [firestore, user]
+    [firestore, user?.uid]
   );
   const { data: userData } = useDoc(user, userDocRef);
 
@@ -44,7 +44,8 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
       
-      const creativeSeed = `SESS-${Date.now()}-${Math.random().toString(36).substring(5)}`;
+      // Seed yang jauh lebih acak dan presisi hingga milidetik
+      const creativeSeed = `RAND-${now.getTime()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
       try {
         const response = await fetch('/api/quote', {
@@ -69,7 +70,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
         }
       } catch (e: any) {
         setQuote({
-          quote: "Tetap tenang dan teruskan berkarya di SMPN 5 Langke Rembong.",
+          quote: "Tetap tenang dan teruskan berkarya di lingkungan SMPN 5 Langke Rembong.",
           author: "Sistem E-SPENLI"
         });
       } finally {
