@@ -1,7 +1,9 @@
 'use client';
 
-import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp, setHours, setMinutes, startOfDay, endOfDay, format, isBefore, isSameDay, isWithinInterval } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
+import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { getFromCache, setInCache } from './cache';
 
 export interface MonthlyReportData {
@@ -70,7 +72,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
         const usersQuery = query(collection(firestore, 'users'), where('status', '==', 'Aktif'));
         const usersSnap = await getDocs(usersQuery);
-        // CRITICAL: Filter only ACTIVE staff
         const allStaff = usersSnap.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as any))
             .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
