@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -31,6 +32,8 @@ import {
   KeyRound,
   Users as UsersIcon,
   RefreshCw,
+  UserX,
+  UserCheck,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -82,6 +85,7 @@ const addUserSchema = z.object({
     email: z.string().email({ message: 'Email tidak valid.' }),
     role: z.enum(['guru', 'pegawai', 'kepala_sekolah', 'admin', 'siswa']),
     gender: z.enum(['Laki-laki', 'Perempuan'], { required_error: 'Jenis kelamin wajib dipilih' }),
+    status: z.enum(['Aktif', 'Nonaktif']).default('Aktif'),
     nip: z.string().optional(),
     nisn: z.string().optional(),
     position: z.string().optional(),
@@ -132,7 +136,7 @@ export default function AdminUsersPage() {
 
     const userForm = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
-        defaultValues: { role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', nisn: '', position: '', sequenceNumber: '', password: '' },
+        defaultValues: { role: 'guru', gender: 'Laki-laki', status: 'Aktif', name: '', email: '', nip: '', nisn: '', position: '', sequenceNumber: '', password: '' },
     });
 
     useEffect(() => {
@@ -142,6 +146,7 @@ export default function AdminUsersPage() {
                 email: editingUser.email || '',
                 role: editingUser.role || 'guru',
                 gender: editingUser.gender || 'Laki-laki',
+                status: editingUser.status || 'Aktif',
                 nip: editingUser.nip || '',
                 nisn: editingUser.nisn || '',
                 position: editingUser.position || '',
@@ -149,7 +154,7 @@ export default function AdminUsersPage() {
                 password: '',
             });
         } else {
-            userForm.reset({ role: 'guru', gender: 'Laki-laki', name: '', email: '', nip: '', nisn: '', position: '', sequenceNumber: '', password: '' });
+            userForm.reset({ role: 'guru', gender: 'Laki-laki', status: 'Aktif', name: '', email: '', nip: '', nisn: '', position: '', sequenceNumber: '', password: '' });
         }
     }, [editingUser, userForm]);
 
@@ -166,6 +171,7 @@ export default function AdminUsersPage() {
                     name: values.name,
                     role: values.role,
                     gender: values.gender,
+                    status: values.status,
                     nip: values.nip || null,
                     nisn: values.nisn || null,
                     position: values.position || null,
@@ -184,7 +190,7 @@ export default function AdminUsersPage() {
                         role: values.role, 
                         gender: values.gender,
                         email: values.email, 
-                        status: 'Aktif', 
+                        status: values.status, 
                         nip: values.nip || null, 
                         nisn: values.nisn || null,
                         position: values.position || null, 
@@ -201,6 +207,18 @@ export default function AdminUsersPage() {
         } finally { 
             setIsSaving(false); 
         }
+    };
+
+    const handleToggleUserStatus = (targetUser: any) => {
+        if (!firestore) return;
+        const currentStatus = targetUser.status || 'Aktif';
+        const newStatus = currentStatus === 'Aktif' ? 'Nonaktif' : 'Aktif';
+        const userRef = doc(firestore, "users", targetUser.id);
+        updateDocumentNonBlocking(userRef, { status: newStatus });
+        toast({ 
+            title: 'Status Diperbarui', 
+            description: `Akun ${targetUser.name} kini ${newStatus}.` 
+        });
     };
 
     const handleDeleteUser = async () => {
@@ -326,14 +344,28 @@ export default function AdminUsersPage() {
                                             <TableCell><Badge variant="secondary" className="text-[9px] font-bold px-3">{u.role.replace('_', ' ')}</Badge></TableCell>
                                             <TableCell><span className="text-xs font-medium">{u.gender || '-'}</span></TableCell>
                                             <TableCell><div className="flex flex-col"><span className="text-[10px] font-bold">{u.nip || u.nisn || '-'}</span><span className="text-[9px] font-bold text-primary uppercase">{u.position || '-'}</span></div></TableCell>
-                                            <TableCell className="text-center"><Badge variant={u.status === 'Aktif' ? 'default' : 'destructive'} className="text-[9px] font-bold">{u.status}</Badge></TableCell>
+                                            <TableCell className="text-center"><Badge variant={u.status === 'Aktif' ? 'default' : 'destructive'} className="text-[9px] font-bold">{u.status || 'Aktif'}</Badge></TableCell>
                                             <TableCell className="text-right pr-4">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9 rounded-full"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none shadow-2xl">
                                                         <DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel>
                                                         <DropdownMenuItem className="rounded-lg" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem>
+                                                        
+                                                        {/* FITUR TOGGLE NONAKTIF/AKTIF */}
+                                                        <DropdownMenuItem 
+                                                            className={u.status === 'Nonaktif' ? "text-emerald-600 rounded-lg" : "text-amber-600 rounded-lg"}
+                                                            onClick={() => handleToggleUserStatus(u)}
+                                                        >
+                                                            {u.status === 'Nonaktif' ? (
+                                                                <><UserCheck className="mr-3 h-4 w-4" />Aktifkan akun</>
+                                                            ) : (
+                                                                <><UserX className="mr-3 h-4 w-4" />Nonaktifkan akun</>
+                                                            )}
+                                                        </DropdownMenuItem>
+
                                                         <DropdownMenuItem className="rounded-lg" onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem>
+                                                        <DropdownMenuSeparator className="opacity-50" />
                                                         <DropdownMenuItem className="text-destructive rounded-lg" onClick={() => { setUserToDelete(u); setIsDeleteDialogOpen(true); }}><Trash2 className="mr-3 h-4 w-4" />Hapus akun</DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -412,12 +444,31 @@ export default function AdminUsersPage() {
                                     )} />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <FormField control={userForm.control} name="status" render={({field}) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[10px] font-bold uppercase">Status Akun</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className='border-none shadow-2xl'>
+                                                    <SelectItem value="Aktif" className="rounded-lg">Aktif</SelectItem>
+                                                    <SelectItem value="Nonaktif" className="rounded-lg text-destructive font-bold">Nonaktif</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP (Staf)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                     <FormField control={userForm.control} name="nisn" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NISN (Siswa)</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-4">
                                     <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status/Jabatan</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kata sandi awal</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />}
                                 <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-none mt-4 uppercase" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan data personil'}</Button>
