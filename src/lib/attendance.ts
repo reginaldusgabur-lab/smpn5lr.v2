@@ -2,7 +2,7 @@
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
-import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
+import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { getFromCache, setInCache } from './cache';
 
@@ -93,7 +93,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             if (userId) presentUserIds.add(userId);
         });
 
-        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
+        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
         const leaveSnap = await getDocs(leaveQuery);
         
         let izinCount = 0;
@@ -112,12 +112,8 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
             if (activeLeave) {
                 const leave = activeLeave.data();
-                if (leave.status === 'approved') {
-                    if (leave.type === 'Sakit') sakitCount++;
-                    else izinCount++;
-                } else {
-                    pendingCount++;
-                }
+                if (leave.type === 'Sakit') sakitCount++;
+                else izinCount++;
             } else {
                 alpaCount++;
             }
@@ -134,7 +130,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v302_single_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v303_single_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
 
     try {

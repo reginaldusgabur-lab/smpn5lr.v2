@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, writeBatch, collection, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, Timestamp, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { format, parseISO, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths, startOfDay, setHours, setMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
@@ -26,6 +26,27 @@ const safeFormat = (dateInput: any, formatString: string): string => {
     else date = new Date(dateInput);
     return format(date, formatString, { locale: id });
 };
+
+const PointLegend = () => (
+    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-sm font-black text-green-600">1.0 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
+            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
+            <p className="text-sm font-black text-blue-600">0.9 - 0.7 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
+            <p className="text-sm font-black text-red-600">0.5 - 0.0 Poin</p>
+        </div>
+    </div>
+);
 
 export default function UserReportDetailPage() {
     const params = useParams(); const router = useRouter(); const { user: currentUser } = useUser(); const firestore = useFirestore(); const { toast } = useToast();
@@ -51,7 +72,7 @@ export default function UserReportDetailPage() {
 
     const handleDownloadPdf = () => {
         if (!userData || monthlyReportData.length === 0) return;
-        const doc = new jsPDF('landscape');
+        const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
         const config = schoolConfig || {};
         
@@ -63,11 +84,10 @@ export default function UserReportDetailPage() {
         doc.text(`LAPORAN KEHADIRAN: ${userData.name}`, 14, 45);
         doc.setFontSize(10).setFont('times', 'normal').text(`Bulan: ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, 14, 51);
 
-        const tableHead = [['No', 'Tanggal', 'S1 Masuk', 'S1 Pulang', 'S2 Masuk', 'S2 Pulang', 'Status', 'Poin', 'Keterangan']];
+        const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Poin', 'Keterangan']];
         const tableRows = monthlyReportData.map((item, index) => [
             index + 1, safeFormat(item.date, 'eeee, d MMM yyyy'),
             safeFormat(item.checkInTime, 'HH:mm'), safeFormat(item.checkOutTime, 'HH:mm'),
-            safeFormat(item.s2CheckInTime, 'HH:mm'), safeFormat(item.s2CheckOutTime, 'HH:mm'),
             item.status, item.points?.toFixed(2), item.description
         ]);
 
@@ -82,7 +102,7 @@ export default function UserReportDetailPage() {
             <div className="max-w-7xl mx-auto space-y-4">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft /></Button>
-                    <div><h1 className="text-2xl font-black uppercase tracking-tighter">Detail Laporan: {userData?.name}</h1><p className="text-xs font-bold text-muted-foreground">REKAPITULASI SESI GANDA (S1 & S2)</p></div>
+                    <div><h1 className="text-2xl font-black uppercase tracking-tighter">Detail Laporan: {userData?.name}</h1><p className="text-xs font-bold text-muted-foreground">REKAPITULASI KEHADIRAN HARIAN</p></div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -115,12 +135,11 @@ export default function UserReportDetailPage() {
                                 <TableRow>
                                     <TableHead className="w-12 text-center text-[10px] font-black uppercase">No</TableHead>
                                     <TableHead className="text-[10px] font-black uppercase">Tanggal</TableHead>
-                                    <TableHead className="text-center text-[10px] font-black uppercase text-blue-600">S1 Masuk</TableHead>
-                                    <TableHead className="text-center text-[10px] font-black uppercase text-blue-600">S1 Pulang</TableHead>
-                                    <TableHead className="text-center text-[10px] font-black uppercase text-orange-600">S2 Masuk</TableHead>
-                                    <TableHead className="text-center text-[10px] font-black uppercase text-orange-600">S2 Pulang</TableHead>
+                                    <TableHead className="text-center text-[10px] font-black uppercase">Masuk</TableHead>
+                                    <TableHead className="text-center text-[10px] font-black uppercase">Pulang</TableHead>
                                     <TableHead className="text-center text-[10px] font-black uppercase">Status</TableHead>
                                     <TableHead className="text-center text-[10px] font-black uppercase">Poin</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase">Keterangan</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -130,14 +149,16 @@ export default function UserReportDetailPage() {
                                         <TableCell className="font-bold text-xs whitespace-nowrap">{format(parseISO(item.date), 'eeee, d MMM yyyy', { locale: id })}</TableCell>
                                         <TableCell className="text-center font-mono text-xs">{safeFormat(item.checkInTime, 'HH:mm')}</TableCell>
                                         <TableCell className="text-center font-mono text-xs">{safeFormat(item.checkOutTime, 'HH:mm')}</TableCell>
-                                        <TableCell className="text-center font-mono text-xs">{safeFormat(item.s2CheckInTime, 'HH:mm')}</TableCell>
-                                        <TableCell className="text-center font-mono text-xs">{safeFormat(item.s2CheckOutTime, 'HH:mm')}</TableCell>
                                         <TableCell className="text-center"><Badge variant={item.status === 'Hadir' ? 'default' : 'destructive'} className="text-[9px] uppercase font-bold">{item.status}</Badge></TableCell>
                                         <TableCell className="text-center font-black text-primary">{item.points?.toFixed(2)}</TableCell>
+                                        <TableCell className="text-xs italic text-muted-foreground">{item.description}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
+                    </div>
+                    <div className="p-6 border-t bg-muted/5">
+                        <PointLegend />
                     </div>
                 </Card>
             </div>

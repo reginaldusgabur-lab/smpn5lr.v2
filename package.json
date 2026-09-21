@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "push": "cd smpn5lr.v2 && git add . && (git commit -m \"Clean Sync - E-SPENLI v2\" || echo \"No changes\") && (git remote add origin https://github.com/reginaldusgabur-lab/smpn5lr.v2.git || git remote set-url origin https://github.com/reginaldusgabur-lab/smpn5lr.v2.git) && git push -u origin main --force"
+    "push": "git add . && (git commit -m \"Clean Sync - E-SPENLI v2 Single Session\" || echo \"No changes\") && (git remote add origin https://github.com/reginaldusgabur-lab/smpn5lr.v2.git || git remote set-url origin https://github.com/reginaldusgabur-lab/smpn5lr.v2.git) && git push -u origin main --force"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -65,6 +65,7 @@
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "xlsx": "^0.18.5",
+    "zip-a-folder": "^3.1.8",
     "zod": "^3.25.76"
   },
   "devDependencies": {
