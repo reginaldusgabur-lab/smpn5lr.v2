@@ -1,7 +1,6 @@
 'use client';
 
-import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
-import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
+import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp, setHours, setMinutes, startOfDay, endOfDay, format, isBefore, isSameDay, isWithinInterval } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import { getFromCache, setInCache } from './cache';
 
@@ -69,7 +68,9 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
         const isHoliday = !isManualOff && (isCalendarHoliday || isRecurringOff);
 
-        const usersSnap = await getDocs(collection(firestore, 'users'));
+        const usersQuery = query(collection(firestore, 'users'), where('status', '==', 'Aktif'));
+        const usersSnap = await getDocs(usersQuery);
+        // CRITICAL: Filter only ACTIVE staff
         const allStaff = usersSnap.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as any))
             .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
@@ -214,7 +215,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         });
 
         const leaveMap = new Map();
-        leaveHistorySnap.docs.forEach(d => {
+        leaveSnap.docs.forEach(d => {
             const l = d.data();
             eachDayOfInterval({ start: l.startDate.toDate(), end: l.endDate.toDate() }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), l));
         });

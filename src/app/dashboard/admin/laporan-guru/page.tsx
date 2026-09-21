@@ -25,7 +25,7 @@ const LaporanGuruListPage = () => {
         [firestore]
     );
 
-    const { data: usersData, isLoading: isUsersLoading } = useCollection(usersQuery);
+    const { data: usersData, isLoading: isUsersLoading } = useCollection(null, usersQuery);
 
     const sortedUsers = useMemo(() => {
         if (!usersData) return [];

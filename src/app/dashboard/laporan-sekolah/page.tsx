@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -81,7 +80,9 @@ export default function SchoolReportPage() {
 
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthId);
             
-            const usersSnap = await getDocs(collection(firestore, 'users'));
+            // CRITICAL: Filter only ACTIVE users for report
+            const usersQuery = query(collection(firestore, 'users'), where('status', '==', 'Aktif'));
+            const usersSnap = await getDocs(usersQuery);
             const monthlySnap = await getDoc(monthlyConfigRef);
 
             const mConfig = monthlySnap.exists() ? monthlySnap.data() : {};
