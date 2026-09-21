@@ -2,168 +2,144 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { format, parseISO, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
+import { format, parseISO, subMonths, addMonths, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fetchUserMonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, Info, Calculator, TrendingUp } from 'lucide-react';
+import { fetchUserMonthlyReportData } from '@/lib/attendance';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, User, CalendarDays, RefreshCw, Calendar as CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-const safeFormat = (dateInput: any, formatString: string): string => {
-    if (!dateInput) return '-';
-    let date: Date;
-    if (typeof dateInput === 'string') date = parseISO(dateInput);
-    else if (dateInput.toDate) date = dateInput.toDate();
-    else date = new Date(dateInput);
-    return format(date, formatString, { locale: id });
-};
-
-const PointLegend = () => (
-    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
-            <p className="text-sm font-black text-green-600">1.0 Poin</p>
-        </div>
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
-            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
-        </div>
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
-            <p className="text-sm font-black text-blue-600">0.9 - 0.7 Poin</p>
-        </div>
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
-            <p className="text-sm font-black text-red-600">0.5 - 0.0 Poin</p>
-        </div>
-    </div>
-);
-
 export default function UserReportDetailPage() {
-    const params = useParams(); const router = useRouter(); const { user: currentUser } = useUser(); const firestore = useFirestore(); const { toast } = useToast();
-    const userId = params.userId as string; const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [monthlyReportData, setMonthlyReportData] = useState<any[]>([]);
-    const [stats, setStats] = useState<any>(null); const [userData, setUserData] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(true); const [schoolConfig, setSchoolConfig] = useState<any>(null);
+    const params = useParams();
+    const router = useRouter();
+    const { user: currentUser } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const userId = params.userId as string;
+
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [reportData, setReportData] = useState<any[]>([]);
+    const [userData, setUserData] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [academicYear, setAcademicYear] = useState("");
+
+    const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
+    const { data: schoolConfig } = useDoc(currentUser, schoolConfigRef);
 
     const loadData = useCallback(async () => {
-        if (!firestore || !userId) return;
+        if (!firestore || !userId || !schoolConfig) return;
         setIsLoading(true);
         try {
-            const [uSnap, cSnap] = await Promise.all([getDoc(doc(firestore, 'users', userId)), getDoc(doc(firestore, 'schoolConfig', 'default'))]);
+            const uSnap = await getDoc(doc(firestore, 'users', userId));
             if (uSnap.exists()) setUserData(uSnap.data());
-            const config = cSnap.data() || {}; setSchoolConfig(config);
-            const [report, s] = await Promise.all([fetchUserMonthlyReportData(firestore, userId, currentMonth, config), calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })]);
-            setMonthlyReportData(report); setStats(s);
-        } catch (e) { toast({ variant: 'destructive', title: 'Gagal memuat' }); }
-        finally { setIsLoading(false); }
-    }, [firestore, userId, currentMonth, toast]);
+            const data = await fetchUserMonthlyReportData(firestore, userId, currentMonth, schoolConfig);
+            setReportData(data);
+            const mSnap = await getDoc(doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM')));
+            setAcademicYear(mSnap.exists() ? mSnap.data().academicYear : schoolConfig.academicYear || "");
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Gagal memuat data' });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [firestore, userId, currentMonth, schoolConfig, toast]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
     const handleDownloadPdf = () => {
-        if (!userData || monthlyReportData.length === 0) return;
+        if (!userData || reportData.length === 0) return;
         const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const config = schoolConfig || {};
-        
-        doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), pageWidth/2, 15, { align: 'center' });
-        doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), pageWidth/2, 21, { align: 'center' });
-        doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), pageWidth/2, 28, { align: 'center' });
-        doc.setLineWidth(0.5).line(14, 34, pageWidth - 14, 34);
-
-        doc.text(`LAPORAN KEHADIRAN: ${userData.name}`, 14, 45);
-        doc.setFontSize(10).setFont('times', 'normal').text(`Bulan: ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, 14, 51);
-
-        const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Poin', 'Keterangan']];
-        const tableRows = monthlyReportData.map((item, index) => [
-            index + 1, safeFormat(item.date, 'eeee, d MMM yyyy'),
-            safeFormat(item.checkInTime, 'HH:mm'), safeFormat(item.checkOutTime, 'HH:mm'),
-            item.status, item.points?.toFixed(2), item.description
-        ]);
-
-        autoTable(doc, { startY: 55, head: tableHead, body: tableRows, theme: 'grid', styles: { font: 'times', fontSize: 9 } });
-        doc.save(`Laporan_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
+        autoTable(doc, {
+            head: [['Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']],
+            body: reportData.map(item => [
+                format(parseISO(item.date), 'eeee, d MMM yyyy', { locale: id }),
+                item.checkInTime ? format(parseISO(item.checkInTime), 'HH:mm:ss') : '-',
+                item.checkOutTime ? format(parseISO(item.checkOutTime), 'HH:mm:ss') : '-',
+                item.status,
+                item.description
+            ])
+        });
+        doc.save(`Laporan_${userData.name.replace(/\s+/g, '_')}.pdf`);
     };
 
-    if (isLoading) return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    if (isLoading && reportData.length === 0) return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
     return (
-        <div className="flex-1 pt-4 pb-24 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-4">
-                <div className="flex items-center gap-4 px-4 md:px-0">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full"><ArrowLeft /></Button>
-                    <div><h1 className="text-xl sm:text-2xl font-black uppercase tracking-tighter">Detail Laporan: {userData?.name}</h1><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Rekapitulasi Kehadiran Harian</p></div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 px-4 md:px-0">
-                    <div className="bg-primary/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-primary/10 flex flex-col items-center justify-center text-center">
-                        <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Persentase</Label>
-                        <p className="text-sm sm:text-4xl font-black text-primary mt-1 tabular-nums">{stats?.persentase}</p>
-                    </div>
-                    <div className="bg-emerald-500/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-emerald-500/10 flex flex-col items-center justify-center text-center">
-                        <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Poin</Label>
-                        <p className="text-sm sm:text-4xl font-black text-emerald-600 mt-1 tabular-nums">{stats?.totalPoints}</p>
-                    </div>
-                    <div className="bg-red-500/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-red-500/10 flex flex-col items-center justify-center text-center">
-                        <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Alpa</Label>
-                        <p className="text-sm sm:text-4xl font-black text-red-600 mt-1 tabular-nums">{stats?.totalAlpa}</p>
+        <div className="flex-1 pt-4 pb-24 md:p-8 bg-background">
+            <div className="max-w-7xl mx-auto space-y-6">
+                <div className="px-4 md:px-0 flex items-center gap-3">
+                    <button onClick={() => router.back()} className="p-2 hover:bg-muted rounded-full transition-colors"><ArrowLeft className="h-5 w-5" /></button>
+                    <div>
+                        <h1 className="text-2xl font-normal tracking-tight">Detail laporan kehadiran</h1>
+                        {userData && <p className="text-sm font-bold text-primary flex items-center gap-1.5"><User className="h-3.5 w-3.5" />{userData.name}</p>}
                     </div>
                 </div>
 
-                <Card className="rounded-3xl border-none shadow-none bg-card overflow-hidden">
-                    <CardHeader className="flex flex-col sm:flex-row items-center justify-between bg-muted/20 p-6 gap-4">
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} className="rounded-xl"><ChevronLeft /></Button>
-                            <span className="font-black text-sm uppercase px-4 whitespace-nowrap">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())} className="rounded-xl"><ChevronRight /></Button>
+                <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl p-0">
+                    <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
+                        <div className="flex items-center justify-between relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 shadow-sm backdrop-blur-sm"><CalendarIcon className="h-6 w-6" /></div>
+                                <div className="space-y-0.5">
+                                    <h2 className="font-bold text-2xl tracking-tight">Riwayat Absensi & Izin</h2>
+                                    <p className="text-[11px] font-medium text-white/80">Melihat riwayat kehadiran personil.</p>
+                                </div>
+                            </div>
+                            <button onClick={loadData} className="p-2 hover:bg-white/10 rounded-full transition-colors"><RefreshCw className={cn("h-5 w-5", isLoading && "animate-spin")} /></button>
                         </div>
-                        <Button onClick={handleDownloadPdf} className="w-full sm:w-auto rounded-xl font-bold bg-primary uppercase text-[10px] tracking-widest h-10 px-6"><Download className="mr-2 h-4 w-4" /> Unduh PDF</Button>
-                    </CardHeader>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader className="bg-muted/30">
-                                <TableRow>
-                                    <TableHead className="w-12 text-center text-[10px] font-black uppercase">No</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase">Tanggal</TableHead>
-                                    <TableHead className="text-center text-[10px] font-black uppercase">Masuk</TableHead>
-                                    <TableHead className="text-center text-[10px] font-black uppercase">Pulang</TableHead>
-                                    <TableHead className="text-center text-[10px] font-black uppercase">Status</TableHead>
-                                    <TableHead className="text-center text-[10px] font-black uppercase">Poin</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase">Keterangan</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {monthlyReportData.map((item, i) => (
-                                    <TableRow key={item.id} className="hover:bg-primary/5 transition-colors">
-                                        <TableCell className="text-center font-bold text-muted-foreground text-xs">{i + 1}</TableCell>
-                                        <TableCell className="font-bold text-xs whitespace-nowrap">{format(parseISO(item.date), 'eeee, d MMM yyyy', { locale: id })}</TableCell>
-                                        <TableCell className="text-center font-mono text-xs">{safeFormat(item.checkInTime, 'HH:mm')}</TableCell>
-                                        <TableCell className="text-center font-mono text-xs">{safeFormat(item.checkOutTime, 'HH:mm')}</TableCell>
-                                        <TableCell className="text-center"><Badge variant={item.status === 'Hadir' ? 'default' : 'destructive'} className="text-[9px] uppercase font-bold px-3">{item.status}</Badge></TableCell>
-                                        <TableCell className="text-center font-black text-primary">{item.points?.toFixed(2)}</TableCell>
-                                        <TableCell className="text-[10px] italic text-muted-foreground whitespace-nowrap">{item.description}</TableCell>
+                    </div>
+
+                    <CardContent className="p-6 space-y-6">
+                        <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border p-1">
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                <div className="flex items-center gap-2 px-3 border-r border-muted-foreground/10 mr-1">
+                                    <CalendarDays className="h-4 w-4 text-primary/70" />
+                                    <div className="flex flex-col"><span className="text-[7px] font-bold text-muted-foreground/50 uppercase leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear}</span></div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-primary capitalize">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                                <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Button onClick={handleDownloadPdf} className="bg-primary hover:bg-primary/90 text-white font-bold rounded-xl h-10 px-6"><Download className="mr-2 h-4 w-4" /> unduh pdf</Button>
+                        </div>
+
+                        <div className="overflow-x-auto border-t">
+                            <Table>
+                                <TableHeader className="bg-muted/30">
+                                    <TableRow>
+                                        <TableHead className="font-bold text-xs">Tanggal</TableHead>
+                                        <TableHead className="text-center font-bold text-xs">Masuk</TableHead>
+                                        <TableHead className="text-center font-bold text-xs">Pulang</TableHead>
+                                        <TableHead className="text-center font-bold text-xs">Status</TableHead>
+                                        <TableHead className="font-bold text-xs">Keterangan</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <div className="p-6 border-t bg-muted/5">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Info className="h-4 w-4 text-primary" />
-                            <h3 className="text-[10px] font-black uppercase tracking-widest">Legenda Poin Kehadiran</h3>
+                                </TableHeader>
+                                <TableBody>
+                                    {reportData.map((item) => (
+                                        <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5">
+                                            <TableCell className="font-bold text-sm">{format(parseISO(item.date), 'eeee, d MMMM yyyy', { locale: id })}</TableCell>
+                                            <TableCell className="text-center font-mono text-xs font-bold">{item.checkInTime ? format(parseISO(item.checkInTime), 'HH:mm:ss') : '-'}</TableCell>
+                                            <TableCell className="text-center font-mono text-xs font-bold">{item.checkOutTime ? format(parseISO(item.checkOutTime), 'HH:mm:ss') : '-'}</TableCell>
+                                            <TableCell className="text-center"><Badge className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-1 rounded-full text-[10px] uppercase border-none shadow-sm">{item.status === 'Hadir' ? 'HADIR' : item.status.toUpperCase()}</Badge></TableCell>
+                                            <TableCell className="text-xs italic text-muted-foreground">{item.description}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
-                        <PointLegend />
-                    </div>
+                    </CardContent>
                 </Card>
             </div>
         </div>
