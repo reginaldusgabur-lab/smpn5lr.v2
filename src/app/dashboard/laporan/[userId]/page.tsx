@@ -102,21 +102,21 @@ export default function UserReportDetailPage() {
             <div className="max-w-7xl mx-auto space-y-4">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft /></Button>
-                    <div><h1 className="text-2xl font-black uppercase tracking-tighter">Detail Laporan: {userData?.name}</h1><p className="text-xs font-bold text-muted-foreground">REKAPITULASI KEHADIRAN HARIAN</p></div>
+                    <div><h1 className="text-2xl font-black uppercase tracking-tighter">Detail Laporan: {userData?.name}</h1><p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">Rekapitulasi Kehadiran Harian</p></div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10 flex flex-col items-center justify-center">
-                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Persentase Kehadiran</Label>
-                        <p className="text-4xl font-black text-primary mt-2">{stats?.persentase}</p>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+                    <div className="bg-primary/5 p-2 sm:p-6 rounded-2xl sm:rounded-3xl border border-primary/10 flex flex-col items-center justify-center text-center">
+                        <Label className="text-[7px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Persentase Kehadiran</Label>
+                        <p className="text-lg sm:text-4xl font-black text-primary mt-1 sm:mt-2 tabular-nums">{stats?.persentase}</p>
                     </div>
-                    <div className="bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10 flex flex-col items-center justify-center">
-                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Total Poin</Label>
-                        <p className="text-4xl font-black text-emerald-600 mt-2">{stats?.totalPoints}</p>
+                    <div className="bg-emerald-500/5 p-2 sm:p-6 rounded-2xl sm:rounded-3xl border border-emerald-500/10 flex flex-col items-center justify-center text-center">
+                        <Label className="text-[7px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Total Poin</Label>
+                        <p className="text-lg sm:text-4xl font-black text-emerald-600 mt-1 sm:mt-2 tabular-nums">{stats?.totalPoints}</p>
                     </div>
-                    <div className="bg-red-500/5 p-6 rounded-3xl border border-red-500/10 flex flex-col items-center justify-center">
-                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Total Alpa</Label>
-                        <p className="text-4xl font-black text-red-600 mt-2">{stats?.totalAlpa} HARI</p>
+                    <div className="bg-red-500/5 p-2 sm:p-6 rounded-2xl sm:rounded-3xl border border-red-500/10 flex flex-col items-center justify-center text-center">
+                        <Label className="text-[7px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Total Alpa</Label>
+                        <p className="text-lg sm:text-4xl font-black text-red-600 mt-1 sm:mt-2 tabular-nums">{stats?.totalAlpa}<span className="text-[8px] sm:text-sm ml-0.5">HARI</span></p>
                     </div>
                 </div>
 

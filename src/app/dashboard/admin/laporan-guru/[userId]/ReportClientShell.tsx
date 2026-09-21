@@ -88,13 +88,15 @@ export default function ReportClientShell({
     const [currentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
 
     const stats = useMemo(() => {
-        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%" };
+        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%", totalAlpa: 0 };
         const total = reportDetails.reduce((acc, curr) => acc + (curr.points || 0), 0);
         const count = reportDetails.length;
         const perc = (total / (count || 1)) * 100;
+        const alpaCount = reportDetails.filter(d => d.status === 'Alpa').length;
         return {
             totalPoints: total.toFixed(2),
-            persentase: Math.min(perc, 100).toFixed(1) + "%"
+            persentase: Math.min(perc, 100).toFixed(1) + "%",
+            totalAlpa: alpaCount
         };
     }, [reportDetails]);
 
@@ -291,7 +293,7 @@ export default function ReportClientShell({
             const labelsStartY = listItemsStartY - labelAreaHeight + 2;
 
             doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 6.5);
+            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
 
             let noteCursorY = listItemsStartY;
             processedNotes.forEach((note) => {
@@ -355,6 +357,21 @@ export default function ReportClientShell({
 
                     <div className="p-0">
                         <div className="p-4 space-y-6">
+                            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+                                <div className="bg-primary/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-primary/10 flex flex-col items-center justify-center text-center">
+                                    <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Persentase Kehadiran</Label>
+                                    <p className="text-sm sm:text-3xl font-black text-primary mt-1 sm:mt-2 tabular-nums">{stats.persentase}</p>
+                                </div>
+                                <div className="bg-emerald-500/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-emerald-500/10 flex flex-col items-center justify-center text-center">
+                                    <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Total Poin</Label>
+                                    <p className="text-sm sm:text-3xl font-black text-emerald-600 mt-1 sm:mt-2 tabular-nums">{stats.totalPoints}</p>
+                                </div>
+                                <div className="bg-red-500/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-red-500/10 flex flex-col items-center justify-center text-center">
+                                    <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Total Alpa</Label>
+                                    <p className="text-sm sm:text-3xl font-black text-red-600 mt-1 sm:mt-2 tabular-nums">{stats.totalAlpa}<span className="text-[6px] sm:text-sm ml-0.5">HARI</span></p>
+                                </div>
+                            </div>
+
                             <div className="flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <div className="flex items-center">
@@ -476,4 +493,3 @@ export default function ReportClientShell({
         </div>
     );
 }
-
