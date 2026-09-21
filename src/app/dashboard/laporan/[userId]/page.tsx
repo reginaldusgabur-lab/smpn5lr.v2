@@ -2,18 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, collection, query, where, getDocs, Timestamp, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { format, parseISO, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths, startOfDay, setHours, setMinutes } from 'date-fns';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { format, parseISO, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchUserMonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, User, CalendarDays, FileText, RefreshCw, Calculator, TrendingUp, Info } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, Info, Calculator, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -100,34 +100,34 @@ export default function UserReportDetailPage() {
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft /></Button>
-                    <div><h1 className="text-2xl font-black uppercase tracking-tighter">Detail Laporan: {userData?.name}</h1><p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">Rekapitulasi Kehadiran Harian</p></div>
+                <div className="flex items-center gap-4 px-4 md:px-0">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full"><ArrowLeft /></Button>
+                    <div><h1 className="text-xl sm:text-2xl font-black uppercase tracking-tighter">Detail Laporan: {userData?.name}</h1><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Rekapitulasi Kehadiran Harian</p></div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-                    <div className="bg-primary/5 p-2 sm:p-6 rounded-2xl sm:rounded-3xl border border-primary/10 flex flex-col items-center justify-center text-center">
-                        <Label className="text-[7px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Persentase Kehadiran</Label>
-                        <p className="text-lg sm:text-4xl font-black text-primary mt-1 sm:mt-2 tabular-nums">{stats?.persentase}</p>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 px-4 md:px-0">
+                    <div className="bg-primary/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-primary/10 flex flex-col items-center justify-center text-center">
+                        <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Persentase</Label>
+                        <p className="text-sm sm:text-4xl font-black text-primary mt-1 tabular-nums">{stats?.persentase}</p>
                     </div>
-                    <div className="bg-emerald-500/5 p-2 sm:p-6 rounded-2xl sm:rounded-3xl border border-emerald-500/10 flex flex-col items-center justify-center text-center">
-                        <Label className="text-[7px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Total Poin</Label>
-                        <p className="text-lg sm:text-4xl font-black text-emerald-600 mt-1 sm:mt-2 tabular-nums">{stats?.totalPoints}</p>
+                    <div className="bg-emerald-500/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-emerald-500/10 flex flex-col items-center justify-center text-center">
+                        <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Poin</Label>
+                        <p className="text-sm sm:text-4xl font-black text-emerald-600 mt-1 tabular-nums">{stats?.totalPoints}</p>
                     </div>
-                    <div className="bg-red-500/5 p-2 sm:p-6 rounded-2xl sm:rounded-3xl border border-red-500/10 flex flex-col items-center justify-center text-center">
-                        <Label className="text-[7px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Total Alpa</Label>
-                        <p className="text-lg sm:text-4xl font-black text-red-600 mt-1 sm:mt-2 tabular-nums">{stats?.totalAlpa}<span className="text-[8px] sm:text-sm ml-0.5">HARI</span></p>
+                    <div className="bg-red-500/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-red-500/10 flex flex-col items-center justify-center text-center">
+                        <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Alpa</Label>
+                        <p className="text-sm sm:text-4xl font-black text-red-600 mt-1 tabular-nums">{stats?.totalAlpa}</p>
                     </div>
                 </div>
 
                 <Card className="rounded-3xl border-none shadow-none bg-card overflow-hidden">
-                    <CardHeader className="flex flex-row items-center justify-between bg-muted/20 p-6 border-b">
+                    <CardHeader className="flex flex-col sm:flex-row items-center justify-between bg-muted/20 p-6 gap-4">
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}><ChevronLeft /></Button>
-                            <span className="font-black text-sm uppercase px-4">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())}><ChevronRight /></Button>
+                            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} className="rounded-xl"><ChevronLeft /></Button>
+                            <span className="font-black text-sm uppercase px-4 whitespace-nowrap">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isSameMonth(currentMonth, new Date())} className="rounded-xl"><ChevronRight /></Button>
                         </div>
-                        <Button onClick={handleDownloadPdf} className="rounded-xl font-bold bg-primary uppercase text-[10px] tracking-widest"><Download className="mr-2 h-4 w-4" /> Unduh PDF</Button>
+                        <Button onClick={handleDownloadPdf} className="w-full sm:w-auto rounded-xl font-bold bg-primary uppercase text-[10px] tracking-widest h-10 px-6"><Download className="mr-2 h-4 w-4" /> Unduh PDF</Button>
                     </CardHeader>
                     <div className="overflow-x-auto">
                         <Table>
@@ -144,20 +144,24 @@ export default function UserReportDetailPage() {
                             </TableHeader>
                             <TableBody>
                                 {monthlyReportData.map((item, i) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="text-center font-bold text-muted-foreground">{i + 1}</TableCell>
+                                    <TableRow key={item.id} className="hover:bg-primary/5 transition-colors">
+                                        <TableCell className="text-center font-bold text-muted-foreground text-xs">{i + 1}</TableCell>
                                         <TableCell className="font-bold text-xs whitespace-nowrap">{format(parseISO(item.date), 'eeee, d MMM yyyy', { locale: id })}</TableCell>
                                         <TableCell className="text-center font-mono text-xs">{safeFormat(item.checkInTime, 'HH:mm')}</TableCell>
                                         <TableCell className="text-center font-mono text-xs">{safeFormat(item.checkOutTime, 'HH:mm')}</TableCell>
-                                        <TableCell className="text-center"><Badge variant={item.status === 'Hadir' ? 'default' : 'destructive'} className="text-[9px] uppercase font-bold">{item.status}</Badge></TableCell>
+                                        <TableCell className="text-center"><Badge variant={item.status === 'Hadir' ? 'default' : 'destructive'} className="text-[9px] uppercase font-bold px-3">{item.status}</Badge></TableCell>
                                         <TableCell className="text-center font-black text-primary">{item.points?.toFixed(2)}</TableCell>
-                                        <TableCell className="text-xs italic text-muted-foreground">{item.description}</TableCell>
+                                        <TableCell className="text-[10px] italic text-muted-foreground whitespace-nowrap">{item.description}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
                     </div>
                     <div className="p-6 border-t bg-muted/5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Info className="h-4 w-4 text-primary" />
+                            <h3 className="text-[10px] font-black uppercase tracking-widest">Legenda Poin Kehadiran</h3>
+                        </div>
                         <PointLegend />
                     </div>
                 </Card>
