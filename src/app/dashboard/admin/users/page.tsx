@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -425,7 +426,7 @@ export default function AdminUsersPage() {
                                             <TableCell><Badge variant="secondary" className="text-[9px] font-bold px-3">{u.role.replace('_', ' ')}</Badge></TableCell>
                                             <TableCell><span className="text-xs font-medium">{u.gender || '-'}</span></TableCell>
                                             <TableCell><div className="flex flex-col"><span className="text-[10px] font-bold">{u.nip || u.nisn || '-'}</span><span className="text-[9px] font-bold text-primary uppercase">{u.position || '-'}</span></div></TableCell>
-                                            <TableCell className="text-center"><Badge variant={u.status === 'Aktif' ? 'default' : 'destructive'} className="text-[9px] font-bold">{u.status || 'Aktif'}</Badge></TableCell>
+                                            <TableCell className="text-center"><Badge variant={u.status === 'Nonaktif' ? 'destructive' : 'default'} className="text-[9px] font-bold">{u.status || 'Aktif'}</Badge></TableCell>
                                             <TableCell className="text-right pr-4">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9 rounded-full"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
