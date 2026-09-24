@@ -1,4 +1,3 @@
-
 'use server';
 
 import { notFound } from 'next/navigation';
@@ -86,7 +85,7 @@ export default async function UserReportDetailPage(props: {
 
         const leaveMap = new Map<string, any>();
         leaveSnap.docs.forEach(d => {
-            const leave = d.data();
+            const leave = { ...d.data(), id: d.id };
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 if (isWithinInterval(day, { start: monthStart, end: monthEnd })) {
                     leaveMap.set(format(day, 'yyyy-MM-dd'), leave);
@@ -137,7 +136,8 @@ export default async function UserReportDetailPage(props: {
                     checkOutTime, 
                     status: 'Hadir', 
                     description,
-                    points: pts
+                    points: pts,
+                    manualEntry: attendanceRecord.manualEntry || false
                 };
             }
 
@@ -150,7 +150,8 @@ export default async function UserReportDetailPage(props: {
                     checkOutTime: null, 
                     status: leaveRecord.type, 
                     description: leaveRecord.reason || leaveRecord.type,
-                    points: pts
+                    points: pts,
+                    manualEntry: false
                 };
             }
 
@@ -162,7 +163,8 @@ export default async function UserReportDetailPage(props: {
                     checkOutTime: null, 
                     status: 'Alpa', 
                     description: 'Tidak ada keterangan',
-                    points: 0.0
+                    points: 0.0,
+                    manualEntry: false
                 };
             }
 

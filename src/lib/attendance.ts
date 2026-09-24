@@ -165,7 +165,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const leaveMap = new Map();
         leaveSnap.docs.forEach(d => {
             const l = d.data();
-            eachDayOfInterval({ start: l.startDate.toDate(), end: l.endDate.toDate() }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), l));
+            eachDayOfInterval({ start: l.startDate.toDate(), end: l.endDate.toDate() }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), { ...l, id: d.id }));
         });
         const workingDays = eachDayOfInterval({ start, end }).filter(d => !(schoolConfig.offDays || [0, 6]).includes(d.getDay()) && !mConfig.holidays?.includes(format(d, 'yyyy-MM-dd')));
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -177,13 +177,13 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (att) {
                 const desc = cleanDesc(att.reasonForUpdate);
                 const pts = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime);
-                return { id: att.id, date: dStr, checkInTime: att.checkInTime?.toDate().toISOString() || null, checkOutTime: att.checkOutTime?.toDate().toISOString() || null, status: 'Hadir', description: desc, points: pts };
+                return { id: att.id, date: dStr, checkInTime: att.checkInTime?.toDate().toISOString() || null, checkOutTime: att.checkOutTime?.toDate().toISOString() || null, status: 'Hadir', description: desc, points: pts, manualEntry: att.manualEntry || false };
             }
             if (leave) {
                 const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false);
-                return { id: leave.id, date: dStr, status: leave.type, description: leave.reason || leave.type, points: pts };
+                return { id: `${leave.id}-${dStr}`, date: dStr, status: leave.type, description: leave.reason || leave.type, points: pts, manualEntry: false };
             }
-            return { id: dStr, date: dStr, status: 'Alpa', description: 'Tanpa keterangan', points: 0.0 };
+            return { id: dStr, date: dStr, status: 'Alpa', description: 'Tanpa keterangan', points: 0.0, manualEntry: false };
         }).filter(Boolean).sort((a: any, b: any) => b.date.localeCompare(a.date));
     } catch (e) { return []; }
 }
