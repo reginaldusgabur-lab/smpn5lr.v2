@@ -34,7 +34,6 @@ import {
   RefreshCw,
   UserX,
   UserCheck,
-  CalendarDays,
   PlaneTakeoff,
   FileText,
   Save,
@@ -53,7 +52,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -88,16 +86,17 @@ import { firebaseConfig } from '@/firebase/config';
 import { resetUserPassword } from '@/app/actions/admin-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
-import { addDays, startOfDay, endOfDay, format, startOfMonth, parse, isValid } from 'date-fns';
+import { addDays, startOfDay, endOfDay, format, parse, isValid } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { invalidateCache } from '@/lib/cache';
+import { cn } from '@/lib/utils';
 
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
     email: z.string().email({ message: 'Email tidak valid.' }),
     role: z.enum(['guru', 'pegawai', 'kepala_sekolah', 'admin', 'siswa']),
     gender: z.enum(['Laki-laki', 'Perempuan'], { required_error: 'Jenis kelamin wajib dipilih' }),
-    status: z.enum(['Aktif', 'Nonaktif']).default('Aktif'),
+    status: z.enum(['Aktif', 'Nonaktif', 'Cuti']).default('Aktif'),
     nip: z.string().optional(),
     nisn: z.string().optional(),
     position: z.string().optional(),
@@ -108,18 +107,10 @@ const addUserSchema = z.object({
 });
 
 const months = [
-    { value: '01', label: 'Januari' },
-    { value: '02', label: 'Februari' },
-    { value: '03', label: 'Maret' },
-    { value: '04', label: 'April' },
-    { value: '05', label: 'Mei' },
-    { value: '06', label: 'Juni' },
-    { value: '07', label: 'Juli' },
-    { value: '08', label: 'Agustus' },
-    { value: '09', label: 'September' },
-    { value: '10', label: 'Oktober' },
-    { value: '11', label: 'November' },
-    { value: '12', label: 'Desember' },
+    { value: '01', label: 'Januari' }, { value: '02', label: 'Februari' }, { value: '03', label: 'Maret' },
+    { value: '04', label: 'April' }, { value: '05', label: 'Mei' }, { value: '06', label: 'Juni' },
+    { value: '07', label: 'Juli' }, { value: '08', label: 'Agustus' }, { value: '09', label: 'September' },
+    { value: '10', label: 'Oktober' }, { value: '11', label: 'November' }, { value: '12', label: 'Desember' },
 ];
 
 export default function AdminUsersPage() {
@@ -141,7 +132,6 @@ export default function AdminUsersPage() {
     const [userForCuti, setUserForCuti] = useState<any | null>(null);
     const [newPassInput, setNewPassInput] = useState('');
 
-    // State untuk form cuti baru
     const [cutiCategory, setCutiCategory] = useState<'harian' | 'mingguan' | 'bulanan'>('harian');
     const [cutiMonth, setCutiMonth] = useState(format(new Date(), 'MM'));
     const [cutiStartDate, setCutiStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -178,16 +168,11 @@ export default function AdminUsersPage() {
     useEffect(() => {
         if (editingUser) {
             userForm.reset({
-                name: editingUser.name || '',
-                email: editingUser.email || '',
-                role: editingUser.role || 'guru',
-                gender: editingUser.gender || 'Laki-laki',
-                status: editingUser.status || 'Aktif',
-                nip: editingUser.nip || '',
-                nisn: editingUser.nisn || '',
-                position: editingUser.position || '',
-                sequenceNumber: editingUser.sequenceNumber?.toString() || '',
-                password: '',
+                name: editingUser.name || '', email: editingUser.email || '',
+                role: editingUser.role || 'guru', gender: editingUser.gender || 'Laki-laki',
+                status: editingUser.status || 'Aktif', nip: editingUser.nip || '',
+                nisn: editingUser.nisn || '', position: editingUser.position || '',
+                sequenceNumber: editingUser.sequenceNumber?.toString() || '', password: '',
             });
         } else {
             userForm.reset({ role: 'guru', gender: 'Laki-laki', status: 'Aktif', name: '', email: '', nip: '', nisn: '', position: '', sequenceNumber: '', password: '' });
@@ -200,17 +185,12 @@ export default function AdminUsersPage() {
         try {
             const parsedSeq = values.sequenceNumber ? parseInt(values.sequenceNumber, 10) : null;
             const finalSeq = (parsedSeq !== null && !isNaN(parsedSeq)) ? parsedSeq : null;
-
             if (editingUser) {
                 const userRef = doc(firestore, "users", editingUser.id);
                 updateDocumentNonBlocking(userRef, {
-                    name: values.name,
-                    role: values.role,
-                    gender: values.gender,
-                    status: values.status,
-                    nip: values.nip || null,
-                    nisn: values.nisn || null,
-                    position: values.position || null,
+                    name: values.name, role: values.role, gender: values.gender,
+                    status: values.status, nip: values.nip || null,
+                    nisn: values.nisn || null, position: values.position || null,
                     sequenceNumber: finalSeq,
                 });
                 toast({ title: 'Berhasil', description: 'Data pengguna diperbarui.' });
@@ -221,34 +201,23 @@ export default function AdminUsersPage() {
                 try {
                     const cred = await createUserWithEmailAndPassword(getAuth(tempApp), values.email, values.password);
                     setDocumentNonBlocking(doc(firestore, "users", cred.user.uid), {
-                        id: cred.user.uid, 
-                        name: values.name, 
-                        role: values.role, 
-                        gender: values.gender,
-                        email: values.email, 
-                        status: values.status, 
-                        nip: values.nip || null, 
-                        nisn: values.nisn || null,
-                        position: values.position || null, 
-                        sequenceNumber: finalSeq,
+                        id: cred.user.uid, name: values.name, role: values.role, 
+                        gender: values.gender, email: values.email, status: values.status, 
+                        nip: values.nip || null, nisn: values.nisn || null,
+                        position: values.position || null, sequenceNumber: finalSeq,
                     }, {});
                     toast({ title: 'Berhasil', description: 'Akun baru telah dibuat.' });
                     setIsUserDialogOpen(false);
-                } finally { 
-                    await deleteApp(tempApp); 
-                }
+                } finally { await deleteApp(tempApp); }
             }
-        } catch (e: any) { 
-            toast({ variant: 'destructive', title: 'Kesalahan', description: e.message }); 
-        } finally { 
-            setIsSaving(false); 
-        }
+        } catch (e: any) { toast({ variant: 'destructive', title: 'Kesalahan', description: e.message }); }
+        finally { setIsSaving(false); }
     };
 
-    const handleToggleUserStatus = (targetUser: any) => {
+    const handleToggleUserStatus = (targetUser: any, newStatusOverride?: string) => {
         if (!firestore) return;
         const currentStatus = targetUser.status || 'Aktif';
-        const newStatus = currentStatus === 'Aktif' ? 'Nonaktif' : 'Aktif';
+        const newStatus = newStatusOverride || (currentStatus === 'Aktif' ? 'Nonaktif' : 'Aktif');
         const userRef = doc(firestore, "users", targetUser.id);
         updateDocumentNonBlocking(userRef, { status: newStatus });
         toast({ title: 'Status Diperbarui', description: `Akun ${targetUser.name} kini ${newStatus}.` });
@@ -261,13 +230,9 @@ export default function AdminUsersPage() {
             const userRef = doc(firestore, "users", userToDelete.id);
             deleteDocumentNonBlocking(userRef);
             toast({ title: 'Berhasil', description: 'Pengguna telah dihapus.' });
-            setIsDeleteDialogOpen(false);
-            setUserToDelete(null);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Gagal', description: e.message });
-        } finally {
-            setIsSaving(false);
-        }
+            setIsDeleteDialogOpen(false); setUserToDelete(null);
+        } catch (e: any) { toast({ variant: 'destructive', title: 'Gagal', description: e.message }); }
+        finally { setIsSaving(false); }
     };
 
     const handleManualResetPassword = async () => {
@@ -277,16 +242,10 @@ export default function AdminUsersPage() {
             const result = await resetUserPassword(userForReset.id, newPassInput);
             if (result.success) {
                 toast({ title: 'Berhasil', description: `Kata sandi ${userForReset.name} diperbarui.` });
-                setIsResetPassDialogOpen(false);
-                setNewPassInput('');
-            } else { 
-                throw new Error(result.error); 
-            }
-        } catch (e: any) { 
-            toast({ variant: 'destructive', title: 'Gagal', description: e.message }); 
-        } finally { 
-            setIsSaving(false); 
-        }
+                setIsResetPassDialogOpen(false); setNewPassInput('');
+            } else { throw new Error(result.error); }
+        } catch (e: any) { toast({ variant: 'destructive', title: 'Gagal', description: e.message }); }
+        finally { setIsSaving(false); }
     };
 
     const handleProcessCuti = async (daysOverride?: number) => {
@@ -298,52 +257,40 @@ export default function AdminUsersPage() {
             if (!isValid(start)) throw new Error("Format tanggal mulai tidak valid.");
             
             let end;
-            if (daysOverride) {
-                end = endOfDay(addDays(start, daysOverride - 1));
-            } else if (cutiCategory === 'bulanan') {
+            if (daysOverride) { end = endOfDay(addDays(start, daysOverride - 1)); }
+            else if (cutiCategory === 'bulanan') {
                 end = endOfDay(parse(cutiEndDate, 'yyyy-MM-dd', new Date()));
                 if (!isValid(end)) throw new Error("Format tanggal selesai tidak valid.");
                 if (end < start) throw new Error("Tanggal selesai tidak boleh sebelum tanggal mulai.");
             } else {
-                // Default handling for category change if not using quick buttons
                 const days = cutiCategory === 'mingguan' ? 7 : 1;
                 end = endOfDay(addDays(start, days - 1));
             }
 
             const leaveRef = doc(collection(firestore, 'users', userForCuti.id, 'leaveRequests'));
             batch.set(leaveRef, {
-                userId: userForCuti.id,
-                userName: userForCuti.name,
-                type: 'Izin Pribadi',
-                status: 'approved',
+                userId: userForCuti.id, userName: userForCuti.name, type: 'Izin Pribadi', status: 'approved',
                 reason: cutiReason.trim() || 'Cuti Resmi Admin',
-                startDate: Timestamp.fromDate(start),
-                endDate: Timestamp.fromDate(end),
-                createdAt: serverTimestamp(),
-                approvedBy: user?.uid,
-                approvedAt: serverTimestamp()
+                startDate: Timestamp.fromDate(start), endDate: Timestamp.fromDate(end),
+                createdAt: serverTimestamp(), approvedBy: user?.uid, approvedAt: serverTimestamp()
             });
+
+            // Update user status to 'Cuti'
+            const userRef = doc(firestore, 'users', userForCuti.id);
+            batch.update(userRef, { status: 'Cuti' });
 
             const startStr = format(start, 'yyyy-MM-dd');
             const endStr = format(end, 'yyyy-MM-dd');
-            const attendanceQuery = query(
-                collection(firestore, 'users', userForCuti.id, 'attendanceRecords'),
-                where('date', '>=', startStr),
-                where('date', '<=', endStr)
-            );
+            const attendanceQuery = query(collection(firestore, 'users', userForCuti.id, 'attendanceRecords'), where('date', '>=', startStr), where('date', '<=', endStr));
             const attSnap = await getDocs(attendanceQuery);
             attSnap.forEach(d => batch.delete(d.ref));
 
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: `Jadwal cuti telah disimpan untuk ${userForCuti.name}.` });
-            setIsCutiDialogOpen(false);
-            setCutiReason('');
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Gagal', description: e.message });
-        } finally {
-            setIsSaving(false);
-        }
+            toast({ title: 'Berhasil', description: `Jadwal cuti disimpan untuk ${userForCuti.name}.` });
+            setIsCutiDialogOpen(false); setCutiReason('');
+        } catch (e: any) { toast({ variant: 'destructive', title: 'Gagal', description: e.message }); }
+        finally { setIsSaving(false); }
     };
 
     if (isAuthLoading || isUsersLoading) {
@@ -434,7 +381,17 @@ export default function AdminUsersPage() {
                                             <TableCell><Badge variant="secondary" className="text-[9px] font-bold px-3">{u.role.replace('_', ' ')}</Badge></TableCell>
                                             <TableCell><span className="text-xs font-medium">{u.gender || '-'}</span></TableCell>
                                             <TableCell><div className="flex flex-col"><span className="text-[10px] font-bold">{u.nip || u.nisn || '-'}</span><span className="text-[9px] font-bold text-primary uppercase">{u.position || '-'}</span></div></TableCell>
-                                            <TableCell className="text-center"><Badge variant={u.status === 'Nonaktif' ? 'destructive' : 'default'} className="text-[9px] font-bold">{u.status || 'Aktif'}</Badge></TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge 
+                                                    variant={u.status === 'Nonaktif' ? 'destructive' : (u.status === 'Cuti' ? 'outline' : 'default')} 
+                                                    className={cn(
+                                                        "text-[9px] font-bold px-3 py-1 rounded-full",
+                                                        u.status === 'Cuti' ? "bg-amber-500 text-white border-none" : ""
+                                                    )}
+                                                >
+                                                    {u.status || 'Aktif'}
+                                                </Badge>
+                                            </TableCell>
                                             <TableCell className="text-right pr-4">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-9 w-9 rounded-full"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
@@ -442,6 +399,7 @@ export default function AdminUsersPage() {
                                                         <DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel>
                                                         <DropdownMenuItem className="rounded-lg" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem>
                                                         <DropdownMenuItem className="rounded-lg" onClick={() => { setUserForCuti(u); setCutiStartDate(format(new Date(), 'yyyy-MM-dd')); setIsCutiDialogOpen(true); }}><PlaneTakeoff className="mr-3 h-4 w-4" />Atur cuti</DropdownMenuItem>
+                                                        {u.status === 'Cuti' && <DropdownMenuItem className="text-blue-600 rounded-lg" onClick={() => handleToggleUserStatus(u, 'Aktif')}><UserCheck className="mr-3 h-4 w-4" />Kembalikan Aktif</DropdownMenuItem>}
                                                         <DropdownMenuItem className={u.status === 'Nonaktif' ? "text-emerald-600 rounded-lg" : "text-amber-600 rounded-lg"} onClick={() => handleToggleUserStatus(u)}>{u.status === 'Nonaktif' ? <><UserCheck className="mr-3 h-4 w-4" />Aktifkan akun</> : <><UserX className="mr-3 h-4 w-4" />Nonaktifkan akun</>}</DropdownMenuItem>
                                                         <DropdownMenuItem className="rounded-lg" onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem>
                                                         <DropdownMenuSeparator className="opacity-50" />
@@ -458,68 +416,38 @@ export default function AdminUsersPage() {
                 </Card>
             </div>
 
+            {/* Dialog Cuti */}
             <Dialog open={isCutiDialogOpen} onOpenChange={setIsCutiDialogOpen}>
                 <DialogContent className="rounded-2xl border-none shadow-2xl p-0 overflow-hidden max-w-md">
                     <DialogHeader className="p-6 bg-primary text-white">
-                        <DialogTitle className="flex items-center gap-3 text-xl font-black uppercase tracking-tight">
-                            <PlaneTakeoff className="h-6 w-6" /> Atur jadwal cuti
-                        </DialogTitle>
-                        <DialogDescription className="text-white/80 font-bold text-[10px] mt-1 uppercase tracking-widest">
-                            Pilih periode cuti resmi untuk <strong>{userForCuti?.name}</strong>.
-                        </DialogDescription>
+                        <DialogTitle className="flex items-center gap-3 text-xl font-black uppercase tracking-tight"><PlaneTakeoff className="h-6 w-6" /> Atur jadwal cuti</DialogTitle>
+                        <DialogDescription className="text-white/80 font-bold text-[10px] mt-1 uppercase tracking-widest">Pilih periode cuti resmi untuk <strong>{userForCuti?.name}</strong>.</DialogDescription>
                     </DialogHeader>
                     <div className="p-6 space-y-6">
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Kategori Cuti</Label>
-                            <Select value={cutiCategory} onValueChange={(v: any) => setCutiCategory(v)}>
-                                <SelectTrigger className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="border-none shadow-2xl rounded-xl">
-                                    <SelectItem value="harian" className="rounded-lg">Harian (Pilih lama hari)</SelectItem>
-                                    <SelectItem value="mingguan" className="rounded-lg">Mingguan (7 Hari)</SelectItem>
-                                    <SelectItem value="bulanan" className="rounded-lg">Bulanan (Custom Tanggal)</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Select value={cutiCategory} onValueChange={(v: any) => setCutiCategory(v)}><SelectTrigger className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="border-none shadow-2xl rounded-xl"><SelectItem value="harian" className="rounded-lg">Harian (Pilih lama hari)</SelectItem><SelectItem value="mingguan" className="rounded-lg">Mingguan (7 Hari)</SelectItem><SelectItem value="bulanan" className="rounded-lg">Bulanan (Custom Tanggal)</SelectItem></SelectContent></Select>
                         </div>
-
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                                    {cutiCategory === 'bulanan' ? 'Periode Bulan' : 'Tahun'}
-                                </Label>
-                                <Select value={cutiMonth} onValueChange={setCutiMonth}>
-                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-none shadow-2xl rounded-xl max-h-[200px]">
-                                        {months.map(m => <SelectItem key={m.value} value={m.value} className="rounded-lg">{m.label}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{cutiCategory === 'bulanan' ? 'Periode Bulan' : 'Tahun'}</Label>
+                                <Select value={cutiMonth} onValueChange={setCutiMonth}><SelectTrigger className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="border-none shadow-2xl rounded-xl max-h-[200px]">{months.map(m => <SelectItem key={m.value} value={m.value} className="rounded-lg">{m.label}</SelectItem>)}</SelectContent></Select>
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tanggal Mulai</Label>
                                 <Input type="date" value={cutiStartDate} onChange={e => setCutiStartDate(e.target.value)} className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" />
                             </div>
                         </div>
-
                         {cutiCategory === 'bulanan' && (
                             <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tanggal Selesai</Label>
                                 <Input type="date" value={cutiEndDate} onChange={e => setCutiEndDate(e.target.value)} className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" />
                             </div>
                         )}
-
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Keterangan Lengkap</Label>
-                            <Textarea 
-                                placeholder="Tuliskan keterangan detail cuti..." 
-                                value={cutiReason} 
-                                onChange={e => setCutiReason(e.target.value)}
-                                className="rounded-xl bg-muted/30 shadow-none border-muted-foreground/10 min-h-[80px] font-medium text-sm"
-                            />
+                            <Textarea placeholder="Tuliskan keterangan detail cuti..." value={cutiReason} onChange={e => setCutiReason(e.target.value)} className="rounded-xl bg-muted/30 shadow-none border-muted-foreground/10 min-h-[80px] font-medium text-sm" />
                         </div>
-
                         {cutiCategory !== 'bulanan' && (
                             <div className="space-y-3 pt-2">
                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Klik untuk pilih durasi:</Label>
@@ -531,21 +459,20 @@ export default function AdminUsersPage() {
                                 </div>
                             </div>
                         )}
-
                         <div className="pt-4 flex flex-col gap-4">
                             <Button className="w-full h-12 rounded-xl font-black bg-primary uppercase tracking-[0.2em] shadow-lg shadow-primary/20 text-[11px] active:scale-95 transition-all" onClick={() => handleProcessCuti()} disabled={isSaving}>
                                 {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <><Save className="mr-2 h-4 w-4" /> SIMPAN JADWAL CUTI</>}
                             </Button>
-                            
                             <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-2">
                                 <RefreshCw className="h-3 w-3 text-amber-600 mt-0.5 shrink-0" />
-                                <p className="text-[9px] text-amber-700 font-bold leading-tight">Sistem akan otomatis menghapus catatan kehadiran mandiri pada rentang tanggal tersebut untuk memastikan integritas laporan.</p>
+                                <p className="text-[9px] text-amber-700 font-bold leading-tight">Status akun akan berubah menjadi "Cuti". Sistem otomatis menghapus data absen mandiri pada rentang tanggal tersebut untuk integritas laporan.</p>
                             </div>
                         </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
+            {/* Dialog Edit User */}
             <Dialog open={isUserDialogOpen} onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setEditingUser(null); }}>
                 <DialogContent className="rounded-xl border-none max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
                     <div className="p-6 pb-2 border-b border-muted-foreground/5"><DialogTitle className="text-xl font-bold">{editingUser ? 'Perbarui data personil' : 'Tambah personil baru'}</DialogTitle></div>
@@ -560,38 +487,13 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="role" render={({field}) => (
                                         <FormItem>
                                             <FormLabel className="text-[10px] font-bold uppercase">Peran Sistem</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className='border-none shadow-2xl'>
-                                                    <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
-                                                    <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
-                                                    <SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem>
-                                                    <SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem>
-                                                    <SelectItem value="admin" className="rounded-lg font-bold text-primary">Admin Utama</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
+                                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="guru" className="rounded-lg">Guru</SelectItem><SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem><SelectItem value="kepala_sekolah" className="rounded-lg">Kepala Sekolah</SelectItem><SelectItem value="siswa" className="rounded-lg">Siswa</SelectItem><SelectItem value="admin" className="rounded-lg font-bold text-primary">Admin Utama</SelectItem></SelectContent></Select><FormMessage />
                                         </FormItem>
                                     )} />
                                     <FormField control={userForm.control} name="gender" render={({field}) => (
                                         <FormItem>
                                             <FormLabel className="text-[10px] font-bold uppercase">Jenis Kelamin</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className='border-none shadow-2xl'>
-                                                    <SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem>
-                                                    <SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
+                                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Laki-laki" className="rounded-lg">Laki-laki</SelectItem><SelectItem value="Perempuan" className="rounded-lg">Perempuan</SelectItem></SelectContent></Select><FormMessage />
                                         </FormItem>
                                     )} />
                                 </div>
@@ -606,18 +508,7 @@ export default function AdminUsersPage() {
                                 <FormField control={userForm.control} name="status" render={({field}) => (
                                         <FormItem>
                                             <FormLabel className="text-[10px] font-bold uppercase">Status Akun</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none font-bold">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className='border-none shadow-2xl'>
-                                                    <SelectItem value="Aktif" className="rounded-lg">Aktif (Dapat Login)</SelectItem>
-                                                    <SelectItem value="Nonaktif" className="rounded-lg text-destructive">Nonaktif (Blokir)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
+                                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none font-bold"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Aktif" className="rounded-lg">Aktif (Dapat Login)</SelectItem><SelectItem value="Cuti" className="rounded-lg text-amber-600">Cuti (Izin Resmi)</SelectItem><SelectItem value="Nonaktif" className="rounded-lg text-destructive">Nonaktif (Blokir)</SelectItem></SelectContent></Select><FormMessage />
                                         </FormItem>
                                     )} />
                                 {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kata sandi awal</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />}
@@ -634,14 +525,7 @@ export default function AdminUsersPage() {
 
             <Dialog open={isResetPassDialogOpen} onOpenChange={setIsResetPassDialogOpen}>
                 <DialogContent className="rounded-xl border-none max-w-sm shadow-2xl">
-                    <div className="space-y-4 p-4">
-                        <DialogTitle className="font-bold text-xl uppercase text-primary tracking-tight">Reset kata sandi</DialogTitle>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Sandi baru untuk {userForReset?.name}</label>
-                            <Input type="password" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} placeholder="Minimal 6 karakter" className="h-11 rounded-xl bg-muted/30 shadow-none" />
-                        </div>
-                        <Button className="w-full h-11 rounded-xl font-bold shadow-none uppercase text-[10px] tracking-widest" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Perbarui Sandi'}</Button>
-                    </div>
+                    <div className="space-y-4 p-4"><DialogTitle className="font-bold text-xl uppercase text-primary tracking-tight">Reset kata sandi</DialogTitle><div className="space-y-2"><label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Sandi baru untuk {userForReset?.name}</label><Input type="password" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} placeholder="Minimal 6 karakter" className="h-11 rounded-xl bg-muted/30 shadow-none" /></div><Button className="w-full h-11 rounded-xl font-bold shadow-none uppercase text-[10px] tracking-widest" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Perbarui Sandi'}</Button></div>
                 </DialogContent>
             </Dialog>
         </div>

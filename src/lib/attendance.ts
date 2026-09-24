@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
@@ -42,7 +43,7 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
     // Poin 0.95 untuk Terlambat atau Pulang Cepat
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
     
-    // Poin untuk Sakit/Izin
+    // Poin untuk Sakit/Izin (Cuti juga masuk sini)
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
     
@@ -68,20 +69,45 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const usersSnap = await getDocs(collection(firestore, 'users'));
         const allStaff = usersSnap.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as any))
-            .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role) && u.status === 'Aktif');
+            .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role) && u.status !== 'Nonaktif');
 
         if (isHoliday) return { totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: true };
 
         const attSnap = await getDocs(query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr)));
         const presentIds = new Set(attSnap.docs.map(d => d.data().userId || d.ref.parent.parent?.id));
 
-        return { totalStaff: allStaff.length, hadir: presentIds.size, izin: 0, sakit: 0, pending: 0, alpa: allStaff.length - presentIds.size, isHoliday: false };
+        const leaveSnap = await getDocs(query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved')));
+        const leaveMap = new Map();
+        leaveSnap.docs.forEach(d => {
+            const l = d.data();
+            if (isWithinInterval(today, { start: startOfDay(l.startDate.toDate()), end: endOfDay(l.endDate.toDate()) })) {
+                leaveMap.set(l.userId || d.ref.parent.parent?.id, l);
+            }
+        });
+
+        let hadirCount = presentIds.size;
+        let izinCount = 0;
+        let sakitCount = 0;
+        let alpaCount = 0;
+
+        allStaff.forEach(u => {
+            if (presentIds.has(u.id)) return;
+            const leave = leaveMap.get(u.id);
+            if (leave) {
+                if (leave.type === 'Sakit') sakitCount++;
+                else izinCount++;
+            } else {
+                alpaCount++;
+            }
+        });
+
+        return { totalStaff: allStaff.length, hadir: hadirCount, izin: izinCount, sakit: sakitCount, pending: 0, alpa: alpaCount, isHoliday: false };
     } catch (e) { return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false }; }
 }
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v305_single_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v311_cuti_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
 
     try {
@@ -127,8 +153,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                     const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false);
                     totalPoints += pts;
                     if (leave.type === 'Sakit') sakitCount++;
-                    else if (pts < 1.0) izinCount++;
-                    else hadirCount++;
+                    else izinCount++; // Cuti & Izin Pribadi masuk sini
                     processedDates.add(dStr);
                 }
             });
