@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useRef } from 'react';
@@ -216,7 +215,7 @@ export default function ReportClientShell({
         const tableRows = reportDetails.map((item, index) => [
             index + 1,
             safeFormat(item.date, 'eeee, dd MMM yyyy'),
-            safeFormat(item.checkInTime, 'HH:mm:ss'),
+            (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
             safeFormat(item.checkOutTime, 'HH:mm:ss'),
             item.status,
             item.description || '-'
@@ -313,7 +312,7 @@ export default function ReportClientShell({
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className="text-center font-mono text-xs font-bold">{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                                    <TableCell className="text-center font-mono text-xs font-bold">{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center">
                                                         <div className="flex items-center justify-center gap-2">
@@ -353,7 +352,7 @@ export default function ReportClientShell({
                                                                     >
                                                                         Pulang cepat
                                                                     </DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Jadikan kegiatan luar sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         </div>
@@ -374,4 +373,3 @@ export default function ReportClientShell({
         </div>
     );
 }
-

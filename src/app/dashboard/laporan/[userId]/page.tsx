@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -271,6 +270,7 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
+        // --- SMART BOTTOM ANCHOR LOGIC ---
         const footerLineY = pHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
@@ -299,6 +299,7 @@ export default function UserReportDetailPage() {
             closureStartY = finalTableY + 10;
         }
 
+        // Render Signature (Top part of closure)
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
@@ -307,6 +308,7 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
+        // Render Notes (ANCHORED TO BOTTOM LINE)
         if (mConfig.isHolidayNotesActive) {
             const listItemsStartY = bottomSafeLimit - totalNotesHeight;
             const labelsStartY = listItemsStartY - labelAreaHeight + 2;
@@ -454,7 +456,7 @@ export default function UserReportDetailPage() {
                                                                     >
                                                                         Pulang cepat
                                                                     </DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Jadikan kegiatan luar sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         )}
@@ -489,4 +491,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
