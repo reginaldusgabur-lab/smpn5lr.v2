@@ -37,6 +37,7 @@ import {
   CalendarDays,
   PlaneTakeoff,
   FileText,
+  Save,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -140,10 +141,11 @@ export default function AdminUsersPage() {
     const [userForCuti, setUserForCuti] = useState<any | null>(null);
     const [newPassInput, setNewPassInput] = useState('');
 
-    // State untuk form cuti
+    // State untuk form cuti baru
+    const [cutiCategory, setCutiCategory] = useState<'harian' | 'mingguan' | 'bulanan'>('harian');
     const [cutiMonth, setCutiMonth] = useState(format(new Date(), 'MM'));
-    const [cutiYear, setCutiYear] = useState(format(new Date(), 'yyyy'));
     const [cutiStartDate, setCutiStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [cutiEndDate, setCutiEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [cutiReason, setCutiReason] = useState('');
 
     const usersRef = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
@@ -249,10 +251,7 @@ export default function AdminUsersPage() {
         const newStatus = currentStatus === 'Aktif' ? 'Nonaktif' : 'Aktif';
         const userRef = doc(firestore, "users", targetUser.id);
         updateDocumentNonBlocking(userRef, { status: newStatus });
-        toast({ 
-            title: 'Status Diperbarui', 
-            description: `Akun ${targetUser.name} kini ${newStatus}.` 
-        });
+        toast({ title: 'Status Diperbarui', description: `Akun ${targetUser.name} kini ${newStatus}.` });
     };
 
     const handleDeleteUser = async () => {
@@ -290,7 +289,7 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleSetCuti = async (days: number) => {
+    const handleProcessCuti = async (daysOverride?: number) => {
         if (!userForCuti || !firestore) return;
         setIsSaving(true);
         try {
@@ -298,16 +297,26 @@ export default function AdminUsersPage() {
             const start = startOfDay(parse(cutiStartDate, 'yyyy-MM-dd', new Date()));
             if (!isValid(start)) throw new Error("Format tanggal mulai tidak valid.");
             
-            const end = endOfDay(addDays(start, days - 1));
+            let end;
+            if (daysOverride) {
+                end = endOfDay(addDays(start, daysOverride - 1));
+            } else if (cutiCategory === 'bulanan') {
+                end = endOfDay(parse(cutiEndDate, 'yyyy-MM-dd', new Date()));
+                if (!isValid(end)) throw new Error("Format tanggal selesai tidak valid.");
+                if (end < start) throw new Error("Tanggal selesai tidak boleh sebelum tanggal mulai.");
+            } else {
+                // Default handling for category change if not using quick buttons
+                const days = cutiCategory === 'mingguan' ? 7 : 1;
+                end = endOfDay(addDays(start, days - 1));
+            }
 
-            // Tambahkan LeaveRequest otomatis disetujui
             const leaveRef = doc(collection(firestore, 'users', userForCuti.id, 'leaveRequests'));
             batch.set(leaveRef, {
                 userId: userForCuti.id,
                 userName: userForCuti.name,
                 type: 'Izin Pribadi',
                 status: 'approved',
-                reason: cutiReason.trim() || `Cuti periode ${days} hari`,
+                reason: cutiReason.trim() || 'Cuti Resmi Admin',
                 startDate: Timestamp.fromDate(start),
                 endDate: Timestamp.fromDate(end),
                 createdAt: serverTimestamp(),
@@ -315,7 +324,6 @@ export default function AdminUsersPage() {
                 approvedAt: serverTimestamp()
             });
 
-            // Hapus data absen yang bentrok jika ada
             const startStr = format(start, 'yyyy-MM-dd');
             const endStr = format(end, 'yyyy-MM-dd');
             const attendanceQuery = query(
@@ -328,7 +336,7 @@ export default function AdminUsersPage() {
 
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: `Status cuti ${days} hari telah disetel untuk ${userForCuti.name}.` });
+            toast({ title: 'Berhasil', description: `Jadwal cuti telah disimpan untuk ${userForCuti.name}.` });
             setIsCutiDialogOpen(false);
             setCutiReason('');
         } catch (e: any) {
@@ -366,12 +374,12 @@ export default function AdminUsersPage() {
                     </div>
                 </Card>
 
-                <Button size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg shadow-primary/20 bg-primary" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
-                    <PlusCircle className="mr-2 h-5 w-5" />Tambah personil
+                <Button size="lg" className="w-full font-bold rounded-xl h-12 shadow-lg shadow-primary/20 bg-primary uppercase tracking-widest text-[11px]" onClick={() => { setEditingUser(null); setIsUserDialogOpen(true); }}>
+                    <PlusCircle className="mr-2 h-4 w-4" />Tambah personil
                 </Button>
 
                 <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-card">
-                    <CardHeader className="p-6 border-b border-muted-foreground/5"><CardTitle className="font-bold text-blue-600 text-sm">Daftar pengguna sistem</CardTitle></CardHeader>
+                    <CardHeader className="p-6 border-b border-muted-foreground/5"><CardTitle className="font-bold text-blue-600 text-[10px] uppercase tracking-[0.2em]">Daftar pengguna sistem</CardTitle></CardHeader>
                     <CardContent className="py-6">
                         <div className="flex flex-col gap-4 sm:flex-row mb-8">
                             <Select value={userFilter} onValueChange={setUserFilter}>
@@ -433,7 +441,7 @@ export default function AdminUsersPage() {
                                                     <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 border-none shadow-2xl">
                                                         <DropdownMenuLabel className="text-[10px] uppercase">Aksi</DropdownMenuLabel>
                                                         <DropdownMenuItem className="rounded-lg" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}><Edit2 className="mr-3 h-4 w-4" />Ubah data</DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-lg" onClick={() => { setUserForCuti(u); setIsCutiDialogOpen(true); }}><PlaneTakeoff className="mr-3 h-4 w-4" />Atur cuti</DropdownMenuItem>
+                                                        <DropdownMenuItem className="rounded-lg" onClick={() => { setUserForCuti(u); setCutiStartDate(format(new Date(), 'yyyy-MM-dd')); setIsCutiDialogOpen(true); }}><PlaneTakeoff className="mr-3 h-4 w-4" />Atur cuti</DropdownMenuItem>
                                                         <DropdownMenuItem className={u.status === 'Nonaktif' ? "text-emerald-600 rounded-lg" : "text-amber-600 rounded-lg"} onClick={() => handleToggleUserStatus(u)}>{u.status === 'Nonaktif' ? <><UserCheck className="mr-3 h-4 w-4" />Aktifkan akun</> : <><UserX className="mr-3 h-4 w-4" />Nonaktifkan akun</>}</DropdownMenuItem>
                                                         <DropdownMenuItem className="rounded-lg" onClick={() => { setUserForReset(u); setIsResetPassDialogOpen(true); }}><KeyRound className="mr-3 h-4 w-4" />Reset sandi</DropdownMenuItem>
                                                         <DropdownMenuSeparator className="opacity-50" />
@@ -456,19 +464,35 @@ export default function AdminUsersPage() {
                         <DialogTitle className="flex items-center gap-3 text-xl font-black uppercase tracking-tight">
                             <PlaneTakeoff className="h-6 w-6" /> Atur jadwal cuti
                         </DialogTitle>
-                        <DialogDescription className="text-white/80 font-bold text-xs mt-1">
+                        <DialogDescription className="text-white/80 font-bold text-[10px] mt-1 uppercase tracking-widest">
                             Pilih periode cuti resmi untuk <strong>{userForCuti?.name}</strong>.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="p-6 space-y-6">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Kategori Cuti</Label>
+                            <Select value={cutiCategory} onValueChange={(v: any) => setCutiCategory(v)}>
+                                <SelectTrigger className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="border-none shadow-2xl rounded-xl">
+                                    <SelectItem value="harian" className="rounded-lg">Harian (Pilih lama hari)</SelectItem>
+                                    <SelectItem value="mingguan" className="rounded-lg">Mingguan (7 Hari)</SelectItem>
+                                    <SelectItem value="bulanan" className="rounded-lg">Bulanan (Custom Tanggal)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Periode Bulan</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                                    {cutiCategory === 'bulanan' ? 'Periode Bulan' : 'Tahun'}
+                                </Label>
                                 <Select value={cutiMonth} onValueChange={setCutiMonth}>
                                     <SelectTrigger className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="border-none shadow-2xl rounded-xl">
+                                    <SelectContent className="border-none shadow-2xl rounded-xl max-h-[200px]">
                                         {months.map(m => <SelectItem key={m.value} value={m.value} className="rounded-lg">{m.label}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
@@ -478,6 +502,13 @@ export default function AdminUsersPage() {
                                 <Input type="date" value={cutiStartDate} onChange={e => setCutiStartDate(e.target.value)} className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" />
                             </div>
                         </div>
+
+                        {cutiCategory === 'bulanan' && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tanggal Selesai</Label>
+                                <Input type="date" value={cutiEndDate} onChange={e => setCutiEndDate(e.target.value)} className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" />
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Keterangan Lengkap</Label>
@@ -489,26 +520,27 @@ export default function AdminUsersPage() {
                             />
                         </div>
 
-                        <div className="space-y-3">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Klik untuk pilih lama cuti:</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                                <Button variant="outline" className="rounded-xl h-12 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary/5 hover:text-primary transition-all" onClick={() => handleSetCuti(1)} disabled={isSaving}>
-                                    <span>1 HARI</span>
-                                </Button>
-                                <Button variant="outline" className="rounded-xl h-12 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary/5 hover:text-primary transition-all" onClick={() => handleSetCuti(2)} disabled={isSaving}>
-                                    <span>2 HARI</span>
-                                </Button>
-                                <Button variant="outline" className="rounded-xl h-12 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary/5 hover:text-primary transition-all" onClick={() => handleSetCuti(7)} disabled={isSaving}>
-                                    <span>1 MINGGU</span>
-                                </Button>
-                                <Button variant="outline" className="rounded-xl h-12 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary/5 hover:text-primary transition-all" onClick={() => handleSetCuti(30)} disabled={isSaving}>
-                                    <span>1 BULAN</span>
-                                </Button>
+                        {cutiCategory !== 'bulanan' && (
+                            <div className="space-y-3 pt-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Klik untuk pilih durasi:</Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button variant="outline" className="rounded-xl h-11 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary hover:text-white transition-all text-[10px]" onClick={() => handleProcessCuti(1)} disabled={isSaving}>1 HARI</Button>
+                                    <Button variant="outline" className="rounded-xl h-11 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary hover:text-white transition-all text-[10px]" onClick={() => handleProcessCuti(2)} disabled={isSaving}>2 HARI</Button>
+                                    <Button variant="outline" className="rounded-xl h-11 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary hover:text-white transition-all text-[10px]" onClick={() => handleProcessCuti(7)} disabled={isSaving}>1 MINGGU</Button>
+                                    <Button variant="outline" className="rounded-xl h-11 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary hover:text-white transition-all text-[10px]" onClick={() => handleProcessCuti(30)} disabled={isSaving}>1 BULAN</Button>
+                                </div>
                             </div>
-                        </div>
-                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-2">
-                            <RefreshCw className="h-3 w-3 text-amber-600 mt-0.5" />
-                            <p className="text-[9px] text-amber-700 font-bold leading-tight">Sistem akan otomatis menghapus catatan kehadiran mandiri pada rentang tanggal tersebut untuk memastikan integritas laporan.</p>
+                        )}
+
+                        <div className="pt-4 flex flex-col gap-4">
+                            <Button className="w-full h-12 rounded-xl font-black bg-primary uppercase tracking-[0.2em] shadow-lg shadow-primary/20 text-[11px] active:scale-95 transition-all" onClick={() => handleProcessCuti()} disabled={isSaving}>
+                                {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <><Save className="mr-2 h-4 w-4" /> SIMPAN JADWAL CUTI</>}
+                            </Button>
+                            
+                            <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-2">
+                                <RefreshCw className="h-3 w-3 text-amber-600 mt-0.5 shrink-0" />
+                                <p className="text-[9px] text-amber-700 font-bold leading-tight">Sistem akan otomatis menghapus catatan kehadiran mandiri pada rentang tanggal tersebut untuk memastikan integritas laporan.</p>
+                            </div>
                         </div>
                     </div>
                 </DialogContent>
@@ -571,8 +603,25 @@ export default function AdminUsersPage() {
                                     <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status/Jabatan</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                     <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. urut laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
+                                <FormField control={userForm.control} name="status" render={({field}) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[10px] font-bold uppercase">Status Akun</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none font-bold">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className='border-none shadow-2xl'>
+                                                    <SelectItem value="Aktif" className="rounded-lg">Aktif (Dapat Login)</SelectItem>
+                                                    <SelectItem value="Nonaktif" className="rounded-lg text-destructive">Nonaktif (Blokir)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
                                 {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kata sandi awal</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />}
-                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-none mt-4 uppercase" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan data personil'}</Button>
+                                <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary shadow-none mt-4 uppercase text-[11px] tracking-widest" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan data personil'}</Button>
                             </form>
                         </Form>
                     </div>
@@ -580,22 +629,21 @@ export default function AdminUsersPage() {
             </Dialog>
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setUserToDelete(null); }}>
-                <AlertDialogContent className="rounded-xl border-none shadow-2xl"><AlertDialogHeader><AlertDialogTitle className="font-bold">Hapus pengguna?</AlertDialogTitle><AlertDialogDescription className="font-medium text-sm">Data <strong>{userToDelete?.name}</strong> akan dihapus permanen dari sistem.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-2"><AlertDialogCancel className="rounded-xl font-bold shadow-none">Batal</AlertDialogCancel><AlertDialogAction className="rounded-xl font-bold bg-destructive shadow-none uppercase" onClick={handleDeleteUser}>Ya, hapus permanen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                <AlertDialogContent className="rounded-xl border-none shadow-2xl"><AlertDialogHeader><AlertDialogTitle className="font-bold">Hapus pengguna?</AlertDialogTitle><AlertDialogDescription className="font-medium text-sm">Data <strong>{userToDelete?.name}</strong> akan dihapus permanen dari sistem.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-2"><AlertDialogCancel className="rounded-xl font-bold shadow-none">Batal</AlertDialogCancel><AlertDialogAction className="rounded-xl font-bold bg-destructive shadow-none uppercase text-[10px]" onClick={handleDeleteUser}>Ya, hapus permanen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
             </AlertDialog>
 
             <Dialog open={isResetPassDialogOpen} onOpenChange={setIsResetPassDialogOpen}>
                 <DialogContent className="rounded-xl border-none max-w-sm shadow-2xl">
                     <div className="space-y-4 p-4">
-                        <DialogTitle className="font-bold text-xl uppercase text-primary">Reset kata sandi</DialogTitle>
+                        <DialogTitle className="font-bold text-xl uppercase text-primary tracking-tight">Reset kata sandi</DialogTitle>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase text-muted-foreground">Sandi baru untuk {userForReset?.name}</label>
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Sandi baru untuk {userForReset?.name}</label>
                             <Input type="password" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} placeholder="Minimal 6 karakter" className="h-11 rounded-xl bg-muted/30 shadow-none" />
                         </div>
-                        <Button className="w-full h-11 rounded-xl font-bold shadow-none uppercase" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Perbarui Sandi'}</Button>
+                        <Button className="w-full h-11 rounded-xl font-bold shadow-none uppercase text-[10px] tracking-widest" onClick={handleManualResetPassword} disabled={isSaving || newPassInput.length < 6}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Perbarui Sandi'}</Button>
                     </div>
                 </DialogContent>
             </Dialog>
         </div>
     );
 }
-
