@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { format, parseISO, isValid, startOfMonth, endOfMonth, startOfDay, subMonths, addMonths, isSameMonth, setHours, setMinutes, isSameDay } from 'date-fns';
+import { useState, useMemo, useCallback } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { format, startOfMonth, parseISO, isValid, endOfMonth, endOfDay, startOfDay, addMonths, subMonths, isBefore, isSameMonth, addMinutes, setHours, setMinutes, isSameDay } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { doc, writeBatch, collection, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
@@ -21,7 +21,7 @@ import {
     DropdownMenuLabel 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, PencilLine } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User, MoreVertical, Info, Calculator, TrendingUp, PencilLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -45,6 +45,27 @@ interface ClientShellProps {
   initialMonthlyConfig: any;
 }
 
+const PointLegend = () => (
+    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-sm font-black text-green-600">1.0 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
+            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
+            <p className="text-sm font-black text-blue-600">0.9 - 0.7 Poin</p>
+        </div>
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
+            <p className="text-sm font-black text-red-600">0.5 - 0.0 Poin</p>
+        </div>
+    </div>
+);
+
 export default function ReportClientShell({ 
     userId, 
     initialUserData,
@@ -65,6 +86,17 @@ export default function ReportClientShell({
 
     const parsedInitialMonth = parseISO(initialMonth);
     const [currentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
+
+    const stats = useMemo(() => {
+        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%" };
+        const total = reportDetails.reduce((acc, curr) => acc + (curr.points || 0), 0);
+        const count = reportDetails.length;
+        const perc = (total / (count || 1)) * 100;
+        return {
+            totalPoints: total.toFixed(2),
+            persentase: Math.min(perc, 100).toFixed(1) + "%"
+        };
+    }, [reportDetails]);
 
     const handleMonthChange = (amount: number) => {
         const newMonthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
@@ -122,40 +154,32 @@ export default function ReportClientShell({
                     updatedAt: serverTimestamp()
                 };
 
-                // --- LOGIKA JAM MASUK ---
-                if (currentItem?.checkInTime) {
+                // Jam Masuk
+                if (type === 'luar-sekolah') {
+                    data.checkInTime = null;
+                } else if (currentItem?.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(currentItem.checkInTime));
-                } else if (['hadir', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
+                } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                     if (isToday && now < limitIn) {
                         data.checkInTime = Timestamp.fromDate(now);
                     } else {
-                        const randomOffset = Math.floor(Math.random() * 299) + 1;
-                        data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffset * 1000));
+                        const randomInOffset = Math.floor(Math.random() * 299) + 1;
+                        data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
                     }
-                } else if (type === 'terlambat' || type === 'dinas-pagi') {
-                    const randomOffset = Math.floor(Math.random() * 899) + 60; 
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() + randomOffset * 1000));
                 } else {
                     data.checkInTime = null;
                 }
 
-                // --- LOGIKA JAM PULANG ---
-                if (currentItem?.checkOutTime) {
+                // Jam Pulang
+                if (type === 'luar-sekolah') {
+                    data.checkOutTime = null;
+                } else if (currentItem?.checkOutTime) {
                     data.checkOutTime = Timestamp.fromDate(parseISO(currentItem.checkOutTime));
-                } else if (['hadir', 'terlambat', 'dinas-pagi', 'luar-sekolah'].includes(type)) {
-                    if (isToday && now > limitOutStart) {
-                        data.checkOutTime = Timestamp.fromDate(now);
-                    } else {
-                        const randomOffset = Math.floor(Math.random() * 599) + 60; 
-                        data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOffset * 1000));
-                    }
-                } else if (type === 'pulang-cepat' || type === 'dinas-siang') {
-                    if (isToday && now < limitOutStart && (!data.checkInTime || now > data.checkInTime.toDate())) {
-                        data.checkOutTime = Timestamp.fromDate(now);
-                    } else {
-                        const randomOffset = Math.floor(Math.random() * 1800) + 300; 
-                        data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() - randomOffset * 1000));
-                    }
+                } else if (isToday && now > limitOutStart && ['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
+                    data.checkOutTime = Timestamp.fromDate(now);
+                } else if (!isToday && ['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
+                    const randomOutOffset = Math.floor(Math.random() * 599) + 1;
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
                 } else {
                     data.checkOutTime = null;
                 }
@@ -184,9 +208,9 @@ export default function ReportClientShell({
 
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Kehadiran diperbarui.' });
+            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
             router.refresh();
-        } catch (err) { toast({ variant: 'destructive', title: 'Gagal' }); }
+        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); }
         finally { setIsMutating(false); }
     };
 
@@ -194,9 +218,11 @@ export default function ReportClientShell({
         if (!userData || reportDetails.length === 0) return;
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = initialSchoolConfig || ({} as any);
+        const mConfig = initialMonthlyConfig || ({} as any);
 
         doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
         doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
@@ -207,31 +233,105 @@ export default function ReportClientShell({
 
         doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}`, centerX, 54, { align: 'center' });
+        doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${mConfig.academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
-        doc.setFontSize(11).setFont('times', 'normal').text(`Nama : ${userData.name}`, margin, 70);
-        doc.text(`NIP  : ${userData.nip || '-'}`, margin, 76);
+        let currentY = 70;
+        doc.setFontSize(11).setFont('times', 'normal').text(`Nama : ${userData.name}`, margin, currentY); currentY += 6;
+        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentY); currentY += 10;
 
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = reportDetails.map((item, index) => [
             index + 1,
             safeFormat(item.date, 'eeee, dd MMM yyyy'),
             (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
-            safeFormat(item.checkOutTime, 'HH:mm:ss'),
+            (item.description === 'Pulang cepat' || item.description === 'Dinas siang' || item.description === 'Kegiatan luar sekolah') && !item.checkOutTime ? '-' : safeFormat(item.checkOutTime, 'HH:mm:ss'),
             item.status,
             item.description || '-'
         ]);
 
         autoTable(doc, {
-            startY: 82,
+            startY: currentY,
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            styles: { font: 'times', fontSize: 10, cellPadding: 2 },
-            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center' },
-            columnStyles: { 0: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' } }
+            margin: { bottom: 65 },
+            styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
+            alternateRowStyles: { fillColor: [225, 242, 254] },
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
         });
 
-        doc.save(`Laporan_${userData.name?.replace(/\s+/g, '_')}.pdf`);
+        // --- SMART ANCHOR LOGIC ---
+        const footerLineY = pageHeight - 15;
+        const bottomSafeLimit = footerLineY - 2; 
+        const signatureHeight = 45;
+        const notesLineHeight = 5;
+        const labelAreaHeight = 16; 
+        
+        let totalNotesHeight = 0;
+        const processedNotes = [];
+        if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
+            mConfig.holidayNotes.forEach((n: any, idx: number) => {
+                const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                totalNotesHeight += (split.length * notesLineHeight);
+                processedNotes.push({ split, isRed: n.isRed });
+            });
+        }
+
+        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        const finalTableY = (doc as any).lastAutoTable.finalY;
+
+        let closureStartY;
+        if (finalTableY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
+            doc.addPage();
+            closureStartY = 20;
+        } else {
+            closureStartY = finalTableY + 10;
+        }
+
+        const sigX = pageWidth - 85;
+        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
+        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
+        doc.text('Mengetahui,', sigX, closureStartY + 6);
+        doc.text('Kepala Sekolah', sigX, closureStartY + 12);
+        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
+        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
+
+        if (mConfig.isHolidayNotesActive) {
+            const listItemsStartY = bottomSafeLimit - totalNotesHeight;
+            const labelsStartY = listItemsStartY - labelAreaHeight + 2;
+
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+
+            let noteCursorY = listItemsStartY;
+            processedNotes.forEach((note) => {
+                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                doc.text(note.split, margin, noteCursorY);
+                noteCursorY += note.split.length * notesLineHeight;
+            });
+        }
+
+        const totalPagesCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= totalPagesCount; i++) {
+            doc.setPage(i);
+            const ph = doc.internal.pageSize.getHeight();
+            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'italic').setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+            doc.text(config.reportFooterNote || "Dokumen otomatis.", margin, ph - 10);
+            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPagesCount}`, pageWidth - margin, ph - 10, { align: 'right' });
+        }
+        doc.save(`Laporan_${userData.name?.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
+    };
+
+    const getStatusColorClass = (status: string, desc: string) => {
+        const s = status.toLowerCase();
+        const d = desc.toLowerCase();
+        if (s === 'alpa') return "bg-red-500 text-white";
+        if (s === 'sakit') return "bg-orange-500 text-white";
+        if (s.includes('izin') || s.includes('dinas') || d.includes('luar sekolah') || d.includes('cepat')) return "bg-amber-500 text-white";
+        return "bg-emerald-500 text-white";
     };
 
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
@@ -252,7 +352,7 @@ export default function ReportClientShell({
 
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl p-0">
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><Calendar className="w-24 h-24 text-white" /></div>
+                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><FileText className="w-24 h-24 text-white" /></div>
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div>
@@ -270,7 +370,7 @@ export default function ReportClientShell({
                             <div className="flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <div className="flex items-center">
-                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0 shadow-none text-primary hover:bg-white/10" onClick={() => handleMonthChange(-1)} disabled={!canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl shrink-0" onClick={() => handleMonthChange(-1)} disabled={!canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                                         <div className="flex items-center gap-1.5 pl-0.5 pr-3 border-r border-muted-foreground/10 mr-1 min-w-max">
                                             <CalendarDays className="h-4 w-4 text-primary/70" />
                                             <div className="flex flex-col min-w-max">
@@ -305,56 +405,59 @@ export default function ReportClientShell({
                                         reportDetails.map((item, index) => {
                                             const hasIn = !!item.checkInTime;
                                             const hasOut = !!item.checkOutTime;
-                                            const isAlpa = item.status === 'Alpa';
-                                            const isToday = isSameDay(parseISO(item.date), new Date());
-                                            
+                                            const isProblematic = item.status === 'Alpa' || !hasIn || !hasOut;
+                                            const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
+                                            const isLuarSekolah = item.description === 'Kegiatan luar sekolah';
+
                                             return (
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className="text-center font-mono text-xs font-bold">{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                                    <TableCell className="text-center font-mono text-xs font-bold text-foreground">{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                    <TableCell className="text-center font-mono text-xs font-bold">
+                                                        {(isManualLate || isLuarSekolah || item.description === 'Dinas pagi') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-mono text-xs font-bold text-foreground">
+                                                        {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
+                                                    </TableCell>
                                                     <TableCell className="text-center">
                                                         <div className="flex items-center justify-center gap-2">
-                                                            <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", isAlpa ? "bg-red-500 text-white" : "bg-emerald-500 text-white")}>
-                                                                {isAlpa ? 'ALPA' : 'HADIR'}
+                                                            <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description))}>
+                                                                {isManualLate ? 'HADIR' : item.status.toUpperCase()}
                                                             </Badge>
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
-                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
-                                                                    {hasIn && !hasOut ? (
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
-                                                                    ) : !hasIn && hasOut ? (
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
-                                                                    ) : (
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
-                                                                    )}
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
-                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                    <DropdownMenuItem 
-                                                                        className="rounded-xl py-2.5 px-3 font-bold text-xs" 
-                                                                        onClick={() => handleStatusChange(item.date, 'dinas-siang')}
-                                                                        disabled={isToday && !hasIn}
-                                                                    >
-                                                                        Dinas siang
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem 
-                                                                        className="rounded-xl py-2.5 px-3 font-bold text-xs" 
-                                                                        onClick={() => handleStatusChange(item.date, 'pulang-cepat')}
-                                                                        disabled={isToday && !hasIn}
-                                                                    >
-                                                                        Pulang cepat
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Jadikan kegiatan luar sekolah</DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
+                                                            {isProblematic && (
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                        <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                        {hasIn && !hasOut ? (
+                                                                            <>
+                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
+                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
+                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                                            </>
+                                                                        ) : !hasIn && hasOut ? (
+                                                                            <>
+                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                            </>
+                                                                        )}
+                                                                        <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                        <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            )}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-[10px] font-medium italic opacity-70 whitespace-nowrap">{item.description}</TableCell>
@@ -362,10 +465,29 @@ export default function ReportClientShell({
                                             );
                                         })
                                     ) : (
-                                        <TableRow><TableCell colSpan={6} className="h-24 text-center">Tidak ada data.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="h-48 text-center font-bold text-muted-foreground opacity-40 uppercase text-[10px] tracking-widest">Tidak ada data.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                             </Table>
+                        </div>
+
+                        <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
+                            <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm max-w-2xl mx-auto">
+                                <div className="grid grid-cols-2">
+                                    <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
+                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats.totalPoints}</span></div>
+                                    </div>
+                                    <div className="p-5 flex flex-col items-center justify-center text-center">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
+                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats.persentase}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 px-1"><Info className="h-3 w-3 text-muted-foreground" /><h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3></div>
+                                <PointLegend />
+                            </div>
                         </div>
                     </div>
                 </Card>

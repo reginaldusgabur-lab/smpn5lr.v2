@@ -143,7 +143,6 @@ export default function UserReportDetailPage() {
             const outStart = getDailyOutStart(targetDate);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
@@ -171,7 +170,10 @@ export default function UserReportDetailPage() {
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                if (existingAtt?.checkInTime) {
+                // Masuk
+                if (type === 'luar-sekolah') {
+                    data.checkInTime = null;
+                } else if (existingAtt?.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
                 } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                     const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
@@ -180,11 +182,16 @@ export default function UserReportDetailPage() {
                     data.checkInTime = null;
                 }
 
-                if (existingAtt?.checkOutTime) {
+                // Pulang
+                if (type === 'luar-sekolah') {
+                    data.checkOutTime = null;
+                } else if (existingAtt?.checkOutTime) {
                     data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
-                } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi')) {
-                    const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
-                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                } else if (!isToday || (isToday && now > limitOutStart)) {
+                    if (['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
+                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
+                        data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                    }
                 } else {
                     data.checkOutTime = null;
                 }
@@ -253,7 +260,7 @@ export default function UserReportDetailPage() {
             index + 1,
             safeFormat(item.date, 'eeee, dd MMMM yyyy'),
             (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
-            safeFormat(item.checkOutTime, 'HH:mm:ss'),
+            (item.description === 'Pulang cepat' || item.description === 'Dinas siang' || item.description === 'Kegiatan luar sekolah') && !item.checkOutTime ? '-' : safeFormat(item.checkOutTime, 'HH:mm:ss'),
             item.status,
             item.description || '-'
         ]);
@@ -341,11 +348,12 @@ export default function UserReportDetailPage() {
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
-    const getStatusColorClass = (status: string) => {
+    const getStatusColorClass = (status: string, desc: string) => {
         const s = status.toLowerCase();
+        const d = desc.toLowerCase();
         if (s === 'alpa') return "bg-red-500 text-white border-none shadow-sm";
         if (s === 'sakit') return "bg-orange-500 text-white border-none shadow-sm";
-        if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return "bg-amber-500 text-white border-none shadow-sm";
+        if (s.includes('izin') || s.includes('dinas') || d.includes('cepat') || d.includes('luar sekolah')) return "bg-amber-500 text-white border-none shadow-sm";
         return "bg-emerald-500 text-white border-none shadow-sm";
     };
 
@@ -412,16 +420,21 @@ export default function UserReportDetailPage() {
                                         const isAlpa = item.status === 'Alpa';
                                         const isToday = isSameDay(parseISO(item.date), new Date());
                                         const canEdit = isAdmin || currentUser?.role === 'kepala_sekolah';
+                                        const isLuarSekolah = item.description === 'Kegiatan luar sekolah';
 
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
                                                 <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
-                                                <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold'>
+                                                    {(item.description === 'Terlambat' || item.description === 'Dinas pagi' || isLuarSekolah) && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
+                                                </TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>
+                                                    {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
+                                                </TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status))}>{item.status}</Badge>
+                                                        <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description))}>{item.status}</Badge>
                                                         {canEdit && (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>

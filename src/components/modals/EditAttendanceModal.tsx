@@ -143,22 +143,28 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 reasonForUpdate: 'Kehadiran penuh'
             };
 
-            if (day.checkInTime) {
-                data.checkInTime = Timestamp.fromDate(parseISO(day.checkInTime));
-            } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
-                const randomOffset = Math.floor(Math.random() * 299) + 1;
-                data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffset * 1000));
-            } else {
+            // Proteksi Waktu
+            if (type === 'luar-sekolah') {
                 data.checkInTime = null;
-            }
-
-            if (day.checkOutTime) {
-                data.checkOutTime = Timestamp.fromDate(parseISO(day.checkOutTime));
-            } else if (fillOut && ['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi', 'luar-sekolah'].includes(type)) {
-                const randomOffset = Math.floor(Math.random() * 599) + 1;
-                data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOffset * 1000));
-            } else {
                 data.checkOutTime = null;
+            } else {
+                if (day.checkInTime) {
+                    data.checkInTime = Timestamp.fromDate(parseISO(day.checkInTime));
+                } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                    const randomOffset = Math.floor(Math.random() * 299) + 1;
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffset * 1000));
+                } else {
+                    data.checkInTime = null;
+                }
+
+                if (day.checkOutTime) {
+                    data.checkOutTime = Timestamp.fromDate(parseISO(day.checkOutTime));
+                } else if (fillOut && ['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
+                    const randomOffset = Math.floor(Math.random() * 599) + 1;
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOffset * 1000));
+                } else {
+                    data.checkOutTime = null;
+                }
             }
 
             if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
@@ -248,7 +254,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                 
                                 return (
                                     <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 border border-muted-foreground/5 transition-all">
-                                        {isAlpa && !isToday ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[item.id]} onCheckedChange={() => handleSelectDay(item.id)} />}
+                                        {(isAlpa && !isToday) ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[item.id]} onCheckedChange={() => handleSelectDay(item.id)} />}
                                         <div className="flex flex-col grow">
                                             <label className="text-[13px] font-bold text-foreground leading-none">{format(parseISO(item.date), 'eeee, d MMM', { locale: id })}</label>
                                             <span className="text-[9px] font-medium text-muted-foreground mt-1">{item.description}</span>
@@ -299,7 +305,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                                 >
                                                     Pulang cepat
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'luar-sekolah')}>Jadikan kegiatan luar sekolah</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
@@ -319,4 +325,3 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         </Dialog>
     );
 }
-
