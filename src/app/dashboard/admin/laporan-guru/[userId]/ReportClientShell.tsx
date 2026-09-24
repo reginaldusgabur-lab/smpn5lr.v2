@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useRef } from 'react';
@@ -214,7 +215,7 @@ export default function ReportClientShell({
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = reportDetails.map((item, index) => [
             index + 1,
-            safeFormat(item.date, 'eeee, dd MMMM yyyy'),
+            safeFormat(item.date, 'eeee, dd MMM yyyy'),
             safeFormat(item.checkInTime, 'HH:mm:ss'),
             safeFormat(item.checkOutTime, 'HH:mm:ss'),
             item.status,
@@ -304,8 +305,10 @@ export default function ReportClientShell({
                                     {reportDetails.length > 0 ? (
                                         reportDetails.map((item, index) => {
                                             const hasIn = !!item.checkInTime;
+                                            const hasOut = !!item.checkOutTime;
                                             const isAlpa = item.status === 'Alpa';
                                             const isToday = isSameDay(parseISO(item.date), new Date());
+                                            
                                             return (
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
@@ -323,7 +326,13 @@ export default function ReportClientShell({
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                    {hasIn && !hasOut ? (
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
+                                                                    ) : !hasIn && hasOut ? (
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
+                                                                    ) : (
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                    )}
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
@@ -365,3 +374,4 @@ export default function ReportClientShell({
         </div>
     );
 }
+
