@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -20,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { format, parseISO, isValid, startOfDay, endOfDay, addMinutes, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { MoreVertical, CheckCircle2, AlertTriangle, Loader2, PencilLine } from 'lucide-react';
+import { MoreVertical, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
 
@@ -47,12 +48,13 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 if (isMounted.current) setSchoolConfig(config);
                 const reportData = await fetchUserMonthlyReportData(firestore, user.uid, month, config);
                 
-                const problems = reportData.filter(d => 
-                    (d.status === 'Alpa') || 
-                    (d.description.includes('Belum')) ||
-                    (d.description.includes('Tanpa')) ||
-                    (d.status === 'Terlambat')
-                );
+                const problems = reportData.filter(d => {
+                    const hasIn = !!d.checkInTime;
+                    const hasOut = !!d.checkOutTime;
+                    const isManual = d.manualEntry === true;
+                    // Hanya tampilkan yang ALPA, KURANG LENGKAP, atau SUDAH EDIT MANUAL (bisa di edit ulang)
+                    return (d.status === 'Alpa') || (!hasIn || !hasOut) || isManual;
+                });
                 if (isMounted.current) {
                     setProblematicDays(problems);
                     setSelectedDays({});
@@ -248,11 +250,10 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                 const hasIn = !!item.checkInTime;
                                 const hasOut = !!item.checkOutTime;
                                 const isAlpa = item.status === 'Alpa';
-                                const isToday = isSameDay(parseISO(item.date), new Date());
                                 
                                 return (
                                     <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 border border-muted-foreground/5 transition-all">
-                                        {(isAlpa && !isToday) ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[item.id]} onCheckedChange={() => handleSelectDay(item.id)} />}
+                                        {isAlpa ? <div className="p-1 rounded-full bg-destructive/10"><AlertTriangle className="h-4 w-4 text-destructive" /></div> : <Checkbox checked={!!selectedDays[item.id]} onCheckedChange={() => handleSelectDay(item.id)} />}
                                         <div className="flex flex-col grow">
                                             <label className="text-[13px] font-bold text-foreground leading-none">{format(parseISO(item.date), 'eeee, d MMM', { locale: id })}</label>
                                             <span className="text-[9px] font-medium text-muted-foreground mt-1">{item.description}</span>

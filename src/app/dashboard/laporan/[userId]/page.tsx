@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -412,20 +413,17 @@ export default function UserReportDetailPage() {
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
-                                        const isToday = isSameDay(parseISO(item.date), new Date());
-                                        const canEdit = isAdmin;
-                                        const isLuarSekolah = item.description === 'Kegiatan luar sekolah';
+                                        const isAlpa = item.status === 'Alpa';
+                                        const isManual = item.manualEntry === true;
+                                        // PROTEKSI: Full Absen Mandiri (bukan manual admin) tidak bisa di edit
+                                        const canEdit = isAdmin && (isAlpa || !hasIn || !hasOut || isManual);
 
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
-                                                <TableCell className='text-center font-mono text-xs font-bold'>
-                                                    {(item.description === 'Terlambat' || item.description === 'Dinas pagi' || isLuarSekolah) && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
-                                                </TableCell>
-                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>
-                                                    {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
-                                                </TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{(item.description === 'Pulang cepat' || item.description === 'Dinas siang' || item.description === 'Kegiatan luar sekolah') && !item.checkOutTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description))}>{item.status}</Badge>
@@ -449,20 +447,8 @@ export default function UserReportDetailPage() {
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                    <DropdownMenuItem 
-                                                                        className="rounded-xl py-2.5 px-3 font-bold text-xs" 
-                                                                        onClick={() => handleStatusChange(item.date, 'dinas-siang')}
-                                                                        disabled={isToday && !hasIn}
-                                                                    >
-                                                                        Dinas siang
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem 
-                                                                        className="rounded-xl py-2.5 px-3 font-bold text-xs" 
-                                                                        onClick={() => handleStatusChange(item.date, 'pulang-cepat')}
-                                                                        disabled={isToday && !hasIn}
-                                                                    >
-                                                                        Pulang cepat
-                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
