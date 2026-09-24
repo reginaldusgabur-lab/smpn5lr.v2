@@ -143,10 +143,10 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 reasonForUpdate: 'Kehadiran penuh'
             };
 
-            // Proteksi Waktu
             if (type === 'luar-sekolah') {
                 data.checkInTime = null;
                 data.checkOutTime = null;
+                data.reasonForUpdate = 'Kegiatan luar sekolah';
             } else {
                 if (day.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(day.checkInTime));
@@ -171,7 +171,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
             else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
             else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
-            else if (type === 'luar-sekolah') data.reasonForUpdate = 'Kegiatan luar sekolah';
 
             batch.set(recordRef, data, { merge: true });
             await batch.commit();
@@ -244,7 +243,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                     <div className="py-4 space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>
                 ) : problematicDays.length > 0 ? (
                     <div className="py-4">
-                        <DialogDescription className="mb-4 text-sm font-bold text-muted-foreground">Pilih data untuk diperbaiki otomatis atau klik titik tiga untuk ubah status manual.</DialogDescription>
                         <div className="max-h-[350px] overflow-y-auto space-y-2 pr-1">
                             {problematicDays.map(item => {
                                 const hasIn = !!item.checkInTime;
@@ -268,43 +266,22 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                             <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                 <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
                                                 {hasIn && !hasOut ? (
-                                                    <>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
-                                                    </>
+                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
                                                 ) : !hasIn && hasOut ? (
-                                                    <>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
-                                                    </>
+                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
                                                 ) : (
-                                                    <>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                    </>
+                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
                                                 )}
+                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                
                                                 <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                 <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
                                                 
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(item, 'Sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(item, 'Izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    className="rounded-xl py-2.5 px-3 font-bold text-xs" 
-                                                    onClick={() => handleAlpaConversionToAttendance(item, 'dinas-siang')}
-                                                    disabled={isToday && !hasIn}
-                                                >
-                                                    Dinas siang
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    className="rounded-xl py-2.5 px-3 font-bold text-xs" 
-                                                    onClick={() => handleAlpaConversionToAttendance(item, 'pulang-cepat')}
-                                                    disabled={isToday && !hasIn}
-                                                >
-                                                    Pulang cepat
-                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

@@ -11,7 +11,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/table";
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
@@ -154,42 +154,37 @@ export default function ReportClientShell({
                     updatedAt: serverTimestamp()
                 };
 
-                // Jam Masuk
                 if (type === 'luar-sekolah') {
                     data.checkInTime = null;
-                } else if (currentItem?.checkInTime) {
-                    data.checkInTime = Timestamp.fromDate(parseISO(currentItem.checkInTime));
-                } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
-                    if (isToday && now < limitIn) {
-                        data.checkInTime = Timestamp.fromDate(now);
-                    } else {
+                    data.checkOutTime = null;
+                    data.reasonForUpdate = 'Kegiatan luar sekolah';
+                } else {
+                    if (currentItem?.checkInTime) {
+                        data.checkInTime = Timestamp.fromDate(parseISO(currentItem.checkInTime));
+                    } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                         const randomInOffset = Math.floor(Math.random() * 299) + 1;
                         data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
+                    } else {
+                        data.checkInTime = null;
                     }
-                } else {
-                    data.checkInTime = null;
-                }
 
-                // Jam Pulang
-                if (type === 'luar-sekolah') {
-                    data.checkOutTime = null;
-                } else if (currentItem?.checkOutTime) {
-                    data.checkOutTime = Timestamp.fromDate(parseISO(currentItem.checkOutTime));
-                } else if (isToday && now > limitOutStart && ['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
-                    data.checkOutTime = Timestamp.fromDate(now);
-                } else if (!isToday && ['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
-                    const randomOutOffset = Math.floor(Math.random() * 599) + 1;
-                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
-                } else {
-                    data.checkOutTime = null;
-                }
+                    if (currentItem?.checkOutTime) {
+                        data.checkOutTime = Timestamp.fromDate(parseISO(currentItem.checkOutTime));
+                    } else if (!isToday || (isToday && now > limitOutStart)) {
+                        if (['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
+                            const randomOutOffset = Math.floor(Math.random() * 599) + 1;
+                            data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
+                        }
+                    } else {
+                        data.checkOutTime = null;
+                    }
 
-                if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
-                else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
-                else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
-                else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
-                else if (type === 'luar-sekolah') data.reasonForUpdate = 'Kegiatan luar sekolah';
-                else data.reasonForUpdate = 'Kehadiran penuh';
+                    if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
+                    else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
+                    else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
+                    else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
+                    else data.reasonForUpdate = 'Kehadiran penuh';
+                }
 
                 batch.set(doc(attendanceRef), data);
             } else {
@@ -414,10 +409,10 @@ export default function ReportClientShell({
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold">
-                                                        {(isManualLate || isLuarSekolah || item.description === 'Dinas pagi') && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
+                                                        {(isManualLate || isLuarSekolah || item.description === 'Dinas pagi') && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
                                                     </TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">
-                                                        {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
+                                                        {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
                                                     </TableCell>
                                                     <TableCell className="text-center">
                                                         <div className="flex items-center justify-center gap-2">
@@ -430,23 +425,14 @@ export default function ReportClientShell({
                                                                     <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                         <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                         {hasIn && !hasOut ? (
-                                                                            <>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
-                                                                            </>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
                                                                         ) : !hasIn && hasOut ? (
-                                                                            <>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
-                                                                            </>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Lengkapi absen masuk</DropdownMenuItem>
                                                                         ) : (
-                                                                            <>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                                            </>
+                                                                            <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
                                                                         )}
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                        
                                                                         <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                         <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>

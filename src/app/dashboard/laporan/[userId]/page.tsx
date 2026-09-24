@@ -143,6 +143,7 @@ export default function UserReportDetailPage() {
             const outStart = getDailyOutStart(targetDate);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
+            const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
@@ -170,38 +171,35 @@ export default function UserReportDetailPage() {
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                // Masuk
                 if (type === 'luar-sekolah') {
                     data.checkInTime = null;
-                } else if (existingAtt?.checkInTime) {
-                    data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
-                } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
-                    const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
-                } else {
-                    data.checkInTime = null;
-                }
-
-                // Pulang
-                if (type === 'luar-sekolah') {
                     data.checkOutTime = null;
-                } else if (existingAtt?.checkOutTime) {
-                    data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
-                } else if (!isToday || (isToday && now > limitOutStart)) {
-                    if (['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
+                    data.reasonForUpdate = 'Kegiatan luar sekolah';
+                } else {
+                    if (existingAtt?.checkInTime) {
+                        data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
+                    } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                        const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                        data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
+                    } else {
+                        data.checkInTime = null;
+                    }
+
+                    if (existingAtt?.checkOutTime) {
+                        data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
+                    } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi')) {
                         const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
                         data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                    } else {
+                        data.checkOutTime = null;
                     }
-                } else {
-                    data.checkOutTime = null;
-                }
 
-                if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
-                else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
-                else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
-                else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
-                else if (type === 'luar-sekolah') data.reasonForUpdate = 'Kegiatan luar sekolah';
-                else data.reasonForUpdate = 'Kehadiran penuh';
+                    if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
+                    else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
+                    else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
+                    else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
+                    else data.reasonForUpdate = 'Kehadiran penuh';
+                }
 
                 batch.set(doc(attendanceRef), data);
             } else {
@@ -306,7 +304,6 @@ export default function UserReportDetailPage() {
             closureStartY = finalTableY + 10;
         }
 
-        // Render Signature (Top part of closure)
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
@@ -315,7 +312,6 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
-        // Render Notes (ANCHORED TO BOTTOM LINE)
         if (mConfig.isHolidayNotesActive) {
             const listItemsStartY = bottomSafeLimit - totalNotesHeight;
             const labelsStartY = listItemsStartY - labelAreaHeight + 2;
@@ -332,19 +328,18 @@ export default function UserReportDetailPage() {
             });
         }
 
-        const footerNoteText = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
         const totalPagesCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPagesCount; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
             doc.setTextColor(0,0,0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(footerNoteText, margin, ph - 10);
+            doc.setFontSize(8).setFont('times', 'italic').text(config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.", margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPagesCount}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
     };
 
-    const isAdmin = currentUser?.role === 'admin';
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'kepala_sekolah';
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
@@ -417,9 +412,8 @@ export default function UserReportDetailPage() {
                                     {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
-                                        const isAlpa = item.status === 'Alpa';
                                         const isToday = isSameDay(parseISO(item.date), new Date());
-                                        const canEdit = isAdmin || currentUser?.role === 'kepala_sekolah';
+                                        const canEdit = isAdmin;
                                         const isLuarSekolah = item.description === 'Kegiatan luar sekolah';
 
                                         return (
@@ -427,10 +421,10 @@ export default function UserReportDetailPage() {
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
                                                 <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold'>
-                                                    {(item.description === 'Terlambat' || item.description === 'Dinas pagi' || isLuarSekolah) && !item.checkInTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
+                                                    {(item.description === 'Terlambat' || item.description === 'Dinas pagi' || isLuarSekolah) && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
                                                 </TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>
-                                                    {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-red-500 font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
+                                                    {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
@@ -469,7 +463,7 @@ export default function UserReportDetailPage() {
                                                                     >
                                                                         Pulang cepat
                                                                     </DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Jadikan kegiatan luar sekolah</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         )}
