@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { format, parseISO, isValid, startOfMonth, endOfMonth, startOfDay, subMonths, addMonths, isSameMonth, setHours, setMinutes, isSameDay } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
@@ -85,7 +85,7 @@ export default function ReportClientShell({
     };
 
     const handleStatusChange = async (dateStr: string, type: string) => {
-        if (!authUser || !firestore || isMutating) return;
+        if (!authUser || !firestore || isMutating || !initialSchoolConfig || !userData) return;
         setIsMutating(true);
         try {
             const targetDate = parseISO(dateStr);
@@ -94,7 +94,10 @@ export default function ReportClientShell({
             const outStart = getDailyOutStart(targetDate);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            const fillOut = !isToday || (isToday && now > limitOutStart);
+
+            const inEnd = initialSchoolConfig?.checkInEndTime || '07:30';
+            const [hE, mE] = inEnd.split(':').map(Number);
+            const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
 
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
@@ -109,10 +112,6 @@ export default function ReportClientShell({
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            const inEnd = initialSchoolConfig?.checkInEndTime || '07:30';
-            const [hE, mE] = inEnd.split(':').map(Number);
-            const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
-
             if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
                 const currentItem = reportDetails.find(d => d.date.startsWith(todayStr));
                 
@@ -123,20 +122,40 @@ export default function ReportClientShell({
                     updatedAt: serverTimestamp()
                 };
 
+                // --- LOGIKA JAM MASUK ---
                 if (currentItem?.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(currentItem.checkInTime));
-                } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
-                    const rIn = Math.floor(Math.random() * 299) + 1;
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - rIn * 1000));
+                } else if (['hadir', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
+                    if (isToday && now < limitIn) {
+                        data.checkInTime = Timestamp.fromDate(now);
+                    } else {
+                        const randomOffset = Math.floor(Math.random() * 299) + 1;
+                        data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffset * 1000));
+                    }
+                } else if (type === 'terlambat' || type === 'dinas-pagi') {
+                    const randomOffset = Math.floor(Math.random() * 899) + 60; 
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() + randomOffset * 1000));
                 } else {
                     data.checkInTime = null;
                 }
 
+                // --- LOGIKA JAM PULANG ---
                 if (currentItem?.checkOutTime) {
                     data.checkOutTime = Timestamp.fromDate(parseISO(currentItem.checkOutTime));
-                } else if (fillOut && ['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
-                    const rOut = Math.floor(Math.random() * 599) + 1;
-                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + rOut * 1000));
+                } else if (['hadir', 'terlambat', 'dinas-pagi', 'luar-sekolah'].includes(type)) {
+                    if (isToday && now > limitOutStart) {
+                        data.checkOutTime = Timestamp.fromDate(now);
+                    } else {
+                        const randomOffset = Math.floor(Math.random() * 599) + 60; 
+                        data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOffset * 1000));
+                    }
+                } else if (type === 'pulang-cepat' || type === 'dinas-siang') {
+                    if (isToday && now < limitOutStart && (!data.checkInTime || now > data.checkInTime.toDate())) {
+                        data.checkOutTime = Timestamp.fromDate(now);
+                    } else {
+                        const randomOffset = Math.floor(Math.random() * 1800) + 300; 
+                        data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() - randomOffset * 1000));
+                    }
                 } else {
                     data.checkOutTime = null;
                 }
@@ -178,7 +197,6 @@ export default function ReportClientShell({
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = initialSchoolConfig || ({} as any);
-        const mConfig = initialMonthlyConfig || ({} as any);
 
         doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
         doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
@@ -285,7 +303,9 @@ export default function ReportClientShell({
                                 <TableBody className="bg-background">
                                     {reportDetails.length > 0 ? (
                                         reportDetails.map((item, index) => {
+                                            const hasIn = !!item.checkInTime;
                                             const isAlpa = item.status === 'Alpa';
+                                            const isToday = isSameDay(parseISO(item.date), new Date());
                                             return (
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
@@ -310,8 +330,20 @@ export default function ReportClientShell({
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
+                                                                    <DropdownMenuItem 
+                                                                        className="rounded-xl py-2.5 px-3 font-bold text-xs" 
+                                                                        onClick={() => handleStatusChange(item.date, 'dinas-siang')}
+                                                                        disabled={isToday && !hasIn}
+                                                                    >
+                                                                        Dinas siang
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem 
+                                                                        className="rounded-xl py-2.5 px-3 font-bold text-xs" 
+                                                                        onClick={() => handleStatusChange(item.date, 'pulang-cepat')}
+                                                                        disabled={isToday && !hasIn}
+                                                                    >
+                                                                        Pulang cepat
+                                                                    </DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
