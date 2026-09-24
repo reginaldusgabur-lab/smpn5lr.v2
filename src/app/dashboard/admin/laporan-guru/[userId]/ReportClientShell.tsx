@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, parseISO, isValid, endOfMonth, endOfDay, startOfDay, addMonths, subMonths, isBefore, isSameMonth, addMinutes, setHours, setMinutes, isSameDay } from 'date-fns';
+import { useRouter, usePathname } from 'next/navigation';
+import { format, parseISO, isValid, startOfMonth, endOfMonth, startOfDay, subMonths, addMonths, isSameMonth, setHours, setMinutes, isSameDay } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { doc, writeBatch, collection, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
@@ -21,7 +21,7 @@ import {
     DropdownMenuLabel 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User, MoreVertical, Info, Calculator, TrendingUp } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, PencilLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -45,27 +45,6 @@ interface ClientShellProps {
   initialMonthlyConfig: any;
 }
 
-const PointLegend = () => (
-    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
-            <p className="text-sm font-black text-green-600">1.0 Poin</p>
-        </div>
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
-            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
-        </div>
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
-            <p className="text-sm font-black text-blue-600">0.9 - 0.7 Poin</p>
-        </div>
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Lupa Absen / Alpa</p>
-            <p className="text-sm font-black text-red-600">0.5 - 0.0 Poin</p>
-        </div>
-    </div>
-);
-
 export default function ReportClientShell({ 
     userId, 
     initialUserData,
@@ -86,19 +65,6 @@ export default function ReportClientShell({
 
     const parsedInitialMonth = parseISO(initialMonth);
     const [currentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
-
-    const stats = useMemo(() => {
-        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%", totalAlpa: 0 };
-        const total = reportDetails.reduce((acc, curr) => acc + (curr.points || 0), 0);
-        const count = reportDetails.length;
-        const perc = (total / (count || 1)) * 100;
-        const alpaCount = reportDetails.filter(d => d.status === 'Alpa').length;
-        return {
-            totalPoints: total.toFixed(2),
-            persentase: Math.min(perc, 100).toFixed(1) + "%",
-            totalAlpa: alpaCount
-        };
-    }, [reportDetails]);
 
     const handleMonthChange = (amount: number) => {
         const newMonthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
@@ -147,7 +113,7 @@ export default function ReportClientShell({
             const [hE, mE] = inEnd.split(':').map(Number);
             const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
 
-            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'lengkapi-masuk', 'lengkapi-pulang'].includes(type)) {
+            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
                 const currentItem = reportDetails.find(d => d.date.startsWith(todayStr));
                 
                 let data: any = {
@@ -159,18 +125,18 @@ export default function ReportClientShell({
 
                 if (currentItem?.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(currentItem.checkInTime));
-                } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat'].includes(type)) {
-                    const randomInOffset = Math.floor(Math.random() * 299) + 1;
-                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
+                } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                    const rIn = Math.floor(Math.random() * 299) + 1;
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - rIn * 1000));
                 } else {
                     data.checkInTime = null;
                 }
 
                 if (currentItem?.checkOutTime) {
                     data.checkOutTime = Timestamp.fromDate(parseISO(currentItem.checkOutTime));
-                } else if (fillOut && ['hadir', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
-                    const randomOutOffset = Math.floor(Math.random() * 599) + 1;
-                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffset * 1000));
+                } else if (fillOut && ['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
+                    const rOut = Math.floor(Math.random() * 599) + 1;
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + rOut * 1000));
                 } else {
                     data.checkOutTime = null;
                 }
@@ -179,6 +145,7 @@ export default function ReportClientShell({
                 else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
                 else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
                 else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
+                else if (type === 'luar-sekolah') data.reasonForUpdate = 'Kegiatan luar sekolah';
                 else data.reasonForUpdate = 'Kehadiran penuh';
 
                 batch.set(doc(attendanceRef), data);
@@ -198,9 +165,9 @@ export default function ReportClientShell({
 
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
+            toast({ title: 'Berhasil', description: 'Kehadiran diperbarui.' });
             router.refresh();
-        } catch (err) { toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); }
+        } catch (err) { toast({ variant: 'destructive', title: 'Gagal' }); }
         finally { setIsMutating(false); }
     };
 
@@ -208,7 +175,6 @@ export default function ReportClientShell({
         if (!userData || reportDetails.length === 0) return;
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
         const centerX = pageWidth / 2;
         const margin = 14;
         const config = initialSchoolConfig || ({} as any);
@@ -223,105 +189,31 @@ export default function ReportClientShell({
 
         doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
         doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesiaLocale })}`, centerX, 54, { align: 'center' });
-        doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${mConfig.academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
-        let currentYStart = 70;
-        doc.setFontSize(11).setFont('times', 'normal').text(`Nama : ${userData.name}`, margin, currentYStart); currentYStart += 6;
-        doc.text(`NIP : ${userData.nip || '-'}`, margin, currentYStart); currentYStart += 10;
+        doc.setFontSize(11).setFont('times', 'normal').text(`Nama : ${userData.name}`, margin, 70);
+        doc.text(`NIP  : ${userData.nip || '-'}`, margin, 76);
 
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
         const tableRows = reportDetails.map((item, index) => [
             index + 1,
-            safeFormat(item.date, 'eeee, dd MMM yyyy'),
-            item.checkInTime ? format(parseISO(item.checkInTime), 'HH:mm:ss') : '-',
-            item.checkOutTime ? format(parseISO(item.checkOutTime), 'HH:mm:ss') : '-',
+            safeFormat(item.date, 'eeee, dd MMMM yyyy'),
+            safeFormat(item.checkInTime, 'HH:mm:ss'),
+            safeFormat(item.checkOutTime, 'HH:mm:ss'),
             item.status,
             item.description || '-'
         ]);
 
         autoTable(doc, {
-            startY: currentYStart,
+            startY: 82,
             head: tableHead,
             body: tableRows,
             theme: 'striped',
-            margin: { bottom: 65 },
-            styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
-            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
-            alternateRowStyles: { fillColor: [225, 242, 254] },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
+            styles: { font: 'times', fontSize: 10, cellPadding: 2 },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center' },
+            columnStyles: { 0: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' } }
         });
 
-        // --- SMART ANCHOR LOGIC ---
-        const footerLineY = pageHeight - 15;
-        const bottomSafeLimit = footerLineY - 2; 
-        const signatureHeight = 45;
-        const notesLineHeight = 4;
-        const labelAreaHeight = 16; 
-        
-        let totalNotesHeight = 0;
-        const processedNotes = [];
-        if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
-            mConfig.holidayNotes.forEach((n: any, idx: number) => {
-                const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
-                const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
-                totalNotesHeight += (split.length * notesLineHeight);
-                processedNotes.push({ split, isRed: n.isRed });
-            });
-        }
-
-        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
-        const finalTableY = (doc as any).lastAutoTable.finalY;
-
-        let closureStartY;
-        if (finalTableY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
-            doc.addPage();
-            closureStartY = 20;
-        } else {
-            closureStartY = finalTableY + 10;
-        }
-
-        const sigX = pageWidth - 85;
-        const todayStr = format(new Date(), 'd MMMM yyyy', { locale: indonesiaLocale });
-        doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
-        doc.text('Mengetahui,', sigX, closureStartY + 6);
-        doc.text('Kepala Sekolah', sigX, closureStartY + 12);
-        doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
-        doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
-
-        if (mConfig.isHolidayNotesActive) {
-            const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-            const labelsStartY = listItemsStartY - labelAreaHeight + 2;
-
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
-
-            let noteCursorY = listItemsStartY;
-            processedNotes.forEach((note) => {
-                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                doc.text(note.split, margin, noteCursorY);
-                noteCursorY += note.split.length * notesLineHeight;
-            });
-        }
-
-        const totalPagesCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= totalPagesCount; i++) {
-            doc.setPage(i);
-            const ph = doc.internal.pageSize.getHeight();
-            doc.setTextColor(0, 0, 0).setFontSize(8).setFont('times', 'italic').setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.text(config.reportFooterNote || "Dokumen otomatis.", margin, ph - 10);
-            doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPagesCount}`, pageWidth - margin, ph - 10, { align: 'right' });
-        }
-        doc.save(`Laporan_${userData.name?.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy')}.pdf`);
-    };
-
-    const getStatusColorClass = (status: string, desc: string, hasOut: boolean) => {
-        const s = status.toLowerCase();
-        if (s === 'alpa') return "bg-red-500 text-white";
-        if (s === 'sakit') return "bg-orange-500 text-white";
-        if (s.includes('izin') || s.includes('dinas')) return "bg-amber-500 text-white";
-        if (s === 'hadir') return hasOut ? "bg-emerald-500 text-white" : "bg-blue-600 text-white";
-        return "bg-primary text-white";
+        doc.save(`Laporan_${userData.name?.replace(/\s+/g, '_')}.pdf`);
     };
 
     const canGoPrev = currentMonth > new Date(2026, 0, 1);
@@ -342,13 +234,13 @@ export default function ReportClientShell({
 
                 <Card className="overflow-hidden bg-card border border-muted-foreground/10 shadow-none rounded-xl p-0">
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative overflow-hidden">
-                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><FileText className="w-24 h-24 text-white" /></div>
+                        <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><Calendar className="w-24 h-24 text-white" /></div>
                         <div className="flex items-center justify-between relative z-10">
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div>
                                 <div className="space-y-0.5">
                                     <h2 className="font-bold text-2xl tracking-tight leading-tight">Riwayat Absensi & Izin</h2>
-                                    <p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat rincian catatan harian personil.</p>
+                                    <p className="text-[11px] font-medium text-white/80 leading-relaxed">Melihat rincian harian personil.</p>
                                 </div>
                             </div>
                             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}><RefreshCw className={cn("h-4 w-4", isMutating && "animate-spin")} /></Button>
@@ -357,21 +249,6 @@ export default function ReportClientShell({
 
                     <div className="p-0">
                         <div className="p-4 space-y-6">
-                            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-                                <div className="bg-primary/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-primary/10 flex flex-col items-center justify-center text-center">
-                                    <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Persentase Kehadiran</Label>
-                                    <p className="text-sm sm:text-3xl font-black text-primary mt-1 sm:mt-2 tabular-nums">{stats.persentase}</p>
-                                </div>
-                                <div className="bg-emerald-500/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-emerald-500/10 flex flex-col items-center justify-center text-center">
-                                    <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Total Poin</Label>
-                                    <p className="text-sm sm:text-3xl font-black text-emerald-600 mt-1 sm:mt-2 tabular-nums">{stats.totalPoints}</p>
-                                </div>
-                                <div className="bg-red-500/5 p-2 sm:p-6 rounded-xl sm:rounded-3xl border border-red-500/10 flex flex-col items-center justify-center text-center">
-                                    <Label className="text-[6px] sm:text-[10px] font-black uppercase tracking-widest opacity-50 leading-tight">Total Alpa</Label>
-                                    <p className="text-sm sm:text-3xl font-black text-red-600 mt-1 sm:mt-2 tabular-nums">{stats.totalAlpa}<span className="text-[6px] sm:text-sm ml-0.5">HARI</span></p>
-                                </div>
-                            </div>
-
                             <div className="flex flex-col items-center justify-center">
                                 <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                     <div className="flex items-center">
@@ -401,7 +278,6 @@ export default function ReportClientShell({
                                         <TableHead className="font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Tanggal</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Masuk</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Pulang</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Poin</TableHead>
                                         <TableHead className="text-center font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Status</TableHead>
                                         <TableHead className="font-bold text-[10px] text-muted-foreground uppercase border-none h-11">Keterangan</TableHead>
                                     </TableRow>
@@ -409,53 +285,36 @@ export default function ReportClientShell({
                                 <TableBody className="bg-background">
                                     {reportDetails.length > 0 ? (
                                         reportDetails.map((item, index) => {
-                                            const hasIn = !!item.checkInTime;
-                                            const hasOut = !!item.checkOutTime;
-                                            const isProblematic = item.status === 'Alpa' || !hasIn || !hasOut;
-                                            const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
+                                            const isAlpa = item.status === 'Alpa';
                                             return (
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className="text-center font-mono text-xs font-bold">{isManualLate && !item.checkInTime ? <span className="text-red-600">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
+                                                    <TableCell className="text-center font-mono text-xs font-bold">{safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
-                                                    <TableCell className="text-center"><Badge variant="outline" className="font-black text-[10px] bg-background text-primary border-primary/20">{item.points?.toFixed(2) || "0.00"}</Badge></TableCell>
                                                     <TableCell className="text-center">
                                                         <div className="flex items-center justify-center gap-2">
-                                                            <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description, !!item.checkOutTime))}>{isManualLate ? 'Hadir' : item.status}</Badge>
-                                                            {isProblematic && (
-                                                                <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-primary/10"><MoreVertical className="h-4 w-4 text-primary" /></Button></DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
-                                                                        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
-                                                                        {hasIn && !hasOut ? (
-                                                                            <>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-pulang')}>Lengkapi absen pulang</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Izin pulang cepat</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
-                                                                            </>
-                                                                        ) : !hasIn && hasOut ? (
-                                                                            <>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'lengkapi-masuk')}>Lengkapi absen masuk</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas pagi</DropdownMenuItem>
-                                                                            </>
-                                                                        ) : (
-                                                                            <>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
-                                                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
-                                                                            </>
-                                                                        )}
-                                                                        <DropdownMenuSeparator className='my-1.5 opacity-50' />
-                                                                        <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
-                                                                    </DropdownMenuContent>
-                                                                </DropdownMenu>
-                                                            )}
+                                                            <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", isAlpa ? "bg-red-500 text-white" : "bg-emerald-500 text-white")}>
+                                                                {isAlpa ? 'ALPA' : 'HADIR'}
+                                                            </Badge>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'hadir')}>Jadikan Hadir (Penuh)</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'terlambat')}>Jadikan Terlambat</DropdownMenuItem>
+                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                    <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-[10px] font-medium italic opacity-70 whitespace-nowrap">{item.description}</TableCell>
@@ -463,29 +322,10 @@ export default function ReportClientShell({
                                             );
                                         })
                                     ) : (
-                                        <TableRow><TableCell colSpan={7} className="h-24 text-center">Tidak ada data.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={6} className="h-24 text-center">Tidak ada data.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                             </Table>
-                        </div>
-
-                        <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
-                            <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm max-w-2xl mx-auto">
-                                <div className="grid grid-cols-2">
-                                    <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
-                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats.totalPoints}</span></div>
-                                    </div>
-                                    <div className="p-5 flex flex-col items-center justify-center text-center">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
-                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats.persentase}</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2 px-1"><Info className="h-3 w-3 text-muted-foreground" /><h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3></div>
-                                <PointLegend />
-                            </div>
                         </div>
                     </div>
                 </Card>
