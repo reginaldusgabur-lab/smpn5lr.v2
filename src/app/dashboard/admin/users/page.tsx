@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -36,6 +35,7 @@ import {
   UserCheck,
   CalendarDays,
   PlaneTakeoff,
+  FileText,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -64,6 +64,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -84,7 +86,8 @@ import { firebaseConfig } from '@/firebase/config';
 import { resetUserPassword } from '@/app/actions/admin-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
-import { addDays, startOfDay, endOfDay, format } from 'date-fns';
+import { addDays, startOfDay, endOfDay, format, startOfMonth, parse, isValid } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
 import { invalidateCache } from '@/lib/cache';
 
 const addUserSchema = z.object({
@@ -101,6 +104,21 @@ const addUserSchema = z.object({
       message: 'Password minimal 6 karakter.'
     }),
 });
+
+const months = [
+    { value: '01', label: 'Januari' },
+    { value: '02', label: 'Februari' },
+    { value: '03', label: 'Maret' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'Mei' },
+    { value: '06', label: 'Juni' },
+    { value: '07', label: 'Juli' },
+    { value: '08', label: 'Agustus' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'Oktober' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'Desember' },
+];
 
 export default function AdminUsersPage() {
     const { user, isUserLoading: isAuthLoading } = useUser();
@@ -120,6 +138,12 @@ export default function AdminUsersPage() {
     const [userForReset, setUserForReset] = useState<any | null>(null);
     const [userForCuti, setUserForCuti] = useState<any | null>(null);
     const [newPassInput, setNewPassInput] = useState('');
+
+    // State untuk form cuti
+    const [cutiMonth, setCutiMonth] = useState(format(new Date(), 'MM'));
+    const [cutiYear, setCutiYear] = useState(format(new Date(), 'yyyy'));
+    const [cutiStartDate, setCutiStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [cutiReason, setCutiReason] = useState('');
 
     const usersRef = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
     const { data: usersData, isLoading: isUsersLoading } = useCollection(user, usersRef);
@@ -270,8 +294,9 @@ export default function AdminUsersPage() {
         setIsSaving(true);
         try {
             const batch = writeBatch(firestore);
-            const now = new Date();
-            const start = startOfDay(now);
+            const start = startOfDay(parse(cutiStartDate, 'yyyy-MM-dd', new Date()));
+            if (!isValid(start)) throw new Error("Format tanggal mulai tidak valid.");
+            
             const end = endOfDay(addDays(start, days - 1));
 
             // Tambahkan LeaveRequest otomatis disetujui
@@ -281,7 +306,7 @@ export default function AdminUsersPage() {
                 userName: userForCuti.name,
                 type: 'Izin Pribadi',
                 status: 'approved',
-                reason: `Cuti periode ${days} hari`,
+                reason: cutiReason.trim() || `Cuti periode ${days} hari`,
                 startDate: Timestamp.fromDate(start),
                 endDate: Timestamp.fromDate(end),
                 createdAt: serverTimestamp(),
@@ -304,6 +329,7 @@ export default function AdminUsersPage() {
             invalidateCache();
             toast({ title: 'Berhasil', description: `Status cuti ${days} hari telah disetel untuk ${userForCuti.name}.` });
             setIsCutiDialogOpen(false);
+            setCutiReason('');
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Gagal', description: e.message });
         } finally {
@@ -424,33 +450,66 @@ export default function AdminUsersPage() {
             </div>
 
             <Dialog open={isCutiDialogOpen} onOpenChange={setIsCutiDialogOpen}>
-                <DialogContent className="rounded-2xl border-none shadow-2xl p-6">
-                    <DialogHeader>
-                        <PlaneTakeoff className="h-10 w-10 text-primary mb-2" />
-                        <DialogTitle className="text-xl font-bold">Atur periode cuti</DialogTitle>
-                        <DialogDescription className="text-xs font-bold text-muted-foreground">
-                            Pilih lama cuti untuk <strong>{userForCuti?.name}</strong>. Terhitung mulai hari ini.
+                <DialogContent className="rounded-2xl border-none shadow-2xl p-0 overflow-hidden max-w-md">
+                    <DialogHeader className="p-6 bg-primary text-white">
+                        <DialogTitle className="flex items-center gap-3 text-xl font-black uppercase tracking-tight">
+                            <PlaneTakeoff className="h-6 w-6" /> Atur jadwal cuti
+                        </DialogTitle>
+                        <DialogDescription className="text-white/80 font-bold text-xs mt-1">
+                            Pilih periode cuti resmi untuk <strong>{userForCuti?.name}</strong>.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid grid-cols-2 gap-3 py-4">
-                        <Button variant="outline" className="rounded-xl h-14 flex flex-col items-center justify-center font-bold border-muted-foreground/10" onClick={() => handleSetCuti(1)}>
-                            <span className="text-lg">1 Hari</span>
-                            <span className="text-[8px] uppercase tracking-widest opacity-60">Izin harian</span>
-                        </Button>
-                        <Button variant="outline" className="rounded-xl h-14 flex flex-col items-center justify-center font-bold border-muted-foreground/10" onClick={() => handleSetCuti(2)}>
-                            <span className="text-lg">2 Hari</span>
-                            <span className="text-[8px] uppercase tracking-widest opacity-60">Izin pendek</span>
-                        </Button>
-                        <Button variant="outline" className="rounded-xl h-14 flex flex-col items-center justify-center font-bold border-muted-foreground/10" onClick={() => handleSetCuti(7)}>
-                            <span className="text-lg">1 Minggu</span>
-                            <span className="text-[8px] uppercase tracking-widest opacity-60">7 Hari kalender</span>
-                        </Button>
-                        <Button variant="outline" className="rounded-xl h-14 flex flex-col items-center justify-center font-bold border-muted-foreground/10" onClick={() => handleSetCuti(30)}>
-                            <span className="text-lg">1 Bulan</span>
-                            <span className="text-[8px] uppercase tracking-widest opacity-60">30 Hari kalender</span>
-                        </Button>
+                    <div className="p-6 space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Periode Bulan</Label>
+                                <Select value={cutiMonth} onValueChange={setCutiMonth}>
+                                    <SelectTrigger className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-none shadow-2xl rounded-xl">
+                                        {months.map(m => <SelectItem key={m.value} value={m.value} className="rounded-lg">{m.label}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tanggal Mulai</Label>
+                                <Input type="date" value={cutiStartDate} onChange={e => setCutiStartDate(e.target.value)} className="h-11 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Keterangan Lengkap</Label>
+                            <Textarea 
+                                placeholder="Tuliskan keterangan detail cuti..." 
+                                value={cutiReason} 
+                                onChange={e => setCutiReason(e.target.value)}
+                                className="rounded-xl bg-muted/30 shadow-none border-muted-foreground/10 min-h-[80px] font-medium text-sm"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Klik untuk pilih lama cuti:</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button variant="outline" className="rounded-xl h-12 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary/5 hover:text-primary transition-all" onClick={() => handleSetCuti(1)} disabled={isSaving}>
+                                    <span>1 HARI</span>
+                                </Button>
+                                <Button variant="outline" className="rounded-xl h-12 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary/5 hover:text-primary transition-all" onClick={() => handleSetCuti(2)} disabled={isSaving}>
+                                    <span>2 HARI</span>
+                                </Button>
+                                <Button variant="outline" className="rounded-xl h-12 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary/5 hover:text-primary transition-all" onClick={() => handleSetCuti(7)} disabled={isSaving}>
+                                    <span>1 MINGGU</span>
+                                </Button>
+                                <Button variant="outline" className="rounded-xl h-12 flex flex-col font-black border-muted-foreground/10 shadow-none hover:bg-primary/5 hover:text-primary transition-all" onClick={() => handleSetCuti(30)} disabled={isSaving}>
+                                    <span>1 BULAN</span>
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-2">
+                            <RefreshCw className="h-3 w-3 text-amber-600 mt-0.5" />
+                            <p className="text-[9px] text-amber-700 font-bold leading-tight">Sistem akan otomatis menghapus catatan kehadiran mandiri pada rentang tanggal tersebut untuk memastikan integritas laporan.</p>
+                        </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-bold italic text-center px-4">Sistem akan otomatis menghapus catatan kehadiran manual pada rentang tanggal tersebut.</p>
                 </DialogContent>
             </Dialog>
 
@@ -538,3 +597,4 @@ export default function AdminUsersPage() {
         </div>
     );
 }
+

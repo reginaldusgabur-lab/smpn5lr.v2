@@ -41,7 +41,7 @@ export function useDoc<T = any>(
       return;
     }
     
-    // Hanya reset loading jika path benar-benar berubah untuk memutus loop
+    // Hanya reset loading jika path benar-benar berubah
     if (currentPath !== lastPath.current) {
         setResult({ data: null, isLoading: true, error: null });
         lastPath.current = currentPath;
@@ -83,7 +83,8 @@ export function useDoc<T = any>(
         isMounted = false;
         unsubscribe();
     };
-  }, [memoizedDocRef, userForSubscription?.uid]); // Gunakan UID untuk stabilitas
+  }, [memoizedDocRef, userForSubscription?.uid]);
 
   return result;
 }
+

@@ -51,7 +51,7 @@ export function useCollection<T = any>(
       return;
     }
 
-    // Identifikasi kueri secara unik untuk memutus loop
+    // Identifikasi kueri secara unik untuk memutus loop yang tidak perlu
     let currentKey: string;
     if (memoizedTargetRefOrQuery.type === 'collection') {
         currentKey = (memoizedTargetRefOrQuery as CollectionReference).path;
@@ -106,7 +106,8 @@ export function useCollection<T = any>(
       isMounted = false;
       unsubscribe();
     };
-  }, [memoizedTargetRefOrQuery, userForSubscription?.uid]); // Gunakan UID untuk stabilitas
+  }, [memoizedTargetRefOrQuery, userForSubscription?.uid]);
 
   return result;
 }
+
