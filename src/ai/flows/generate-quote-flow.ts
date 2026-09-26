@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview AI Flow untuk menghasilkan kutipan motivasi yang SANGAT UNIK per pengguna.
- * Menggunakan identitas unik pengguna (userId & userName) untuk menjamin variasi yang berbeda 
- * antar personil meskipun pada hari dan status absen yang sama.
+ * @fileOverview AI Flow untuk menyajikan kutipan nyata dari tokoh dunia/nasional.
+ * Sistem bertindak sebagai kurator kutipan inspiratif yang relevan dengan 
+ * dunia pendidikan, masyarakat, dan pengabdian.
  */
 
 import { ai } from '../genkit';
@@ -27,25 +27,15 @@ export type QuoteInput = z.infer<typeof QuoteInputSchema>;
 export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
 /**
- * Kutipan cadangan berbasis hash untuk menjamin keunikan 
- * bahkan saat kondisi offline atau kegagalan API AI.
+ * Kutipan cadangan dari tokoh nyata jika AI mengalami kendala.
  */
-const fallbacks = {
-  in: [
-    "Pagi adalah awal baru untuk jiwa yang ikhlas mendidik. Semangat menyinari kelas!",
-    "Kopi pagi ini adalah doa, pengabdian adalah ibadah. Selamat bertugas.",
-    "Setiap murid adalah kanvas kosong, jadilah kuas yang memberi warna hari ini.",
-    "Dedikasi Anda adalah pondasi masa depan mereka. Mari menyapa kelas dengan senyum.",
-    "Tantangan hari ini adalah peluang untuk memberi inspirasi. Selamat mengabdi."
-  ],
-  out: [
-    "Tuntas sudah perjuangan hari ini. Waktunya pulang dan mengisi ulang energi.",
-    "Istirahatlah dengan tenang, keluarga menanti cerita hebat Anda di rumah.",
-    "Beban kerja tuntas, kehangatan keluarga menunggu. Hati-hati di jalan.",
-    "Terima kasih atas ketulusan Anda mengabdi hari ini. Selamat bersantai.",
-    "Besok adalah petualangan baru, sore ini adalah kemenangan untuk diri sendiri."
-  ]
-};
+const fallbacks = [
+  { quote: "Ing Ngarsa Sung Tuladha, Ing Madya Mangun Karsa, Tut Wuri Handayani.", author: "Ki Hajar Dewantara" },
+  { quote: "Pendidikan adalah senjata paling mematikan di dunia, karena dengan pendidikan, Anda dapat mengubah dunia.", author: "Nelson Mandela" },
+  { quote: "Hiduplah seolah engkau mati besok. Belajarlah seolah engkau hidup selamanya.", author: "Mahatma Gandhi" },
+  { quote: "Akar pendidikan itu pahit, tapi buahnya manis.", author: "Aristoteles" },
+  { quote: "Tujuan utama pendidikan bukanlah pengetahuan, melainkan tindakan.", author: "Herbert Spencer" }
+];
 
 function getHash(str: string): number {
   let hash = 0;
@@ -71,78 +61,54 @@ const generateQuoteFlow = ai.defineFlow(
     const isEntry = input.attendanceType === 'in';
     const hash = getHash(`${input.userId}|${input.creativeSeed}`);
     
-    // Tentukan Persona berdasarkan Hash untuk variasi radikal antar user
-    const personas = [
-      "Filosof Stoik (fokus pada ketenangan, logika, dan tugas mulia sebagai pengabdian)",
-      "Penyair Kontemporer (fokus pada metafora alam, cahaya, dan harmoni dalam pendidikan)",
-      "Arsitek Visi (fokus pada struktur, pondasi masa depan, dan presisi dalam bekerja)",
-      "Rekan Energik (fokus pada antusiasme, keceriaan, dan aksi nyata yang berdampak)",
-      "Navigator Bijak (fokus pada arah, kompas moral, dan perjalanan panjang ilmu pengetahuan)"
+    // Tentukan Kategori Tokoh berdasarkan Hash untuk variasi
+    const categories = [
+        "Tokoh Pendidikan Indonesia (Ki Hajar Dewantara, RA Kartini, dll)",
+        "Filsuf Klasik (Socrates, Plato, Marcus Aurelius)",
+        "Pemimpin Dunia (Nelson Mandela, Winston Churchill, Bung Karno)",
+        "Ilmuwan & Inovator (Albert Einstein, Marie Curie, B.J. Habibie)",
+        "Tokoh Kemanusiaan (Bunda Teresa, Mahatma Gandhi)"
     ];
-    const selectedPersona = personas[hash % personas.length];
+    const selectedCategory = categories[hash % categories.length];
 
-    const fallbackList = isEntry ? fallbacks.in : fallbacks.out;
-    const selectedFallback = fallbackList[hash % fallbackList.length];
-
-    // Petunjuk tema berdasarkan Role
-    let roleTheme = "";
-    const r = input.role.toLowerCase();
-    if (r === 'kepala_sekolah') {
-      roleTheme = "Fokus pada kepemimpinan, visi sekolah, integritas, dan orkestrasi kebijakan yang melayani.";
-    } else if (r === 'guru') {
-      roleTheme = "Fokus pada inspirasi kelas, kesabaran mendampingi murid, cahaya ilmu, dan keteladanan moral.";
-    } else if (r === 'pegawai') {
-      roleTheme = "Fokus pada efisiensi sistem, detak jantung administrasi, profesionalisme, dan harmoni pelayanan.";
-    } else {
-      roleTheme = "Fokus pada disiplin, pertumbuhan diri, dan kontribusi positif bagi lingkungan sekolah.";
-    }
+    // Tema berdasarkan peran
+    let focusTheme = "Pendidikan dan pengabdian masyarakat.";
+    if (input.role === 'kepala_sekolah') focusTheme = "Kepemimpinan, visi, dan tanggung jawab sosial.";
+    if (input.role === 'guru') focusTheme = "Inspirasi belajar, kesabaran, dan mencerdaskan bangsa.";
+    if (input.role === 'pegawai') focusTheme = "Dedikasi, integritas dalam pelayanan, dan kerjasama tim.";
 
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.4, // Suhu tinggi untuk mencegah repetisi kata
-          topP: 0.95,
-          maxOutputTokens: 150,
+          temperature: 1.0,
+          maxOutputTokens: 200,
         },
-        system: `Anda adalah "E-SPENLI Muse", generator kutipan yang sangat personal dan cerdas untuk personil sekolah.
-TUGAS: Buat SATU kutipan pendek (15-25 kata) yang disesuaikan khusus untuk identitas pengguna ini.
+        system: `Anda adalah "Kurator Kebijaksanaan E-SPENLI". 
+TUGAS: Berikan SATU kutipan nyata (asli) dari tokoh terkenal (nasional atau internasional).
+Kutipan harus berkaitan dengan: ${focusTheme}
 
-GAYA BAHASA ANDA SAAT INI: Tuliskan kutipan dengan gaya sebagai "${selectedPersona}".
+PANDUAN:
+1. Cari kutipan dari kategori: ${selectedCategory}.
+2. Kutipan harus relevan untuk sesi ${isEntry ? 'memulai pekerjaan di pagi hari' : 'mengakhiri pekerjaan di sore hari'}.
+3. Prioritaskan tokoh pendidikan Indonesia jika memungkinkan.
+4. Gunakan bahasa Indonesia yang baik dan benar (terjemahkan dengan anggun jika kutipan asli berbahasa asing).
+5. Output harus berupa kutipan teks dan nama tokoh secara akurat.
 
-KONTEKS PERAN (Wajib dipatuhi):
-${roleTheme}
-
-PEMBEDA SESI:
-- Jika Masuk (IN): Fokus pada kesiapan mental, niat baik, dan energi awal untuk mulai berkarya.
-- Jika Pulang (OUT): Fokus pada refleksi, rasa syukur atas tugas yang tuntas, dan peralihan ke waktu istirahat bersama keluarga.
-
-DAFTAR TERLARANG (JANGAN GUNAKAN):
-"Pahlawan tanpa tanda jasa", "Masa depan bangsa", "Semangat pagi", "Pantang menyerah", "Setiap hari adalah", "Mari kita".
-
-ATURAN KETAT:
-- Jangan sebutkan nama peran secara eksplisit (misal: "Wahai Kepala Sekolah"). Biarkan konteksnya saja yang terasa.
-- Gunakan metafora yang segar (misal: tentang tenun, arus air, navigasi bintang, atau simfoni).
-- Tanpa emoji. Tanpa sajak berima. Tanpa pantun.`,
-        prompt: `PARAMETER UNIK:
-- Nama Pengguna: ${input.userName}
-- Identitas Benih (Seed): ${input.userId}
-- Sesi Absensi: ${isEntry ? 'MASUK (Fajar/Mulai)' : 'PULANG (Senja/Selesai)'}
-- Tanggal: ${input.date}
-- Varian Entropi: ${input.creativeSeed}
-
-Buatlah kalimat yang benar-benar baru, tajam, dan hanya terasa relevan untuk personil ini pada sesi ${isEntry ? 'pagi' : 'sore'} ini. JANGAN pernah mengulang pola kalimat sebelumnya.`,
+LARANGAN:
+- JANGAN membuat kutipan palsu atau anonim.
+- JANGAN memberikan kutipan motivasi yang terlalu pasaran/klise tanpa tokoh yang jelas.`,
+        prompt: `Sajikan satu kutipan bijak untuk ${input.userName} (Peran: ${input.role}) pada hari ${input.day}, ${input.date}. 
+Gunakan variasi entropi: ${input.creativeSeed} untuk memastikan pilihan tokoh yang berbeda dari sebelumnya.`,
         output: { schema: QuoteOutputSchema },
       });
 
-      if (!response.output) throw new Error('AI_EMPTY_RESPONSE');
+      if (!response.output || !response.output.quote) throw new Error('AI_EMPTY_RESPONSE');
       return response.output;
     } catch (err: any) {
       console.error('[AI_QUOTE_FLOW_ERROR]:', err.message);
-      return {
-        quote: selectedFallback,
-        author: "AI E-SPENLI"
-      };
+      const fallback = fallbacks[hash % fallbacks.length];
+      return fallback;
     }
   }
 );
