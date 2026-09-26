@@ -54,7 +54,7 @@ const LiveClockUI = memo(() => {
     }, []);
     if (!time) return <div className="h-16 w-full flex items-center justify-center"><Skeleton className="h-10 w-40" /></div>;
     return (
-        <div className="flex flex-col items-center justify-center py-2 w-full min-h-[80px]">
+        <div className="flex flex-col items-center justify-center py-2 w-full min-h-[80px]" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
             <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">{format(time, 'HH:mm:ss')}</h2>
             <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">{format(time, 'eeee, d MMMM yyyy', { locale: id })}</p>
         </div>
@@ -69,6 +69,9 @@ export default function DashboardPage() {
   const { status: windowStatus } = useAttendanceWindow();
   const isMounted = useRef(true);
   const [isClient, setIsClient] = useState(false);
+
+  const isAdmin = user?.role === 'admin';
+  const isKepsek = user?.role === 'kepala_sekolah';
 
   const [summaryMonth, setSummaryMonth] = useState(new Date());
   const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false });
@@ -112,11 +115,14 @@ export default function DashboardPage() {
   useEffect(() => {
     isMounted.current = true;
     if (!isUserLoading && user?.uid) {
-        loadDashboardData();
+        // PERBAIKAN: Hanya panggil data dashboard global untuk Admin/Kepsek (Menghemat reads & menghentikan error permission)
+        if (isAdmin || isKepsek) {
+            loadDashboardData();
+        }
         loadMonthlySummary(summaryMonth);
     }
     return () => { isMounted.current = false; };
-  }, [loadDashboardData, loadMonthlySummary, summaryMonth, user?.uid, isUserLoading]);
+  }, [loadDashboardData, loadMonthlySummary, summaryMonth, user?.uid, isUserLoading, isAdmin, isKepsek]);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const todaysAttendanceQuery = useMemoFirebase(() => {
@@ -188,8 +194,6 @@ export default function DashboardPage() {
 
   if (isUserLoading || !isClient) return <div className="p-4 space-y-4"><Skeleton className="h-20 w-full rounded-xl" /><Skeleton className="h-64 w-full rounded-xl" /></div>;
 
-  const isAdmin = user?.role === 'admin';
-  const isKepsek = user?.role === 'kepala_sekolah';
   const isStaffOnly = ['guru', 'pegawai', 'siswa'].includes(user?.role || '');
 
   return (

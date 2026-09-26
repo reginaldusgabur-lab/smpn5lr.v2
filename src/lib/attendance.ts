@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp, getCountFromServer } from 'firebase/firestore';
@@ -44,6 +45,7 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
 
 /**
  * Agregasi Statistik Harian (HANYA 1 READ PER QUERY)
+ * Menggunakan getCountFromServer untuk efisiensi maksimal.
  */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
@@ -60,6 +62,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const isManualOff = config.isAttendanceActive === false;
         const isHoliday = isManualOff || (mConfig.holidays || []).includes(todayStr) || (config.offDays || [0, 6]).includes(today.getDay());
 
+        // 1. Hitung Total Staf Aktif
         const qUsers = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -72,10 +75,12 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return { totalStaff, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: true };
         }
 
+        // 2. Hitung Staf Hadir Hari Ini
         const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
         const countPresent = await getCountFromServer(qPresent);
         const hadirCount = countPresent.data().count;
 
+        // 3. Hitung Izin & Sakit (Hanya yang status approved hari ini)
         const qLeave = query(
             collectionGroup(firestore, 'leaveRequests'),
             where('status', '==', 'approved'),
@@ -94,13 +99,24 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             else if (!['Pulang Cepat', 'Dinas Siang'].includes(l.type)) izinCount++;
         });
 
+        // 4. Hitung Pending Requests
         const qPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
         const countPending = await getCountFromServer(qPending);
 
+        // 5. Kalkulasi Alpa (Matematika klien untuk hemat reads)
         const alpaCount = Math.max(0, totalStaff - (hadirCount + izinCount + sakitCount));
 
-        return { totalStaff, hadir: hadirCount, izin: izinCount, sakit: sakitCount, pending: countPending.data().count, alpa: alpaCount, isHoliday: false };
+        return { 
+            totalStaff, 
+            hadir: hadirCount, 
+            izin: izinCount, 
+            sakit: sakitCount, 
+            pending: countPending.data().count, 
+            alpa: alpaCount, 
+            isHoliday: false 
+        };
     } catch (e) {
+        console.error("Aggregation stats error:", e);
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
     }
 }

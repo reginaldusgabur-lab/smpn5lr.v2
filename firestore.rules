@@ -1,30 +1,37 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Function ---
-    // Membaca data role user langsung dari dokumen profilnya
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function isRole(role) {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+      return isAuthenticated() && getUserData().role == role;
     }
     
-    // Helper untuk mengecek kepemilikan dokumen
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
     // --- Collection: users ---
     match /users/{userId} {
       allow read: if isOwner(userId) || isRole('admin') || isRole('kepala_sekolah');
+      // allow list for aggregation and admin/kepsek browsing
       allow list: if isRole('admin') || isRole('kepala_sekolah');
       allow create: if isRole('admin');
       allow update: if isOwner(userId) || isRole('admin');
       allow delete: if isRole('admin');
     }
 
-    // --- Rules untuk Sub-collections (attendanceRecords & leaveRequests) ---
-    // Aturan ini mendukung akses langsung via path /users/{userId}/...
+    // --- Sub-collections under users (attendanceRecords & leaveRequests) ---
     match /users/{userId}/{subCollection}/{docId} {
       allow read: if isOwner(userId) || isRole('admin') || isRole('kepala_sekolah');
       allow create: if isOwner(userId) || isRole('admin');
@@ -32,29 +39,28 @@ service cloud.firestore {
       allow delete: if isOwner(userId) || isRole('admin');
     }
     
-    // --- KHUSUS COLLECTION GROUP QUERIES (Dashboard & Laporan Sekolah) ---
-    // Rules ini wajib ada agar kueri "collectionGroup" tidak dianggap melanggar izin.
+    // --- Collection Group Rules (Dashboard & Stats) ---
     match /{path=**}/attendanceRecords/{docId} {
-      allow read, list: if isRole('admin') || isRole('kepala_sekolah') || (request.auth != null && request.auth.uid == resource.data.userId);
+      allow read, list: if isRole('admin') || isRole('kepala_sekolah') || (isAuthenticated() && request.auth.uid == resource.data.userId);
     }
     
     match /{path=**}/leaveRequests/{docId} {
-      allow read, list: if isRole('admin') || isRole('kepala_sekolah') || (request.auth != null && request.auth.uid == resource.data.userId);
+      allow read, list: if isRole('admin') || isRole('kepala_sekolah') || (isAuthenticated() && request.auth.uid == resource.data.userId);
     }
     
     // --- Global Configuration ---
     match /schoolConfig/{docId} {
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       allow write: if isRole('admin');
     }
 
     match /monthlyConfigs/{docId} {
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       allow write: if isRole('admin');
     }
 
     match /quotes/{quoteId} {
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       allow write: if isRole('admin');
     }
   }
