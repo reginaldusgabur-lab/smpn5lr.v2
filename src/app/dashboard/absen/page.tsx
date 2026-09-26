@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -259,7 +258,7 @@ export default function AbsenPage() {
 
 const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     const feedback = useMemo(() => {
-        const iconSize = "h-14 w-14";
+        const iconSize = "h-12 w-12";
         switch (status) {
             case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'ABSEN MASUK BERHASIL', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
             case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'ABSEN PULANG BERHASIL', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
@@ -276,12 +275,12 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-10">
-            <div className="w-full max-w-sm text-center p-10 rounded-[2.5rem] border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-6 w-6" /></button>
+            <div className="w-full max-w-sm text-center p-6 rounded-2xl border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-4 right-4 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-6 w-6" /></button>
                 <div className="flex flex-col items-center">
-                    <div className="mb-6">{feedback.icon}</div>
-                    <h3 className="text-2xl font-black tracking-tighter mb-2 uppercase text-foreground">{feedback.title}</h3>
-                    <p className="text-muted-foreground text-xs font-bold leading-relaxed px-2 mb-8">{feedback.desc}</p>
+                    <div className="mb-4">{feedback.icon}</div>
+                    <h3 className="text-base font-medium mb-1 uppercase text-foreground whitespace-nowrap overflow-hidden text-ellipsis w-full">{feedback.title}</h3>
+                    <p className="text-muted-foreground text-[10px] font-normal leading-relaxed px-2 mb-6">{feedback.desc}</p>
                     {(status === 'success_in' || status === 'success_out') && (
                         <div className="w-full">
                             <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_in' ? 'in' : 'out'} />
