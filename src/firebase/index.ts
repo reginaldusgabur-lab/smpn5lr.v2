@@ -6,8 +6,7 @@ import { getAuth } from 'firebase/auth';
 import { 
   initializeFirestore, 
   getFirestore, 
-  persistentLocalCache, 
-  persistentIndexedDbLocalCache 
+  persistentLocalCache
 } from 'firebase/firestore';
 
 // Inisialisasi App secara idempotent
@@ -15,26 +14,24 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 const auth = getAuth(app);
 
 /**
- * Inisialisasi Firestore dengan fitur Offline Persistence (IndexedDB Cache).
- * Konfigurasi ini menginstruksikan SDK untuk menyimpan salinan data di browser (IndexedDB).
- * Saat aplikasi dibuka kembali, Firestore akan membaca data dari cache ini terlebih dahulu 
- * sebelum melakukan kueri ke server, yang secara drastis mengurangi Server Reads.
+ * Inisialisasi Firestore dengan fitur Offline Persistence (Cache Lokal).
+ * persistentLocalCache() mengaktifkan penyimpanan data di browser (IndexedDB) secara otomatis.
+ * Saat aplikasi dibuka kembali, Firestore akan membaca data dari cache ini terlebih dahulu,
+ * yang secara drastis mengurangi Server Reads dan biaya database.
  * 
  * experimentalForceLongPolling dipertahankan untuk menjamin stabilitas koneksi 
  * di lingkungan yang membatasi WebSocket/gRPC.
  */
 const firestore = (() => {
   if (typeof window !== 'undefined') {
-    // Cek apakah Firestore sudah diinisialisasi (untuk stabilitas saat Hot Reload/Next.js dev)
+    // Cek apakah Firestore sudah diinisialisasi untuk stabilitas HMR
     try {
       return initializeFirestore(app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentIndexedDbLocalCache()
-        }),
+        localCache: persistentLocalCache({}),
         experimentalForceLongPolling: true,
       });
     } catch (e) {
-      // Jika sudah diinisialisasi (misal saat HMR), ambil instance yang ada
+      // Jika sudah diinisialisasi, ambil instance yang ada
       return getFirestore(app);
     }
   }
