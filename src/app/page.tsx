@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Eye, EyeOff, ShieldCheck, LogIn, Network, Smartphone, Server, Wifi, Globe, Cpu } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -45,26 +45,6 @@ const loginSchema = z.object({
 const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
-
-const BeringinIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M48 95 L48 72 M52 95 L52 72 M44 95 L47 82 M56 95 L53 82" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    <circle cx="50" cy="30" r="18" fill="currentColor" fillOpacity="0.8" />
-    <circle cx="30" cy="45" r="16" fill="currentColor" fillOpacity="0.7" />
-    <circle cx="70" cy="45" r="16" fill="currentColor" fillOpacity="0.7" />
-    <circle cx="15" cy="65" r="14" fill="currentColor" fillOpacity="0.6" />
-    <circle cx="85" cy="65" r="14" fill="currentColor" fillOpacity="0.6" />
-    <circle cx="40" cy="60" r="15" fill="currentColor" fillOpacity="0.7" />
-    <circle cx="60" cy="60" r="15" fill="currentColor" fillOpacity="0.7" />
-    <circle cx="50" cy="70" r="12" fill="currentColor" fillOpacity="0.5" />
-  </svg>
-);
-
-const ApiIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M50 5 C50 5 85 50 85 75 C85 92 70 100 50 98 C30 100 15 92 15 75 C15 50 50 5 50 5 Z" />
-  </svg>
-);
 
 export default function LoginPage() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
@@ -142,51 +122,9 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-foreground relative overflow-hidden">
       
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/40 dark:bg-blue-900/10 blur-[100px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/30 dark:bg-indigo-900/10 blur-[120px] rounded-full" />
-        
-        <div className="absolute inset-0">
-          <div className="absolute top-[8%] left-[-15%] sm:left-[2%] flex items-center justify-center opacity-90 dark:opacity-70">
-             <BeringinIcon className="w-96 h-96 text-blue-600 -rotate-12" />
-             <ApiIcon className="absolute w-24 h-24 text-amber-500 mb-16" />
-          </div>
-          
-          <div className="absolute bottom-[10%] left-[5%] flex items-center justify-center opacity-85 dark:opacity-65 rotate-12">
-             <BeringinIcon className="w-[450px] h-[450px] text-blue-600" />
-             <ApiIcon className="absolute w-28 h-28 text-amber-500 mb-20" />
-          </div>
-          
-          <div className="absolute top-[25%] right-[-15%] flex items-center justify-center opacity-75 dark:opacity-55 -rotate-45">
-             <BeringinIcon className="w-80 h-80 text-blue-600" />
-             <ApiIcon className="absolute w-20 h-20 text-amber-500 mb-12" />
-          </div>
-        </div>
-      </div>
-
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
-          <CardHeader className="text-center space-y-0 pt-6 pb-2 relative">
-            
-            <div className="absolute top-8 left-6 opacity-40 -rotate-12">
-              <Smartphone className="h-8 w-8 text-blue-600" />
-            </div>
-            <div className="absolute top-12 left-16 opacity-30 rotate-45">
-              <Network className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="absolute top-8 right-6 opacity-40 rotate-12">
-              <Server className="h-8 w-8 text-blue-600" />
-            </div>
-            <div className="absolute top-14 right-16 opacity-30 -rotate-12">
-              <Wifi className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="absolute top-24 left-4 opacity-30 rotate-12">
-              <Globe className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="absolute top-24 right-4 opacity-30 -rotate-45">
-              <Cpu className="h-5 w-5 text-blue-600" />
-            </div>
-
+          <CardHeader className="text-center space-y-0 pt-8 pb-2 relative">
             <div className="flex justify-center mb-0 relative z-10">
               <div className="relative w-36 h-36 transition-transform duration-500 hover:scale-105">
                 <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="144px" className="object-contain" priority />
@@ -195,7 +133,7 @@ export default function LoginPage() {
             <CardTitle className="text-4xl font-black tracking-tighter text-blue-600 dark:text-blue-400 leading-none uppercase -mt-2">E-SPENLI</CardTitle>
             <CardDescription className="font-bold text-muted-foreground/60 text-[10px] mt-1 tracking-tight">Aplikasi absensi online</CardDescription>
 
-            <div className="pt-4 space-y-2">
+            <div className="pt-6 space-y-2">
                <div className="flex flex-col items-center gap-1">
                   <div className="bg-blue-600/10 rounded-full p-2 border border-blue-500/20 mb-1">
                     <ShieldCheck className="h-4 w-4 text-blue-600" />
@@ -205,7 +143,7 @@ export default function LoginPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="px-8 pb-8 pt-2">
+          <CardContent className="px-8 pb-8 pt-4">
             <Form {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
