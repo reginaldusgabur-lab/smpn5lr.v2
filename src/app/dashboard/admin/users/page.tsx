@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -76,7 +76,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, collection, writeBatch, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -117,6 +117,7 @@ export default function AdminUsersPage() {
     const router = useRouter();
     const { toast } = useToast();
     
+    // UI States
     const [userFilter, setUserFilter] = useState('all');
     const [userSearch, setUserSearch] = useState('');
     const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
@@ -124,6 +125,11 @@ export default function AdminUsersPage() {
     const [isResetPassDialogOpen, setIsResetPassDialogOpen] = useState(false);
     const [isCutiDialogOpen, setIsCutiDialogOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Data States
+    const [usersData, setUsersData] = useState<any[] | null>(null);
+    const [isUsersLoading, setIsUsersLoading] = useState(true);
+    
     const [editingUser, setEditingUser] = useState<any | null>(null);
     const [userToDelete, setUserToDelete] = useState<any | null>(null);
     const [userForReset, setUserForReset] = useState<any | null>(null);
@@ -136,12 +142,46 @@ export default function AdminUsersPage() {
     const [cutiEndDate, setCutiEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [cutiReason, setCutiReason] = useState('');
 
-    // CRITICAL: Memoize query to prevent re-subscriptions on re-renders
-    const usersQuery = useMemoFirebase(() => 
-        firestore ? query(collection(firestore, 'users')) : null, 
-        [firestore]
-    );
-    const { data: usersData, isLoading: isUsersLoading } = useCollection(user, usersQuery);
+    /**
+     * FUNGSI FETCH DATA DENGAN LOCALSTORAGE CACHING
+     */
+    const loadUsers = useCallback(async (forceRefresh = false) => {
+        if (!firestore) return;
+        setIsUsersLoading(true);
+
+        const CACHE_KEY = 'espenli_daftar_guru';
+
+        if (!forceRefresh) {
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                try {
+                    setUsersData(JSON.parse(cachedData));
+                    setIsUsersLoading(false);
+                    return;
+                } catch (e) {
+                    localStorage.removeItem(CACHE_KEY);
+                }
+            }
+        }
+
+        try {
+            const snap = await getDocs(collection(firestore, 'users'));
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setUsersData(data);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        } catch (error: any) {
+            console.error("Gagal memuat data pengguna:", error);
+            toast({ variant: 'destructive', title: 'Gagal', description: 'Koneksi database terganggu.' });
+        } finally {
+            setIsUsersLoading(false);
+        }
+    }, [firestore, toast]);
+
+    useEffect(() => {
+        if (!isAuthLoading && user) {
+            loadUsers();
+        }
+    }, [isAuthLoading, user, loadUsers]);
 
     const filteredUsers = useMemo(() => {
         if (!usersData) return [];
@@ -197,6 +237,7 @@ export default function AdminUsersPage() {
                 });
                 toast({ title: 'Berhasil', description: 'Data pengguna diperbarui.' });
                 setIsUserDialogOpen(false);
+                loadUsers(true); // Force refresh cache
             } else {
                 if (!values.password) throw new Error("Password wajib diisi.");
                 const tempApp = initializeApp(firebaseConfig, `temp-${Date.now()}`);
@@ -210,6 +251,7 @@ export default function AdminUsersPage() {
                     }, {});
                     toast({ title: 'Berhasil', description: 'Akun baru telah dibuat.' });
                     setIsUserDialogOpen(false);
+                    loadUsers(true); // Force refresh cache
                 } finally { await deleteApp(tempApp); }
             }
         } catch (e: any) { toast({ variant: 'destructive', title: 'Kesalahan', description: e.message }); }
@@ -223,6 +265,7 @@ export default function AdminUsersPage() {
         const userRef = doc(firestore, "users", targetUser.id);
         updateDocumentNonBlocking(userRef, { status: newStatus });
         toast({ title: 'Status Diperbarui', description: `Akun ${targetUser.name} kini ${newStatus}.` });
+        loadUsers(true); // Sync cache
     };
 
     const handleDeleteUser = async () => {
@@ -233,6 +276,7 @@ export default function AdminUsersPage() {
             deleteDocumentNonBlocking(userRef);
             toast({ title: 'Berhasil', description: 'Pengguna telah dihapus.' });
             setIsDeleteDialogOpen(false); setUserToDelete(null);
+            loadUsers(true); // Sync cache
         } catch (e: any) { toast({ variant: 'destructive', title: 'Gagal', description: e.message }); }
         finally { setIsSaving(false); }
     };
@@ -290,13 +334,12 @@ export default function AdminUsersPage() {
             invalidateCache();
             toast({ title: 'Berhasil', description: `Jadwal cuti disimpan untuk ${userForCuti.name}.` });
             setIsCutiDialogOpen(false); setCutiReason('');
+            loadUsers(true); // Sync cache
         } catch (e: any) { toast({ variant: 'destructive', title: 'Gagal', description: e.message }); }
         finally { setIsSaving(false); }
     };
 
-    const isRoleCheckLoading = isAuthLoading;
-
-    if (isRoleCheckLoading || isUsersLoading) {
+    if (isAuthLoading) {
         return (
             <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
                 <div className="flex items-center gap-1.5">
@@ -319,7 +362,7 @@ export default function AdminUsersPage() {
                                 <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><UsersIcon className="h-6 w-6" /></div>
                                 <div className="space-y-0.5"><h1 className="font-bold text-2xl tracking-tight">Manajemen pengguna</h1><p className="text-[11px] font-medium text-white/80">Kelola data personil sekolah.</p></div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => router.refresh()}><RefreshCw className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => loadUsers(true)} disabled={isUsersLoading}><RefreshCw className={cn("h-4 w-4", isUsersLoading && "animate-spin")} /></Button>
                         </div>
                     </div>
                 </Card>
@@ -366,7 +409,11 @@ export default function AdminUsersPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
+                                    {isUsersLoading ? (
+                                        [...Array(5)].map((_, i) => (
+                                            <TableRow key={i} className="border-muted-foreground/5"><TableCell colSpan={7} className="h-16 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-primary/30" /></TableCell></TableRow>
+                                        ))
+                                    ) : filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
                                         <TableRow key={u.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
                                             <TableCell className="text-center font-bold text-muted-foreground text-sm">{u.sequenceNumber ?? i + 1}</TableCell>
                                             <TableCell>
@@ -526,7 +573,7 @@ export default function AdminUsersPage() {
                                 <FormField control={userForm.control} name="status" render={({field}) => (
                                         <FormItem>
                                             <FormLabel className="text-[10px] font-bold uppercase">Status Akun</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 shadow-none font-bold"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Aktif" className="rounded-lg">Aktif (Dapat Login)</SelectItem><SelectItem value="Cuti" className="rounded-lg text-amber-600">Cuti (Izin Resmi)</SelectItem><SelectItem value="Nonaktif" className="rounded-lg text-destructive">Nonaktif (Blokir)</SelectItem></SelectContent></Select><FormMessage />
+                                            <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 font-bold"><SelectValue /></SelectTrigger></FormControl><SelectContent className='border-none shadow-2xl'><SelectItem value="Aktif" className="rounded-lg">Aktif (Dapat Login)</SelectItem><SelectItem value="Cuti" className="rounded-lg text-amber-600">Cuti (Izin Resmi)</SelectItem><SelectItem value="Nonaktif" className="rounded-lg text-destructive">Nonaktif (Blokir)</SelectItem></SelectContent></Select><FormMessage />
                                         </FormItem>
                                     )} />
                                 {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Kata sandi awal</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />}
