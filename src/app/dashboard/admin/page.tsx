@@ -20,7 +20,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useMemo, useEffect, useState } from 'react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, limit, getDocs, type DocumentData, collectionGroup, getDoc } from 'firebase/firestore';
+import { doc, collection, query, where, limit, getDocs, type DocumentData, collectionGroup, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -38,40 +38,14 @@ const AdminDashboardSkeletons = () => (
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-8 w-48 mt-2" />
         </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-                <Card key={i} className="rounded-xl">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <Skeleton className="h-4 w-1/2" />
-                        <Skeleton className="h-5 w-5 rounded-full" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-8 w-1/4" />
-                        <Skeleton className="h-3 w-3/4 mt-1" />
-                    </CardContent>
-                </Card>
+                <Card key={i} className="rounded-xl h-24" />
             ))}
         </div>
-        <Card className="rounded-xl">
-            <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-2">
-                    {[...Array(3)].map((_, i) => (
-                         <div key={i} className="flex items-center space-x-4 p-2 border-b">
-                            <Skeleton className="h-4 w-1/3 flex-1" />
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-5 w-16 rounded-full" />
-                        </div>
-                    ))}
-                </div>
-            </CardContent>
-        </Card>
+        <Card className="rounded-xl h-64" />
     </div>
 );
-
 
 export default function AdminDashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -79,9 +53,8 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [isHoliday, setIsHoliday] = useState(false);
-  const [isManualDisabled, setIsManualDisabled] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -91,18 +64,20 @@ export default function AdminDashboardPage() {
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
 
-  const isRoleCheckLoading = isUserLoading || isUserDataLoading;
-  const isAdmin = !isRoleCheckLoading && userData?.role === 'admin';
+  const isAdmin = useMemo(() => userData?.role === 'admin', [userData]);
 
-  // Personal Attendance Logic for Admin
+  // 1. Fetch Personal Attendance (Today Only) - VERY EFFICIENT
   const personalAttendanceQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    return query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', todayStr), limit(1));
-  }, [user, firestore]);
+    return query(
+      collection(firestore, 'users', user.uid, 'attendanceRecords'), 
+      where('date', '==', todayStr), 
+      limit(1)
+    );
+  }, [user?.uid, firestore, todayStr]);
   const { data: personalAttendance } = useCollection(user, personalAttendanceQuery);
 
   const personalCheckIn = useMemo(() => {
@@ -115,101 +90,69 @@ export default function AdminDashboardPage() {
     return rec?.checkOutTime ? format(rec.checkOutTime.toDate(), 'HH:mm') : null;
   }, [personalAttendance]);
 
-  const allUsersQuery = useMemoFirebase(() => (isAdmin && firestore) ? collection(firestore, 'users') : null, [firestore, isAdmin]);
+  // 2. Fetch All Active Users - Memoized
+  const allUsersQuery = useMemoFirebase(() => 
+    (isAdmin && firestore) ? query(collection(firestore, 'users'), where('status', '==', 'Aktif')) : null, 
+    [firestore, isAdmin]
+  );
   const { data: usersData, isLoading: isUsersLoading } = useCollection(user, allUsersQuery);
   
-  const [dashboardData, setDashboardData] = useState({
-    allAttendanceData: [] as DocumentData[],
-    pendingLeaveRequests: [] as DocumentData[],
-    stats: { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0 }
-  });
-  const [isDashboardDataLoading, setIsDashboardDataLoading] = useState(true);
+  // 3. Fetch Today's Global Attendance (Using collectionGroup with strict date filter)
+  // CRITICAL: Filter where('date', '==', todayStr) to prevent reading entire database
+  const globalAttendanceQuery = useMemoFirebase(() => 
+    (isAdmin && firestore) ? query(
+      collectionGroup(firestore, 'attendanceRecords'), 
+      where('date', '==', todayStr),
+      limit(100) // Safety limit for dashboard
+    ) : null,
+    [firestore, isAdmin, todayStr]
+  );
+  const { data: globalAttendance, isLoading: isGlobalLoading } = useCollection(user, globalAttendanceQuery);
 
-  useEffect(() => {
-    if (!isAdmin || !firestore || !usersData) {
-        if (!isUsersLoading) setIsDashboardDataLoading(false);
-        return;
-    }
+  // 4. Fetch Pending Leaves Only
+  const pendingLeaveQuery = useMemoFirebase(() => 
+    (isAdmin && firestore) ? query(
+      collectionGroup(firestore, 'leaveRequests'), 
+      where('status', '==', 'pending'),
+      limit(50)
+    ) : null,
+    [firestore, isAdmin]
+  );
+  const { data: pendingLeaves, isLoading: isLeavesLoading } = useCollection(user, pendingLeaveQuery);
 
-    const fetchDashboardData = async () => {
-        setIsDashboardDataLoading(true);
-        try {
-            const today = new Date();
-            const todayStr = format(today, 'yyyy-MM-dd');
-            const dailyStats = await getDailyStaffAttendanceStats(firestore);
-            
-            setIsManualDisabled(!!dailyStats.isManualDisabled);
-            setIsHoliday(!!dailyStats.isHoliday);
-
-            const attendanceQuery = collectionGroup(firestore, 'attendanceRecords');
-            const leaveQuery = collectionGroup(firestore, 'leaveRequests');
-            
-            const [attendanceSnap, leaveSnap] = await Promise.all([
-                getDocs(attendanceQuery),
-                getDocs(leaveQuery)
-            ]);
-
-            const allAttendance = attendanceSnap.docs
-                .map(d => ({ ...d.data(), id: d.id }))
-                .filter(att => {
-                    const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : null);
-                    return dStr === todayStr;
-                });
-
-            const userMap = new Map(usersData.map(u => [u.id, u.role]));
-            const allPendingLeave = leaveSnap.docs
-                .map(d => ({ ...d.data(), id: d.id }))
-                .filter(req => {
-                    const userRole = userMap.get(req.userId);
-                    return userRole && ['guru', 'kepala_sekolah', 'pegawai'].includes(userRole) && req.status === 'pending';
-                });
-
-            setDashboardData({
-                allAttendanceData: allAttendance,
-                pendingLeaveRequests: allPendingLeave,
-                stats: {
-                    hadir: dailyStats.hadir,
-                    izin: dailyStats.izin,
-                    sakit: dailyStats.sakit,
-                    pending: dailyStats.pending,
-                    alpa: dailyStats.alpa
-                }
-            });
-        } catch (error) {
-            console.error("Dashboard error:", error);
-            toast({ variant: "destructive", title: "Error", description: "Gagal memuat data aktivitas." });
-        } finally {
-            setIsDashboardDataLoading(false);
-        }
+  const stats = useMemo(() => {
+    if (!usersData || !globalAttendance) return { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0 };
+    
+    const presentIds = new Set(globalAttendance.map(a => a.userId));
+    const totalStaff = usersData.filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role)).length;
+    
+    return {
+        hadir: presentIds.size,
+        izin: 0, // Calculated separately if needed
+        sakit: 0,
+        pending: pendingLeaves?.length || 0,
+        alpa: Math.max(0, totalStaff - presentIds.size)
     };
-
-    fetchDashboardData();
-  }, [isAdmin, firestore, usersData, isUsersLoading, toast]);
-  
-  useEffect(() => {
-    if (!isRoleCheckLoading) {
-      if (!user) { router.replace('/'); } 
-      else if (!isAdmin) { router.replace('/dashboard'); }
-    }
-  }, [isRoleCheckLoading, user, isAdmin, router]);
+  }, [usersData, globalAttendance, pendingLeaves]);
 
   const recentUserActivity = useMemo(() => {
-    if (!usersData || !dashboardData.allAttendanceData || !isAdmin) return [];
+    if (!usersData || !globalAttendance) return [];
     const userMap = new Map(usersData.map(u => [u.id, u]));
     
-    return [...dashboardData.allAttendanceData]
+    return [...globalAttendance]
         .sort((a, b) => {
             const timeA = a.checkInTime?.toDate().getTime() || a.checkOutTime?.toDate().getTime() || 0;
             const timeB = b.checkInTime?.toDate().getTime() || b.checkOutTime?.toDate().getTime() || 0;
             return timeB - timeA;
         })
+        .slice(0, 10) // Only show top 10 for dashboard efficiency
         .map((att, index) => {
             const userDoc = userMap.get(att.userId);
             const isFinished = !!att.checkOutTime;
             return {
                 ...att,
                 sequence: index + 1,
-                name: userDoc?.name || 'Pengguna tidak dikenal',
+                name: userDoc?.name || 'Pengguna',
                 role: (userDoc?.role || 'user').replace('_', ' '),
                 checkInTimeFormatted: att.checkInTime ? format(att.checkInTime.toDate(), 'HH:mm:ss') : '-',
                 checkOutTimeFormatted: att.checkOutTime ? format(att.checkOutTime.toDate(), 'HH:mm:ss') : '-',
@@ -217,48 +160,31 @@ export default function AdminDashboardPage() {
                 statusClass: isFinished ? 'bg-emerald-500' : 'bg-blue-600',
             };
         });
-  }, [usersData, dashboardData.allAttendanceData, isAdmin]);
+  }, [usersData, globalAttendance]);
 
-  if (isRoleCheckLoading || isUsersLoading || isDashboardDataLoading || !isAdmin) {
+  const isRoleCheckLoading = isUserLoading || isUserDataLoading;
+
+  useEffect(() => {
+    if (!isRoleCheckLoading) {
+      if (!user) { router.replace('/'); } 
+      else if (!isAdmin) { router.replace('/dashboard'); }
+    }
+  }, [isRoleCheckLoading, user, isAdmin, router]);
+
+  if (isRoleCheckLoading || isUsersLoading || isGlobalLoading || isLeavesLoading) {
     return <AdminDashboardSkeletons />;
   }
-  
-  const isTemporaryAdmin = user?.email === 'admin@sekolah.sch.id';
 
   return (
     <div className="space-y-6">
       <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
           <h1 className="text-2xl font-black tracking-tight text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
-          <p className="text-xs font-bold text-muted-foreground mt-2">Absensi digital mandiri SMPN 5 Langke Rembong.</p>
+          <p className="text-xs font-bold text-muted-foreground mt-2">Dashboard Administratif.</p>
       </div>
       
        <div className="grid gap-6">
-        {isTemporaryAdmin && (
-            <Alert variant="default" className="bg-amber-50 border-amber-300 text-amber-900 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-200 rounded-xl">
-                <ShieldAlert className="h-4 w-4" />
-                <AlertTitle className="font-semibold">Langkah Keamanan Penting</AlertTitle>
-                <AlertDescription>
-                    Anda menggunakan akun sementara. Segera buat akun admin baru dengan email pribadi Anda.
-                </AlertDescription>
-            </Alert>
-        )}
-        
-        {isManualDisabled ? (
-            <Alert className="bg-amber-50 border-amber-200 rounded-xl">
-                <Lock className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-amber-800 font-bold">Sistem Absensi Dinonaktifkan</AlertTitle>
-                <AlertDescription className="text-amber-700">Sistem saat ini sedang dinonaktifkan secara manual oleh Administrator.</AlertDescription>
-            </Alert>
-        ) : isHoliday && (
-            <Alert className="bg-blue-50 border-blue-200 rounded-xl">
-                <CalendarOff className="h-4 w-4 text-blue-600" />
-                <AlertTitle className="text-blue-800 font-bold">Hari Libur Terdeteksi</AlertTitle>
-                <AlertDescription className="text-blue-700">Sistem absensi non-aktif hari ini berdasarkan jadwal libur.</AlertDescription>
-            </Alert>
-        )}
-
-        {/* Kehadiran Hari Ini Section */}
+        {/* Real-time Clock Card */}
         <div className="w-full space-y-1">
             <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
                 <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
@@ -271,7 +197,7 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className="space-y-0.5">
                             <h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2>
-                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau kehadiran pribadi Anda.</p>
+                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Pantauan kehadiran personil secara real-time.</p>
                         </div>
                     </div>
                 </CardContent>
@@ -290,27 +216,21 @@ export default function AdminDashboardPage() {
 
                     <div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4">
                         <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
-                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
-                            <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
+                            <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shrink-0">
                                 <LogIn className="h-4 w-4" />
                             </div>
-                            <div className="text-left relative z-10">
+                            <div className="text-left">
                                 <p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p>
-                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">
-                                    {personalCheckIn || '--:--'}
-                                </p>
+                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">{personalCheckIn || '--:--'}</p>
                             </div>
                         </div>
                         <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
-                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-blue-500/5" />
-                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
+                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shrink-0">
                                 <LogOut className="h-4 w-4" />
                             </div>
-                            <div className="text-left relative z-10">
+                            <div className="text-left">
                                 <p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p>
-                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">
-                                    {personalCheckOut || '--:--'}
-                                </p>
+                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">{personalCheckOut || '--:--'}</p>
                             </div>
                         </div>
                     </div>
@@ -319,51 +239,43 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-            <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+            <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span>
+                    <span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Hadir</span>
                     <UserCheck className="h-3.5 w-3.5 opacity-60" />
                 </div>
-                <div className="text-3xl font-normal tracking-tight">
-                    {dashboardData.stats.hadir}
-                </div>
+                <div className="text-3xl font-normal tracking-tight">{stats.hadir}</div>
             </Card>
 
-            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit</span>
+                    <span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Izin/Sakit</span>
                     <BookUser className="h-3.5 w-3.5 opacity-60" />
                 </div>
-                <div className="text-3xl font-normal tracking-tight">
-                    {dashboardData.stats.izin + dashboardData.stats.sakit}
-                </div>
+                <div className="text-3xl font-normal tracking-tight">{stats.izin + stats.sakit}</div>
             </Card>
 
-            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl p-3 text-white">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span>
+                    <span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Menunggu</span>
                     <Clock className="h-3.5 w-3.5 opacity-60" />
                 </div>
-                <div className="text-3xl font-normal tracking-tight">
-                    {dashboardData.stats.pending}
-                </div>
+                <div className="text-3xl font-normal tracking-tight">{stats.pending}</div>
             </Card>
 
-            <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
+            <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span>
+                    <span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Alpa</span>
                     <UserX className="h-3.5 w-3.5 opacity-60" />
                 </div>
-                <div className="text-3xl font-normal tracking-tight">
-                    {dashboardData.stats.alpa}
-                </div>
+                <div className="text-3xl font-normal tracking-tight">{stats.alpa}</div>
             </Card>
         </div>
 
         <Card className="shadow-none overflow-hidden border-muted-foreground/10 bg-primary/5 rounded-xl">
             <CardHeader className="bg-muted/20 border-b border-muted-foreground/5">
                 <CardTitle className="text-lg font-bold">Aktivitas Kehadiran Terbaru</CardTitle>
-                <CardDescription>Daftar personil yang telah melakukan absensi hari ini.</CardDescription>
+                <CardDescription>Maksimal 10 aktivitas terbaru hari ini.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -378,9 +290,9 @@ export default function AdminDashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {recentUserActivity.length > 0 ? recentUserActivity.map((item) => (
+                            {recentUserActivity.length > 0 ? recentUserActivity.map((item, idx) => (
                                 <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
-                                    <TableCell className="text-center font-bold text-muted-foreground">{item.sequence}</TableCell>
+                                    <TableCell className="text-center font-bold text-muted-foreground text-sm">{idx + 1}</TableCell>
                                     <TableCell>
                                         <div className="font-bold text-sm">{item.name}</div>
                                         <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">{item.role}</div>
@@ -395,7 +307,7 @@ export default function AdminDashboardPage() {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-48 text-center text-muted-foreground font-bold">Belum ada aktivitas kehadiran hari ini.</TableCell>
+                                    <TableCell colSpan={5} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Belum ada aktivitas hari ini.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

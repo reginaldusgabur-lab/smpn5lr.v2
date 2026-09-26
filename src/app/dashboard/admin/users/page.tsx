@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -35,7 +34,6 @@ import {
   UserX,
   UserCheck,
   PlaneTakeoff,
-  FileText,
   Save,
 } from 'lucide-react';
 import {
@@ -138,8 +136,12 @@ export default function AdminUsersPage() {
     const [cutiEndDate, setCutiEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [cutiReason, setCutiReason] = useState('');
 
-    const usersRef = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
-    const { data: usersData, isLoading: isUsersLoading } = useCollection(user, usersRef);
+    // CRITICAL: Memoize query to prevent re-subscriptions on re-renders
+    const usersQuery = useMemoFirebase(() => 
+        firestore ? query(collection(firestore, 'users')) : null, 
+        [firestore]
+    );
+    const { data: usersData, isLoading: isUsersLoading } = useCollection(user, usersQuery);
 
     const filteredUsers = useMemo(() => {
         if (!usersData) return [];
@@ -275,7 +277,6 @@ export default function AdminUsersPage() {
                 createdAt: serverTimestamp(), approvedBy: user?.uid, approvedAt: serverTimestamp()
             });
 
-            // Update user status to 'Cuti'
             const userRef = doc(firestore, 'users', userForCuti.id);
             batch.update(userRef, { status: 'Cuti' });
 
@@ -293,7 +294,9 @@ export default function AdminUsersPage() {
         finally { setIsSaving(false); }
     };
 
-    if (isAuthLoading || isUsersLoading) {
+    const isRoleCheckLoading = isAuthLoading;
+
+    if (isRoleCheckLoading || isUsersLoading) {
         return (
             <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
                 <div className="flex items-center gap-1.5">
@@ -411,6 +414,21 @@ export default function AdminUsersPage() {
                                     )) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Data tidak ditemukan</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
+                        </div>
+
+                        <div className="mt-8 pt-8 border-t border-muted-foreground/10 grid grid-cols-3 gap-3">
+                            <div className="bg-primary/5 p-4 rounded-2xl text-center border border-primary/5">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Total Aktif</p>
+                                <p className="text-2xl font-black text-primary leading-none">{userStats.total}</p>
+                            </div>
+                            <div className="bg-blue-500/5 p-4 rounded-2xl text-center border border-blue-500/10">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2 text-blue-600">Laki-laki</p>
+                                <p className="text-2xl font-black text-blue-600 leading-none">{userStats.lakiLaki}</p>
+                            </div>
+                            <div className="bg-pink-500/5 p-4 rounded-2xl text-center border border-pink-500/10">
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2 text-pink-600">Perempuan</p>
+                                <p className="text-2xl font-black text-pink-600 leading-none">{userStats.perempuan}</p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
