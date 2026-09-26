@@ -43,7 +43,7 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
 };
 
 /**
- * MENGGUNAKAN getCountFromServer UNTUK MENGHEMAT READS (HANYA 1 READ PER QUERY)
+ * Agregasi Statistik Harian (HANYA 1 READ PER QUERY)
  */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
@@ -51,7 +51,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const endOfToday = Timestamp.fromDate(endOfDay(today));
 
     try {
-        // 1. Cek Konfigurasi Libur
         const [configSnap, monthlySnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
             getDoc(doc(firestore, 'monthlyConfigs', format(today, 'yyyy-MM')))
@@ -61,7 +60,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const isManualOff = config.isAttendanceActive === false;
         const isHoliday = isManualOff || (mConfig.holidays || []).includes(todayStr) || (config.offDays || [0, 6]).includes(today.getDay());
 
-        // 2. Hitung Total Staf Aktif
         const qUsers = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -74,15 +72,10 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return { totalStaff, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: true };
         }
 
-        // 3. Hitung yang Hadir Hari Ini
-        const qPresent = query(
-            collectionGroup(firestore, 'attendanceRecords'),
-            where('date', '==', todayStr)
-        );
+        const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
         const countPresent = await getCountFromServer(qPresent);
         const hadirCount = countPresent.data().count;
 
-        // 4. Hitung yang Izin/Sakit (Approved) Hari Ini
         const qLeave = query(
             collectionGroup(firestore, 'leaveRequests'),
             where('status', '==', 'approved'),
@@ -91,49 +84,30 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const leaveSnap = await getDocs(qLeave);
         const activeLeaves = leaveSnap.docs.filter(d => {
             const l = d.data();
-            if (!l.startDate || !l.endDate) return false;
-            return isWithinInterval(today, { 
-                start: startOfDay(l.startDate.toDate()), 
-                end: endOfDay(l.endDate.toDate()) 
-            });
+            return isWithinInterval(today, { start: startOfDay(l.startDate.toDate()), end: endOfDay(l.endDate.toDate()) });
         });
 
-        let izinCount = 0;
-        let sakitCount = 0;
+        let izinCount = 0; let sakitCount = 0;
         activeLeaves.forEach(d => {
             const l = d.data();
             if (l.type === 'Sakit') sakitCount++;
             else if (!['Pulang Cepat', 'Dinas Siang'].includes(l.type)) izinCount++;
         });
 
-        // 5. Hitung Pending Izin
-        const qPending = query(
-            collectionGroup(firestore, 'leaveRequests'),
-            where('status', '==', 'pending')
-        );
+        const qPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
         const countPending = await getCountFromServer(qPending);
 
-        // 6. Kalkulasi Alpa secara matematis
         const alpaCount = Math.max(0, totalStaff - (hadirCount + izinCount + sakitCount));
 
-        return {
-            totalStaff,
-            hadir: hadirCount,
-            izin: izinCount,
-            sakit: sakitCount,
-            pending: countPending.data().count,
-            alpa: alpaCount,
-            isHoliday: false
-        };
+        return { totalStaff, hadir: hadirCount, izin: izinCount, sakit: sakitCount, pending: countPending.data().count, alpa: alpaCount, isHoliday: false };
     } catch (e) {
-        console.error("Optimized stats error:", e);
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
     }
 }
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v312_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v401_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
 
     try {
@@ -146,8 +120,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         const schoolConfig = schoolConfigSnap.data() || {};
         const monthlyConfig = monthlyConfigSnap.data() || {};
-        const startStr = format(start, 'yyyy-MM-dd');
-        const endStr = format(end, 'yyyy-MM-dd');
         const todayStr = format(new Date(), 'yyyy-MM-dd');
 
         const workingDays = eachDayOfInterval({ start, end }).filter(day => 
@@ -156,18 +128,15 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         );
         const workingDaysSet = new Set(workingDays.map(d => format(d, 'yyyy-MM-dd')));
 
-        let totalPoints = 0;
-        let hadirCount = 0;
-        let izinCount = 0;
-        let sakitCount = 0;
+        let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
 
         attendanceSnap.docs.forEach(d => {
             const att = d.data();
             const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
             if (dStr && workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
-                const pts = calculatePoints('hadir', cleanDesc(att.reasonForUpdate), !!att.checkInTime, !!att.checkOutTime);
-                totalPoints += pts; hadirCount++; processedDates.add(dStr);
+                totalPoints += calculatePoints('hadir', cleanDesc(att.reasonForUpdate), !!att.checkInTime, !!att.checkOutTime);
+                hadirCount++; processedDates.add(dStr);
             }
         });
 
@@ -176,10 +145,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 const dStr = format(day, 'yyyy-MM-dd');
                 if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
-                    const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false);
-                    totalPoints += pts;
-                    if (leave.type === 'Sakit') sakitCount++;
-                    else izinCount++;
+                    totalPoints += calculatePoints(leave.type, leave.reason || leave.type, false, false);
+                    if (leave.type === 'Sakit') sakitCount++; else izinCount++;
                     processedDates.add(dStr);
                 }
             });
@@ -227,13 +194,9 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const att = attMap.get(dStr); const leave = leaveMap.get(dStr);
             if (att) {
                 const desc = cleanDesc(att.reasonForUpdate);
-                const pts = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime);
-                return { id: att.id, date: dStr, checkInTime: att.checkInTime?.toDate().toISOString() || null, checkOutTime: att.checkOutTime?.toDate().toISOString() || null, status: 'Hadir', description: desc, points: pts, manualEntry: att.manualEntry || false };
+                return { id: att.id, date: dStr, checkInTime: att.checkInTime?.toDate().toISOString() || null, checkOutTime: att.checkOutTime?.toDate().toISOString() || null, status: 'Hadir', description: desc, points: calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime), manualEntry: att.manualEntry || false };
             }
-            if (leave) {
-                const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false);
-                return { id: `${leave.id}-${dStr}`, date: dStr, status: leave.type, description: leave.reason || leave.type, points: pts, manualEntry: false };
-            }
+            if (leave) return { id: `${leave.id}-${dStr}`, date: dStr, status: leave.type, description: cleanDesc(leave.reason) || leave.type, points: calculatePoints(leave.type, leave.reason || leave.type, false, false), manualEntry: false };
             return { id: dStr, date: dStr, status: 'Alpa', description: 'Tanpa keterangan', points: 0.0, manualEntry: false };
         }).filter(Boolean).sort((a: any, b: any) => b.date.localeCompare(a.date));
     } catch (e) { return []; }

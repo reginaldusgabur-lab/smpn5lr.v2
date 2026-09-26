@@ -9,33 +9,25 @@ import {
   persistentLocalCache
 } from 'firebase/firestore';
 
-// Inisialisasi App secara idempotent
+// Inisialisasi App secara idempotent (Sangat penting untuk Next.js/Vercel)
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /**
- * Inisialisasi Firestore dengan fitur Offline Persistence (Cache Lokal).
- * persistentLocalCache() mengaktifkan penyimpanan data di browser (IndexedDB) secara otomatis.
- * Saat aplikasi dibuka kembali, Firestore akan membaca data dari cache ini terlebih dahulu,
- * yang secara drastis mengurangi Server Reads dan biaya database.
- * 
- * experimentalForceLongPolling dipertahankan untuk menjamin stabilitas koneksi 
- * di lingkungan yang membatasi WebSocket/gRPC.
+ * Inisialisasi Firestore dengan Offline Persistence (IndexedDB).
+ * Menggunakan long polling untuk stabilitas di lingkungan Cloud (Vercel).
  */
 const firestore = (() => {
   if (typeof window !== 'undefined') {
-    // Cek apakah Firestore sudah diinisialisasi untuk stabilitas HMR
     try {
       return initializeFirestore(app, {
         localCache: persistentLocalCache({}),
         experimentalForceLongPolling: true,
       });
     } catch (e) {
-      // Jika sudah diinisialisasi, ambil instance yang ada
       return getFirestore(app);
     }
   }
-  // Fallback untuk Server-Side Rendering (SSR)
   return getFirestore(app);
 })();
 
