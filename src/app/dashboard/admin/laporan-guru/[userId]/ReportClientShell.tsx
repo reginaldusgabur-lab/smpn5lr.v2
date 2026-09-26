@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, parseISO, isValid, endOfMonth, endOfDay, startOfDay, addMonths, subMonths, isBefore, isSameMonth, addMinutes, setHours, setMinutes, isSameDay } from 'date-fns';
+import { useRouter, usePathname } from 'next/navigation';
+import { format, parseISO, isValid, startOfDay, setHours, setMinutes, isSameDay, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -11,7 +11,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
@@ -21,7 +21,7 @@ import {
     DropdownMenuLabel 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, Loader2, User, MoreVertical, Info, Calculator, TrendingUp, PencilLine } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, PencilLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 

@@ -7,14 +7,6 @@ import ReportClientShell from './ReportClientShell';
 import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
 import { Timestamp } from 'firebase-admin/firestore';
 
-interface AttendanceRecord {
-  id: string;
-  checkInTime: Timestamp;
-  checkOutTime?: Timestamp;
-  manualEntry?: boolean;
-  reasonForUpdate?: string;
-}
-
 const getMonthDate = (monthParam: string | undefined): Date => {
     if (monthParam) {
         const [year, month] = monthParam.split('-').map(Number);
@@ -85,10 +77,10 @@ export default async function UserReportDetailPage(props: {
 
         const leaveMap = new Map<string, any>();
         leaveSnap.docs.forEach(d => {
-            const leave = { ...d.data(), id: d.id };
+            const leave = d.data();
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 if (isWithinInterval(day, { start: monthStart, end: monthEnd })) {
-                    leaveMap.set(format(day, 'yyyy-MM-dd'), leave);
+                    leaveMap.set(format(day, 'yyyy-MM-dd'), { ...leave, id: d.id });
                 }
             });
         });
