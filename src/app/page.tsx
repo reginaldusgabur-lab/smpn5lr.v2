@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Eye, EyeOff, ShieldCheck, LogIn } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ShieldCheck, LogIn, Smartphone, Network, Server, Wifi, Globe, Cpu } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -125,6 +125,27 @@ export default function LoginPage() {
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-8 pb-2 relative">
+            
+            {/* Tech Icons Decoration - Internal Elements restored */}
+            <div className="absolute top-8 left-6 opacity-30 -rotate-12">
+              <Smartphone className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="absolute top-12 left-16 opacity-20 rotate-45">
+              <Network className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="absolute top-8 right-6 opacity-30 rotate-12">
+              <Server className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="absolute top-14 right-16 opacity-20 -rotate-12">
+              <Wifi className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="absolute top-24 left-4 opacity-20 rotate-12">
+              <Globe className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="absolute top-24 right-4 opacity-20 -rotate-45">
+              <Cpu className="h-5 w-5 text-blue-600" />
+            </div>
+
             <div className="flex justify-center mb-0 relative z-10">
               <div className="relative w-36 h-36 transition-transform duration-500 hover:scale-105">
                 <Image src="/logo-3d.png" alt="Logo E-SPENLI" fill sizes="144px" className="object-contain" priority />
