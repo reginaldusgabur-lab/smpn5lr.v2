@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -54,12 +55,27 @@ export default function AdminDashboardPage() {
   const { toast } = useToast();
 
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false });
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  
   const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Optimized fetch for daily summary stats
+  useEffect(() => {
+    if (!firestore || !user) return;
+    const fetchStats = async () => {
+        setIsStatsLoading(true);
+        const daily = await getDailyStaffAttendanceStats(firestore);
+        setStats(daily);
+        setIsStatsLoading(false);
+    };
+    fetchStats();
+  }, [firestore, user, todayStr]);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -69,71 +85,22 @@ export default function AdminDashboardPage() {
 
   const isAdmin = useMemo(() => userData?.role === 'admin', [userData]);
 
-  // 1. Fetch Personal Attendance (Today Only) - VERY EFFICIENT
-  const personalAttendanceQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(
-      collection(firestore, 'users', user.uid, 'attendanceRecords'), 
-      where('date', '==', todayStr), 
-      limit(1)
-    );
-  }, [user?.uid, firestore, todayStr]);
-  const { data: personalAttendance } = useCollection(user, personalAttendanceQuery);
-
-  const personalCheckIn = useMemo(() => {
-    const rec = personalAttendance?.[0];
-    return rec?.checkInTime ? format(rec.checkInTime.toDate(), 'HH:mm') : null;
-  }, [personalAttendance]);
-
-  const personalCheckOut = useMemo(() => {
-    const rec = personalAttendance?.[0];
-    return rec?.checkOutTime ? format(rec.checkOutTime.toDate(), 'HH:mm') : null;
-  }, [personalAttendance]);
-
-  // 2. Fetch All Active Users - Memoized
-  const allUsersQuery = useMemoFirebase(() => 
-    (isAdmin && firestore) ? query(collection(firestore, 'users'), where('status', '==', 'Aktif')) : null, 
-    [firestore, isAdmin]
-  );
-  const { data: usersData, isLoading: isUsersLoading } = useCollection(user, allUsersQuery);
-  
-  // 3. Fetch Today's Global Attendance (Using collectionGroup with strict date filter)
-  // CRITICAL: Filter where('date', '==', todayStr) to prevent reading entire database
+  // Activity list - limited to 10 for performance
   const globalAttendanceQuery = useMemoFirebase(() => 
     (isAdmin && firestore) ? query(
       collectionGroup(firestore, 'attendanceRecords'), 
       where('date', '==', todayStr),
-      limit(100) // Safety limit for dashboard
+      limit(10)
     ) : null,
     [firestore, isAdmin, todayStr]
   );
   const { data: globalAttendance, isLoading: isGlobalLoading } = useCollection(user, globalAttendanceQuery);
 
-  // 4. Fetch Pending Leaves Only
-  const pendingLeaveQuery = useMemoFirebase(() => 
-    (isAdmin && firestore) ? query(
-      collectionGroup(firestore, 'leaveRequests'), 
-      where('status', '==', 'pending'),
-      limit(50)
-    ) : null,
+  const usersQuery = useMemoFirebase(() => 
+    (isAdmin && firestore) ? query(collection(firestore, 'users'), where('status', '==', 'Aktif')) : null,
     [firestore, isAdmin]
   );
-  const { data: pendingLeaves, isLoading: isLeavesLoading } = useCollection(user, pendingLeaveQuery);
-
-  const stats = useMemo(() => {
-    if (!usersData || !globalAttendance) return { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0 };
-    
-    const presentIds = new Set(globalAttendance.map(a => a.userId));
-    const totalStaff = usersData.filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role)).length;
-    
-    return {
-        hadir: presentIds.size,
-        izin: 0, // Calculated separately if needed
-        sakit: 0,
-        pending: pendingLeaves?.length || 0,
-        alpa: Math.max(0, totalStaff - presentIds.size)
-    };
-  }, [usersData, globalAttendance, pendingLeaves]);
+  const { data: usersData } = useCollection(user, usersQuery);
 
   const recentUserActivity = useMemo(() => {
     if (!usersData || !globalAttendance) return [];
@@ -145,7 +112,6 @@ export default function AdminDashboardPage() {
             const timeB = b.checkInTime?.toDate().getTime() || b.checkOutTime?.toDate().getTime() || 0;
             return timeB - timeA;
         })
-        .slice(0, 10) // Only show top 10 for dashboard efficiency
         .map((att, index) => {
             const userDoc = userMap.get(att.userId);
             const isFinished = !!att.checkOutTime;
@@ -171,7 +137,7 @@ export default function AdminDashboardPage() {
     }
   }, [isRoleCheckLoading, user, isAdmin, router]);
 
-  if (isRoleCheckLoading || isUsersLoading || isGlobalLoading || isLeavesLoading) {
+  if (isRoleCheckLoading || isGlobalLoading || isStatsLoading) {
     return <AdminDashboardSkeletons />;
   }
 
@@ -184,21 +150,13 @@ export default function AdminDashboardPage() {
       </div>
       
        <div className="grid gap-6">
-        {/* Real-time Clock Card */}
         <div className="w-full space-y-1">
             <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
-                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
-                    <UserCircle className="w-24 h-24 text-white" />
-                </div>
+                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><UserCircle className="w-24 h-24 text-white" /></div>
                 <CardContent className="p-6 relative z-10">
                     <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
-                            <Calendar className="h-6 w-6" />
-                        </div>
-                        <div className="space-y-0.5">
-                            <h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2>
-                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Pantauan kehadiran personil secara real-time.</p>
-                        </div>
+                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div>
+                        <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Pantauan kehadiran personil secara real-time.</p></div>
                     </div>
                 </CardContent>
             </Card>
@@ -206,33 +164,8 @@ export default function AdminDashboardPage() {
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
                 <CardContent className="p-8 space-y-6 pt-10 text-center">
                     <div className="flex flex-col items-center justify-center">
-                        <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
-                            {format(currentTime, 'HH:mm:ss')}
-                        </h2>
-                        <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">
-                            {format(currentTime, 'eeee, d MMMM yyyy', { locale: id })}
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4">
-                        <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
-                            <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shrink-0">
-                                <LogIn className="h-4 w-4" />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p>
-                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">{personalCheckIn || '--:--'}</p>
-                            </div>
-                        </div>
-                        <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
-                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shrink-0">
-                                <LogOut className="h-4 w-4" />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p>
-                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">{personalCheckOut || '--:--'}</p>
-                            </div>
-                        </div>
+                        <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">{format(currentTime, 'HH:mm:ss')}</h2>
+                        <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">{format(currentTime, 'eeee, d MMMM yyyy', { locale: id })}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -240,34 +173,19 @@ export default function AdminDashboardPage() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
             <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white">
-                <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Hadir</span>
-                    <UserCheck className="h-3.5 w-3.5 opacity-60" />
-                </div>
+                <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div>
                 <div className="text-3xl font-normal tracking-tight">{stats.hadir}</div>
             </Card>
-
             <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white">
-                <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Izin/Sakit</span>
-                    <BookUser className="h-3.5 w-3.5 opacity-60" />
-                </div>
+                <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Izin/Sakit</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div>
                 <div className="text-3xl font-normal tracking-tight">{stats.izin + stats.sakit}</div>
             </Card>
-
             <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl p-3 text-white">
-                <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Menunggu</span>
-                    <Clock className="h-3.5 w-3.5 opacity-60" />
-                </div>
+                <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Menunggu</span><Clock className="h-3.5 w-3.5 opacity-60" /></div>
                 <div className="text-3xl font-normal tracking-tight">{stats.pending}</div>
             </Card>
-
             <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white">
-                <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Alpa</span>
-                    <UserX className="h-3.5 w-3.5 opacity-60" />
-                </div>
+                <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div>
                 <div className="text-3xl font-normal tracking-tight">{stats.alpa}</div>
             </Card>
         </div>
@@ -275,7 +193,7 @@ export default function AdminDashboardPage() {
         <Card className="shadow-none overflow-hidden border-muted-foreground/10 bg-primary/5 rounded-xl">
             <CardHeader className="bg-muted/20 border-b border-muted-foreground/5">
                 <CardTitle className="text-lg font-bold">Aktivitas Kehadiran Terbaru</CardTitle>
-                <CardDescription>Maksimal 10 aktivitas terbaru hari ini.</CardDescription>
+                <CardDescription>Daftar aktivitas masuk dan pulang hari ini.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -293,22 +211,13 @@ export default function AdminDashboardPage() {
                             {recentUserActivity.length > 0 ? recentUserActivity.map((item, idx) => (
                                 <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
                                     <TableCell className="text-center font-bold text-muted-foreground text-sm">{idx + 1}</TableCell>
-                                    <TableCell>
-                                        <div className="font-bold text-sm">{item.name}</div>
-                                        <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">{item.role}</div>
-                                    </TableCell>
+                                    <TableCell><div className="font-bold text-sm">{item.name}</div><div className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">{item.role}</div></TableCell>
                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{item.checkInTimeFormatted}</TableCell>
                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">{item.checkOutTimeFormatted}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant="outline" className={cn("text-[9px] font-bold uppercase text-white border-none px-3 py-1 rounded-full", item.statusClass)}>
-                                            {item.status}
-                                        </Badge>
-                                    </TableCell>
+                                    <TableCell className="text-center"><Badge variant="outline" className={cn("text-[9px] font-bold uppercase text-white border-none px-3 py-1 rounded-full", item.statusClass)}>{item.status}</Badge></TableCell>
                                 </TableRow>
                             )) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Belum ada aktivitas hari ini.</TableCell>
-                                </TableRow>
+                                <TableRow><TableCell colSpan={5} className="h-48 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Belum ada aktivitas hari ini.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -51,17 +52,11 @@ const LiveClockUI = memo(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
-
     if (!time) return <div className="h-16 w-full flex items-center justify-center"><Skeleton className="h-10 w-40" /></div>;
-
     return (
-        <div className="flex flex-col items-center justify-center py-2 w-full min-h-[80px]" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-            <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">
-                {format(time, 'HH:mm:ss')}
-            </h2>
-            <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">
-                {format(time, 'eeee, d MMMM yyyy', { locale: id })}
-            </p>
+        <div className="flex flex-col items-center justify-center py-2 w-full min-h-[80px]">
+            <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">{format(time, 'HH:mm:ss')}</h2>
+            <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">{format(time, 'eeee, d MMMM yyyy', { locale: id })}</p>
         </div>
     );
 });
@@ -76,14 +71,12 @@ export default function DashboardPage() {
   const [isClient, setIsClient] = useState(false);
 
   const [summaryMonth, setSummaryMonth] = useState(new Date());
-  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false, isCalendarHoliday: false });
+  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [personalSummary, setPersonalSummary] = useState({ percentage: '0.0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  useEffect(() => { setIsClient(true); }, []);
 
   const loadDashboardData = useCallback(async () => {
     if (!firestore || !user?.uid || !isMounted.current) return;
@@ -93,9 +86,7 @@ export default function DashboardPage() {
             setStats(dailyStats);
             setIsStatsLoading(false);
         }
-    } catch (error) {
-        if (isMounted.current) setIsStatsLoading(false);
-    }
+    } catch (error) { if (isMounted.current) setIsStatsLoading(false); }
   }, [firestore, user?.uid]);
 
   const loadMonthlySummary = useCallback(async (month: Date) => {
@@ -115,9 +106,7 @@ export default function DashboardPage() {
                   alpa: personalStats.totalAlpa
               });
           }
-      } finally {
-          if (isMounted.current) setIsPersonalSummaryLoading(false);
-      }
+      } finally { if (isMounted.current) setIsPersonalSummaryLoading(false); }
   }, [firestore, user?.uid]);
 
   useEffect(() => {
@@ -133,13 +122,13 @@ export default function DashboardPage() {
   const todaysAttendanceQuery = useMemoFirebase(() => {
       if (!user || !firestore) return null;
       return query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', todayStr), limit(1));
-  }, [firestore, user, todayStr]);
+  }, [firestore, user?.uid, todayStr]);
   const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
 
   const activeLeavesQuery = useMemoFirebase(() => {
       if (!user || !firestore) return null;
       return query(collection(firestore, 'users', user.uid, 'leaveRequests'), where('status', '==', 'approved'));
-  }, [user, firestore]);
+  }, [user?.uid, firestore]);
   const { data: activeLeaves, isLoading: isLeaveLoading } = useCollection(user, activeLeavesQuery);
 
   const currentActiveLeave = useMemo(() => {
@@ -163,9 +152,7 @@ export default function DashboardPage() {
     });
   };
 
-  const handleNextMonth = () => {
-      setSummaryMonth(prev => addMonths(prev, 1));
-  };
+  const handleNextMonth = () => { setSummaryMonth(prev => addMonths(prev, 1)); };
 
   const canGoNext = !isSameMonth(summaryMonth, new Date());
   const canGoPrev = summaryMonth > new Date(2026, 0, 1);
@@ -177,34 +164,25 @@ export default function DashboardPage() {
 
   const scrollToId = (id: string) => {
     const element = document.getElementById(id);
-    if (element) {
-        window.scrollTo({ top: element.getBoundingClientRect().top + window.pageYOffset - 80, behavior: 'smooth' });
-    }
+    if (element) window.scrollTo({ top: element.getBoundingClientRect().top + window.pageYOffset - 80, behavior: 'smooth' });
   };
 
   const renderAttendanceButton = () => {
     const record = todaysAttendance?.[0];
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
-    
-    const disabledStyle = "w-full bg-primary/10 text-primary/40 border border-primary/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm transition-all cursor-default select-none shadow-none";
-
+    const disabledStyle = "w-full bg-primary/10 text-primary/40 border border-primary/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm transition-all shadow-none";
     if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat...</div>;
     if (currentActiveLeave) return <div className="w-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm">{currentActiveLeave.type} Disetujui</div>;
-    
     if (isCheckedOut) return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
-
-    if (windowStatus === 'DISABLED' || stats.isManualDisabled) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Sistem Non-Aktif</div>;
-    if (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Hari Libur</div>;
-
-    if (windowStatus === 'CHECK_OUT_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-none active:scale-95 transition-all bg-blue-600 hover:bg-blue-700 text-white"><Link href="/dashboard/absen">Absen pulang sekarang</Link></Button>;
-
+    if (windowStatus === 'DISABLED') return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Sistem Non-Aktif</div>;
+    if (windowStatus === 'SESSION_INACTIVE') return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Hari Libur</div>;
+    if (windowStatus === 'CHECK_OUT_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 bg-blue-600 hover:bg-blue-700 text-white"><Link href="/dashboard/absen">Absen pulang sekarang</Link></Button>;
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
-        if (windowStatus === 'CHECK_IN_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-none active:scale-95 transition-all"><Link href="/dashboard/absen">Absen masuk sekarang</Link></Button>;
+        if (windowStatus === 'CHECK_IN_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-none"><Link href="/dashboard/absen">Absen masuk sekarang</Link></Button>;
         if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
     }
-
     return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Menunggu Jadwal</div>;
   };
 
@@ -226,31 +204,17 @@ export default function DashboardPage() {
             <div className="w-full space-y-1">
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
                     <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><UserCircle className="w-24 h-24 text-white" /></div>
-                    <CardContent className="p-6 relative z-10">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div>
-                            <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi harian Anda dengan mudah.</p></div>
-                        </div>
-                    </CardContent>
+                    <CardContent className="p-6 relative z-10"><div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div><div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi harian Anda dengan mudah.</p></div></div></CardContent>
                 </Card>
 
                 <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
                     <CardContent className="p-8 space-y-6 pt-10 text-center">
                         <LiveClockUI />
                         <div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4">
-                            <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
-                                <div className="bg-green-500 p-2.5 rounded-full text-white shrink-0"><LogIn className="h-4 w-4" /></div>
-                                <div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}</p></div>
-                            </div>
-                            <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
-                                <div className="bg-blue-500 p-2.5 rounded-full text-white shrink-0"><LogOut className="h-4 w-4" /></div>
-                                <div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}</p></div>
-                            </div>
+                            <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden"><div className="bg-green-500 p-2.5 rounded-full text-white shrink-0"><LogIn className="h-4 w-4" /></div><div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}</p></div></div>
+                            <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden"><div className="bg-blue-500 p-2.5 rounded-full text-white shrink-0"><LogOut className="h-4 w-4" /></div><div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}</p></div></div>
                         </div>
-                        <div className="flex flex-col items-stretch gap-3">
-                            {renderAttendanceButton()}
-                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground"><Link href="/dashboard/laporan">Lihat riwayat lengkap</Link></Button>
-                        </div>
+                        <div className="flex flex-col items-stretch gap-3">{renderAttendanceButton()}<Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground"><Link href="/dashboard/laporan">Lihat riwayat lengkap</Link></Button></div>
                     </CardContent>
                 </Card>
             </div>
@@ -259,22 +223,10 @@ export default function DashboardPage() {
         {(isAdmin || isKepsek) && (
             <div className="w-full space-y-3 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-                    <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('recent-attendance')}>
-                        <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div>
-                        <div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.hadir}</div>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}>
-                        <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div>
-                        <div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.izin + stats.sakit}</div>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={navigateToApproval}>
-                        <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span><MailWarning className="h-3.5 w-3.5 opacity-60" /></div>
-                        <div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.pending}</div>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}>
-                        <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div>
-                        <div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.alpa}</div>
-                    </Card>
+                    <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('recent-attendance')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.hadir}</div></Card>
+                    <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.izin + stats.sakit}</div></Card>
+                    <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={navigateToApproval}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span><MailWarning className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.pending}</div></Card>
+                    <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.alpa}</div></Card>
                 </div>
                 <div id="recent-attendance" className="scroll-mt-20"><RecentAttendanceTable /></div>
                 <div id="absent-users" className="scroll-mt-20"><AbsentUsersTable /></div>
