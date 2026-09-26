@@ -5,6 +5,7 @@ import { FirebaseClientProvider } from '@/firebase';
 import { ThemeProvider } from "@/components/theme-provider";
 import PwaInstaller from '@/components/pwa-installer';
 import PwaUpdater from '@/components/pwa-updater';
+import { CacheProvider } from '@/context/CacheContext';
 
 export const metadata: Metadata = {
   title: 'E-SPENLI',
@@ -52,7 +53,9 @@ export default function RootLayout({
       <body className="font-body antialiased" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={true} disableTransitionOnChange>
           <FirebaseClientProvider>
-            {children}
+            <CacheProvider>
+              {children}
+            </CacheProvider>
           </FirebaseClientProvider>
           <Toaster />
           <PwaInstaller />

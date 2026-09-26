@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { CacheProvider } from '@/context/CacheContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { DesktopLayout } from '@/components/layout/DesktopLayout';
@@ -70,18 +69,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <CacheProvider>
-      <SidebarProvider>
-        <SystemNotification />
-        <div className="bg-background min-h-screen w-full">
-          {isMobile ? (
-            <MobileLayout>{children}</MobileLayout>
-          ) : (
-            <DesktopLayout>{children}</DesktopLayout>
-          )}
-        </div>
-        {!isMobile && <OnboardingTour run={runTour} onTourComplete={handleTourComplete} />}
-      </SidebarProvider>
-    </CacheProvider>
+    <SidebarProvider>
+      <SystemNotification />
+      <div className="bg-background min-h-screen w-full">
+        {isMobile ? (
+          <MobileLayout>{children}</MobileLayout>
+        ) : (
+          <DesktopLayout>{children}</DesktopLayout>
+        )}
+      </div>
+      {!isMobile && <OnboardingTour run={runTour} onTourComplete={handleTourComplete} />}
+    </SidebarProvider>
   );
 }
