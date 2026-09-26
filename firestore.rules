@@ -4,56 +4,58 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Helper Function ---
+    // Membaca data role user langsung dari dokumen profilnya
     function isRole(role) {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    // Helper untuk mengecek kepemilikan dokumen
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
     
     // --- Collection: users ---
     match /users/{userId} {
-      allow read: if request.auth.uid == userId || isRole('admin') || isRole('kepala_sekolah');
+      allow read: if isOwner(userId) || isRole('admin') || isRole('kepala_sekolah');
       allow list: if isRole('admin') || isRole('kepala_sekolah');
       allow create: if isRole('admin');
-      allow update: if request.auth.uid == userId || isRole('admin');
+      allow update: if isOwner(userId) || isRole('admin');
       allow delete: if isRole('admin');
     }
 
-    // --- Sub-collections under users (attendance, leave requests) ---
-    // --- FINAL & CORRECTED RULES ---
+    // --- Rules untuk Sub-collections (attendanceRecords & leaveRequests) ---
+    // Aturan ini mendukung akses langsung via path /users/{userId}/...
     match /users/{userId}/{subCollection}/{docId} {
-      
-      // READ: A user can read their own data. Admin and Kepsek can read anyone's data.
-      allow read: if request.auth.uid == userId || isRole('admin') || isRole('kepala_sekolah');
-      
-      // CREATE: A user can create their own records. An admin can also create records for others.
-      // This is the rule that fixes the "Ubah Kehadiran" feature for admins.
-      allow create: if request.auth.uid == userId || isRole('admin');
-      
-      // UPDATE: A user can update their own records. Admin and Kepsek can also update records for others.
-      allow update: if request.auth.uid == userId || isRole('admin') || isRole('kepala_sekolah');
-      
-      // DELETE: A user can delete their own records. An admin can also delete records for others.
-      allow delete: if request.auth.uid == userId || isRole('admin');
+      allow read: if isOwner(userId) || isRole('admin') || isRole('kepala_sekolah');
+      allow create: if isOwner(userId) || isRole('admin');
+      allow update: if isOwner(userId) || isRole('admin') || (subCollection == 'leaveRequests' && isRole('kepala_sekolah'));
+      allow delete: if isOwner(userId) || isRole('admin');
     }
     
-    // --- Global Configuration & Other Collections ---
+    // --- KHUSUS COLLECTION GROUP QUERIES (Dashboard & Laporan Sekolah) ---
+    // Rules ini wajib ada agar kueri "collectionGroup" tidak dianggap melanggar izin.
+    match /{path=**}/attendanceRecords/{docId} {
+      allow read, list: if isRole('admin') || isRole('kepala_sekolah') || (request.auth != null && request.auth.uid == resource.data.userId);
+    }
+    
+    match /{path=**}/leaveRequests/{docId} {
+      allow read, list: if isRole('admin') || isRole('kepala_sekolah') || (request.auth != null && request.auth.uid == resource.data.userId);
+    }
+    
+    // --- Global Configuration ---
     match /schoolConfig/{docId} {
-      allow read: if isRole('admin') || isRole('kepala_sekolah');
+      allow read: if request.auth != null;
       allow write: if isRole('admin');
     }
 
     match /monthlyConfigs/{docId} {
-      allow read: if isRole('admin') || isRole('kepala_sekolah');
+      allow read: if request.auth != null;
       allow write: if isRole('admin');
     }
 
     match /quotes/{quoteId} {
-      allow read: if request.auth != null; // Any signed-in user
+      allow read: if request.auth != null;
       allow write: if isRole('admin');
-    }
-
-    match /activities/{activityId} {
-      allow read: if isRole('admin') || isRole('kepala_sekolah');
-      allow create: if request.auth != null; // Any signed-in user
     }
   }
 }

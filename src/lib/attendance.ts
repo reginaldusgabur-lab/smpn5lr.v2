@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp, getCountFromServer } from 'firebase/firestore';
@@ -49,11 +48,10 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const startOfToday = Timestamp.fromDate(startOfDay(today));
     const endOfToday = Timestamp.fromDate(endOfDay(today));
 
     try {
-        // 1. Cek Konfigurasi Libur (1 read)
+        // 1. Cek Konfigurasi Libur
         const [configSnap, monthlySnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
             getDoc(doc(firestore, 'monthlyConfigs', format(today, 'yyyy-MM')))
@@ -63,7 +61,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const isManualOff = config.isAttendanceActive === false;
         const isHoliday = isManualOff || (mConfig.holidays || []).includes(todayStr) || (config.offDays || [0, 6]).includes(today.getDay());
 
-        // 2. Hitung Total Staf Aktif (1 read)
+        // 2. Hitung Total Staf Aktif
         const qUsers = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -76,7 +74,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return { totalStaff, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: true };
         }
 
-        // 3. Hitung yang Hadir Hari Ini (1 read)
+        // 3. Hitung yang Hadir Hari Ini
         const qPresent = query(
             collectionGroup(firestore, 'attendanceRecords'),
             where('date', '==', todayStr)
@@ -84,8 +82,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const countPresent = await getCountFromServer(qPresent);
         const hadirCount = countPresent.data().count;
 
-        // 4. Hitung yang Izin/Sakit (Approved) Hari Ini (1 read)
-        // Catatan: Karena rentang tanggal, kita hitung yang aktif hari ini
+        // 4. Hitung yang Izin/Sakit (Approved) Hari Ini
         const qLeave = query(
             collectionGroup(firestore, 'leaveRequests'),
             where('status', '==', 'approved'),
@@ -94,7 +91,11 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const leaveSnap = await getDocs(qLeave);
         const activeLeaves = leaveSnap.docs.filter(d => {
             const l = d.data();
-            return isWithinInterval(today, { start: startOfDay(l.startDate.toDate()), end: endOfDay(l.endDate.toDate()) });
+            if (!l.startDate || !l.endDate) return false;
+            return isWithinInterval(today, { 
+                start: startOfDay(l.startDate.toDate()), 
+                end: endOfDay(l.endDate.toDate()) 
+            });
         });
 
         let izinCount = 0;
@@ -105,14 +106,14 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             else if (!['Pulang Cepat', 'Dinas Siang'].includes(l.type)) izinCount++;
         });
 
-        // 5. Hitung Pending Izin (1 read)
+        // 5. Hitung Pending Izin
         const qPending = query(
             collectionGroup(firestore, 'leaveRequests'),
             where('status', '==', 'pending')
         );
         const countPending = await getCountFromServer(qPending);
 
-        // 6. Kalkulasi Alpa secara matematis (Hemat Reads)
+        // 6. Kalkulasi Alpa secara matematis
         const alpaCount = Math.max(0, totalStaff - (hadirCount + izinCount + sakitCount));
 
         return {
