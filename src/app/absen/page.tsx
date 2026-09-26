@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -70,7 +71,7 @@ const playSuccessFeedback = async (customAudioBase64?: string) => {
             setTimeout(() => context.close(), 1000);
         }
     } catch (e) {
-        console.warn("Feedback audio/vibration failed", e);
+        console.warn("Feedback failed", e);
     }
 };
 
@@ -80,21 +81,18 @@ export default function AbsenPage() {
   const [status, setStatus] = useState<FeedbackStatus>('idle');
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const { status: windowStatus, config: schoolConfig } = useAttendanceWindow();
   
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isScannerReady, setIsScannerReady] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-  const readerId = "qr-reader-fullscreen";
+  const readerId = "qr-reader-fullscreen-v2";
 
-  // Hydration safety
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  useEffect(() => { setIsClient(true); }, []);
 
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: userData } = useDoc(user, userDocRef);
@@ -119,8 +117,7 @@ export default function AbsenPage() {
       return activeLeaves.find(l => isWithinInterval(now, { start: startOfDay(l.startDate.toDate()), end: endOfDay(l.endDate.toDate()) }));
   }, [activeLeaves, isClient]);
 
-  const isDataLoading = !isClient || isUserLoading || isAttendanceLoading || isLeaveLoading || windowStatus === 'LOADING';
-  const isCameraInitializing = hasCameraPermission === null;
+  const isDataLoading = !isClient || isAttendanceLoading || isLeaveLoading || windowStatus === 'LOADING';
   const isHoliday = windowStatus === 'SESSION_INACTIVE';
   const isManualDisabled = windowStatus === 'DISABLED';
   const hasCompletedAttendance = useMemo(() => !!(todaysRecord?.checkInTime && todaysRecord?.checkOutTime), [todaysRecord]);
@@ -134,42 +131,39 @@ export default function AbsenPage() {
       if (isHoliday) return 'info_holiday';
       if (windowStatus === 'AFTER_IN') return 'error_checkin_closed';
       if (windowStatus === 'BEFORE_IN' || windowStatus === 'CLOSED') return 'error_time';
-      if (hasCameraPermission === false) return 'info_no_camera';
+      if (cameraError) return 'info_no_camera';
       return 'idle';
-  }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
+  }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, cameraError]);
 
-  const showScanner = isClient && !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
-  const showLoader = isDataLoading || (isClient && isCameraInitializing) || (showScanner && !isScannerReady);
+  const showScanner = isClient && !isDataLoading && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
 
   const handleAttendance = useCallback(async () => {
     setLocationError(null);
-    if (!user || !firestore || !schoolConfig) {
-        setStatus('error_generic');
-        return;
-    }
-    if (windowStatus !== 'CHECK_IN_OPEN' && windowStatus !== 'CHECK_OUT_OPEN') {
-        setStatus(windowStatus === 'AFTER_IN' ? 'error_checkin_closed' : 'error_time');
-        return;
-    }
+    if (!user || !firestore || !schoolConfig) return;
+    
     setStatus('processing');
     try {
         let latitude: number | null = null, longitude: number | null = null;
         if (schoolConfig.useLocationValidation) {
             setStatus('locating');
             try {
-                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 });
                 latitude = pos.coords.latitude; longitude = pos.coords.longitude;
                 if (schoolConfig.radius && schoolConfig.latitude && schoolConfig.longitude) {
-                    if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) return setStatus('error_radius');
+                    if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) {
+                        setStatus('error_radius');
+                        return;
+                    }
                 }
-            } catch (error: any) {
-                let specificError = 'Gagal mendapatkan lokasi.';
-                if (error.code === 1) specificError = 'Akses lokasi ditolak.';
-                setLocationError(specificError); return setStatus('error_location');
+            } catch (error: any) { 
+                setStatus('error_location');
+                return;
             }
         }
+
         const now = new Date();
         const todayStr = format(now, 'yyyy-MM-dd');
+
         if (windowStatus === 'CHECK_IN_OPEN') {
             if (todaysRecord?.checkInTime) return setStatus('error_already_in');
             if (todaysRecord) {
@@ -177,8 +171,6 @@ export default function AbsenPage() {
             } else {
                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
             }
-            invalidateCache();
-            playSuccessFeedback((schoolConfig as any).successSoundUrl);
             setStatus('success_in');
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
@@ -187,64 +179,49 @@ export default function AbsenPage() {
             } else {
                 await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
             }
-            invalidateCache();
-            playSuccessFeedback((schoolConfig as any).successSoundUrl);
             setStatus('success_out');
         }
-    } catch (error) {
-        setStatus('error_generic');
-    }
-}, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
-  
-  const statusRef = useRef(status); statusRef.current = status;
-  const handleAttendanceRef = useRef(handleAttendance); handleAttendanceRef.current = handleAttendance;
-
-  useEffect(() => {
-    if (!isClient) return;
-    let isMounted = true;
-    const checkCameras = async () => {
-        try {
-            const devices = await Html5Qrcode.getCameras();
-            if (isMounted) setHasCameraPermission(!!(devices && devices.length));
-        } catch (e) {
-            if (isMounted) setHasCameraPermission(false);
-        }
-    }
-    checkCameras();
-    return () => { isMounted = false; };
-  }, [isClient]);
+        invalidateCache();
+        playSuccessFeedback((schoolConfig as any).successSoundUrl);
+    } catch (error) { setStatus('error_generic'); }
+  }, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
 
   const onScanSuccess = useCallback((decodedText: string) => {
-    if (statusRef.current === 'idle' && schoolConfig?.qrCodeValue) {
-        if (decodedText === schoolConfig.qrCodeValue) {
-            handleAttendanceRef.current();
-        } else {
-            toast({ variant: 'destructive', title: 'QR Code tidak valid' });
-        }
+    if (status === 'idle' && decodedText === schoolConfig?.qrCodeValue) {
+        handleAttendance();
+    } else if (status === 'idle' && decodedText !== schoolConfig?.qrCodeValue) {
+        toast({ variant: 'destructive', title: 'QR Code tidak valid' });
     }
-  }, [schoolConfig?.qrCodeValue, toast]);
+  }, [schoolConfig, status, handleAttendance, toast]);
 
   useEffect(() => {
-    if (showScanner && status === 'idle') {
-        const qrCode = html5QrCodeRef.current || new Html5Qrcode(readerId, { verbose: false });
-        html5QrCodeRef.current = qrCode;
-        if (qrCode.getState() !== 2) {
-            setIsScannerReady(false);
-            qrCode.start(
+    if (!showScanner || status !== 'idle') return;
+
+    let isMounted = true;
+    const scanner = new Html5Qrcode(readerId);
+    html5QrCodeRef.current = scanner;
+
+    const startScanner = async () => {
+        try {
+            await scanner.start(
                 { facingMode: 'environment' }, 
-                { fps: 30, disableFlip: true }, 
+                { fps: 30, aspectRatio: 1.0 }, 
                 onScanSuccess, 
                 undefined
-            )
-            .then(() => { if (html5QrCodeRef.current) setIsScannerReady(true); })
-            .catch(() => setIsScannerReady(false));
+            );
+            if (isMounted) setIsScannerReady(true);
+        } catch (err) {
+            console.error("Scanner start error:", err);
+            if (isMounted) setCameraError(true);
         }
-    } 
+    };
+
+    startScanner();
+
     return () => {
-        if (html5QrCodeRef.current?.isScanning) {
-            html5QrCodeRef.current.stop().catch(err => console.warn(err));
-            html5QrCodeRef.current = null;
-            setIsScannerReady(false);
+        isMounted = false;
+        if (scanner.isScanning) {
+            scanner.stop().catch(e => console.warn("Scanner stop error", e));
         }
     };
   }, [showScanner, status, onScanSuccess]);
@@ -252,40 +229,28 @@ export default function AbsenPage() {
   if (!isClient) return null;
 
   return (
-    <div className="fixed inset-0 z-40 bg-background overflow-hidden" style={{ touchAction: 'none' }}>
-        {(showScanner || isCameraInitializing) && (
+    <div className="fixed inset-0 z-40 bg-black overflow-hidden" style={{ touchAction: 'none' }}>
+        {showScanner && (
             <div className="absolute inset-0">
                 <div id={readerId} className="w-full h-full" />
                 <style>{`
-                    #${readerId} > video { width: 100% !important; height: 100% !important; object-fit: cover !important; opacity: ${isScannerReady ? 1 : 0.5}; transition: opacity 0.3s ease-in-out; }
+                    #${readerId} video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
                     #${readerId}__scan_region, #${readerId}__dashboard_section_csr { display: none !important; }
-                    #${readerId} { border: none !important; }
                 `}</style>
             </div>
         )}
-        <div className="absolute top-8 left-0 right-0 z-50 px-8 text-center pointer-events-none transition-all">
-            <h2 className="text-white text-2xl font-bold mb-1 drop-shadow-md">Pindai QR Code</h2>
-            <p className="text-white/60 text-xs font-medium">Tempatkan kamera tepat di depan QR Code</p>
+        <div className="absolute top-12 left-0 right-0 z-50 text-center pointer-events-none">
+            <h2 className="text-white text-2xl font-black tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">PINDAI QR CODE</h2>
+            <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">SMP NEGERI 5 LANGKE REMBONG</p>
         </div>
-        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-            {isScannerReady && (
-                <div className={cn(
-                    "absolute left-0 right-0 h-16 transition-all duration-700 animate-scan-line z-20 pointer-events-none",
-                    status === 'idle' ? "bg-gradient-to-b from-transparent via-primary/40 to-transparent" : "bg-gradient-to-b from-transparent via-green-500/40 to-transparent"
-                )} />
-            )}
-            {showLoader && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
-                    <Loader2 className="h-10 w-10 animate-spin text-white" />
-                </div>
-            )}
+        <div className="absolute inset-0 z-10 pointer-events-none">
+            {isScannerReady && <div className="absolute left-0 right-0 h-24 animate-scan-line bg-gradient-to-b from-transparent via-primary/30 to-transparent" />}
+            {isDataLoading && <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"><Loader2 className="h-10 w-10 animate-spin text-white" /></div>}
         </div>
         {effectiveStatus !== 'idle' && (
             <StatusFeedbackOverlay 
                 status={effectiveStatus} 
-                locationError={locationError} 
-                leaveType={currentActiveLeave?.type}
-                onClose={() => effectiveStatus.startsWith('success') || effectiveStatus.startsWith('info') || effectiveStatus === 'error_time' || effectiveStatus === 'error_checkin_closed' || effectiveStatus === 'info_holiday' || effectiveStatus === 'info_disabled' || effectiveStatus === 'info_leave' ? router.push('/dashboard') : setStatus('idle')} 
+                onClose={() => effectiveStatus.includes('success') || effectiveStatus.includes('info') ? router.push('/dashboard') : setStatus('idle')} 
                 userData={userData} 
             />
         )}
@@ -293,42 +258,36 @@ export default function AbsenPage() {
   );
 }
 
-const StatusFeedbackOverlay = ({ status, locationError, onClose, userData, leaveType }: { status: FeedbackStatus, locationError: string | null, onClose: () => void, userData: any, leaveType?: string }) => {
+const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     const feedback = useMemo(() => {
-        const iconSize = "h-12 w-12";
+        const iconSize = "h-14 w-14";
         switch (status) {
             case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'ABSEN MASUK BERHASIL', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
             case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'ABSEN PULANG BERHASIL', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
             case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
             case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'JADWAL TUTUP', desc: 'Sesi absensi untuk saat ini telah ditutup.' };
             case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'BATAS MASUK BERAKHIR', desc: 'Waktu absen masuk berakhir, silahkan tunggu absen pulang.' };
-            case 'error_location': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'LOKASI ERROR', desc: locationError || 'Pastikan GPS aktif.' };
             case 'info_holiday': return { icon: <CalendarOff className={cn(iconSize, "text-amber-500")} />, title: 'HARI LIBUR', desc: 'Sistem absensi tidak aktif hari ini.' };
             case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: 'ABSENSI SELESAI', desc: 'Absensi Anda hari ini telah tuntas.' };
-            case 'info_no_camera': return { icon: <CameraOff className={cn(iconSize, "text-red-500")} />, title: 'KAMERA ERROR', desc: 'Izinkan akses kamera di browser.' };
-            case 'info_leave': return { icon: <FileText className={cn(iconSize, "text-blue-500")} />, title: `${leaveType} DISETUJUI`, desc: `Anda memiliki izin/sakit sah hari ini.` };
-            default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'GAGAL', desc: 'Kesalahan sistem. Coba lagi.' };
+            case 'info_no_camera': return { icon: <CameraOff className={cn(iconSize, "text-red-500")} />, title: 'KAMERA ERROR', desc: 'Izinkan akses kamera di pengaturan browser Anda.' };
+            case 'info_leave': return { icon: <FileText className={cn(iconSize, "text-blue-500")} />, title: `IZIN DISETUJUI`, desc: `Anda memiliki izin/sakit sah hari ini.` };
+            default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'GAGAL', desc: 'Terjadi kesalahan sistem. Coba lagi.' };
         }
-    }, [status, locationError, leaveType]);
+    }, [status]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 backdrop-blur-xl px-10">
-            <div className="w-full max-w-sm text-center p-8 rounded-3xl border border-border bg-card shadow-2xl relative animate-in fade-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 opacity-40 hover:opacity-100 transition-opacity">
-                    <X className="h-5 w-5" />
-                </button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-10">
+            <div className="w-full max-w-sm text-center p-10 rounded-[2.5rem] border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-6 w-6" /></button>
                 <div className="flex flex-col items-center">
-                    <div className="mb-4">{feedback.icon}</div>
-                    <h3 className="text-xl font-black tracking-tighter mb-2 uppercase">{feedback.title}</h3>
-                    <p className="text-muted-foreground text-xs font-bold leading-relaxed px-4 mb-6">{feedback.desc}</p>
+                    <div className="mb-6">{feedback.icon}</div>
+                    <h3 className="text-2xl font-black tracking-tighter mb-2 uppercase text-foreground">{feedback.title}</h3>
+                    <p className="text-muted-foreground text-xs font-bold leading-relaxed px-2 mb-8">{feedback.desc}</p>
                     {(status === 'success_in' || status === 'success_out') && (
                         <div className="w-full">
                             <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_in' ? 'in' : 'out'} />
                         </div>
                     )}
-                    <div className="mt-8 pt-6 border-t border-border/10 w-full opacity-30">
-                        <p className="text-[8px] font-bold tracking-[0.2em] uppercase">SMP NEGERI 5 LANGKE REMBONG</p>
-                    </div>
                 </div>
             </div>
         </div>

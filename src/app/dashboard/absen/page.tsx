@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -85,10 +86,10 @@ export default function AbsenPage() {
   const router = useRouter();
   const { status: windowStatus, config: schoolConfig } = useAttendanceWindow();
   
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isScannerReady, setIsScannerReady] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-  const readerId = "qr-reader-fullscreen-clean";
+  const readerId = "qr-reader-fullscreen-dash-v2";
 
   useEffect(() => { setIsClient(true); }, []);
 
@@ -116,7 +117,6 @@ export default function AbsenPage() {
   }, [activeLeaves, isClient]);
 
   const isDataLoading = !isClient || isAttendanceLoading || isLeaveLoading || windowStatus === 'LOADING';
-  const isCameraInitializing = hasCameraPermission === null;
   const isHoliday = windowStatus === 'SESSION_INACTIVE';
   const isManualDisabled = windowStatus === 'DISABLED';
   const hasCompletedAttendance = useMemo(() => !!(todaysRecord?.checkInTime && todaysRecord?.checkOutTime), [todaysRecord]);
@@ -130,11 +130,11 @@ export default function AbsenPage() {
       if (isHoliday) return 'info_holiday';
       if (windowStatus === 'AFTER_IN') return 'error_checkin_closed';
       if (windowStatus === 'BEFORE_IN' || windowStatus === 'CLOSED') return 'error_time';
-      if (hasCameraPermission === false) return 'info_no_camera';
+      if (cameraError) return 'info_no_camera';
       return 'idle';
-  }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, hasCameraPermission]);
+  }, [status, isDataLoading, currentActiveLeave, hasCompletedAttendance, isHoliday, isManualDisabled, windowStatus, cameraError]);
 
-  const showScanner = isClient && !isDataLoading && hasCameraPermission && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
+  const showScanner = isClient && !isDataLoading && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
 
   const handleAttendance = useCallback(async () => {
     setLocationError(null);
@@ -146,12 +146,18 @@ export default function AbsenPage() {
         if (schoolConfig.useLocationValidation) {
             setStatus('locating');
             try {
-                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 });
                 latitude = pos.coords.latitude; longitude = pos.coords.longitude;
                 if (schoolConfig.radius && schoolConfig.latitude && schoolConfig.longitude) {
-                    if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) return setStatus('error_radius');
+                    if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) {
+                        setStatus('error_radius');
+                        return;
+                    }
                 }
-            } catch (error: any) { return setStatus('error_location'); }
+            } catch (error: any) { 
+                setStatus('error_location');
+                return;
+            }
         }
 
         const now = new Date();
@@ -180,32 +186,65 @@ export default function AbsenPage() {
   }, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
 
   const onScanSuccess = useCallback((decodedText: string) => {
-    if (status === 'idle' && decodedText === schoolConfig?.qrCodeValue) handleAttendance();
-    else if (decodedText !== schoolConfig?.qrCodeValue) toast({ variant: 'destructive', title: 'QR Code tidak valid' });
+    if (status === 'idle' && decodedText === schoolConfig?.qrCodeValue) {
+        handleAttendance();
+    } else if (status === 'idle' && decodedText !== schoolConfig?.qrCodeValue) {
+        toast({ variant: 'destructive', title: 'QR Code tidak valid' });
+    }
   }, [schoolConfig, status, handleAttendance, toast]);
 
   useEffect(() => {
-    if (showScanner && status === 'idle') {
-        const qrCode = html5QrCodeRef.current || new Html5Qrcode(readerId);
-        html5QrCodeRef.current = qrCode;
-        qrCode.start({ facingMode: 'environment' }, { fps: 30 }, onScanSuccess, undefined)
-          .then(() => setIsScannerReady(true)).catch(() => setIsScannerReady(false));
-    }
-    return () => { if (html5QrCodeRef.current?.isScanning) { html5QrCodeRef.current.stop(); html5QrCodeRef.current = null; } };
+    if (!showScanner || status !== 'idle') return;
+
+    let isMounted = true;
+    const scanner = new Html5Qrcode(readerId);
+    html5QrCodeRef.current = scanner;
+
+    const startScanner = async () => {
+        try {
+            await scanner.start(
+                { facingMode: 'environment' }, 
+                { fps: 30, aspectRatio: 1.0 }, 
+                onScanSuccess, 
+                undefined
+            );
+            if (isMounted) setIsScannerReady(true);
+        } catch (err) {
+            console.error("Scanner start error:", err);
+            if (isMounted) setCameraError(true);
+        }
+    };
+
+    startScanner();
+
+    return () => {
+        isMounted = false;
+        if (scanner.isScanning) {
+            scanner.stop().catch(e => console.warn("Scanner stop error", e));
+        }
+    };
   }, [showScanner, status, onScanSuccess]);
 
   if (!isClient) return null;
 
   return (
-    <div className="fixed inset-0 z-40 bg-background overflow-hidden">
-        {showScanner && <div id={readerId} className="w-full h-full" />}
-        <div className="absolute top-8 left-0 right-0 z-50 text-center pointer-events-none">
-            <h2 className="text-white text-2xl font-bold drop-shadow-md">PINDAI QR CODE</h2>
-            <p className="text-white/60 text-xs font-medium">Sistem E-SPENLI</p>
+    <div className="fixed inset-0 z-40 bg-black overflow-hidden" style={{ touchAction: 'none' }}>
+        {showScanner && (
+            <div className="absolute inset-0">
+                <div id={readerId} className="w-full h-full" />
+                <style>{`
+                    #${readerId} video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+                    #${readerId}__scan_region, #${readerId}__dashboard_section_csr { display: none !important; }
+                `}</style>
+            </div>
+        )}
+        <div className="absolute top-12 left-0 right-0 z-50 text-center pointer-events-none">
+            <h2 className="text-white text-2xl font-black tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">PINDAI QR CODE</h2>
+            <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">SMP NEGERI 5 LANGKE REMBONG</p>
         </div>
         <div className="absolute inset-0 z-10 pointer-events-none">
-            {isScannerReady && <div className="absolute left-0 right-0 h-16 animate-scan-line bg-gradient-to-b from-transparent via-primary/40 to-transparent" />}
-            {isDataLoading && <div className="absolute inset-0 flex items-center justify-center bg-black/40"><Loader2 className="h-10 w-10 animate-spin text-white" /></div>}
+            {isScannerReady && <div className="absolute left-0 right-0 h-24 animate-scan-line bg-gradient-to-b from-transparent via-primary/30 to-transparent" />}
+            {isDataLoading && <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"><Loader2 className="h-10 w-10 animate-spin text-white" /></div>}
         </div>
         {effectiveStatus !== 'idle' && (
             <StatusFeedbackOverlay 
@@ -220,7 +259,7 @@ export default function AbsenPage() {
 
 const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     const feedback = useMemo(() => {
-        const iconSize = "h-12 w-12";
+        const iconSize = "h-14 w-14";
         switch (status) {
             case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'ABSEN MASUK BERHASIL', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
             case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'ABSEN PULANG BERHASIL', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
@@ -229,18 +268,20 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
             case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'BATAS MASUK BERAKHIR', desc: 'Waktu absen masuk berakhir, silahkan tunggu absen pulang.' };
             case 'info_holiday': return { icon: <CalendarOff className={cn(iconSize, "text-amber-500")} />, title: 'HARI LIBUR', desc: 'Sistem absensi tidak aktif hari ini.' };
             case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: 'ABSENSI SELESAI', desc: 'Absensi Anda hari ini telah tuntas.' };
-            default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'GAGAL', desc: 'Kesalahan sistem.' };
+            case 'info_no_camera': return { icon: <CameraOff className={cn(iconSize, "text-red-500")} />, title: 'KAMERA ERROR', desc: 'Izinkan akses kamera di pengaturan browser Anda.' };
+            case 'info_leave': return { icon: <FileText className={cn(iconSize, "text-blue-500")} />, title: `IZIN DISETUJUI`, desc: `Anda memiliki izin/sakit sah hari ini.` };
+            default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'GAGAL', desc: 'Terjadi kesalahan sistem. Coba lagi.' };
         }
     }, [status]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 backdrop-blur-xl px-10">
-            <div className="w-full max-w-sm text-center p-8 rounded-3xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 opacity-40 hover:opacity-100 transition-opacity"><X /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-10">
+            <div className="w-full max-w-sm text-center p-10 rounded-[2.5rem] border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-6 w-6" /></button>
                 <div className="flex flex-col items-center">
-                    <div className="mb-4">{feedback.icon}</div>
-                    <h3 className="text-xl font-black tracking-tighter mb-2 uppercase">{feedback.title}</h3>
-                    <p className="text-muted-foreground text-xs font-bold leading-relaxed px-4 mb-6">{feedback.desc}</p>
+                    <div className="mb-6">{feedback.icon}</div>
+                    <h3 className="text-2xl font-black tracking-tighter mb-2 uppercase text-foreground">{feedback.title}</h3>
+                    <p className="text-muted-foreground text-xs font-bold leading-relaxed px-2 mb-8">{feedback.desc}</p>
                     {(status === 'success_in' || status === 'success_out') && (
                         <div className="w-full">
                             <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_in' ? 'in' : 'out'} />
