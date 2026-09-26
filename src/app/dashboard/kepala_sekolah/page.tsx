@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -20,30 +20,25 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, CalendarOff, LogIn, LogOut, ClipboardCheck, ArrowRight, FileText, UserCheck, AlertCircle, UserX, BookUser, MailWarning, Clock, Calendar, UserCircle } from 'lucide-react';
+import { Loader2, CalendarOff, LogIn, LogOut, ClipboardCheck, FileText, UserCheck, UserX, Clock, Calendar, UserCircle, Sparkles } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection, query, where, Timestamp, getDocs, type DocumentData, collectionGroup, getDoc } from 'firebase/firestore';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { doc, collection, query, where, limit, getDocs, type DocumentData, collectionGroup } from 'firebase/firestore';
+import { format, startOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { getDailyStaffAttendanceStats } from '@/lib/attendance';
 
-// LiveClock component fixed for hydration
 function LiveClock() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-
   useEffect(() => {
     setCurrentTime(new Date());
-    const timerId = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    const timerId = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timerId);
   }, []);
-
   return (
       <div className="flex flex-col items-center">
           <h2 className="text-5xl sm:text-6xl font-bold text-foreground tabular-nums tracking-tighter">
@@ -64,231 +59,114 @@ const KepalaSekolahDashboardSkeleton = () => (
             <Skeleton className="h-8 w-48 mt-2" />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="w-full lg:col-span-2 rounded-xl">
-                <CardHeader>
-                    <Skeleton className="h-6 w-1/2" />
-                    <Skeleton className="h-4 w-3/4" />
-                </CardHeader>
-                <CardContent className="space-y-6 flex flex-col items-center justify-center pt-8">
-                    <Skeleton className="h-[72px] w-1/2" />
-                    <div className="grid grid-cols-2 gap-4 text-center w-full max-sm pt-4">
-                        <Skeleton className="h-[88px] w-full" />
-                        <Skeleton className="h-[88px] w-full" />
-                    </div>
-                </CardContent>
-                <CardFooter className="flex flex-col gap-2">
-                    <Skeleton className="h-11 w-full" />
-                </CardFooter>
-            </Card>
-            <div className="space-y-6">
-                {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="rounded-xl">
-                        <CardHeader className="pb-2">
-                            <Skeleton className="h-4 w-1/2" />
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-8 w-1/4" />
-                            <Skeleton className="h-3 w-3/4 mt-1" />
-                        </CardContent>
-                        { i > 0 && <CardFooter><Skeleton className="h-9 w-full" /></CardFooter> }
-                    </Card>
-                ))}
+            <Card className="w-full lg:col-span-2 rounded-xl h-64" />
+            <div className="space-y-4">
+                {[...Array(3)].map((_, i) => <Card key={i} className="h-24 rounded-xl" />)}
             </div>
         </div>
-        <Card className="rounded-xl">
-            <CardHeader>
-                <Skeleton className="h-6 w-1/2" />
-                <Skeleton className="h-4 w-3/4" />
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-1">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className="flex items-center space-x-4 p-2 border-b">
-                            <Skeleton className="h-4 w-1/3 flex-1" />
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-5 w-16 rounded-full" />
-                        </div>
-                    ))}
-                </div>
-            </CardContent>
-        </Card>
     </div>
 );
-
 
 export default function KepalaSekolahDashboardPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const isMounted = useRef(true);
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  // 1. INSTANT UI: Cache initialization
+  const [stats, setStats] = useState(() => {
+    if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('espenli_kepsek_stats');
+        return cached ? JSON.parse(cached) : { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+    }
+    return { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+  });
+
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+
+  useEffect(() => {
+    isMounted.current = true;
+    if (!firestore || !user) return;
+    const fetchStats = async () => {
+        try {
+            const daily = await getDailyStaffAttendanceStats(firestore);
+            if (isMounted.current) {
+                setStats(daily);
+                localStorage.setItem('espenli_kepsek_stats', JSON.stringify(daily));
+                setIsStatsLoading(false);
+            }
+        } catch (e) {
+            if (isMounted.current) setIsStatsLoading(false);
+        }
+    };
+    fetchStats();
+    return () => { isMounted.current = false; };
+  }, [firestore, user, todayStr]);
+
+  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
-  
-  const isRoleLoading = isAuthLoading || isUserDataLoading;
-  const isHeadmaster = !isRoleLoading && userData?.role === 'kepala_sekolah';
+  const isHeadmaster = useMemo(() => userData?.role === 'kepala_sekolah', [userData]);
   
   const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
   const { data: schoolConfig, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
 
   const todaysPersonalAttendanceQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    return query(
-      collection(firestore, 'users', user.uid, 'attendanceRecords'),
-      where('date', '==', todayStr)
-    );
-  }, [user, firestore]);
+    return query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', todayStr), limit(1));
+  }, [user?.uid, firestore, todayStr]);
   const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysPersonalAttendanceQuery);
   
-  const allUsersQuery = useMemoFirebase(() => (isHeadmaster && firestore) ? collection(firestore, 'users') : null, [firestore, isHeadmaster]);
-  const { data: usersData, isLoading: isUsersLoading } = useCollection(user, allUsersQuery);
-  
-  const [dashboardData, setDashboardData] = useState({
-    allAttendanceData: [] as DocumentData[],
-    pendingLeaveRequests: [] as DocumentData[],
-    stats: { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0 }
-  });
-  const [isDashboardDataLoading, setIsDashboardDataLoading] = useState(true);
+  const usersQuery = useMemoFirebase(() => (isHeadmaster && firestore) ? query(collection(firestore, 'users'), where('status', '==', 'Aktif')) : null, [firestore, isHeadmaster]);
+  const { data: usersData } = useCollection(user, usersQuery);
 
-  useEffect(() => {
-    if (!isHeadmaster || !firestore || !usersData) {
-        if (!isUsersLoading) setIsDashboardDataLoading(false);
-        return;
-    }
+  // 2. REAL-TIME: Snapshot activity
+  const globalAttendanceQuery = useMemoFirebase(() => 
+    (isHeadmaster && firestore) ? query(
+      collectionGroup(firestore, 'attendanceRecords'), 
+      where('date', '==', todayStr),
+      limit(100)
+    ) : null,
+    [firestore, isHeadmaster, todayStr]
+  );
+  const { data: globalAttendance, isLoading: isGlobalLoading } = useCollection(user, globalAttendanceQuery);
 
-    const fetchDashboardData = async () => {
-        setIsDashboardDataLoading(true);
-        try {
-            const today = new Date();
-            const todayStr = format(today, 'yyyy-MM-dd');
-            
-            const attendanceQuery = collectionGroup(firestore, 'attendanceRecords');
-            const leaveQuery = collectionGroup(firestore, 'leaveRequests');
-
-            const [attendanceSnap, leaveSnap] = await Promise.all([
-                getDocs(attendanceQuery),
-                getDocs(leaveSnap),
-            ]);
-            
-            const userMap = new Map(usersData.map(u => [u.id, u.role]));
-            
-            const allAttendance = attendanceSnap.docs
-                .map(d => ({ ...d.data(), id: d.id }))
-                .filter(att => {
-                    const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : null);
-                    const role = userMap.get(att.userId);
-                    return dStr === todayStr && role && ['guru', 'kepala_sekolah', 'pegawai'].includes(role);
-                });
-            
-            const allPendingLeave = leaveSnap.docs
-                .map(d => ({ ...d.data(), id: d.id }))
-                .filter(req => {
-                    const role = userMap.get(req.userId);
-                    return req.status === 'pending' && role && ['guru', 'kepala_sekolah', 'pegawai'].includes(role);
-                });
-
-            const presentIds = new Set(allAttendance.map(a => a.userId));
-            
-            setDashboardData({
-                allAttendanceData: allAttendance,
-                pendingLeaveRequests: allPendingLeave,
-                stats: {
-                    hadir: presentIds.size,
-                    izin: 0,
-                    sakit: 0,
-                    pending: allPendingLeave.length,
-                    alpa: 0
-                }
-            });
-        } catch (error) {
-            console.error("Dashboard error:", error);
-            toast({ variant: "destructive", title: "Error", description: "Gagal memuat data dasbor." });
-        } finally {
-            setIsDashboardDataLoading(false);
-        }
-    };
-
-    fetchDashboardData();
-  }, [isHeadmaster, firestore, isUsersLoading, usersData, toast]);
-
-  const isLoading = isRoleLoading || isConfigLoading || isAttendanceLoading || isUsersLoading || isDashboardDataLoading;
-  
-  useEffect(() => {
-    if (!isRoleLoading) {
-        if (!user) {
-          router.replace('/');
-        } else if (!isHeadmaster) {
-          router.replace('/dashboard');
-        }
-    }
-  }, [isRoleLoading, isHeadmaster, router, user]);
-  
-
-  const isHoliday = useMemo(() => {
-    if (!schoolConfig) return false;
-    if (schoolConfig.isAttendanceActive === false) return true;
-    const today = new Date();
-    const offDays: number[] = schoolConfig.offDays ?? [0];
-    if (offDays.includes(today.getDay())) return true;
-    return false;
-  }, [schoolConfig]);
-
-  const { staffPresentToday, totalStaff, recentStaffAttendance } = useMemo(() => {
-    const { allAttendanceData } = dashboardData;
-    if (!usersData || !allAttendanceData || !isHeadmaster) {
-      return { staffPresentToday: 0, totalStaff: 0, recentStaffAttendance: [] };
-    }
-
+  const processedRecentAttendance = useMemo(() => {
+    if (!usersData || !globalAttendance) return [];
     const userMap = new Map(usersData.map(u => [u.id, u]));
-    const staffAndTeachers = usersData.filter(u => ['guru', 'kepala_sekolah', 'pegawai'].includes(u.role));
-    const presentStaffIds = new Set(allAttendanceData.map(att => att.userId));
     
-    const sortedRecentAttendance = [...allAttendanceData].sort((a, b) => {
-        const timeA = a.checkInTime?.toDate().getTime() || a.checkOutTime?.toDate().getTime() || 0;
-        const timeB = b.checkInTime?.toDate().getTime() || b.checkOutTime?.toDate().getTime() || 0;
-        return timeA - timeB;
-    });
+    return [...globalAttendance]
+        .sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (b.checkInTime?.toDate().getTime() || 0))
+        .map((att, index) => {
+            const isFinished = !!att.checkOutTime;
+            return {
+                ...att,
+                sequence: index + 1,
+                name: userMap.get(att.userId)?.name || 'Pengguna',
+                checkInTimeFormatted: att.checkInTime ? format(att.checkInTime.toDate(), 'HH:mm:ss') : '-',
+                checkOutTimeFormatted: att.checkOutTime ? format(att.checkOutTime.toDate(), 'HH:mm:ss') : '-',
+                status: isFinished ? 'Pulang' : 'Hadir',
+                statusClass: isFinished ? 'bg-emerald-500' : 'bg-blue-600',
+            };
+        });
+  }, [usersData, globalAttendance]);
 
-    const enrichedRecentAttendance = sortedRecentAttendance.map((att, index) => {
-        const isFinished = !!att.checkOutTime;
-        return {
-            ...att,
-            sequence: index + 1,
-            name: userMap.get(att.userId)?.name || 'Pengguna tidak dikenal',
-            checkInTimeFormatted: att.checkInTime ? format(att.checkInTime.toDate(), 'HH:mm:ss') : '-',
-            checkOutTimeFormatted: att.checkOutTime ? format(att.checkOutTime.toDate(), 'HH:mm:ss') : '-',
-            status: isFinished ? 'Pulang' : 'Hadir',
-            statusClass: isFinished ? 'bg-emerald-500' : 'bg-blue-600',
-        };
-    });
+  const isLoading = isAuthLoading || isUserDataLoading || isConfigLoading || isAttendanceLoading || (isGlobalLoading && processedRecentAttendance.length === 0);
+  
+  useEffect(() => {
+    if (!isUserDataLoading && user && !isHeadmaster) { router.replace('/dashboard'); }
+  }, [isUserDataLoading, isHeadmaster, router, user]);
 
-    return {
-      totalStaff: staffAndTeachers.length,
-      staffPresentToday: presentStaffIds.size,
-      recentStaffAttendance: enrichedRecentAttendance,
-    };
-  }, [usersData, dashboardData, isHeadmaster]);
-
-  if (isLoading || !isHeadmaster) {
-    return <KepalaSekolahDashboardSkeleton />;
-  }
+  if (isLoading || !isHeadmaster) return <KepalaSekolahDashboardSkeleton />;
 
   const personalButtonAction = () => {
     const record = todaysAttendance?.[0];
     const hasIn = !!record?.checkInTime;
     const hasOut = !!record?.checkOutTime;
-
-    if (hasIn && !hasOut) {
-        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
-    } else if (!hasIn) {
-        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
-    } else {
-        return <Button disabled size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all">Absensi Selesai</Button>;
-    }
+    if (hasIn && !hasOut) return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 bg-blue-600"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
+    if (!hasIn) return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
+    return <Button disabled size="lg" className="w-full font-semibold rounded-xl h-12">Absensi Selesai</Button>;
   };
 
   return (
@@ -296,160 +174,68 @@ export default function KepalaSekolahDashboardPage() {
       <div className="space-y-1">
         <p className="text-sm font-medium text-muted-foreground mt-1">Selamat datang di</p>
         <h1 className="text-2xl font-black tracking-tight text-foreground mt-1 leading-tight">Sistem E-SPENLI</h1>
-        <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">Absensi digital mandiri SMPN 5 Langke Rembong.</p>
+        <p className="text-[11px] font-bold text-muted-foreground mt-2 leading-relaxed">Dashboard Monitoring Kepala Sekolah.</p>
       </div>
 
-      {isHoliday && (
+      {stats.isHoliday && (
         <Alert className="bg-blue-50 border-blue-200 rounded-xl shadow-none">
-          <CalendarOff className="h-4 w-4 text-blue-600" />
-          <AlertTitle className="text-blue-800 font-bold">Hari Libur Terdeteksi</AlertTitle>
-          <AlertDescription className="text-blue-700 text-xs font-bold">Sistem absensi sedang non-aktif hari ini.</AlertDescription>
+          <CalendarOff className="h-4 w-4 text-blue-600" /><AlertTitle className="text-blue-800 font-bold">Hari Libur Sekolah</AlertTitle><AlertDescription className="text-blue-700 text-xs font-bold">Sistem absensi sedang non-aktif hari ini.</AlertDescription>
         </Alert>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Personal Attendance Card */}
         <div className="w-full lg:col-span-2 space-y-1">
             <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
-                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12">
-                    <UserCircle className="w-24 h-24 text-white" />
-                </div>
-                <CardContent className="p-6 relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm">
-                            <Calendar className="h-6 w-6" />
-                        </div>
-                        <div className="space-y-0.5">
-                            <h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2>
-                            <p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau kehadiran pribadi Anda.</p>
-                        </div>
-                    </div>
-                </CardContent>
+                <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><UserCircle className="w-24 h-24 text-white" /></div>
+                <CardContent className="p-6 relative z-10"><div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div><div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau kehadiran pribadi Anda.</p></div></div></CardContent>
             </Card>
-
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
-                <CardContent className="p-8 space-y-6 pt-10 text-center">
-                    <LiveClock />
-                    <div className="flex flex-col items-center justify-center">
-                        <p className="text-xs font-medium text-muted-foreground mt-3 opacity-60">
-                            {format(new Date(), 'eeee, d MMMM yyyy', { locale: id })}
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4">
-                        <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden">
-                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
-                            <div className="bg-green-500 p-2.5 rounded-full text-white shadow-lg shadow-green-500/20 shrink-0 relative z-10">
-                                <LogIn className="h-4 w-4" />
-                            </div>
-                            <div className="text-left relative z-10">
-                                <p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p>
-                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">
-                                    {todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden">
-                            <div className="absolute right-[-10px] top-[-10px] w-12 h-12 rounded-full bg-green-500/5" />
-                            <div className="bg-blue-500 p-2.5 rounded-full text-white shadow-lg shadow-blue-500/20 shrink-0 relative z-10">
-                                <LogOut className="h-4 w-4" />
-                            </div>
-                            <div className="text-left relative z-10">
-                                <p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p>
-                                <p className="text-xl font-bold tabular-nums text-foreground leading-none">
-                                    {todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex flex-col gap-2 p-6 pt-0">
-                    {!isHoliday ? personalButtonAction() : (
-                       <div className="w-full p-4 bg-muted/30 rounded-xl text-center">
-                          <p className="text-xs font-bold text-muted-foreground">Absensi pribadi dinonaktifkan hari ini</p>
-                       </div>
-                    )}
-                </CardFooter>
+                <CardContent className="p-8 space-y-6 pt-10 text-center"><LiveClock /><div className="grid grid-cols-2 gap-4 w-full max-sm mx-auto pt-4"><div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden"><div className="bg-green-500 p-2.5 rounded-full text-white shrink-0"><LogIn className="h-4 w-4" /></div><div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}</p></div></div><div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden"><div className="bg-blue-500 p-2.5 rounded-full text-white shrink-0"><LogOut className="h-4 w-4" /></div><div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}</p></div></div></div></CardContent>
+                <CardFooter className="flex flex-col gap-2 p-6 pt-0">{!stats.isHoliday ? personalButtonAction() : <div className="w-full p-4 bg-muted/30 rounded-xl text-center"><p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Absensi Non-Aktif</p></div>}</CardFooter>
             </Card>
         </div>
 
         <div className="space-y-4">
-          <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
-            <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span>
-                <UserCheck className="h-3.5 w-3.5 opacity-60" />
-            </div>
-            <div className="text-3xl font-normal tracking-tight">
-                {staffPresentToday}<span className="text-lg opacity-50">/{totalStaff}</span>
-            </div>
+          <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white">
+            <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div>
+            <div className="text-3xl font-normal tracking-tight">{stats.hadir}<span className="text-lg opacity-50 ml-1">Staf</span></div>
           </Card>
-          
-          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-normal opacity-80 tracking-widest">Persetujuan Izin</span>
-              <ClipboardCheck className="h-3.5 w-3.5 opacity-60" />
-            </div>
-            <div className="flex items-center justify-between">
-                <div className="text-3xl font-normal tracking-tight">{dashboardData.stats.pending}</div>
-                <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
-                    <Link href="/dashboard/izin-kepala-sekolah">DETAIL</Link>
-                </Button>
-            </div>
+          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white">
+            <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Persetujuan Izin</span><ClipboardCheck className="h-3.5 w-3.5 opacity-60" /></div>
+            <div className="flex items-center justify-between"><div className="text-3xl font-normal tracking-tight">{stats.pending}</div><Button asChild variant="ghost" size="sm" className="h-7 rounded-lg text-[10px] text-white hover:bg-white/10 uppercase tracking-widest">Detail</Button></div>
           </Card>
-          
-           <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 text-white">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-normal opacity-80 tracking-widest">Laporan Sekolah</span>
-              <FileText className="h-3.5 w-3.5 opacity-60" />
-            </div>
-            <div className="flex items-center justify-between mt-1">
-                <p className="text-[10px] opacity-70 uppercase tracking-widest">Akses data</p>
-                <Button asChild variant="ghost" size="sm" className="h-7 rounded-lg font-normal text-[10px] text-white hover:bg-white/10">
-                    <Link href="/dashboard/laporan-sekolah">BUKA</Link>
-                </Button>
-            </div>
+          <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white">
+            <div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div>
+            <div className="text-3xl font-normal tracking-tight">{stats.alpa}</div>
           </Card>
         </div>
       </div>
 
       <Card className="shadow-none border-muted-foreground/10 overflow-hidden rounded-xl bg-primary/5">
-        <CardHeader className="bg-muted/20 border-b border-muted-foreground/5">
-            <CardTitle className="text-lg font-bold">Riwayat Kehadiran Staf Terbaru</CardTitle>
-            <CardDescription>Aktivitas kehadiran guru & pegawai yang tercatat hari ini.</CardDescription>
-        </CardHeader>
+        <CardHeader className="bg-muted/20 border-b border-muted-foreground/5"><CardTitle className="text-lg font-bold">Riwayat Kehadiran Staf Terbaru</CardTitle><CardDescription>Data aktivitas kehadiran guru & pegawai hari ini.</CardDescription></CardHeader>
         <CardContent className="p-0">
             <div className="overflow-x-auto">
                 <Table>
                     <TableHeader className="bg-muted/30">
                         <TableRow className="border-none">
-                            <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest border-none">No.</TableHead>
-                            <TableHead className="font-bold text-[10px] uppercase tracking-widest border-none">Nama</TableHead>
-                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Masuk</TableHead>
-                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Pulang</TableHead>
-                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest border-none">Status</TableHead>
+                            <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest">No</TableHead>
+                            <TableHead className="font-bold text-[10px] uppercase tracking-widest">Nama</TableHead>
+                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Masuk</TableHead>
+                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Pulang</TableHead>
+                            <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {recentStaffAttendance.length > 0 ? (
-                            recentStaffAttendance.map(item => (
-                                <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
-                                    <TableCell className="text-center font-bold text-muted-foreground text-xs">{item.sequence}</TableCell>
-                                    <TableCell className="font-bold text-sm">{item.name}</TableCell>
-                                    <TableCell className="text-center font-mono text-xs font-bold text-foreground">{item.checkInTimeFormatted}</TableCell>
-                                    <TableCell className="text-center font-mono text-xs font-bold text-foreground">{item.checkOutTimeFormatted}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant="outline" className={cn("text-[9px] font-bold uppercase px-3 py-1 rounded-full text-white border-none shadow-none", item.statusClass)}>
-                                            {item.status}
-                                        </Badge>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">
-                                    Belum ada aktivitas
-                                </TableCell>
+                        {processedRecentAttendance.length > 0 ? processedRecentAttendance.map((item, idx) => (
+                            <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
+                                <TableCell className="text-center font-bold text-muted-foreground text-xs">{idx + 1}</TableCell>
+                                <TableCell className="font-bold text-sm">{item.name}</TableCell>
+                                <TableCell className="text-center font-mono text-xs font-bold text-foreground">{item.checkInTimeFormatted}</TableCell>
+                                <TableCell className="text-center font-mono text-xs font-bold text-foreground">{item.checkOutTimeFormatted}</TableCell>
+                                <TableCell className="text-center"><Badge variant="outline" className={cn("text-[9px] font-bold uppercase px-3 py-1 rounded-full text-white border-none shadow-none", item.statusClass)}>{item.status}</Badge></TableCell>
                             </TableRow>
+                        )) : (
+                            <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Belum ada aktivitas hari ini.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>

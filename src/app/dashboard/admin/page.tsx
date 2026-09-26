@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -19,13 +18,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, limit, getDocs, type DocumentData, collectionGroup, orderBy } from 'firebase/firestore';
+import { doc, collection, query, where, limit, type DocumentData, collectionGroup } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { startOfDay, endOfDay, format } from 'date-fns';
+import { startOfDay, format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -53,11 +51,20 @@ export default function AdminDashboardPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const isMounted = useRef(true);
 
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false });
-  const [isStatsLoading, setIsStatsLoading] = useState(true);
   
+  // 1. INSTANT UI: Load stats from localStorage if available
+  const [stats, setStats] = useState(() => {
+    if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('espenli_admin_stats');
+        return cached ? JSON.parse(cached) : { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+    }
+    return { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+  });
+
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
   const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   useEffect(() => {
@@ -65,35 +72,41 @@ export default function AdminDashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Optimized fetch for daily summary stats
+  // 2. HEMAT READS: Fetch summary stats (optimized with getCountFromServer internally)
   useEffect(() => {
+    isMounted.current = true;
     if (!firestore || !user) return;
+    
     const fetchStats = async () => {
-        setIsStatsLoading(true);
-        const daily = await getDailyStaffAttendanceStats(firestore);
-        setStats(daily);
-        setIsStatsLoading(false);
+        try {
+            const daily = await getDailyStaffAttendanceStats(firestore);
+            if (isMounted.current) {
+                setStats(daily);
+                localStorage.setItem('espenli_admin_stats', JSON.stringify(daily));
+                setIsStatsLoading(false);
+            }
+        } catch (e) {
+            if (isMounted.current) setIsStatsLoading(false);
+        }
     };
     fetchStats();
+    return () => { isMounted.current = false; };
   }, [firestore, user, todayStr]);
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user?.uid]);
+  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
-
   const isAdmin = useMemo(() => userData?.role === 'admin', [userData]);
 
-  // Activity list - limited to 10 for performance
+  // 3. REAL-TIME & HEMAT READS: Listener for today's activity only
   const globalAttendanceQuery = useMemoFirebase(() => 
     (isAdmin && firestore) ? query(
       collectionGroup(firestore, 'attendanceRecords'), 
       where('date', '==', todayStr),
-      limit(10)
+      limit(100) // Safety limit
     ) : null,
     [firestore, isAdmin, todayStr]
   );
+  
   const { data: globalAttendance, isLoading: isGlobalLoading } = useCollection(user, globalAttendanceQuery);
 
   const usersQuery = useMemoFirebase(() => 
@@ -137,7 +150,7 @@ export default function AdminDashboardPage() {
     }
   }, [isRoleCheckLoading, user, isAdmin, router]);
 
-  if (isRoleCheckLoading || isGlobalLoading || isStatsLoading) {
+  if (isRoleCheckLoading || (isGlobalLoading && recentUserActivity.length === 0)) {
     return <AdminDashboardSkeletons />;
   }
 
