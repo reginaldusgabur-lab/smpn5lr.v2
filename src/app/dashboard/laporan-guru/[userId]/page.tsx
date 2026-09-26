@@ -80,7 +80,7 @@ export default async function UserReportDetailPage(props: {
             const leave = d.data();
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 if (isWithinInterval(day, { start: monthStart, end: monthEnd })) {
-                    leaveMap.set(format(day, 'yyyy-MM-dd'), leave);
+                    leaveMap.set(format(day, 'yyyy-MM-dd'), { ...leave, id: d.id });
                 }
             });
         });
@@ -128,7 +128,8 @@ export default async function UserReportDetailPage(props: {
                     checkOutTime, 
                     status: 'Hadir', 
                     description,
-                    points: pts
+                    points: pts,
+                    manualEntry: attendanceRecord.manualEntry || false
                 };
             }
 
@@ -141,7 +142,8 @@ export default async function UserReportDetailPage(props: {
                     checkOutTime: null, 
                     status: leaveRecord.type, 
                     description: leaveRecord.reason || leaveRecord.type,
-                    points: pts
+                    points: pts,
+                    manualEntry: false
                 };
             }
 
@@ -153,7 +155,8 @@ export default async function UserReportDetailPage(props: {
                     checkOutTime: null, 
                     status: 'Alpa', 
                     description: 'Tidak ada keterangan',
-                    points: 0.0
+                    points: 0.0,
+                    manualEntry: false
                 };
             }
 
@@ -183,6 +186,6 @@ export default async function UserReportDetailPage(props: {
 
     } catch (error) {
         console.error("Error User Detail Report:", error);
-        return <div className="p-4"><Alert variant="destructive"><AlertTitle>Gagal</AlertTitle><AlertDescription>Kesalahan server.</AlertDescription></Alert></div>;
+        return <div className="p-4"><Alert variant="destructive"><AlertTitle>Gagal</AlertTitle><AlertDescription>Kesalahan server saat memuat data laporan.</AlertDescription></Alert></div>;
     }
 }
