@@ -26,6 +26,7 @@ const cleanDesc = (desc: any) => {
     if (d === 'terlambat') return 'Terlambat';
     if (d === 'sakit') return 'Sakit';
     if (d === 'izin' || d === 'izin pribadi') return 'Izin pribadi';
+    if (d === 'cuti' || d === 'cuti resmi') return 'Cuti resmi';
     if (d === 'dinas pagi') return 'Dinas pagi';
     if (d === 'dinas siang') return 'Dinas siang';
     if (d === 'pulang cepat') return 'Pulang cepat';
@@ -36,25 +37,30 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Menghitung nilai poin berdasarkan status untuk kalkulasi persentase.
+ * Poin 1.0 = Tidak mengurangi persentase.
+ * Poin 0.0 = Alpa.
  */
 const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
     
-    // Prioritas 1: Tugas Kedinasan (Poin Penuh)
+    // Cuti dihitung sebagai hari libur (Poin 1.0 agar tidak merusak rata-rata)
+    if (s === 'cuti' || d.includes('cuti')) return 1.0;
+    
+    // Tugas Kedinasan (Poin Penuh)
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
     
-    // Prioritas 2: Hadir Normal
+    // Hadir Normal
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
     
-    // Prioritas 3: Telat / Pulang Cepat
+    // Telat / Pulang Cepat
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
     
-    // Prioritas 4: Sakit / Izin
+    // Sakit / Izin
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
     
-    // Prioritas 5: Absen Setengah (Lupa salah satu)
+    // Absen Setengah
     if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
     
     return 0.0;
@@ -109,7 +115,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         activeLeaves.forEach(d => {
             const l = d.data();
             if (l.type === 'Sakit') sakitCount++;
-            else if (!['Pulang Cepat', 'Dinas Siang'].includes(l.type)) izinCount++;
+            else if (!['Pulang Cepat', 'Dinas Siang', 'Cuti', 'Cuti Resmi'].includes(l.type)) izinCount++;
         });
 
         const qPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
@@ -131,7 +137,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
  */
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v500_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v600_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
 
     try {
@@ -146,14 +152,28 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const monthlyConfig = monthlyConfigSnap.data() || {};
         const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-        const workingDays = eachDayOfInterval({ start, end }).filter(day => 
+        const baseWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
             !(schoolConfig.offDays || [0, 6]).includes(day.getDay()) && 
             !(monthlyConfig.holidays || []).includes(format(day, 'yyyy-MM-dd'))
         );
-        const workingDaysSet = new Set(workingDays.map(d => format(d, 'yyyy-MM-dd')));
 
         let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
+        const cutiDates = new Set<string>();
+
+        // Identifikasi tanggal CUTI terlebih dahulu (untuk mengurangi pembagi hari kerja)
+        leaveSnap.docs.forEach(d => {
+            const leave = d.data();
+            if (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') {
+                eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
+                    cutiDates.add(format(day, 'yyyy-MM-dd'));
+                });
+            }
+        });
+
+        // Filter hari kerja: Hapus hari di mana user sedang CUTI
+        const userSpecificWorkingDays = baseWorkingDays.filter(day => !cutiDates.has(format(day, 'yyyy-MM-dd')));
+        const workingDaysSet = new Set(userSpecificWorkingDays.map(d => format(d, 'yyyy-MM-dd')));
 
         attendanceSnap.docs.forEach(d => {
             const att = d.data();
@@ -166,6 +186,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         leaveSnap.docs.forEach(d => {
             const leave = d.data();
+            if (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') return; // Sudah ditangani di atas
+
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 const dStr = format(day, 'yyyy-MM-dd');
                 if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
@@ -176,13 +198,16 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             });
         });
 
-        const pastWorkingDays = workingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+        const pastWorkingDays = userSpecificWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+        
+        const denominator = Math.max(1, userSpecificWorkingDays.length);
+        const finalPercentage = (totalPoints / denominator) * 100;
 
         const result = {
             totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa: alpaCount,
             totalPoints: totalPoints.toFixed(2),
-            persentase: Math.min((totalPoints / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%'
+            persentase: Math.min(finalPercentage, 100).toFixed(1) + '%'
         };
         setInCache(cacheKey, result); return result;
     } catch (e) { return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' }; }
@@ -231,12 +256,14 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 };
             }
             if (leave) {
-                const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false);
-                const isHadirFull = pts === 1.0;
+                const type = (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') ? 'Cuti' : leave.type;
+                const pts = calculatePoints(type, leave.reason || type, false, false);
+                const statusLabel = (type === 'Cuti') ? 'Cuti' : (pts === 1.0 ? 'Hadir' : type);
+                
                 return { 
                     id: `${leave.id}-${dStr}`, date: dStr, 
-                    status: isHadirFull ? 'Hadir' : leave.type, 
-                    description: cleanDesc(leave.reason) || leave.type, 
+                    status: statusLabel, 
+                    description: cleanDesc(leave.reason) || type, 
                     points: pts, manualEntry: false 
                 };
             }
