@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, MessageSquare, MailCheck, Clock, CheckCircle2, Calendar } from 'lucide-react';
+import { Loader2, Trash2, MessageSquare, MailCheck, Clock, CheckCircle2, Calendar, Info } from 'lucide-react';
 import { startOfDay, endOfDay, addDays, format, parse, isValid } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -85,7 +85,6 @@ export default function IzinPage() {
     const watchedType = form.watch('type');
     const isCutiSelected = watchedType === 'Cuti Resmi';
 
-    // Jika user status 'Cuti', aktifkan pilihan range dan tipe Cuti
     useEffect(() => {
         if (isCutiSelected) {
             form.setValue('leaveDate', 'range');
@@ -243,12 +242,24 @@ export default function IzinPage() {
                                     <FormItem className="space-y-2"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Alasan Detail</FormLabel><FormControl><Textarea placeholder="Tuliskan alasan pengajuan Anda secara ringkas..." {...field} className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 transition-all font-bold text-sm shadow-none" /></FormControl><FormMessage className="text-[10px] font-bold" /></FormItem>
                                 )} />
                                 
-                                <div className="p-4 bg-amber-50/50 border border-dashed border-amber-200 rounded-xl flex items-start gap-3">
-                                    <MessageSquare className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                                    <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
-                                        <span className="uppercase tracking-widest mr-1">Info:</span>
-                                        Pengajuan dengan tipe <span className="underline italic">Cuti Resmi</span> tidak akan dihitung sebagai alpa/absen dan tidak mengurangi akumulasi poin kehadiran Anda.
-                                    </p>
+                                <div className="space-y-3">
+                                    <div className="p-4 bg-blue-50/60 border border-blue-200 rounded-xl flex items-start gap-3">
+                                        <MessageSquare className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                                        <p className="text-[10px] font-bold text-slate-600 leading-relaxed">
+                                            <span className="text-blue-600 uppercase tracking-widest mr-1">Petunjuk:</span>
+                                            Isi dengan alasan singkat saja. Kalimat sapaan lengkap harap dikirim langsung kepada <span className="text-foreground">Kepala Sekolah melalui WhatsApp atau menyesuaikan aturan sekolah.</span>
+                                        </p>
+                                    </div>
+
+                                    {isCutiSelected && (
+                                        <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl flex items-start gap-3 animate-in zoom-in-95 duration-300">
+                                            <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                                            <p className="text-[10px] font-bold text-amber-800 leading-relaxed">
+                                                <span className="uppercase tracking-widest mr-1">Petunjuk Pengajuan Cuti:</span>
+                                                Pengajuan <span className="italic">Cuti Resmi</span> akan dihitung sebagai hari libur pribadi dan tidak memengaruhi poin kehadiran. Pastikan rentang tanggal sudah benar sesuai surat izin yang ada.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                             <CardFooter className="p-6 border-t border-muted-foreground/5 bg-muted/5">
