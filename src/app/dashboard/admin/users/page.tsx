@@ -165,11 +165,22 @@ export default function AdminUsersPage() {
     const userStats = useMemo(() => {
         return (usersData || []).reduce((acc, curr) => {
             if (curr.role === 'admin') return acc;
+            
             acc.total++;
+            
+            // Gender
             if (curr.gender === 'Laki-laki') acc.lakiLaki++;
             else if (curr.gender === 'Perempuan') acc.perempuan++;
+            
+            // Status Kepegawaian (PNS / PPPK)
+            if (curr.position === 'PNS') acc.pns++;
+            else if (curr.position === 'PPPK') acc.pppk++;
+            
+            // Role Pegawai
+            if (curr.role === 'pegawai') acc.pegawai++;
+            
             return acc;
-        }, { total: 0, lakiLaki: 0, perempuan: 0 });
+        }, { total: 0, lakiLaki: 0, perempuan: 0, pns: 0, pppk: 0, pegawai: 0 });
     }, [usersData]);
 
     const userForm = useForm<z.infer<typeof addUserSchema>>({
@@ -283,7 +294,7 @@ export default function AdminUsersPage() {
                             <div className="relative w-full sm:w-[320px]"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Cari nama..." className="pl-10 h-11 rounded-xl bg-muted/30 font-bold text-xs shadow-none" value={userSearch} onChange={e => setUserSearch(e.target.value)} /></div>
                         </div>
 
-                        <div className="border rounded-xl overflow-hidden border-muted-foreground/5">
+                        <div className="border rounded-xl overflow-hidden border-muted-foreground/5 mb-8">
                             <Table>
                                 <TableHeader className="bg-muted/30"><TableRow className="border-none"><TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead><TableHead className="font-bold text-[10px] uppercase">Nama & email</TableHead><TableHead className="font-bold text-[10px] uppercase">Peran</TableHead><TableHead className="font-bold text-[10px] uppercase">Gender</TableHead><TableHead className="font-bold text-[10px] uppercase">Identitas</TableHead><TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead><TableHead className="text-right font-bold text-[10px] uppercase pr-6">Aksi</TableHead></TableRow></TableHeader>
                                 <TableBody>
@@ -300,6 +311,36 @@ export default function AdminUsersPage() {
                                     )) : <TableRow><TableCell colSpan={7} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Data tidak ditemukan</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
+                        </div>
+
+                        <div className="pt-8 border-t border-muted-foreground/10">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4 ml-1">Ringkasan Personil (Kecuali Admin)</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                                <div className="bg-primary/5 p-4 rounded-2xl text-center border border-primary/5">
+                                    <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-2">Total</p>
+                                    <p className="text-xl font-black text-primary leading-none">{userStats.total}</p>
+                                </div>
+                                <div className="bg-blue-500/5 p-4 rounded-2xl text-center border border-blue-500/10">
+                                    <p className="text-[8px] font-black uppercase text-blue-600/60 tracking-widest leading-none mb-2">Laki-laki</p>
+                                    <p className="text-xl font-black text-blue-600 leading-none">{userStats.lakiLaki}</p>
+                                </div>
+                                <div className="bg-pink-500/5 p-4 rounded-2xl text-center border border-pink-500/10">
+                                    <p className="text-[8px] font-black uppercase text-pink-600/60 tracking-widest leading-none mb-2">Perempuan</p>
+                                    <p className="text-xl font-black text-pink-600 leading-none">{userStats.perempuan}</p>
+                                </div>
+                                <div className="bg-emerald-500/5 p-4 rounded-2xl text-center border border-emerald-500/10">
+                                    <p className="text-[8px] font-black uppercase text-emerald-600/60 tracking-widest leading-none mb-2">Pegawai</p>
+                                    <p className="text-xl font-black text-emerald-600 leading-none">{userStats.pegawai}</p>
+                                </div>
+                                <div className="bg-amber-500/5 p-4 rounded-2xl text-center border border-amber-500/10">
+                                    <p className="text-[8px] font-black uppercase text-amber-600/60 tracking-widest leading-none mb-2">PNS</p>
+                                    <p className="text-xl font-black text-amber-600 leading-none">{userStats.pns}</p>
+                                </div>
+                                <div className="bg-purple-500/5 p-4 rounded-2xl text-center border border-purple-500/10">
+                                    <p className="text-[8px] font-black uppercase text-purple-600/60 tracking-widest leading-none mb-2">PPPK</p>
+                                    <p className="text-xl font-black text-purple-600 leading-none">{userStats.pppk}</p>
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -326,6 +367,7 @@ export default function AdminUsersPage() {
                             <div className="grid grid-cols-2 gap-4"><FormField control={userForm.control} name="role" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='rounded-xl'><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem><SelectItem value="siswa">Siswa</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></FormItem>)} /><FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Gender</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='rounded-xl'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></SelectContent></Select></FormItem>)} /></div>
                             <div className="grid grid-cols-2 gap-4"><FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl></FormItem>)} /><FormField control={userForm.control} name="nisn" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NISN</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl></FormItem>)} /></div>
                             <div className="grid grid-cols-2 gap-4"><FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl></FormItem>)} /><FormField control={userForm.control} name="status" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status Akun</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='rounded-xl'><SelectItem value="Aktif">Aktif</SelectItem><SelectItem value="Cuti" className="text-amber-600">Cuti (Enabled)</SelectItem><SelectItem value="Nonaktif" className="text-red-600">Nonaktif</SelectItem></SelectContent></Select></FormItem>)} /></div>
+                            <FormField control={userForm.control} name="sequenceNumber" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">No. Urut Laporan</FormLabel><FormControl><Input type="number" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl></FormItem>)} />
                             {!editingUser && <FormField control={userForm.control} name="password" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Sandi Awal</FormLabel><FormControl><Input type="password" {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl></FormItem>)} />}
                             <Button type="submit" className="w-full h-12 rounded-xl font-bold bg-primary uppercase text-[11px]" disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan Data'}</Button>
                         </form>
