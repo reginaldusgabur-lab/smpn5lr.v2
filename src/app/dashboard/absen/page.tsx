@@ -77,6 +77,9 @@ type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'succe
 
 export default function AbsenPage() {
   const [status, setStatus] = useState<FeedbackStatus>('idle');
+  const statusRef = useRef<FeedbackStatus>('idle');
+  useEffect(() => { statusRef.current = status; }, [status]);
+
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const { user } = useUser();
@@ -88,7 +91,7 @@ export default function AbsenPage() {
   const [isScannerReady, setIsScannerReady] = useState(false);
   const [cameraError, setCameraError] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-  const readerId = "qr-reader-fullscreen-dash-v2";
+  const readerId = "qr-reader-fullscreen-dash-v3";
 
   useEffect(() => { setIsClient(true); }, []);
 
@@ -136,6 +139,7 @@ export default function AbsenPage() {
   const showScanner = isClient && !isDataLoading && !isHoliday && !isManualDisabled && !hasCompletedAttendance && !currentActiveLeave && (windowStatus === 'CHECK_IN_OPEN' || windowStatus === 'CHECK_OUT_OPEN');
 
   const handleAttendance = useCallback(async () => {
+    if (statusRef.current !== 'idle' && statusRef.current !== 'processing') return;
     setLocationError(null);
     if (!user || !firestore || !schoolConfig) return;
     
@@ -160,37 +164,39 @@ export default function AbsenPage() {
         }
 
         const now = new Date();
-        const todayStr = format(now, 'yyyy-MM-dd');
+        const tDateStr = format(now, 'yyyy-MM-dd');
 
         if (windowStatus === 'CHECK_IN_OPEN') {
             if (todaysRecord?.checkInTime) return setStatus('error_already_in');
             if (todaysRecord) {
-                await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude });
+                await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { date: tDateStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude });
             } else {
-                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
+                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: tDateStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
             }
+            invalidateCache();
+            await playSuccessFeedback((schoolConfig as any).successSoundUrl);
             setStatus('success_in');
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
             if (!todaysRecord) {
-                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: todayStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude, reasonForUpdate: 'Absen pulang (Tanpa masuk)' });
+                 await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: tDateStr, checkInTime: null, checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude, reasonForUpdate: 'Absen pulang (Tanpa masuk)' });
             } else {
                 await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { checkOutTime: now, checkOutLatitude: latitude, checkOutLongitude: longitude });
             }
+            invalidateCache();
+            await playSuccessFeedback((schoolConfig as any).successSoundUrl);
             setStatus('success_out');
         }
-        invalidateCache();
-        playSuccessFeedback((schoolConfig as any).successSoundUrl);
     } catch (error) { setStatus('error_generic'); }
   }, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
 
   const onScanSuccess = useCallback((decodedText: string) => {
-    if (status === 'idle' && decodedText === schoolConfig?.qrCodeValue) {
+    if (statusRef.current === 'idle' && decodedText === schoolConfig?.qrCodeValue) {
         handleAttendance();
-    } else if (status === 'idle' && decodedText !== schoolConfig?.qrCodeValue) {
+    } else if (statusRef.current === 'idle' && decodedText !== schoolConfig?.qrCodeValue) {
         toast({ variant: 'destructive', title: 'QR Code tidak valid' });
     }
-  }, [schoolConfig, status, handleAttendance, toast]);
+  }, [schoolConfig?.qrCodeValue, handleAttendance, toast]);
 
   useEffect(() => {
     if (!showScanner || status !== 'idle') return;
@@ -238,8 +244,8 @@ export default function AbsenPage() {
             </div>
         )}
         <div className="absolute top-12 left-0 right-0 z-50 text-center pointer-events-none">
-            <h2 className="text-white text-2xl font-black tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">PINDAI QR CODE</h2>
-            <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">SMP NEGERI 5 LANGKE REMBONG</p>
+            <h2 className="text-white text-2xl font-black tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">Pindai QR Code</h2>
+            <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-1">SMP NEGERI 5 LANGKE REMBONG</p>
         </div>
         <div className="absolute inset-0 z-10 pointer-events-none">
             {isScannerReady && <div className="absolute left-0 right-0 h-24 animate-scan-line bg-gradient-to-b from-transparent via-primary/30 to-transparent" />}
@@ -279,7 +285,7 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
                 <button onClick={onClose} className="absolute top-4 right-4 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-6 w-6" /></button>
                 <div className="flex flex-col items-center">
                     <div className="mb-4">{feedback.icon}</div>
-                    <h3 className="text-base font-medium mb-1 uppercase text-foreground whitespace-nowrap overflow-hidden text-ellipsis w-full">{feedback.title}</h3>
+                    <h3 className="text-sm font-medium mb-1 uppercase text-foreground whitespace-nowrap overflow-hidden text-ellipsis w-full tracking-tight">{feedback.title}</h3>
                     <p className="text-muted-foreground text-[10px] font-normal leading-relaxed px-2 mb-6">{feedback.desc}</p>
                     {(status === 'success_in' || status === 'success_out') && (
                         <div className="w-full">
