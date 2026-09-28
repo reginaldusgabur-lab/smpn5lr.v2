@@ -21,7 +21,7 @@ import {
     DropdownMenuLabel 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, PencilLine } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, PencilLine, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -48,7 +48,7 @@ interface ClientShellProps {
 const PointLegend = () => (
     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas / Cuti</p>
             <p className="text-sm font-black text-green-600">1.0 Poin</p>
         </div>
         <div className="space-y-1">
@@ -144,7 +144,10 @@ export default function ReportClientShell({
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
+            if (type === 'reset-alpa') {
+                // Deletion already queued in the snapA/snapL loops above.
+                // Just proceed to commit.
+            } else if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
                 const currentItem = reportDetails.find(d => d.date.startsWith(todayStr));
                 
                 let data: any = {
@@ -192,9 +195,9 @@ export default function ReportClientShell({
                 batch.set(newLeaveDoc, {
                     id: newLeaveDoc.id,
                     userId, userName: userData.name,
-                    type: type === 'sakit' ? 'Sakit' : 'Izin Pribadi',
+                    type: type === 'sakit' ? 'Sakit' : (type === 'cuti' ? 'Cuti Resmi' : 'Izin Pribadi'),
                     status: 'approved',
-                    reason: type === 'sakit' ? 'Sakit' : 'Izin pribadi',
+                    reason: type === 'sakit' ? 'Sakit' : (type === 'cuti' ? 'Cuti resmi' : 'Izin pribadi'),
                     startDate: Timestamp.fromDate(startOfDay(targetDate)),
                     endDate: Timestamp.fromDate(endOfDay(targetDate)),
                     createdAt: serverTimestamp(), approvedBy: authUser.uid, approvedAt: serverTimestamp()
@@ -326,6 +329,7 @@ export default function ReportClientShell({
         if (s === 'alpa') return "bg-red-500 text-white";
         if (s === 'sakit') return "bg-orange-500 text-white";
         if (s.includes('izin') || s.includes('dinas') || d.includes('luar sekolah') || d.includes('cepat')) return "bg-amber-500 text-white";
+        if (s === 'cuti') return "bg-blue-500 text-white";
         return "bg-emerald-500 text-white";
     };
 
@@ -400,7 +404,7 @@ export default function ReportClientShell({
                                         reportDetails.map((item, index) => {
                                             const hasIn = !!item.checkInTime;
                                             const hasOut = !!item.checkOutTime;
-                                            const isProblematic = item.status === 'Alpa' || !hasIn || !hasOut;
+                                            const isProblematic = item.status === 'Alpa' || !hasIn || !hasOut || item.points < 1.0;
                                             const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
                                             const isLuarSekolah = item.description === 'Kegiatan luar sekolah';
 
@@ -437,10 +441,16 @@ export default function ReportClientShell({
                                                                         <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-primary" onClick={() => handleStatusChange(item.date, 'cuti')}>Jadikan Cuti Resmi</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+                                                                        
+                                                                        <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-destructive bg-destructive/5" onClick={() => handleStatusChange(item.date, 'reset-alpa')}>
+                                                                            <RotateCcw className="mr-2 h-3.5 w-3.5" />Kembalikan ke Alpa (Batal)
+                                                                        </DropdownMenuItem>
                                                                     </DropdownMenuContent>
                                                                 </DropdownMenu>
                                                             )}

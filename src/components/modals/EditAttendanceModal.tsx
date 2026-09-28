@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -21,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { format, parseISO, isValid, startOfDay, endOfDay, addMinutes, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { MoreVertical, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { MoreVertical, CheckCircle2, AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +51,6 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                     const hasIn = !!d.checkInTime;
                     const hasOut = !!d.checkOutTime;
                     const isManual = d.manualEntry === true;
-                    // Hanya tampilkan yang ALPA, KURANG LENGKAP, atau SUDAH EDIT MANUAL (bisa di edit ulang)
                     return (d.status === 'Alpa') || (!hasIn || !hasOut) || isManual;
                 });
                 if (isMounted.current) {
@@ -75,7 +73,32 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         return dailyOut?.start || config.checkOutStartTime || '14:00';
     };
 
-    const handleAlpaConversionToLeave = async (day: any, newStatus: 'Sakit' | 'Izin' | 'Dinas') => {
+    const handleResetToAlpa = async (day: any) => {
+        if (!currentUser?.uid || !firestore || !user) return;
+        setIsSaving(true);
+        try {
+            const targetDate = parseISO(day.date);
+            const batch = writeBatch(firestore);
+            const todayStr = format(targetDate, 'yyyy-MM-dd');
+            
+            const attendanceRef = collection(firestore, 'users', user.uid, 'attendanceRecords');
+            const qA = query(attendanceRef, where('date', '==', todayStr));
+            const snapA = await getDocs(qA);
+            snapA.forEach(d => batch.delete(d.ref));
+
+            const leaveRef = collection(firestore, 'users', user.uid, 'leaveRequests');
+            const qL = query(leaveRef, where('startDate', '==', Timestamp.fromDate(startOfDay(targetDate))));
+            const snapL = await getDocs(qL);
+            snapL.forEach(d => batch.delete(d.ref));
+
+            await batch.commit();
+            invalidateCache(); 
+            setProblematicDays(prev => prev.filter(p => p.id !== day.id));
+        } catch (err) { setError("Gagal membatalkan status."); }
+        finally { setIsSaving(false); }
+    };
+
+    const handleAlpaConversionToLeave = async (day: any, newStatus: 'Sakit' | 'Izin' | 'Cuti') => {
         if (!currentUser?.uid || !firestore || !user) return;
         setIsSaving(true);
         try {
@@ -99,9 +122,9 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                 userId: user.uid,
                 userName: user.name,
                 userRole: user.role,
-                type: newStatus === 'Sakit' ? 'Sakit' : 'Izin Pribadi',
+                type: newStatus === 'Sakit' ? 'Sakit' : (newStatus === 'Cuti' ? 'Cuti Resmi' : 'Izin Pribadi'),
                 status: 'approved',
-                reason: newStatus === 'Sakit' ? 'Sakit' : 'Izin pribadi',
+                reason: newStatus === 'Sakit' ? 'Sakit' : (newStatus === 'Cuti' ? 'Cuti resmi' : 'Izin pribadi'),
                 startDate: Timestamp.fromDate(startOfDay(targetDate)),
                 endDate: Timestamp.fromDate(endOfDay(targetDate)),
                 createdAt: serverTimestamp(), 
@@ -113,10 +136,8 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             invalidateCache(); 
             setProblematicDays(prev => prev.filter(p => p.id !== day.id));
             setError(null);
-        } catch (err) { 
-            console.error("Alpa conversion error:", err);
-            setError("Terjadi kesalahan sistem."); 
-        } finally { setIsSaving(false); }
+        } catch (err) { setError("Terjadi kesalahan sistem."); }
+        finally { setIsSaving(false); }
     };
 
     const handleAlpaConversionToAttendance = async (day: any, type: string) => {
@@ -128,7 +149,13 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const recordDate = parseISO(day.date);
             const now = new Date();
             const isToday = isSameDay(recordDate, now);
-            const recordRef = doc(firestore, 'users', user.uid, 'attendanceRecords', day.id);
+            const todayStr = format(recordDate, 'yyyy-MM-dd');
+            
+            // Clean up previous manual entries if any
+            const attendanceRefCol = collection(firestore, 'users', user.uid, 'attendanceRecords');
+            const qA = query(attendanceRefCol, where('date', '==', todayStr));
+            const snapA = await getDocs(qA);
+            snapA.forEach(d => batch.delete(d.ref));
 
             const inEnd = schoolConfig.checkInEndTime || '07:30';
             const outStart = getDailyOutStart(recordDate, schoolConfig);
@@ -140,7 +167,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             const fillOut = !isToday || (isToday && now > limitOutStart);
 
             let data: any = {
-                userId: user.uid, date: format(recordDate, 'yyyy-MM-dd'),
+                userId: user.uid, date: todayStr,
                 manualEntry: true, updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 reasonForUpdate: 'Kehadiran penuh'
             };
@@ -174,7 +201,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
             else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
             else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
 
-            batch.set(recordRef, data, { merge: true });
+            batch.set(doc(attendanceRefCol), data);
             await batch.commit();
             invalidateCache(); 
             setProblematicDays(prev => prev.filter(p => p.id !== day.id));
@@ -233,6 +260,14 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         finally { setIsSaving(false); }
     };
 
+    const getStatusVariant = (status: string) => {
+        const s = status.toLowerCase();
+        if (s === 'alpa') return 'destructive';
+        if (s === 'sakit' || s === 'izin') return 'secondary';
+        if (s === 'hadir') return 'default';
+        return 'outline';
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-md rounded-xl border-none shadow-none p-0 overflow-hidden">
@@ -264,7 +299,7 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                                     <MoreVertical className="h-4 w-4 text-muted-foreground" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2 animate-in zoom-in-95 duration-200">
+                                            <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                 <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
                                                 {hasIn && !hasOut ? (
                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'hadir')}>Lengkapi absen pulang</DropdownMenuItem>
@@ -280,10 +315,16 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                                 
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(item, 'Sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToLeave(item, 'Izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-primary" onClick={() => handleAlpaConversionToLeave(item, 'Cuti')}>Jadikan Cuti Resmi</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleAlpaConversionToAttendance(item, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+                                                
+                                                <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-destructive bg-destructive/5" onClick={() => handleResetToAlpa(item)}>
+                                                    <RotateCcw className="mr-2 h-3.5 w-3.5" />Kembalikan ke Alpa (Batal)
+                                                </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>

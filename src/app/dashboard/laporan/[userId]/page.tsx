@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -16,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserMonthlyReportData, type MonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, RotateCcw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +41,7 @@ const safeFormat = (dateInput: any, formatString: string): string => {
 const PointLegend = () => (
     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas / Cuti</p>
             <p className="text-sm font-black text-green-600">1.0 Poin</p>
         </div>
         <div className="space-y-1">
@@ -144,7 +143,6 @@ export default function UserReportDetailPage() {
             const outStart = getDailyOutStart(targetDate);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
-            const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
@@ -159,7 +157,9 @@ export default function UserReportDetailPage() {
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah', 'lengkapi-masuk', 'lengkapi-pulang'].includes(type)) {
+            if (type === 'reset-alpa') {
+                // Done in deletion loops above
+            } else if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah', 'lengkapi-masuk', 'lengkapi-pulang'].includes(type)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
@@ -188,9 +188,11 @@ export default function UserReportDetailPage() {
 
                     if (existingAtt?.checkOutTime) {
                         data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
-                    } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi')) {
-                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
-                        data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                    } else if (!isToday || (isToday && now > limitOutStart)) {
+                        if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
+                            const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
+                            data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                        }
                     } else {
                         data.checkOutTime = null;
                     }
@@ -208,9 +210,9 @@ export default function UserReportDetailPage() {
                 batch.set(newLeaveDoc, {
                     id: newLeaveDoc.id,
                     userId, userName: userData.name,
-                    type: type === 'sakit' ? 'Sakit' : 'Izin Pribadi',
+                    type: type === 'sakit' ? 'Sakit' : (type === 'cuti' ? 'Cuti Resmi' : 'Izin Pribadi'),
                     status: 'approved',
-                    reason: type === 'sakit' ? 'Sakit' : 'Izin pribadi',
+                    reason: type === 'sakit' ? 'Sakit' : (type === 'cuti' ? 'Cuti resmi' : 'Izin pribadi'),
                     startDate: Timestamp.fromDate(startOfDay(targetDate)),
                     endDate: Timestamp.fromDate(endOfDay(targetDate)),
                     createdAt: serverTimestamp(), approvedBy: currentUser.uid, approvedAt: serverTimestamp()
@@ -329,12 +331,13 @@ export default function UserReportDetailPage() {
             });
         }
 
+        const footerNoteText = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";
         const totalPagesCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPagesCount; i++) {
             doc.setPage(i);
             const ph = doc.internal.pageSize.getHeight();
             doc.setTextColor(0,0,0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-            doc.setFontSize(8).setFont('times', 'italic').text(config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.", margin, ph - 10);
+            doc.setFontSize(8).setFont('times', 'italic').text(footerNoteText, margin, ph - 10);
             doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPagesCount}`, pageWidth - margin, ph - 10, { align: 'right' });
         }
         doc.save(`Laporan_Detail_${userData.name.replace(/\s+/g, '_')}_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
@@ -415,7 +418,6 @@ export default function UserReportDetailPage() {
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
                                         const isManual = item.manualEntry === true;
-                                        // PROTEKSI: Full Absen Mandiri (bukan manual admin) tidak bisa di edit
                                         const canEdit = isAdmin && (isAlpa || !hasIn || !hasOut || isManual);
 
                                         return (
@@ -446,10 +448,16 @@ export default function UserReportDetailPage() {
                                                                     
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-primary" onClick={() => handleStatusChange(item.date, 'cuti')}>Jadikan Cuti Resmi</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang cepat</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+
+                                                                    <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                    <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-destructive bg-destructive/5" onClick={() => handleStatusChange(item.date, 'reset-alpa')}>
+                                                                        <RotateCcw className="mr-2 h-3.5 w-3.5" />Kembalikan ke Alpa (Batal)
+                                                                    </DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         )}
