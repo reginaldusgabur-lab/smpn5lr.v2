@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button'
@@ -90,7 +91,6 @@ export default function PengaturanPage() {
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [name, setName] = useState('');
   const [nip, setNip] = useState('');
-  const [nisn, setNisn] = useState('');
   const [position, setPosition] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -142,7 +142,6 @@ export default function PengaturanPage() {
       role: string;
       email: string;
       nip?: string;
-      nisn?: string;
       position?: string;
       photoURL?: string;
   }>(user, userDocRef);
@@ -171,7 +170,6 @@ export default function PengaturanPage() {
     if (userData) {
       setName(userData.name || '');
       setNip(userData.nip || '');
-      setNisn(userData.nisn || '');
       setPosition(userData.position || '');
     }
   }, [userData]);
@@ -278,7 +276,6 @@ export default function PengaturanPage() {
 
       if (userData?.role !== 'admin') {
           if (nip !== (userData?.nip || '')) firestoreUpdates.nip = nip;
-          if (nisn !== (userData?.nisn || '')) firestoreUpdates.nisn = nisn;
           if (position !== (userData?.position || '')) firestoreUpdates.position = position;
       }
 
@@ -366,7 +363,7 @@ export default function PengaturanPage() {
   const currentPhoto = photoPreview || userData?.photoURL;
   const isTeacherOrStaff = ['guru', 'pegawai', 'kepala_sekolah'].includes(userData?.role || '');
   const isAdmin = userData?.role === 'admin';
-  const positions = isTeacherOrStaff ? ["PNS", "PPPK", "Honorer", "PW"] : ["Pelajar Aktif"];
+  const positions = ["PNS", "PPPK", "Honorer", "PW"];
 
   if (isUserDataLoading || isAuthLoading || isConfigLoading) return <div className="flex h-full items-center justify-center pt-20"><Loader2 className="animate-spin text-primary" /></div>;
 
@@ -416,12 +413,6 @@ export default function PengaturanPage() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NIP</Label>
                         <Input className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" value={nip} onChange={(e) => setNip(e.target.value)} />
-                    </div>
-                  )}
-                  {userData?.role === 'siswa' && (
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NISN</Label>
-                        <Input className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" value={nisn} onChange={(e) => setNisn(e.target.value)} />
                     </div>
                   )}
                   <div className="space-y-2">
@@ -537,11 +528,13 @@ export default function PengaturanPage() {
                   </div>
 
                   <div className="pt-8 border-t mt-6">
-                      <div className="flex items-center gap-3 mb-4">
-                          <Volume2 className="h-5 w-5 text-primary" />
-                          <div>
-                              <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
-                              <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom (Maks 1MB).</p>
+                      <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                              <Volume2 className="h-5 w-5 text-primary" />
+                              <div>
+                                  <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
+                                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom (Maks 1MB).</p>
+                              </div>
                           </div>
                       </div>
                       <div className="flex flex-col gap-4 bg-muted/30 p-4 rounded-2xl border border-muted-foreground/10">
