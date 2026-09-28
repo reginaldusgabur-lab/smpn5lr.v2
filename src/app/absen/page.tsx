@@ -266,7 +266,11 @@ export default function AbsenPage() {
 const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     const feedback = useMemo(() => {
         const iconSize = "h-12 w-12";
+        const loadingIcon = <Loader2 className={cn(iconSize, "animate-spin text-primary")} />;
+        
         switch (status) {
+            case 'processing': return { icon: loadingIcon, title: 'MEMPROSES', desc: 'Sedang memvalidasi data absensi...' };
+            case 'locating': return { icon: loadingIcon, title: 'MENCARI LOKASI', desc: 'Menghubungkan ke satelit GPS...' };
             case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'ABSEN MASUK BERHASIL', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
             case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'ABSEN PULANG BERHASIL', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
             case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };

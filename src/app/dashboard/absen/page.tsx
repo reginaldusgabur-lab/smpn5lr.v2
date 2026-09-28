@@ -265,7 +265,11 @@ export default function AbsenPage() {
 const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     const feedback = useMemo(() => {
         const iconSize = "h-12 w-12";
+        const loadingIcon = <Loader2 className={cn(iconSize, "animate-spin text-primary")} />;
+        
         switch (status) {
+            case 'processing': return { icon: loadingIcon, title: 'MEMPROSES', desc: 'Sedang memvalidasi data absensi...' };
+            case 'locating': return { icon: loadingIcon, title: 'MENCARI LOKASI', desc: 'Menghubungkan ke satelit GPS...' };
             case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'ABSEN MASUK BERHASIL', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
             case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'ABSEN PULANG BERHASIL', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
             case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
@@ -282,7 +286,7 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-10">
             <div className="w-full max-w-sm text-center p-6 rounded-2xl border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-6 w-6" /></button>
+                <button onClick={onClose} className="absolute top-4 right-4 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-5 w-5" /></button>
                 <div className="flex flex-col items-center">
                     <div className="mb-4">{feedback.icon}</div>
                     <h3 className="text-sm font-medium mb-1 uppercase text-foreground whitespace-nowrap overflow-hidden text-ellipsis w-full tracking-tight">{feedback.title}</h3>
