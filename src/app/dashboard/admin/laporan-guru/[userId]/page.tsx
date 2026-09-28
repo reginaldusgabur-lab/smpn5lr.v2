@@ -71,16 +71,17 @@ export default async function UserReportDetailPage(props: {
         const attendanceMap = new Map();
         [...attSnap.docs, ...attFallbackSnap.docs].forEach(d => {
             const data = d.data();
-            const dStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-            if (dStr && !attendanceMap.has(dStr)) attendanceMap.set(dStr, { id: d.id, ...data });
+            const dayStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+            if (dayStr && !attendanceMap.has(dayStr)) attendanceMap.set(dayStr, { id: d.id, ...data });
         });
 
         const leaveMap = new Map<string, any>();
         leaveSnap.docs.forEach(d => {
             const leave = d.data();
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
+                const dayStr = format(day, 'yyyy-MM-dd');
                 if (isWithinInterval(day, { start: monthStart, end: monthEnd })) {
-                    leaveMap.set(format(day, 'yyyy-MM-dd'), { ...leave, id: d.id });
+                    leaveMap.set(dayStr, { ...leave, id: d.id });
                 }
             });
         });
@@ -123,9 +124,9 @@ export default async function UserReportDetailPage(props: {
 
                 return { 
                     id: attendanceRecord.id, 
-                    date: day, 
-                    checkInTime, 
-                    checkOutTime, 
+                    date: dayStr, 
+                    checkInTime: checkInTime ? checkInTime.toISOString() : null, 
+                    checkOutTime: checkOutTime ? checkOutTime.toISOString() : null, 
                     status: 'Hadir', 
                     description,
                     points: pts,
@@ -134,13 +135,13 @@ export default async function UserReportDetailPage(props: {
             }
 
             if (leaveRecord) {
-                const pts = leaveRecord.type === 'Sakit' ? 0.9 : 0.7;
+                const pts = (leaveRecord.type === 'Sakit') ? 0.9 : ((leaveRecord.type === 'Cuti' || leaveRecord.type === 'Cuti Resmi') ? 1.0 : 0.7);
                 return { 
                     id: `${leaveRecord.id}-${dayStr}`, 
-                    date: day, 
+                    date: dayStr, 
                     checkInTime: null, 
                     checkOutTime: null, 
-                    status: leaveRecord.type, 
+                    status: leaveRecord.type === 'Cuti Resmi' ? 'Cuti' : leaveRecord.type, 
                     description: leaveRecord.reason || leaveRecord.type,
                     points: pts,
                     manualEntry: false
@@ -150,7 +151,7 @@ export default async function UserReportDetailPage(props: {
             if (isToday || isBefore(day, today)) {
                 return { 
                     id: dayStr, 
-                    date: day, 
+                    date: dayStr, 
                     checkInTime: null, 
                     checkOutTime: null, 
                     status: 'Alpa', 
@@ -164,20 +165,13 @@ export default async function UserReportDetailPage(props: {
         });
 
         const validReport = report.filter(Boolean) as any[];
-        validReport.sort((a, b) => b.date.getTime() - a.date.getTime());
-
-        const reportData = validReport.map(item => ({
-            ...item,
-            date: item.date.toISOString(),
-            checkInTime: item.checkInTime ? item.checkInTime.toISOString() : null,
-            checkOutTime: item.checkOutTime ? item.checkOutTime.toISOString() : null,
-        }));
+        validReport.sort((a, b) => b.date.localeCompare(a.date));
 
         return (
             <ReportClientShell 
                 userId={userId}
                 initialUserData={userData}
-                initialReportData={reportData}
+                initialReportData={validReport}
                 initialMonth={currentMonth.toISOString()}
                 initialSchoolConfig={schoolConfig}
                 initialMonthlyConfig={monthlyConfig}
@@ -186,6 +180,6 @@ export default async function UserReportDetailPage(props: {
 
     } catch (error) {
         console.error("Error User Detail Report:", error);
-        return <div className="p-4"><Alert variant="destructive"><AlertTitle>Gagal</AlertTitle><AlertDescription>Kesalahan server.</AlertDescription></Alert></div>;
+        return <div className="p-4"><Alert variant="destructive"><AlertTitle>Gagal</AlertTitle><AlertDescription>Kesalahan server saat memuat data laporan.</AlertDescription></Alert></div>;
     }
 }
