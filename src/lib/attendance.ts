@@ -17,6 +17,9 @@ export interface MonthlyReportData {
     points: number;
 }
 
+/**
+ * Membersihkan deskripsi agar tampil rapi di laporan.
+ */
 const cleanDesc = (desc: any) => {
     if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
     const d = desc.toLowerCase();
@@ -31,21 +34,34 @@ const cleanDesc = (desc: any) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
+/**
+ * Menghitung nilai poin berdasarkan status untuk kalkulasi persentase.
+ */
 const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
+    
+    // Prioritas 1: Tugas Kedinasan (Poin Penuh)
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
+    
+    // Prioritas 2: Hadir Normal
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
+    
+    // Prioritas 3: Telat / Pulang Cepat
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
+    
+    // Prioritas 4: Sakit / Izin
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
+    
+    // Prioritas 5: Absen Setengah (Lupa salah satu)
     if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
+    
     return 0.0;
 };
 
 /**
- * Agregasi Statistik Harian (HANYA 1 READ PER QUERY)
- * Menggunakan getCountFromServer untuk efisiensi maksimal.
+ * Agregasi Statistik Harian untuk Dashboard.
  */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
@@ -62,7 +78,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const isManualOff = config.isAttendanceActive === false;
         const isHoliday = isManualOff || (mConfig.holidays || []).includes(todayStr) || (config.offDays || [0, 6]).includes(today.getDay());
 
-        // 1. Hitung Total Staf Aktif
         const qUsers = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -75,12 +90,10 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return { totalStaff, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: true };
         }
 
-        // 2. Hitung Staf Hadir Hari Ini
         const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
         const countPresent = await getCountFromServer(qPresent);
         const hadirCount = countPresent.data().count;
 
-        // 3. Hitung Izin & Sakit (Hanya yang status approved hari ini)
         const qLeave = query(
             collectionGroup(firestore, 'leaveRequests'),
             where('status', '==', 'approved'),
@@ -99,31 +112,26 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             else if (!['Pulang Cepat', 'Dinas Siang'].includes(l.type)) izinCount++;
         });
 
-        // 4. Hitung Pending Requests
         const qPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
         const countPending = await getCountFromServer(qPending);
 
-        // 5. Kalkulasi Alpa (Matematika klien untuk hemat reads)
         const alpaCount = Math.max(0, totalStaff - (hadirCount + izinCount + sakitCount));
 
         return { 
-            totalStaff, 
-            hadir: hadirCount, 
-            izin: izinCount, 
-            sakit: sakitCount, 
-            pending: countPending.data().count, 
-            alpa: alpaCount, 
-            isHoliday: false 
+            totalStaff, hadir: hadirCount, izin: izinCount, sakit: sakitCount, 
+            pending: countPending.data().count, alpa: alpaCount, isHoliday: false 
         };
     } catch (e) {
-        console.error("Aggregation stats error:", e);
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
     }
 }
 
+/**
+ * Kalkulasi Statistik Kehadiran Bulanan per User.
+ */
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v401_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v500_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
 
     try {
@@ -180,6 +188,9 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     } catch (e) { return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' }; }
 }
 
+/**
+ * Mengambil data riwayat bulanan lengkap untuk tabel laporan.
+ */
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
     if (!schoolConfig) return [];
     const start = startOfMonth(currentMonth); const end = endOfMonth(currentMonth);
@@ -210,9 +221,25 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const att = attMap.get(dStr); const leave = leaveMap.get(dStr);
             if (att) {
                 const desc = cleanDesc(att.reasonForUpdate);
-                return { id: att.id, date: dStr, checkInTime: att.checkInTime?.toDate().toISOString() || null, checkOutTime: att.checkOutTime?.toDate().toISOString() || null, status: 'Hadir', description: desc, points: calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime), manualEntry: att.manualEntry || false };
+                return { 
+                    id: att.id, date: dStr, 
+                    checkInTime: att.checkInTime?.toDate().toISOString() || null, 
+                    checkOutTime: att.checkOutTime?.toDate().toISOString() || null, 
+                    status: 'Hadir', description: desc, 
+                    points: calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime), 
+                    manualEntry: att.manualEntry || false 
+                };
             }
-            if (leave) return { id: `${leave.id}-${dStr}`, date: dStr, status: leave.type, description: cleanDesc(leave.reason) || leave.type, points: calculatePoints(leave.type, leave.reason || leave.type, false, false), manualEntry: false };
+            if (leave) {
+                const pts = calculatePoints(leave.type, leave.reason || leave.type, false, false);
+                const isHadirFull = pts === 1.0;
+                return { 
+                    id: `${leave.id}-${dStr}`, date: dStr, 
+                    status: isHadirFull ? 'Hadir' : leave.type, 
+                    description: cleanDesc(leave.reason) || leave.type, 
+                    points: pts, manualEntry: false 
+                };
+            }
             return { id: dStr, date: dStr, status: 'Alpa', description: 'Tanpa keterangan', points: 0.0, manualEntry: false };
         }).filter(Boolean).sort((a: any, b: any) => b.date.localeCompare(a.date));
     } catch (e) { return []; }

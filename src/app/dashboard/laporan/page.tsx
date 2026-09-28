@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -166,13 +167,13 @@ export default function LaporanPage() {
       setCurrentMonth(prev => addMonths(prev, 1));
   };
 
-  const getStatusColorClass = (status: string) => {
+  const getStatusColorClass = (status: string, desc: string) => {
     const s = status.toLowerCase();
-    if (s === 'hadir' || s === 'terlambat') return "bg-emerald-500/10 text-emerald-600";
-    if (s === 'sakit') return "bg-orange-500/10 text-orange-600";
-    if (s.includes('izin')) return "bg-amber-500/10 text-amber-600";
-    if (s === 'alpa') return "bg-red-500/10 text-red-600";
-    return "bg-primary/10 text-primary";
+    const d = desc.toLowerCase();
+    if (s === 'alpa') return "bg-red-500 text-white";
+    if (s === 'sakit') return "bg-orange-500 text-white";
+    if (s.includes('izin') || s.includes('dinas') || d.includes('cepat') || d.includes('luar sekolah')) return "bg-amber-500 text-white";
+    return "bg-emerald-500 text-white";
   };
 
   const isLoading = isAuthLoading || isConfigLoading || isReportLoading;
@@ -264,8 +265,8 @@ export default function LaporanPage() {
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkOut}</TableCell>
                                         <TableCell className="text-center">
                                             <span className={cn(
-                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap",
-                                                getStatusColorClass(record.status)
+                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm",
+                                                getStatusColorClass(record.status, record.description)
                                             )}>
                                                 {record.status}
                                             </span>
