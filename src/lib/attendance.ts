@@ -47,8 +47,8 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
     // Cuti dihitung sebagai hari libur (Poin 1.0 agar tidak merusak rata-rata)
     if (s === 'cuti' || d.includes('cuti')) return 1.0;
     
-    // Tugas Kedinasan (Poin Penuh)
-    if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
+    // Tugas Kedinasan / Kegiatan Luar Sekolah (Poin Penuh)
+    if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh' || s.includes('luar sekolah')) return 1.0;
     
     // Hadir Normal
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
@@ -115,7 +115,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         activeLeaves.forEach(d => {
             const l = d.data();
             if (l.type === 'Sakit') sakitCount++;
-            else if (!['Pulang Cepat', 'Dinas Siang', 'Cuti', 'Cuti Resmi'].includes(l.type)) izinCount++;
+            else if (!['Pulang Cepat', 'Dinas Siang', 'Cuti', 'Cuti Resmi', 'Kegiatan Luar Sekolah'].includes(l.type)) izinCount++;
         });
 
         const qPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
@@ -193,7 +193,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
                     totalPoints += calculatePoints(leave.type, leave.reason || leave.type, false, false);
                     if (leave.type === 'Sakit') sakitCount++; else izinCount++;
-                    processedDates.add(dStr);
+                    processedDates.add(dayStr);
                 }
             });
         });
@@ -210,7 +210,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             persentase: Math.min(finalPercentage, 100).toFixed(1) + '%'
         };
         setInCache(cacheKey, result); return result;
-    } catch (e) { return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' }; }
+    } catch (e) {
+        console.error("Stats Error:", e);
+        return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
+    }
 }
 
 /**
@@ -258,6 +261,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (leave) {
                 const type = (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') ? 'Cuti' : leave.type;
                 const pts = calculatePoints(type, leave.reason || type, false, false);
+                // Jika poin 1.0, status ditampilkan sebagai 'Hadir' (untuk dinas/luar sekolah)
                 const statusLabel = (type === 'Cuti') ? 'Cuti' : (pts === 1.0 ? 'Hadir' : type);
                 
                 return { 

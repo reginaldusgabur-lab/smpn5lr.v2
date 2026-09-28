@@ -194,6 +194,7 @@ export default function IzinPage() {
                                                     <SelectItem value="Izin Pribadi" className="font-bold">Izin Pribadi</SelectItem>
                                                     <SelectItem value="Dinas Pagi" className="font-bold">Tugas Dinas Pagi</SelectItem>
                                                     <SelectItem value="Dinas Siang" className="font-bold" disabled={!hasCheckedIn}>Tugas Dinas Siang</SelectItem>
+                                                    <SelectItem value="Kegiatan Luar Sekolah" className="font-bold">Kegiatan Luar Sekolah</SelectItem>
                                                     <SelectItem value="Terlambat" className="font-bold" disabled={hasCheckedIn}>Izin Terlambat</SelectItem>
                                                     <SelectItem value="Pulang Cepat" className="font-bold" disabled={!hasCheckedIn || hasCheckedOut}>Izin Pulang Cepat</SelectItem>
                                                     {userData?.status === 'Cuti' && (
