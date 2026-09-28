@@ -1,3 +1,4 @@
+
 import admin from "firebase-admin";
 
 /**
@@ -20,12 +21,11 @@ if (!admin.apps.length) {
           clientEmail,
           privateKey,
         }),
-        // Ganti URL database jika Anda menggunakan Realtime Database
         databaseURL: `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`
       });
       console.log('Firebase Admin initialized with service account.');
     } else {
-      // Fallback ke Application Default Credentials (ADC)
+      // Fallback ke Application Default Credentials (ADC) jika env tidak ada
       admin.initializeApp();
       console.log('Firebase Admin initialized with default credentials.');
     }
