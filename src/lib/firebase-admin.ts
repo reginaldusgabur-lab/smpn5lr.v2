@@ -2,8 +2,8 @@
 import admin from "firebase-admin";
 
 /**
- * Inisialisasi Firebase Admin SDK secara aman untuk lingkungan server (Next.js/Vercel).
- * Memastikan kredensial Service Account diproses dengan benar.
+ * Inisialisasi Firebase Admin SDK secara aman.
+ * Menangani perbedaan format environment variables antara lokal dan Vercel.
  */
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -12,24 +12,23 @@ const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
 if (admin.apps.length === 0) {
   try {
-    // Membersihkan private key dari tanda petik pembungkus dan literal \n
-    const formattedKey = privateKey
-      ? privateKey.replace(/^"|"$/g, '').replace(/\\n/g, '\n')
-      : undefined;
+    if (projectId && clientEmail && privateKey) {
+      // Membersihkan tanda petik pembungkus dan memastikan \n di-parse menjadi baris baru yang nyata
+      const formattedKey = privateKey
+        .replace(/^['"]|['"]$/g, '') // Hapus tanda petik tunggal atau ganda di awal/akhir
+        .replace(/\\n/g, '\n');     // Ubah literal \n menjadi karakter new-line
 
-    if (projectId && clientEmail && formattedKey) {
       admin.initializeApp({
         credential: admin.credential.cert({
           projectId,
           clientEmail,
           privateKey: formattedKey,
         }),
-        // Database URL opsional namun disarankan untuk kelengkapan inisialisasi
         databaseURL: `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`
       });
-      console.log('Firebase Admin: Berhasil diinisialisasi dengan Service Account.');
+      console.log('Firebase Admin: Berhasil diinisialisasi menggunakan Service Account.');
     } else {
-      // Fallback ke kredensial default lingkungan (lokal)
+      // Fallback untuk lingkungan lokal yang mungkin menggunakan ADC
       admin.initializeApp();
       console.log('Firebase Admin: Menggunakan Application Default Credentials.');
     }
