@@ -61,6 +61,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -81,7 +82,6 @@ import { firebaseConfig } from '@/firebase/config';
 import { resetUserPassword } from '@/app/actions/admin-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
-import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
 
 const addUserSchema = z.object({
@@ -287,7 +287,11 @@ export default function AdminUsersPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30"><TableRow className="border-none"><TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead><TableHead className="font-bold text-[10px] uppercase">Nama & email</TableHead><TableHead className="font-bold text-[10px] uppercase">Peran</TableHead><TableHead className="font-bold text-[10px] uppercase">Gender</TableHead><TableHead className="font-bold text-[10px] uppercase">NIP</TableHead><TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead><TableHead className="text-right font-bold text-[10px] uppercase pr-6">Aksi</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {isUsersLoading ? [...Array(5)].map((_, i) => (<TableRow key={i} className="border-muted-foreground/5"><TableCell colSpan={7} className="h-16 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-primary/30" /></TableCell></TableRow>)) : filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
+                                    {isUsersLoading ? [...Array(5)].map((_, i) => (
+                                        <TableRow key={i} className="border-muted-foreground/5">
+                                            <TableCell colSpan={7} className="h-16 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-primary/30" /></TableCell>
+                                        </TableRow>
+                                    )) : filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
                                         <TableRow key={u.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
                                             <TableCell className="text-center font-bold text-muted-foreground text-sm">{u.sequenceNumber ?? i + 1}</TableCell>
                                             <TableCell><div className="flex items-center gap-3"><Avatar className="h-9 w-9 border border-muted-foreground/10"><AvatarImage src={u.photoURL} alt={u.name} className="object-cover" /><AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">{getInitials(u.name || '')}</AvatarFallback></Avatar><div className="flex flex-col"><span className="font-bold text-sm">{u.name}</span><span className="text-[10px] text-muted-foreground font-bold">{u.email}</span></div></div></TableCell>
@@ -390,3 +394,4 @@ export default function AdminUsersPage() {
         </div>
     );
 }
+
