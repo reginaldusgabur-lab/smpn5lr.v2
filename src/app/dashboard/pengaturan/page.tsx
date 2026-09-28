@@ -398,17 +398,19 @@ export default function PengaturanPage() {
                         <Input className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10" value={nip} onChange={(e) => setNip(e.target.value)} />
                     </div>
                   )}
-                  <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Status Kepegawaian</Label>
-                      <Select onValueChange={setPosition} value={position}>
-                          <SelectTrigger className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10">
-                            <SelectValue placeholder="Pilih status" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-none shadow-2xl">
-                            {positions.map(p => <SelectItem key={p} value={p} className="rounded-lg">{p}</SelectItem>)}
-                          </SelectContent>
-                      </Select>
-                  </div>
+                  {!isAdmin && (
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Status Kepegawaian</Label>
+                        <Select onValueChange={setPosition} value={position}>
+                            <SelectTrigger className="h-12 rounded-xl bg-muted/30 font-bold shadow-none border-muted-foreground/10">
+                              <SelectValue placeholder="Pilih status" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-none shadow-2xl">
+                              {positions.map(p => <SelectItem key={p} value={p} className="rounded-lg">{p}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                  )}
               </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-5 bg-muted/5">
@@ -430,7 +432,7 @@ export default function PengaturanPage() {
                   <CardDescription className="text-[10px] font-bold text-muted-foreground">Sesuaikan detail yang muncul pada header dan blok tanda tangan hasil unduh PDF.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 pt-8">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Instansi Pemerintah</Label>
                         <Input placeholder="Contoh: PEMERINTAH KABUPATEN..." value={governmentAgency} onChange={e => setGovernmentAgency(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
@@ -470,7 +472,7 @@ export default function PengaturanPage() {
                   </div>
                   
                   <div className="pt-8 border-t mt-6">
-                      <div className="flex items-center justify-between mb-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                           <div className="flex items-center gap-3">
                             <BellRing className="h-5 w-5 text-amber-500" />
                             <div>
@@ -487,7 +489,7 @@ export default function PengaturanPage() {
                   </div>
 
                   <div className="pt-8 border-t mt-6">
-                      <div className="flex items-center justify-between mb-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                           <div className="flex items-center gap-3">
                             <Sparkles className="h-5 w-5 text-blue-500" />
                             <div>
@@ -519,13 +521,13 @@ export default function PengaturanPage() {
                           </div>
                       </div>
                       <div className="flex flex-col gap-4 bg-muted/30 p-4 rounded-2xl border border-muted-foreground/10">
-                          <div className="flex items-center justify-between px-1">
-                              <div className="flex items-center gap-2">
-                                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nada Aktif:</span>
-                                  <span className="text-[10px] font-bold text-primary truncate max-w-[150px]">{successSoundName || 'Default (Tinggggg)'}</span>
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-1 gap-4">
+                              <div className="flex items-center gap-2 min-w-0">
+                                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0">Nada Aktif:</span>
+                                  <span className="text-[10px] font-bold text-primary truncate">{successSoundName || 'Default (Tinggggg)'}</span>
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 shrink-0">
                                   {successSoundBase64 && (
                                       <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg shadow-none flex items-center gap-2 font-bold text-[10px]" onClick={playTestAudio}>
                                           <Play className="h-3 w-3 fill-primary text-primary" /> TEST
@@ -547,9 +549,9 @@ export default function PengaturanPage() {
                   </div>
               </CardContent>
               <CardFooter className="border-t px-6 py-5 bg-muted/5 flex flex-wrap gap-3">
-                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-6 shadow-none">SIMPAN DATA PDF</Button>
-                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN & KUTIPAN</Button>
-                  <Button onClick={handleAudioSettingsSave} disabled={isAudioSaving} variant="secondary" className="font-bold rounded-xl h-11 px-6 shadow-none bg-primary/10 text-primary hover:bg-primary/20">SIMPAN NADA</Button>
+                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="w-full sm:w-auto font-bold rounded-xl h-11 px-6 shadow-none">SIMPAN DATA PDF</Button>
+                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="w-full sm:w-auto font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN & KUTIPAN</Button>
+                  <Button onClick={handleAudioSettingsSave} disabled={isAudioSaving} variant="secondary" className="w-full sm:w-auto font-bold rounded-xl h-11 px-6 shadow-none bg-primary/10 text-primary hover:bg-primary/20">SIMPAN NADA</Button>
               </CardFooter>
           </Card>
         )}
