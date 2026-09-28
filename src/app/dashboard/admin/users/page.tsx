@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -79,7 +78,7 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, collection, getDocs } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
-import { resetUserPassword } from '@/app/actions/admin-actions';
+import { resetUserPassword, updateUserEmail } from '@/app/actions/admin-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -196,8 +195,14 @@ export default function AdminUsersPage() {
             const parsedSeq = values.sequenceNumber ? parseInt(values.sequenceNumber, 10) : null;
             const finalSeq = (parsedSeq !== null && !isNaN(parsedSeq)) ? parsedSeq : null;
             if (editingUser) {
+                // Perbarui email di Auth jika berubah
+                if (values.email !== editingUser.email) {
+                    const res = await updateUserEmail(editingUser.id, values.email);
+                    if (!res.success) throw new Error(res.error);
+                }
+
                 updateDocumentNonBlocking(doc(firestore, "users", editingUser.id), {
-                    name: values.name, role: values.role, gender: values.gender,
+                    name: values.name, email: values.email, role: values.role, gender: values.gender,
                     status: values.status, nip: values.nip || null,
                     position: values.position || null,
                     sequenceNumber: finalSeq,
@@ -356,23 +361,40 @@ export default function AdminUsersPage() {
                     <DialogTitle className="text-xl font-bold mb-4">{editingUser ? 'Ubah data personil' : 'Tambah personil baru'}</DialogTitle>
                     <Form {...userForm}>
                         <form onSubmit={userForm.handleSubmit(handleSaveUser)} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4"><FormField control={userForm.control} name="name" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Nama</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} /><FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input {...field} disabled={!!editingUser} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} /></div>
-                            <div className="grid grid-cols-2 gap-4"><FormField control={userForm.control} name="role" render={({field}) => (
-                                <FormItem>
-                                    <FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl>
-                                        <SelectContent className='rounded-xl'>
-                                            <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
-                                            <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
-                                            <SelectItem value="kepala_sekolah" disabled={!!existingKepsek && editingUser?.id !== existingKepsek.id} className="rounded-lg">
-                                                Kepala Sekolah {!!existingKepsek && editingUser?.id !== existingKepsek.id && "(Terisi)"}
-                                            </SelectItem>
-                                            <SelectItem value="admin" className="rounded-lg">Admin</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </FormItem>
-                            )} /><FormField control={userForm.control} name="gender" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Gender</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl><SelectContent className='rounded-xl'><SelectItem value="Laki-laki">Laki-laki</SelectItem><SelectItem value="Perempuan">Perempuan</SelectItem></SelectContent></Select></FormItem>)} /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField control={userForm.control} name="name" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Nama</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={userForm.control} name="email" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField control={userForm.control} name="role" render={({field}) => (
+                                    <FormItem>
+                                        <FormLabel className="text-[10px] font-bold uppercase">Peran</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent className='rounded-xl'>
+                                                <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
+                                                <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
+                                                <SelectItem value="kepala_sekolah" disabled={!!existingKepsek && editingUser?.id !== existingKepsek.id} className="rounded-lg">
+                                                    Kepala Sekolah {!!existingKepsek && editingUser?.id !== existingKepsek.id && "(Terisi)"}
+                                                </SelectItem>
+                                                <SelectItem value="admin" className="rounded-lg">Admin</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )} />
+                                <FormField control={userForm.control} name="gender" render={({field}) => (
+                                    <FormItem>
+                                        <FormLabel className="text-[10px] font-bold uppercase">Gender</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent className='rounded-xl'>
+                                                <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                                                <SelectItem value="Perempuan">Perempuan</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )} />
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <FormField control={userForm.control} name="nip" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">NIP</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl></FormItem>)} />
                                 <FormField control={userForm.control} name="position" render={({field}) => (<FormItem><FormLabel className="text-[10px] font-bold uppercase">Status Kepegawaian</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl bg-muted/30 shadow-none" /></FormControl></FormItem>)} />
@@ -394,4 +416,3 @@ export default function AdminUsersPage() {
         </div>
     );
 }
-

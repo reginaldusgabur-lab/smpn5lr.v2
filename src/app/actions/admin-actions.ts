@@ -31,3 +31,24 @@ export async function resetUserPassword(uid: string, newPass: string) {
     };
   }
 }
+
+/**
+ * Memperbarui email pengguna secara manual oleh Admin.
+ * @param uid UID pengguna yang akan diperbarui.
+ * @param newEmail Alamat email baru.
+ */
+export async function updateUserEmail(uid: string, newEmail: string) {
+  try {
+    await adminAuth.updateUser(uid, {
+      email: newEmail,
+    });
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating email:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Gagal memperbarui email. Email mungkin sudah digunakan atau format salah.' 
+    };
+  }
+}
