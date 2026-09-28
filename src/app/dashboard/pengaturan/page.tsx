@@ -44,35 +44,17 @@ import { invalidateCache } from '@/lib/cache';
 import Cropper, { Area, Point } from 'react-easy-crop';
 import { cn } from '@/lib/utils';
 
-/**
- * Helper to process image cropping and compression on a canvas.
- */
 const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string> => {
     const image = new Image();
     image.src = imageSrc;
     await new Promise((resolve) => { image.onload = resolve; });
-
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-
     if (!ctx) return '';
-
     const targetSize = 800;
     canvas.width = targetSize;
     canvas.height = targetSize;
-
-    ctx.drawImage(
-        image,
-        pixelCrop.x,
-        pixelCrop.y,
-        pixelCrop.width,
-        pixelCrop.height,
-        0,
-        0,
-        targetSize,
-        targetSize
-    );
-
+    ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, targetSize, targetSize);
     return canvas.toDataURL('image/jpeg', 0.8);
 };
 
@@ -185,15 +167,12 @@ export default function PengaturanPage() {
       setReportCity(schoolConfigData.reportCity ?? '');
       setAcademicYear(schoolConfigData.academicYear ?? '');
       setReportFooterNote(schoolConfigData.reportFooterNote ?? 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.');
-      
       setNotificationTitle(schoolConfigData.notificationTitle ?? '');
       setNotificationContent(schoolConfigData.notificationContent ?? '');
       setIsNotificationActive(schoolConfigData.isNotificationActive ?? false);
       setNotificationInterval(schoolConfigData.notificationInterval ?? 3);
-
       setIsManualQuoteActive(schoolConfigData.isManualQuoteActive ?? false);
       setManualQuoteContent(schoolConfigData.manualQuoteContent ?? '');
-
       setSuccessSoundBase64(schoolConfigData.successSoundUrl ?? null);
       setSuccessSoundName(schoolConfigData.successSoundName ?? '');
     }
@@ -259,34 +238,24 @@ export default function PengaturanPage() {
     const rawUser = auth.currentUser;
     if (!rawUser || !userDocRef) return;
     setIsProfileLoading(true);
-
     try {
       const authUpdates: any = {};
       const firestoreUpdates: any = {};
-
       if (name.trim() && name !== userData?.name) {
           authUpdates.displayName = name;
           firestoreUpdates.name = name;
       }
-
       if (photoPreview) {
           authUpdates.photoURL = photoPreview;
           firestoreUpdates.photoURL = photoPreview;
       }
-
       if (userData?.role !== 'admin') {
           if (nip !== (userData?.nip || '')) firestoreUpdates.nip = nip;
           if (position !== (userData?.position || '')) firestoreUpdates.position = position;
       }
-
       const updatePromises: Promise<any>[] = [];
-      if (Object.keys(authUpdates).length > 0) {
-          updatePromises.push(updateProfile(rawUser, authUpdates));
-      }
-      if (Object.keys(firestoreUpdates).length > 0) {
-          updatePromises.push(setDoc(userDocRef, firestoreUpdates, { merge: true }));
-      }
-      
+      if (Object.keys(authUpdates).length > 0) updatePromises.push(updateProfile(rawUser, authUpdates));
+      if (Object.keys(firestoreUpdates).length > 0) updatePromises.push(setDoc(userDocRef, firestoreUpdates, { merge: true }));
       if (updatePromises.length > 0) {
           await Promise.all(updatePromises);
           invalidateCache();
@@ -296,7 +265,6 @@ export default function PengaturanPage() {
       }
       setPhotoPreview(null);
     } catch (error: any) {
-      console.error("Update Profile Error:", error);
       toast({ variant: 'destructive', title: 'Gagal', description: error.message });
     } finally {
       setIsProfileLoading(false);
@@ -359,7 +327,7 @@ export default function PengaturanPage() {
       setIsAudioSaving(false);
   };
 
-  const getInitials = (n: string | null) => n ? n.split(' ').map(x => x[0]).join('').substring(0, 2).toUpperCase() : 'U';
+  const getInitialsIcon = (n: string | null) => n ? n.split(' ').map(x => x[0]).join('').substring(0, 2).toUpperCase() : 'U';
   const currentPhoto = photoPreview || userData?.photoURL;
   const isTeacherOrStaff = ['guru', 'pegawai', 'kepala_sekolah'].includes(userData?.role || '');
   const isAdmin = userData?.role === 'admin';
@@ -388,7 +356,7 @@ export default function PengaturanPage() {
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-2 border-primary/10 shadow-xl">
                       <AvatarImage src={currentPhoto ?? undefined} className="object-cover" />
-                      <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{getInitials(name)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{getInitialsIcon(name)}</AvatarFallback>
                     </Avatar>
                     <Button type="button" size="icon" variant="outline" className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 bg-primary text-white border-none shadow-lg active:scale-95 transition-all" onClick={() => fileInputRef.current?.click()}>
                       <Camera className="h-4 w-4" />
@@ -408,6 +376,21 @@ export default function PengaturanPage() {
                   <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
                       <Input className="h-12 rounded-xl bg-muted/50 font-bold opacity-60 shadow-none border-dashed" value={userData?.email} readOnly />
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Peran Anda</Label>
+                      <Select value={userData?.role} disabled>
+                          <SelectTrigger className="h-12 rounded-xl bg-muted/50 font-bold shadow-none border-dashed opacity-80">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-none shadow-2xl">
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
+                            <SelectItem value="guru">Guru</SelectItem>
+                            <SelectItem value="pegawai">Pegawai</SelectItem>
+                          </SelectContent>
+                      </Select>
+                      <p className="text-[9px] text-muted-foreground font-bold ml-1 italic">Hanya dapat diubah oleh Administrator.</p>
                   </div>
                   {isTeacherOrStaff && (
                     <div className="space-y-2">
@@ -528,13 +511,11 @@ export default function PengaturanPage() {
                   </div>
 
                   <div className="pt-8 border-t mt-6">
-                      <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                              <Volume2 className="h-5 w-5 text-primary" />
-                              <div>
-                                  <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
-                                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom (Maks 1MB).</p>
-                              </div>
+                      <div className="flex items-center gap-3 mb-4">
+                          <Volume2 className="h-5 w-5 text-primary" />
+                          <div>
+                              <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
+                              <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom (Maks 1MB).</p>
                           </div>
                       </div>
                       <div className="flex flex-col gap-4 bg-muted/30 p-4 rounded-2xl border border-muted-foreground/10">

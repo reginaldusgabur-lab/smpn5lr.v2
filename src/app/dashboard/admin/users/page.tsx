@@ -35,7 +35,6 @@ import {
   UserX,
   UserCheck,
   PlaneTakeoff,
-  Save,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -50,7 +49,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -63,8 +61,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -79,14 +75,12 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, collection, writeBatch, query, where, getDocs, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, getDocs } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { resetUserPassword } from '@/app/actions/admin-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
-import { addDays, startOfDay, endOfDay, format, parse, isValid } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
 
@@ -161,23 +155,19 @@ export default function AdminUsersPage() {
         }).sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
     }, [usersData, userFilter, userSearch]);
 
+    const existingKepsek = useMemo(() => {
+        return (usersData || []).find(u => u.role === 'kepala_sekolah');
+    }, [usersData]);
+
     const userStats = useMemo(() => {
         return (usersData || []).reduce((acc, curr) => {
             if (curr.role === 'admin') return acc;
-            
             acc.total++;
-            
-            // Gender
             if (curr.gender === 'Laki-laki') acc.lakiLaki++;
             else if (curr.gender === 'Perempuan') acc.perempuan++;
-            
-            // Status Kepegawaian (PNS / PPPK)
             if (curr.position === 'PNS') acc.pns++;
             else if (curr.position === 'PPPK') acc.pppk++;
-            
-            // Role Pegawai
             if (curr.role === 'pegawai') acc.pegawai++;
-            
             return acc;
         }, { total: 0, lakiLaki: 0, perempuan: 0, pns: 0, pppk: 0, pegawai: 0 });
     }, [usersData]);
@@ -369,10 +359,12 @@ export default function AdminUsersPage() {
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30"><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent className='rounded-xl'>
-                                            <SelectItem value="guru">Guru</SelectItem>
-                                            <SelectItem value="pegawai">Pegawai</SelectItem>
-                                            <SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem>
-                                            <SelectItem value="admin">Admin</SelectItem>
+                                            <SelectItem value="guru" className="rounded-lg">Guru</SelectItem>
+                                            <SelectItem value="pegawai" className="rounded-lg">Pegawai</SelectItem>
+                                            <SelectItem value="kepala_sekolah" disabled={!!existingKepsek && editingUser?.id !== existingKepsek.id} className="rounded-lg">
+                                                Kepala Sekolah {!!existingKepsek && editingUser?.id !== existingKepsek.id && "(Terisi)"}
+                                            </SelectItem>
+                                            <SelectItem value="admin" className="rounded-lg">Admin</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </FormItem>
