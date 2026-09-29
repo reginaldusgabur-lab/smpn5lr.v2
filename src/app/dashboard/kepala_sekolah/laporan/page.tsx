@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -27,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays, Eye } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays, Eye, PlaneTakeoff } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, collectionGroup } from 'firebase/firestore';
 import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, setHours, setMinutes, isBefore, isSameDay } from 'date-fns';

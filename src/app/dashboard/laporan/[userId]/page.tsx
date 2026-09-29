@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -16,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserMonthlyReportData, type MonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, RotateCcw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, PencilLine, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, PlaneTakeoff, RotateCcw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -180,7 +179,7 @@ export default function UserReportDetailPage() {
                 } else {
                     if (existingAtt?.checkInTime) {
                         data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
-                    } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                    } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                         const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
                         data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                     } else {
