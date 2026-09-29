@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
@@ -8,7 +7,7 @@ import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterva
 import { id } from 'date-fns/locale';
 import { TrendingUp, LogIn, LogOut, Sparkles, UserCheck, BookUser, MailWarning, Clock, Lock, AlertCircle, ChevronLeft, ChevronRight, UserX, Calendar, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -72,9 +71,10 @@ export default function DashboardPage() {
 
   const isAdmin = user?.role === 'admin';
   const isKepsek = user?.role === 'kepala_sekolah';
+  const isStaffOnly = ['guru', 'pegawai', 'siswa'].includes(user?.role || '');
 
   const [summaryMonth, setSummaryMonth] = useState(new Date());
-  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false });
+  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [personalSummary, setPersonalSummary] = useState({ percentage: '0.0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
@@ -115,9 +115,7 @@ export default function DashboardPage() {
   useEffect(() => {
     isMounted.current = true;
     if (!isUserLoading && user?.uid) {
-        if (isAdmin || isKepsek) {
-            loadDashboardData();
-        }
+        if (isAdmin || isKepsek) loadDashboardData();
         loadMonthlySummary(summaryMonth);
     }
     return () => { isMounted.current = false; };
@@ -180,8 +178,8 @@ export default function DashboardPage() {
     if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat...</div>;
     if (currentActiveLeave) return <div className="w-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm">{currentActiveLeave.type} Disetujui</div>;
     if (isCheckedOut) return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
-    if (windowStatus === 'DISABLED') return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Sistem Non-Aktif</div>;
-    if (windowStatus === 'SESSION_INACTIVE') return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Hari Libur</div>;
+    if (windowStatus === 'DISABLED' || stats.isManualDisabled) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Sistem Non-Aktif</div>;
+    if (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Hari Libur</div>;
     if (windowStatus === 'CHECK_OUT_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 bg-blue-600 hover:bg-blue-700 text-white"><Link href="/dashboard/absen">Absen pulang sekarang</Link></Button>;
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
@@ -190,8 +188,6 @@ export default function DashboardPage() {
     }
     return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Menunggu Jadwal</div>;
   };
-
-  if (isUserLoading || !isClient) return <div className="p-4 space-y-4"><Skeleton className="h-20 w-full rounded-xl" /><Skeleton className="h-64 w-full rounded-xl" /></div>;
 
   return (
     <div className="w-full space-y-4 pb-10 flex flex-col items-stretch">

@@ -1,9 +1,8 @@
-
 'use client';
 
-import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp, getCountFromServer } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
-import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes, parseISO } from 'date-fns';
+import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
 import { getFromCache, setInCache } from './cache';
 
 export interface MonthlyReportData {
@@ -17,9 +16,6 @@ export interface MonthlyReportData {
     points: number;
 }
 
-/**
- * Membersihkan deskripsi agar tampil rapi di laporan.
- */
 const cleanDesc = (desc: any) => {
     if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
     const d = desc.toLowerCase();
@@ -35,34 +31,22 @@ const cleanDesc = (desc: any) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
-/**
- * Menghitung nilai poin berdasarkan status untuk kalkulasi persentase.
- */
 const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
-    
-    // Cuti Resmi dan Dinas Luar mendapatkan poin penuh (1.0)
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh' || s.includes('luar sekolah')) return 1.0;
-    
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
     if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
-    
     return 0.0;
 };
 
-/**
- * Agregasi Statistik Harian untuk Dashboard.
- * DISINKRONKAN: Menghitung personil secara eksklusif agar total pas.
- */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-
     try {
         const [configSnap, monthlySnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
@@ -73,7 +57,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const isManualOff = config.isAttendanceActive === false;
         const isHoliday = isManualOff || (mConfig.holidays || []).includes(todayStr) || (config.offDays || [0, 6]).includes(today.getDay());
 
-        // Ambil semua personil Aktif & Cuti
         const qUsers = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -83,10 +66,9 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
         if (isHoliday) {
-            return { totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: true };
+            return { totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: true, isManualDisabled: isManualOff };
         }
 
-        // Dapatkan yang hadir hari ini
         const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
         const attSnap = await getDocs(qPresent);
         const presentIds = new Set();
@@ -95,7 +77,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             if (uid) presentIds.add(uid);
         });
 
-        // Dapatkan semua izin yang mencakup hari ini (baik approved maupun pending)
         const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
         const leaveSnap = await getDocs(qLeave);
         const leavesToday = leaveSnap.docs.filter(d => {
@@ -108,19 +89,14 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let cutiCount = 0; let pendingCount = 0; let alpaCount = 0;
 
         allStaff.forEach((u: any) => {
-            // 1. Prioritas Utama: Apakah dia melakukan absen (Hadir)
             if (presentIds.has(u.id)) {
                 hadirCount++;
                 return;
             }
-
-            // 2. Prioritas Kedua: Apakah status akunnya sedang Cuti (dari Managemen User)
             if (u.status === 'Cuti') {
                 cutiCount++;
                 return;
             }
-
-            // 3. Prioritas Ketiga: Apakah ada pengajuan Izin/Sakit/Cuti hari ini
             const userLeaveDoc = leavesToday.find(d => (d.data().userId || d.ref.parent.parent?.id) === u.id);
             if (userLeaveDoc) {
                 const l = userLeaveDoc.data();
@@ -130,11 +106,9 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                     else if (type.includes('cuti')) cutiCount++;
                     else izinCount++;
                 } else {
-                    // Masuk kategori Menunggu (bukan Alpa)
                     pendingCount++;
                 }
             } else {
-                // Tidak ada data sama sekali = Alpa
                 alpaCount++;
             }
         });
@@ -157,14 +131,10 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     }
 }
 
-/**
- * Kalkulasi Statistik Kehadiran Bulanan per User.
- */
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v812_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v902_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
-
     try {
         const [schoolConfigSnap, monthlyConfigSnap, attendanceSnap, leaveSnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
@@ -172,57 +142,44 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             getDocs(collection(firestore, 'users', userId, 'attendanceRecords')),
             getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
         ]);
-
         const schoolConfig = schoolConfigSnap.data() || {};
         const monthlyConfig = monthlyConfigSnap.data() || {};
         const todayStr = format(new Date(), 'yyyy-MM-dd');
-
-        // Hari kerja efektif dasar
         const baseWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
             !(schoolConfig.offDays || [0, 6]).includes(day.getDay()) && 
             !(monthlyConfig.holidays || []).includes(format(day, 'yyyy-MM-dd'))
         );
-
         let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
-
         attendanceSnap.docs.forEach(d => {
             const att = d.data();
             const dayStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
             if (dayStr && !processedDates.has(dayStr)) {
-                const isWork = baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr);
-                if (isWork) {
+                if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr)) {
                     totalPoints += calculatePoints('hadir', cleanDesc(att.reasonForUpdate), !!att.checkInTime, !!att.checkOutTime);
                     hadirCount++; processedDates.add(dayStr);
                 }
             }
         });
-
         leaveSnap.docs.forEach(leaveDoc => {
             const leave = leaveDoc.data();
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
                 const dayStr = format(day, 'yyyy-MM-dd');
-                const isWork = baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr);
-                if (isWork && !processedDates.has(dayStr)) {
-                    const type = leave.type;
-                    const p = calculatePoints(type, leave.reason || type, false, false);
+                if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr) && !processedDates.has(dayStr)) {
+                    const p = calculatePoints(leave.type, leave.reason || leave.type, false, false);
                     totalPoints += p;
-                    if (type === 'Sakit') sakitCount++; 
-                    else if (type === 'Cuti' || type === 'Cuti Resmi') hadirCount++;
+                    if (leave.type === 'Sakit') sakitCount++; 
+                    else if (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') hadirCount++;
                     else if (p < 1.0) izinCount++;
                     else hadirCount++;
-                    
                     processedDates.add(dayStr);
                 }
             });
         });
-
         const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-        
         const denominator = Math.max(1, baseWorkingDays.length);
         const finalPercentage = (totalPoints / denominator) * 100;
-
         const result = {
             totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa: alpaCount,
             totalPoints: totalPoints.toFixed(2),
@@ -235,9 +192,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     }
 }
 
-/**
- * Mengambil data riwayat bulanan lengkap untuk tabel laporan.
- */
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
     if (!schoolConfig) return [];
     const start = startOfMonth(currentMonth); const end = endOfMonth(currentMonth);
@@ -261,7 +215,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             eachDayOfInterval({ start: l.startDate.toDate(), end: l.endDate.toDate() }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), { ...l, id: d.id }));
         });
         const workingDays = eachDayOfInterval({ start, end }).filter(d => !(schoolConfig.offDays || [0, 6]).includes(d.getDay()) && !mConfig.holidays?.includes(format(d, 'yyyy-MM-dd')));
-
         return workingDays.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
             if (dayStr > todayStr) return null;
