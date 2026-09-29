@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, MessageSquare, MailCheck, Clock, CheckCircle2, Calendar, Info } from 'lucide-react';
+import { Loader2, Trash2, MessageSquare, MailCheck, Clock, CheckCircle2, Calendar, Info, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { startOfDay, endOfDay, addDays, format, parse, isValid } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -114,6 +114,7 @@ export default function IzinPage() {
 
     const isTomorrowLocked = useMemo(() => isDateHoliday(tomorrow), [isDateHoliday, tomorrow]);
 
+    // Data Presence Check
     const attendanceQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', format(today, 'yyyy-MM-dd')));
@@ -122,6 +123,21 @@ export default function IzinPage() {
     
     const hasCheckedIn = !!(todayAttendance && todayAttendance[0]?.checkInTime);
     const hasCheckedOut = !!(todayAttendance && todayAttendance[0]?.checkOutTime);
+
+    // Conflict Check (Existing Requests)
+    const selectedDateValue = form.watch('leaveDate');
+    const targetDateForConflict = useMemo(() => selectedDateValue === 'tomorrow' ? tomorrow : today, [selectedDateValue, today, tomorrow]);
+    const targetDateConflictStart = useMemo(() => startOfDay(targetDateForConflict), [targetDateForConflict]);
+
+    const existingLeaveQuery = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return query(
+            collection(firestore, 'users', user.uid, 'leaveRequests'),
+            where('startDate', '==', Timestamp.fromDate(targetDateConflictStart))
+        );
+    }, [user, firestore, targetDateConflictStart]);
+    const { data: existingLeaves } = useCollection(user, existingLeaveQuery);
+    const currentDayConflict = useMemo(() => existingLeaves?.find(l => l.status !== 'rejected'), [existingLeaves]);
 
     const onSubmit = async (values: z.infer<typeof leaveRequestSchema>) => {
         if (!user || !firestore) return;
@@ -166,6 +182,17 @@ export default function IzinPage() {
         } finally { setIsSubmitting(false); }
     };
 
+    const handleCancelLeave = async (id: string) => {
+        if (!user || !firestore) return;
+        try {
+            await deleteDoc(doc(firestore, 'users', user.uid, 'leaveRequests', id));
+            toast({ title: 'Dibatalkan', description: 'Pengajuan telah dihapus.' });
+            invalidateCache();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Gagal', description: error.message });
+        }
+    };
+
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
@@ -177,10 +204,33 @@ export default function IzinPage() {
                             <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Pengajuan Izin & Cuti</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Formulir resmi ketidakhadiran personil.</p></div>
                         </div>
                     </div>
+                    
+                    {currentDayConflict && (
+                        <div className={cn(
+                            "p-4 flex items-start gap-4 animate-in slide-in-from-top-4 duration-500",
+                            currentDayConflict.status === 'approved' ? "bg-emerald-50 text-emerald-900 border-b border-emerald-100" : "bg-amber-50 text-amber-900 border-b border-amber-100"
+                        )}>
+                            {currentDayConflict.status === 'approved' ? <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" /> : <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />}
+                            <div className="flex-1">
+                                <p className="text-xs font-black uppercase tracking-tight">
+                                    {currentDayConflict.status === 'approved' ? 'Pengajuan Sudah Disetujui' : 'Pengajuan Sedang Ditinjau'}
+                                </p>
+                                <p className="text-[10px] font-bold opacity-80 leading-tight mt-1">
+                                    Anda sudah memiliki pengajuan tipe <span className="italic">"{currentDayConflict.type}"</span> untuk tanggal ini. Mohon tidak melakukan pengajuan ganda.
+                                </p>
+                            </div>
+                            {currentDayConflict.status === 'pending' && (
+                                <Button variant="ghost" size="sm" className="h-8 rounded-lg text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase" onClick={() => handleCancelLeave(currentDayConflict.id)}>
+                                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Batal
+                                </Button>
+                            )}
+                        </div>
+                    )}
+
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)}>
                             <CardHeader className="p-6 border-b border-muted-foreground/5 bg-muted/20">
-                                <CardTitle className="text-blue-600 font-bold text-sm uppercase tracking-widest">Informasi Pengajuan</CardTitle>
+                                <CardTitle className="text-blue-600 dark:text-blue-400 font-bold text-sm uppercase tracking-widest">Informasi Pengajuan</CardTitle>
                                 <CardDescription className="text-[10px] font-bold text-muted-foreground">Silakan lengkapi detail ketidakhadiran Anda.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-8 space-y-6">
@@ -257,16 +307,16 @@ export default function IzinPage() {
                                         <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl flex items-start gap-3 animate-in zoom-in-95 duration-300">
                                             <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                                             <p className="text-[10px] font-bold text-amber-800 leading-relaxed">
-                                                <span className="uppercase tracking-widest mr-1">Petunjuk Pengajuan Cuti:</span>
-                                                Pengajuan <span className="italic">Cuti Resmi</span> akan dihitung sebagai hari libur pribadi dan tidak memengaruhi poin kehadiran. Pastikan rentang tanggal sudah benar sesuai surat izin yang ada.
+                                                <span className="uppercase tracking-widest mr-1">Petunjuk Cuti:</span>
+                                                Pengajuan <span className="italic">Cuti Resmi</span> dihitung poin penuh (1.0). Pastikan rentang tanggal sudah benar sesuai surat izin resmi.
                                             </p>
                                         </div>
                                     )}
                                 </div>
                             </CardContent>
                             <CardFooter className="p-6 border-t border-muted-foreground/5 bg-muted/5">
-                                <Button type="submit" disabled={isSubmitting} className="w-full h-12 rounded-xl font-black bg-primary uppercase tracking-[0.2em] shadow-lg shadow-primary/20 text-[11px] active:scale-95 transition-all">
-                                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kirim Pengajuan Sekarang"}
+                                <Button type="submit" disabled={isSubmitting || !!currentDayConflict} className="w-full h-12 rounded-xl font-black bg-primary uppercase tracking-[0.2em] shadow-lg shadow-primary/20 text-[11px] active:scale-95 transition-all">
+                                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : currentDayConflict ? "Data Izin Sudah Ada" : "Kirim Pengajuan Sekarang"}
                                 </Button>
                             </CardFooter>
                         </form>
