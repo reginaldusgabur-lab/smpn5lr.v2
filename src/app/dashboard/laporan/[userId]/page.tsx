@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -157,9 +158,7 @@ export default function UserReportDetailPage() {
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (type === 'reset-alpa') {
-                // Done in deletion loops above
-            } else if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
+            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah', 'lengkapi-masuk', 'lengkapi-pulang'].includes(type)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
@@ -172,39 +171,36 @@ export default function UserReportDetailPage() {
                     updatedBy: currentUser.uid, updatedAt: serverTimestamp(),
                 };
 
-                if (type === 'luar-sekolah') {
-                    data.checkInTime = null;
-                    data.checkOutTime = null;
-                    data.reasonForUpdate = 'Kegiatan luar sekolah';
+                if (existingAtt?.checkInTime) {
+                    data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
+                } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                    const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
+                    data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                 } else {
-                    if (existingAtt?.checkInTime) {
-                        data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
-                    } else if (['hadir', 'lengkapi-masuk', 'dinas-siang', 'pulang-cepat'].includes(type)) {
-                        const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
-                        data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
-                    } else {
-                        data.checkInTime = null;
-                    }
-
-                    if (existingAtt?.checkOutTime) {
-                        data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
-                    } else if (!isToday || (isToday && now > limitOutStart)) {
-                        if (['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
-                            const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
-                            data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
-                        }
-                    } else {
-                        data.checkOutTime = null;
-                    }
-
-                    if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
-                    else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
-                    else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
-                    else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
-                    else data.reasonForUpdate = 'Kehadiran penuh';
+                    data.checkInTime = null;
                 }
 
+                if (existingAtt?.checkOutTime) {
+                    data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
+                } else if (!isToday || (isToday && now > limitOutStart)) {
+                    if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi') {
+                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
+                        data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
+                    }
+                } else {
+                    data.checkOutTime = null;
+                }
+
+                if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
+                else if (type === 'dinas-pagi') data.reasonForUpdate = 'Dinas pagi';
+                else if (type === 'dinas-siang') data.reasonForUpdate = 'Dinas siang';
+                else if (type === 'pulang-cepat') data.reasonForUpdate = 'Pulang cepat';
+                else if (type === 'luar-sekolah') data.reasonForUpdate = 'Kegiatan luar sekolah';
+                else data.reasonForUpdate = 'Kehadiran penuh';
+
                 batch.set(doc(attendanceRef), data);
+            } else if (type === 'reset-alpa') {
+                // Done in deletion loops above
             } else {
                 const newLeaveDoc = doc(leaveRef);
                 batch.set(newLeaveDoc, {
@@ -256,11 +252,8 @@ export default function UserReportDetailPage() {
         doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentYStart); currentYStart += 6;
         doc.text(`NIP : ${userData.nip || '-'}`, margin, currentYStart); currentYStart += 10;
 
-        // Pisahkan data Cuti untuk tampilan khusus di akhir (Opsional untuk PDF)
-        const activeReport = monthlyReportData.filter(d => d.status !== 'Cuti');
-
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
-        const tableRows = activeReport.map((item, index) => [
+        const tableRows = monthlyReportData.map((item, index) => [
             index + 1,
             safeFormat(item.date, 'eeee, dd MMMM yyyy'),
             (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
@@ -359,7 +352,6 @@ export default function UserReportDetailPage() {
         return "bg-emerald-500 text-white border-none shadow-sm";
     };
 
-    // Pisahkan Data Berdasarkan Status 'Cuti' untuk Tampilan Front-End
     const { regularData, cutiData } = useMemo(() => {
         const reg: MonthlyReportData[] = [];
         const cuti: MonthlyReportData[] = [];
@@ -427,7 +419,7 @@ export default function UserReportDetailPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {regularData.length > 0 ? regularData.map((item, index) => {
+                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
@@ -480,15 +472,14 @@ export default function UserReportDetailPage() {
                                                 <TableCell className="text-[11px] font-medium text-muted-foreground italic whitespace-nowrap">{item.description}</TableCell>
                                             </TableRow>
                                         );
-                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data kehadiran reguler.</TableCell></TableRow>}
+                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40 uppercase">Tidak ada data kehadiran.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>
 
-                        {/* SEKSI KHUSUS CUTI RESMI */}
                         {cutiData.length > 0 && (
                             <div className="mt-8 border-t border-muted-foreground/10 bg-blue-50/20">
-                                <div className="p-6 bg-blue-500/5 flex items-center gap-3 border-b border-blue-500/10">
+                                <div className="p-6 flex items-center gap-3 border-b border-blue-500/10">
                                     <PlaneTakeoff className="h-5 w-5 text-blue-600" />
                                     <h3 className="text-sm font-bold text-blue-800 uppercase tracking-widest">Daftar Cuti Resmi & Keterangan Khusus</h3>
                                 </div>
@@ -512,11 +503,6 @@ export default function UserReportDetailPage() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                </div>
-                                <div className="p-4 px-8 border-t border-blue-500/10">
-                                    <p className="text-[10px] font-bold text-blue-600/60 leading-relaxed italic">
-                                        *Data di atas adalah riwayat cuti resmi yang tidak dihitung sebagai pelanggaran kehadiran dan mendapatkan poin penuh.
-                                    </p>
                                 </div>
                             </div>
                         )}
@@ -542,3 +528,4 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
+

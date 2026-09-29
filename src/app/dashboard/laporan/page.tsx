@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -287,7 +288,7 @@ export default function LaporanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data kehadiran reguler.</TableCell>
+                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest uppercase">Tidak ada data kehadiran reguler.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
