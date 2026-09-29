@@ -1,7 +1,7 @@
 
 'use client';
 
-import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes, isValid } from 'date-fns';
 import { getFromCache, setInCache } from './cache';
@@ -108,6 +108,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             const attData = presentMap.get(u.id);
             if (attData) {
                 const desc = (attData.reasonForUpdate || '').toLowerCase();
+                // Kategorikan Luar Sekolah ke kolom Izin di Dashboard
                 if (desc.includes('luar sekolah')) izinCount++;
                 else hadirCount++;
                 return;
@@ -123,8 +124,11 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                 const l = userLeaveDoc.data();
                 if (l.status === 'approved') {
                     const type = (l.type || '').toLowerCase();
+                    const reason = (l.reason || '').toLowerCase();
                     if (type.includes('sakit')) sakitCount++;
                     else if (type.includes('cuti')) cutiCount++;
+                    else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
+                    else if (type.includes('dinas')) hadirCount++;
                     else izinCount++;
                 } else {
                     pendingCount++;
@@ -154,7 +158,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v907_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v909_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     try {
         const [schoolConfigSnap, monthlyConfigSnap, attendanceSnap, leaveSnap] = await Promise.all([
@@ -187,8 +191,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                     const checkInDate = parseFirestoreDate(att.checkInTime);
                     const checkOutDate = parseFirestoreDate(att.checkOutTime);
                     totalPoints += calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate);
+                    
                     if (desc.includes('luar sekolah')) izinCount++;
                     else hadirCount++;
+                    
                     processedDates.add(dayStr);
                 }
             }
@@ -206,6 +212,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                         totalPoints += p;
                         const typeLower = (leave.type || '').toLowerCase();
                         const reasonLower = (leave.reason || '').toLowerCase();
+                        
                         if (typeLower.includes('sakit')) {
                             sakitCount++;
                         } else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) {
@@ -225,8 +232,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+        
         const denominator = Math.max(1, baseWorkingDays.length);
         const finalPercentage = (totalPoints / denominator) * 100;
+
         const result = {
             totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa: alpaCount,
             totalPoints: totalPoints.toFixed(2),
@@ -234,15 +243,14 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         };
         setInCache(cacheKey, result); return result;
     } catch (e) {
-        console.error("Stats Error:", e);
+        console.error("Stats calculation error:", e);
         return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
     }
 }
 
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
     if (!schoolConfig) return [];
-    const start = startOfMonth(currentMonth); 
-    const end = endOfMonth(currentMonth);
+    const start = startOfMonth(currentMonth); const end = endOfMonth(currentMonth);
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     try {
         const [mConfigSnap, attSnap, leaveSnap] = await Promise.all([
@@ -281,26 +289,31 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const leave = leaveMap.get(dayStr);
 
             if (att) {
-                const desc = cleanDesc(att.reasonForUpdate);
+                let finalDesc = cleanDesc(att.reasonForUpdate);
                 const checkInDate = parseFirestoreDate(att.checkInTime);
                 const checkOutDate = parseFirestoreDate(att.checkOutTime);
-                let finalDesc = desc;
-                if (checkInDate && schoolConfig.useTimeValidation && schoolConfig.checkInEndTime && !desc.toLowerCase().includes('dinas')) {
+                
+                if (checkInDate && schoolConfig.useTimeValidation && schoolConfig.checkInEndTime && !finalDesc.toLowerCase().includes('dinas')) {
                     const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
                     const deadline = setMinutes(setHours(startOfDay(checkInDate), h), m);
                     if (checkInDate > deadline) finalDesc = 'Terlambat';
                 }
+
                 const lowerDesc = finalDesc.toLowerCase();
                 const isSpecialStatus = lowerDesc.includes('dinas') || lowerDesc.includes('luar sekolah') || lowerDesc.includes('cuti');
                 if (!isSpecialStatus) {
                     if (checkInDate && !checkOutDate && !lowerDesc.includes('cepat')) finalDesc = 'Belum absen pulang';
                     else if (!checkInDate && checkOutDate && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
                 }
+                
+                // FORCE: Status "Izin" label for Luar Sekolah in Attendance Records
+                const statusLabel = lowerDesc.includes('luar sekolah') ? 'Izin' : 'Hadir';
+
                 return { 
                     id: att.id, date: dayStr, 
                     checkInTime: checkInDate ? checkInDate.toISOString() : null, 
                     checkOutTime: checkOutDate ? checkOutDate.toISOString() : null, 
-                    status: 'Hadir', description: finalDesc, 
+                    status: statusLabel, description: finalDesc, 
                     points: calculatePoints('hadir', finalDesc, !!checkInDate, !!checkOutDate), 
                     manualEntry: att.manualEntry || false 
                 };
@@ -308,7 +321,15 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (leave) {
                 const type = (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') ? 'Cuti' : leave.type;
                 const pts = calculatePoints(type, leave.reason || type, false, false);
-                const statusLabel = (type === 'Cuti') ? 'Cuti' : (pts === 1.0 ? 'Hadir' : type);
+                const typeLower = type.toLowerCase();
+                const reasonLower = (leave.reason || '').toLowerCase();
+                
+                // FORCE: Status "Izin" label for Luar Sekolah in Leave Records
+                let statusLabel = (type === 'Cuti') ? 'Cuti' : (pts === 1.0 ? 'Hadir' : type);
+                if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) {
+                    statusLabel = 'Izin';
+                }
+
                 return { 
                     id: `${leave.id}-${dayStr}`, date: dayStr, status: statusLabel, 
                     description: cleanDesc(leave.reason) || type, points: pts, manualEntry: false 
