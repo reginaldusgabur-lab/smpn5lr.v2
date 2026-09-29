@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -43,12 +44,12 @@ function useStaffAttendanceSummary(currentMonth: Date) {
     const [isLoading, setIsLoading] = useState(true);
     const [academicYear, setAcademicYear] = useState("");
 
-    // CRITICAL: Filter only ACTIVE users for headmaster report
+    // FIX: Fetch users with 'Aktif' OR 'Cuti' status
     const usersQuery = useMemoFirebase(() => 
         query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-            where('status', '==', 'Aktif')
+            where('status', 'in', ['Aktif', 'Cuti'])
         )
     , [firestore]);
     const { data: users, isLoading: isUsersLoading } = useCollection(user, usersQuery);

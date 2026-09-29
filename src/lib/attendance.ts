@@ -73,10 +73,11 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const isManualOff = config.isAttendanceActive === false;
         const isHoliday = isManualOff || (mConfig.holidays || []).includes(todayStr) || (config.offDays || [0, 6]).includes(today.getDay());
 
+        // FIX: Include 'Cuti' status in the staff query
         const qUsers = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-            where('status', '==', 'Aktif')
+            where('status', 'in', ['Aktif', 'Cuti'])
         );
         const countUsers = await getCountFromServer(qUsers);
         const totalStaff = countUsers.data().count;
@@ -152,14 +153,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
 
-        // Cuti Resmi tidak mengurangi poin, tapi mengurangi penyebut hari kerja efektif
-        // atau tetap 1.0 poin. Di sini kita hitung Cuti sebagai Hadir (1.0 poin).
-        
         attendanceSnap.docs.forEach(d => {
             const att = d.data();
             const dayStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
             if (dayStr && !processedDates.has(dayStr)) {
-                // Hanya hitung jika itu hari kerja aktif
                 const isWork = baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr);
                 if (isWork) {
                     totalPoints += calculatePoints('hadir', cleanDesc(att.reasonForUpdate), !!att.checkInTime, !!att.checkOutTime);
@@ -257,7 +254,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (leave) {
                 const type = (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') ? 'Cuti' : leave.type;
                 const pts = calculatePoints(type, leave.reason || type, false, false);
-                // Status dilabeli 'Cuti' jika itu cuti, atau 'Hadir' jika itu Dinas yang mendapat 1.0 poin
                 const statusLabel = (type === 'Cuti') ? 'Cuti' : (pts === 1.0 ? 'Hadir' : type);
                 return { 
                     id: `${leave.id}-${dayStr}`, date: dayStr, status: statusLabel, 

@@ -77,10 +77,11 @@ const RecentAttendanceTable = () => {
             return;
         }
 
+        // FIX: Include 'Cuti' status in the staff query
         const usersQuery = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-            where('status', '==', 'Aktif')
+            where('status', 'in', ['Aktif', 'Cuti'])
         );
         
         const attendanceQuery = query(

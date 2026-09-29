@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -80,8 +81,12 @@ export default function SchoolReportPage() {
 
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthId);
             
-            // CRITICAL: Filter only ACTIVE users for report
-            const usersQuery = query(collection(firestore, 'users'), where('status', '==', 'Aktif'));
+            // FIX: Include 'Cuti' status in the staff query
+            const usersQuery = query(
+                collection(firestore, 'users'), 
+                where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
+                where('status', 'in', ['Aktif', 'Cuti'])
+            );
             const usersSnap = await getDocs(usersQuery);
             const monthlySnap = await getDoc(monthlyConfigRef);
 
@@ -92,8 +97,7 @@ export default function SchoolReportPage() {
             }
             
             const allUsers = usersSnap.docs
-                .map(d => ({ id: d.id, ...d.data() } as any))
-                .filter(u => ['guru', 'pegawai', 'kepala_sekolah'].includes(u.role));
+                .map(d => ({ id: d.id, ...d.data() } as any));
 
             const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('checkInTime', '>=', start), where('checkInTime', '<=', end));
             const attendanceFallbackQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
@@ -165,6 +169,7 @@ export default function SchoolReportPage() {
                         if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
                             let p = 0;
                             if (leave.type === 'Sakit') { p = 0.9; sakitCount++; }
+                            else if (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') { p = 1.0; hadirCount++; }
                             else if (leave.type === 'Izin' || leave.type === 'Izin Pribadi') { p = 0.7; izinCount++; }
                             else { p = 1.0; hadirCount++; }
                             points += p; processedDates.add(dStr);

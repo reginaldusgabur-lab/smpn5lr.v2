@@ -79,10 +79,11 @@ const AbsentUsersTable = () => {
             return;
         }
 
+        // FIX: Include 'Cuti' status in the staff query
         const usersQuery = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-            where('status', '==', 'Aktif')
+            where('status', 'in', ['Aktif', 'Cuti'])
         );
         const usersSnap = await getDocs(usersQuery);
         const allStaff: UserData[] = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserData));
@@ -113,7 +114,6 @@ const AbsentUsersTable = () => {
           if (startDate && endDate && isWithinInterval(today, { start: startOfDay(startDate), end: endOfDay(endDate) })) {
             const userId = leave.userId || doc.ref.parent.parent?.id;
             if (userId) {
-                // Sederhanakan tipe cuti untuk dashboard
                 let type = leave.type;
                 if (type === 'Cuti Resmi') type = 'Cuti';
                 onLeaveUserIds.set(userId, type);
@@ -126,12 +126,14 @@ const AbsentUsersTable = () => {
           .sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999)) 
           .map((user, index) => {
             const leaveType = onLeaveUserIds.get(user.id);
+            // If the user's account status is 'Cuti', prioritize that label
+            const displayStatus = user.status === 'Cuti' ? 'Cuti' : (leaveType || 'Alpa');
             return {
                 no: index + 1,
                 name: user.name,
                 nip: user.nip || '-',
                 position: user.position || 'Staf',
-                status: leaveType || 'Alpa',
+                status: displayStatus,
             };
           });
 

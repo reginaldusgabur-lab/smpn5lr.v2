@@ -14,6 +14,7 @@ import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAttendanceWindow } from '@/hooks/use-attendance-window';
+import { invalidateCache } from '@/lib/cache';
 import {
   Card,
   CardContent,

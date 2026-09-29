@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -12,14 +13,14 @@ import { Loader2, Eye } from 'lucide-react';
 const LaporanGuruListPage = () => {
     const firestore = useFirestore();
 
-    // FILTER: Only fetch ACTIVE staff and order by sequenceNumber
+    // FIX: Include 'Cuti' status in the user list query
     const usersQuery = useMemo(
         () =>
             firestore
                 ? query(
                     collection(firestore, 'users'), 
                     where('role', 'in', ['guru', 'kepala_sekolah', 'pegawai']),
-                    where('status', '==', 'Aktif')
+                    where('status', 'in', ['Aktif', 'Cuti'])
                 )
                 : null,
         [firestore]
