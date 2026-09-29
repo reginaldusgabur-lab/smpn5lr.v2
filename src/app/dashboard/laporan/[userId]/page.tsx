@@ -144,6 +144,7 @@ export default function UserReportDetailPage() {
             const outStart = getDailyOutStart(targetDate);
             const [hO, mO] = outStart.split(':').map(Number);
             const limitOutStart = setMinutes(setHours(startOfDay(targetDate), hO), mO);
+            const fillOut = !isToday || (isToday && now > limitOutStart);
 
             const batch = writeBatch(firestore);
             const todayStr = format(targetDate, 'yyyy-MM-dd');
@@ -163,7 +164,7 @@ export default function UserReportDetailPage() {
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
                 
-                const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
+                const existingAtt = monthlyReportData.find(d => d.date === todayStr);
 
                 let data: any = {
                     userId, date: todayStr,
@@ -182,11 +183,9 @@ export default function UserReportDetailPage() {
 
                 if (existingAtt?.checkOutTime) {
                     data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
-                } else if (!isToday || (isToday && now > limitOutStart)) {
-                    if (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi') {
-                        const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
-                        data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
-                    }
+                } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi')) {
+                    const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
+                    data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                 } else {
                     data.checkOutTime = null;
                 }
@@ -419,7 +418,7 @@ export default function UserReportDetailPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
+                                    {regularData.length > 0 ? regularData.map((item, index) => {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
@@ -429,7 +428,7 @@ export default function UserReportDetailPage() {
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
-                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                                <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{(item.description === 'Pulang cepat' || item.description === 'Dinas siang' || item.description === 'Kegiatan luar sekolah') && !item.checkOutTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
@@ -528,4 +527,3 @@ export default function UserReportDetailPage() {
         </div>
     );
 }
-
