@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, writeBatch, collection, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
-import { format, isValid, parseISO, startOfDay, endOfDay, isSameMonth, startOfMonth, endOfMonth, setHours, setMinutes, subMonths, addMonths, isBefore, isSameDay, addMinutes } from 'date-fns';
+import { format, isValid, parseISO, startOfDay, endOfDay, isSameMonth, startOfMonth, endOfMonth, setHours, setMinutes, subMonths, addMonths, isBefore, isSameDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -103,7 +103,7 @@ export default function UserReportDetailPage() {
                 calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })
             ]);
 
-            if (!userSnap.exists()) throw new Error('Profil staf tidak ditemukan.');
+            if (!userSnap.exists()) throw new Error('Staf tidak ditemukan.');
             
             if (isMounted.current) {
                 setUserData(userSnap.data());
@@ -159,7 +159,7 @@ export default function UserReportDetailPage() {
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah', 'lengkapi-masuk', 'lengkapi-pulang'].includes(type)) {
+            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
@@ -174,7 +174,7 @@ export default function UserReportDetailPage() {
 
                 if (existingAtt?.checkInTime) {
                     data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
-                } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                     const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
                     data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                 } else {
@@ -183,7 +183,7 @@ export default function UserReportDetailPage() {
 
                 if (existingAtt?.checkOutTime) {
                     data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
-                } else if (fillOut && (type === 'hadir' || type === 'lengkapi-masuk' || type === 'lengkapi-pulang' || type === 'terlambat' || type === 'dinas-pagi')) {
+                } else if (fillOut && (type === 'hadir' || type === 'terlambat' || type === 'dinas-pagi')) {
                     const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
                     data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                 } else {
@@ -422,8 +422,7 @@ export default function UserReportDetailPage() {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
-                                        const isManual = item.manualEntry === true;
-                                        const canEdit = isAdmin && (isAlpa || !hasIn || !hasOut || isManual);
+                                        const canEdit = isAdmin && (isAlpa || !hasIn || !hasOut || item.manualEntry);
 
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
@@ -450,7 +449,6 @@ export default function UserReportDetailPage() {
                                                                     
                                                                     <DropdownMenuSeparator className='my-1.5 opacity-50' />
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
-                                                                    
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
                                                                     <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-primary" onClick={() => handleStatusChange(item.date, 'cuti')}>Jadikan Cuti Resmi</DropdownMenuItem>
@@ -471,7 +469,7 @@ export default function UserReportDetailPage() {
                                                 <TableCell className="text-[11px] font-medium text-muted-foreground italic whitespace-nowrap">{item.description}</TableCell>
                                             </TableRow>
                                         );
-                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40 uppercase">Tidak ada data kehadiran.</TableCell></TableRow>}
+                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40 uppercase">Tidak ada data.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>

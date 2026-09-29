@@ -3,7 +3,7 @@
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
-import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
+import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes, isValid } from 'date-fns';
 import { getFromCache, setInCache } from './cache';
 
 export interface MonthlyReportData {
@@ -16,6 +16,16 @@ export interface MonthlyReportData {
     manualEntry: boolean;
     points: number;
 }
+
+/**
+ * Helper untuk mengonversi data waktu dari Firestore (Timestamp atau String) ke objek Date JS.
+ */
+const parseFirestoreDate = (input: any): Date | null => {
+    if (!input) return null;
+    if (typeof input.toDate === 'function') return input.toDate();
+    const date = new Date(input);
+    return isValid(date) ? date : null;
+};
 
 const cleanDesc = (desc: any) => {
     if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
@@ -56,7 +66,11 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const config = configSnap.data() || {};
         const mConfig = monthlySnap.data() || {};
         const isManualOff = config.isAttendanceActive === false;
-        const isHoliday = isManualOff || (mConfig.holidays || []).includes(todayStr) || (config.offDays || [0, 6]).includes(today.getDay());
+        
+        const holidays = Array.isArray(mConfig.holidays) ? mConfig.holidays : [];
+        const offDays = Array.isArray(config.offDays) ? config.offDays : [0, 6];
+        
+        const isHoliday = isManualOff || holidays.includes(todayStr) || offDays.includes(today.getDay());
 
         const qUsers = query(
             collection(firestore, 'users'), 
@@ -83,8 +97,8 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const leaveSnap = await getDocs(qLeave);
         const leavesToday = leaveSnap.docs.filter(d => {
             const l = d.data();
-            const start = l.startDate?.toDate();
-            const end = l.endDate?.toDate();
+            const start = parseFirestoreDate(l.startDate);
+            const end = parseFirestoreDate(l.endDate);
             return start && end && isWithinInterval(today, { start: startOfDay(start), end: endOfDay(end) });
         });
 
@@ -94,11 +108,8 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             const attData = presentMap.get(u.id);
             if (attData) {
                 const desc = (attData.reasonForUpdate || '').toLowerCase();
-                if (desc.includes('luar sekolah')) {
-                    izinCount++;
-                } else {
-                    hadirCount++;
-                }
+                if (desc.includes('luar sekolah')) izinCount++;
+                else hadirCount++;
                 return;
             }
 
@@ -133,7 +144,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             alpa: alpaCount,
             isHoliday: false,
             isManualDisabled: isManualOff,
-            isCalendarHoliday: (mConfig.holidays || []).includes(todayStr)
+            isCalendarHoliday: holidays.includes(todayStr)
         };
     } catch (e) {
         console.error("Daily stats calculation error:", e);
@@ -143,7 +154,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v905_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v907_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     try {
         const [schoolConfigSnap, monthlyConfigSnap, attendanceSnap, leaveSnap] = await Promise.all([
@@ -155,20 +166,27 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const schoolConfig = schoolConfigSnap.data() || {};
         const monthlyConfig = monthlyConfigSnap.data() || {};
         const todayStr = format(new Date(), 'yyyy-MM-dd');
+        
+        const holidays = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
+        const offDays = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
+
         const baseWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
-            !(schoolConfig.offDays || [0, 6]).includes(day.getDay()) && 
-            !(monthlyConfig.holidays || []).includes(format(day, 'yyyy-MM-dd'))
+            !offDays.includes(day.getDay()) && 
+            !holidays.includes(format(day, 'yyyy-MM-dd'))
         );
+
         let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
         
         attendanceSnap.docs.forEach(d => {
             const att = d.data();
-            const dayStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+            const dayStr = att.date || (att.checkInTime ? format(parseFirestoreDate(att.checkInTime)!, 'yyyy-MM-dd') : '');
             if (dayStr && !processedDates.has(dayStr)) {
                 if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr)) {
                     const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
-                    totalPoints += calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime);
+                    const checkInDate = parseFirestoreDate(att.checkInTime);
+                    const checkOutDate = parseFirestoreDate(att.checkOutTime);
+                    totalPoints += calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate);
                     if (desc.includes('luar sekolah')) izinCount++;
                     else hadirCount++;
                     processedDates.add(dayStr);
@@ -178,27 +196,31 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         leaveSnap.docs.forEach(leaveDoc => {
             const leave = leaveDoc.data();
-            eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
-                const dayStr = format(day, 'yyyy-MM-dd');
-                if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr) && !processedDates.has(dayStr)) {
-                    const p = calculatePoints(leave.type, leave.reason || leave.type, false, false);
-                    totalPoints += p;
-                    const typeLower = (leave.type || '').toLowerCase();
-                    const reasonLower = (leave.reason || '').toLowerCase();
-                    if (typeLower.includes('sakit')) {
-                        sakitCount++;
-                    } else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) {
-                        izinCount++;
-                    } else if (typeLower.includes('cuti') || typeLower.includes('dinas')) {
-                        hadirCount++;
-                    } else if (p < 1.0) {
-                        izinCount++;
-                    } else {
-                        hadirCount++;
+            const lStart = parseFirestoreDate(leave.startDate);
+            const lEnd = parseFirestoreDate(leave.endDate);
+            if (lStart && lEnd) {
+                eachDayOfInterval({ start: lStart, end: lEnd }).forEach(day => {
+                    const dayStr = format(day, 'yyyy-MM-dd');
+                    if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr) && !processedDates.has(dayStr)) {
+                        const p = calculatePoints(leave.type, leave.reason || leave.type, false, false);
+                        totalPoints += p;
+                        const typeLower = (leave.type || '').toLowerCase();
+                        const reasonLower = (leave.reason || '').toLowerCase();
+                        if (typeLower.includes('sakit')) {
+                            sakitCount++;
+                        } else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) {
+                            izinCount++;
+                        } else if (typeLower.includes('cuti') || typeLower.includes('dinas')) {
+                            hadirCount++;
+                        } else if (p < 1.0) {
+                            izinCount++;
+                        } else {
+                            hadirCount++;
+                        }
+                        processedDates.add(dayStr);
                     }
-                    processedDates.add(dayStr);
-                }
-            });
+                });
+            }
         });
 
         const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
@@ -219,7 +241,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
     if (!schoolConfig) return [];
-    const start = startOfMonth(currentMonth); const end = endOfMonth(currentMonth);
+    const start = startOfMonth(currentMonth); 
+    const end = endOfMonth(currentMonth);
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     try {
         const [mConfigSnap, attSnap, leaveSnap] = await Promise.all([
@@ -228,26 +251,39 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
         ]);
         const mConfig = mConfigSnap.data() || {};
+        const holidays = Array.isArray(mConfig.holidays) ? mConfig.holidays : [];
+        const offDays = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
+
         const attMap = new Map();
         attSnap.docs.forEach(d => {
             const data = d.data();
-            const dayStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+            const dayStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
             if (dayStr) attMap.set(dayStr, { id: d.id, ...data });
         });
+
         const leaveMap = new Map();
         leaveSnap.docs.forEach(d => {
             const l = d.data();
-            eachDayOfInterval({ start: l.startDate.toDate(), end: l.endDate.toDate() }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), { ...l, id: d.id }));
+            const lS = parseFirestoreDate(l.startDate);
+            const lE = parseFirestoreDate(l.endDate);
+            if (lS && lE) {
+                eachDayOfInterval({ start: lS, end: lE }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), { ...l, id: d.id }));
+            }
         });
-        const workingDays = eachDayOfInterval({ start, end }).filter(d => !(schoolConfig.offDays || [0, 6]).includes(d.getDay()) && !mConfig.holidays?.includes(format(d, 'yyyy-MM-dd')));
+
+        const workingDays = eachDayOfInterval({ start, end }).filter(d => !offDays.includes(d.getDay()) && !holidays.includes(format(d, 'yyyy-MM-dd')));
+        
         return workingDays.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
             if (dayStr > todayStr) return null;
-            const att = attMap.get(dayStr); const leave = leaveMap.get(dayStr);
+            
+            const att = attMap.get(dayStr); 
+            const leave = leaveMap.get(dayStr);
+
             if (att) {
                 const desc = cleanDesc(att.reasonForUpdate);
-                const checkInDate = att.checkInTime?.toDate() || null;
-                const checkOutDate = att.checkOutTime?.toDate() || null;
+                const checkInDate = parseFirestoreDate(att.checkInTime);
+                const checkOutDate = parseFirestoreDate(att.checkOutTime);
                 let finalDesc = desc;
                 if (checkInDate && schoolConfig.useTimeValidation && schoolConfig.checkInEndTime && !desc.toLowerCase().includes('dinas')) {
                     const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
@@ -257,15 +293,15 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const lowerDesc = finalDesc.toLowerCase();
                 const isSpecialStatus = lowerDesc.includes('dinas') || lowerDesc.includes('luar sekolah') || lowerDesc.includes('cuti');
                 if (!isSpecialStatus) {
-                    if (checkInDate && !checkOutTime && !lowerDesc.includes('cepat')) finalDesc = 'Belum absen pulang';
-                    else if (!checkInDate && checkOutTime && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
+                    if (checkInDate && !checkOutDate && !lowerDesc.includes('cepat')) finalDesc = 'Belum absen pulang';
+                    else if (!checkInDate && checkOutDate && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
                 }
                 return { 
                     id: att.id, date: dayStr, 
-                    checkInTime: att.checkInTime?.toDate().toISOString() || null, 
-                    checkOutTime: att.checkOutTime?.toDate().toISOString() || null, 
+                    checkInTime: checkInDate ? checkInDate.toISOString() : null, 
+                    checkOutTime: checkOutDate ? checkOutDate.toISOString() : null, 
                     status: 'Hadir', description: finalDesc, 
-                    points: calculatePoints('hadir', finalDesc, !!att.checkInTime, !!att.checkOutTime), 
+                    points: calculatePoints('hadir', finalDesc, !!checkInDate, !!checkOutDate), 
                     manualEntry: att.manualEntry || false 
                 };
             }
@@ -280,5 +316,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             }
             return { id: dayStr, date: dayStr, status: 'Alpa', description: 'Tanpa keterangan', points: 0.0, manualEntry: false };
         }).filter(Boolean).sort((a: any, b: any) => b.date.localeCompare(a.date));
-    } catch (e) { return []; }
+    } catch (e) { 
+        console.error("Fetch Report Error:", e);
+        return []; 
+    }
 }
