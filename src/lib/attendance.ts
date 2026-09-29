@@ -94,7 +94,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             const attData = presentMap.get(u.id);
             if (attData) {
                 const desc = (attData.reasonForUpdate || '').toLowerCase();
-                // Jika Kegiatan Luar Sekolah, masukkan ke Izin meskipun inputnya via presensi
                 if (desc.includes('luar sekolah')) {
                     izinCount++;
                 } else {
@@ -115,7 +114,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                     const type = (l.type || '').toLowerCase();
                     if (type.includes('sakit')) sakitCount++;
                     else if (type.includes('cuti')) cutiCount++;
-                    else izinCount++; // Termasuk Luar Sekolah di sini
+                    else izinCount++;
                 } else {
                     pendingCount++;
                 }
@@ -170,11 +169,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr)) {
                     const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
                     totalPoints += calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime);
-                    
-                    // Categorization: Luar Sekolah -> Izin, others -> Hadir
                     if (desc.includes('luar sekolah')) izinCount++;
                     else hadirCount++;
-                    
                     processedDates.add(dayStr);
                 }
             }
@@ -187,16 +183,14 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr) && !processedDates.has(dayStr)) {
                     const p = calculatePoints(leave.type, leave.reason || leave.type, false, false);
                     totalPoints += p;
-                    
                     const typeLower = (leave.type || '').toLowerCase();
                     const reasonLower = (leave.reason || '').toLowerCase();
-
                     if (typeLower.includes('sakit')) {
                         sakitCount++;
                     } else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) {
                         izinCount++;
                     } else if (typeLower.includes('cuti') || typeLower.includes('dinas')) {
-                        hadirCount++; // Dinas & Cuti are 1.0 pts and counted as Hadir
+                        hadirCount++;
                     } else if (p < 1.0) {
                         izinCount++;
                     } else {
@@ -255,24 +249,17 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const checkInDate = att.checkInTime?.toDate() || null;
                 const checkOutDate = att.checkOutTime?.toDate() || null;
                 let finalDesc = desc;
-
                 if (checkInDate && schoolConfig.useTimeValidation && schoolConfig.checkInEndTime && !desc.toLowerCase().includes('dinas')) {
                     const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
                     const deadline = setMinutes(setHours(startOfDay(checkInDate), h), m);
                     if (checkInDate > deadline) finalDesc = 'Terlambat';
                 }
-
                 const lowerDesc = finalDesc.toLowerCase();
                 const isSpecialStatus = lowerDesc.includes('dinas') || lowerDesc.includes('luar sekolah') || lowerDesc.includes('cuti');
-
                 if (!isSpecialStatus) {
-                    if (checkInDate && !checkOutTime && !lowerDesc.includes('cepat')) {
-                        finalDesc = 'Belum absen pulang';
-                    } else if (!checkInDate && checkOutTime && !lowerDesc.includes('terlambat')) {
-                        finalDesc = 'Belum absen masuk';
-                    }
+                    if (checkInDate && !checkOutTime && !lowerDesc.includes('cepat')) finalDesc = 'Belum absen pulang';
+                    else if (!checkInDate && checkOutTime && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
                 }
-
                 return { 
                     id: att.id, date: dayStr, 
                     checkInTime: att.checkInTime?.toDate().toISOString() || null, 

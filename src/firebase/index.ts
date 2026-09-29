@@ -9,25 +9,34 @@ import {
   persistentLocalCache
 } from 'firebase/firestore';
 
-// Inisialisasi App secara idempotent (Sangat penting untuk Next.js/Vercel)
+/**
+ * Inisialisasi Firebase App secara idempotent.
+ * Penting untuk lingkungan Next.js agar tidak terjadi error re-initialization.
+ */
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /**
- * Inisialisasi Firestore dengan Offline Persistence (IndexedDB).
- * Menggunakan long polling untuk stabilitas di lingkungan Cloud (Vercel).
+ * Inisialisasi Firestore dengan Offline Persistence dan Long Polling.
+ * experimentalForceLongPolling dipaksa aktif untuk mengatasi error "Could not reach backend"
+ * yang umum terjadi di lingkungan proxy/studio yang memblokir WebSocket.
  */
 const firestore = (() => {
   if (typeof window !== 'undefined') {
+    // Di sisi klien, kita coba gunakan inisialisasi kustom
     try {
+      // Jika sudah ada instance, getFirestore akan mengembalikannya.
+      // initializeFirestore hanya dipanggil sekali.
       return initializeFirestore(app, {
         localCache: persistentLocalCache({}),
         experimentalForceLongPolling: true,
       });
     } catch (e) {
+      // Jika terjadi error (misal sudah diinisialisasi), ambil instance yang ada
       return getFirestore(app);
     }
   }
+  // Di sisi server, gunakan default
   return getFirestore(app);
 })();
 
