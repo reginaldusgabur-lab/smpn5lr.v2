@@ -119,7 +119,7 @@ export default function DashboardPage() {
         loadMonthlySummary(summaryMonth);
     }
     return () => { isMounted.current = false; };
-  }, [loadDashboardData, loadMonthlySummary, summaryMonth, user?.uid, isUserLoading, isAdmin, isKepsek]);
+  }, [loadDashboardData, loadMonthlySummary, summaryMonth, user?.uid, iisUserLoading, isAdmin, isKepsek]);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const todaysAttendanceQuery = useMemoFirebase(() => {
