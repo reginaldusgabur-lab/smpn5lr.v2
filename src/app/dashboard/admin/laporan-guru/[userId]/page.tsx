@@ -1,3 +1,4 @@
+
 'use server';
 
 import { notFound } from 'next/navigation';
@@ -29,7 +30,7 @@ export default async function UserReportDetailPage(props: {
         const userRef = firestore.collection('users').doc(userId);
         const schoolConfigRef = firestore.collection('schoolConfig').doc('default');
         const monthlyConfigId = format(currentMonth, 'yyyy-MM');
-        const monthlyConfigRef = firestore.collection('monthlyConfigs').doc(monthlyConfigId);
+        const monthlyConfigRef = firestore.collection('monthlyConfigs', monthlyConfigId);
 
         const [userSnap, schoolConfigSnap, monthlyConfigSnap] = await Promise.all([
             userRef.get(),
@@ -115,9 +116,19 @@ export default async function UserReportDetailPage(props: {
                     }
                 }
 
+                // Penyesuaian keterangan absen lupa
+                const lowerD = description.toLowerCase();
+                if (!lowerD.includes('dinas') && !lowerD.includes('luar sekolah') && !lowerD.includes('cuti')) {
+                    if (checkInTime && !checkOutTime && !lowerD.includes('cepat')) {
+                        description = 'Belum absen pulang';
+                    } else if (!checkInTime && checkOutTime && !lowerD.includes('terlambat')) {
+                        description = 'Belum absen masuk';
+                    }
+                }
+
                 const sD = description.toLowerCase();
                 let pts = 0;
-                if (sD.includes('dinas') || sD.includes('luar sekolah') || sD === 'kehadiran penuh') pts = 1.0;
+                if (sD.includes('dinas') || sD.includes('luar sekolah') || sD === 'kehadiran penuh' || sD.includes('cuti')) pts = 1.0;
                 else if (sD.includes('telat') || sD.includes('terlambat') || sD.includes('cepat')) pts = 0.95;
                 else if (checkInTime && checkOutTime) pts = 1.0;
                 else pts = 0.5;

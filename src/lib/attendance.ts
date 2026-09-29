@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup, Timestamp } from 'firebase/firestore';
@@ -222,12 +223,27 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (att) {
                 const desc = cleanDesc(att.reasonForUpdate);
                 const checkInDate = att.checkInTime?.toDate() || null;
+                const checkOutDate = att.checkOutTime?.toDate() || null;
                 let finalDesc = desc;
+
                 if (checkInDate && schoolConfig.useTimeValidation && schoolConfig.checkInEndTime && !desc.toLowerCase().includes('dinas')) {
                     const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
                     const deadline = setMinutes(setHours(startOfDay(checkInDate), h), m);
                     if (checkInDate > deadline) finalDesc = 'Terlambat';
                 }
+
+                // Penyesuaian Keterangan Lupa Absen
+                const lowerDesc = finalDesc.toLowerCase();
+                const isSpecialStatus = lowerDesc.includes('dinas') || lowerDesc.includes('luar sekolah') || lowerDesc.includes('cuti');
+
+                if (!isSpecialStatus) {
+                    if (checkInDate && !checkOutDate && !lowerDesc.includes('cepat')) {
+                        finalDesc = 'Belum absen pulang';
+                    } else if (!checkInDate && checkOutDate && !lowerDesc.includes('terlambat')) {
+                        finalDesc = 'Belum absen masuk';
+                    }
+                }
+
                 return { 
                     id: att.id, date: dayStr, 
                     checkInTime: att.checkInTime?.toDate().toISOString() || null, 
