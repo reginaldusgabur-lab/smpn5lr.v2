@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -43,7 +44,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
     const [isLoading, setIsLoading] = useState(true);
     const [academicYear, setAcademicYear] = useState("");
 
-    // FIX: Fetch users with 'Aktif' OR 'Cuti' status
     const usersQuery = useMemoFirebase(() => 
         query(
             collection(firestore, 'users'), 
@@ -73,13 +73,12 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             const start = startOfMonth(currentMonth);
             const end = endOfMonth(currentMonth);
 
-            const qAtt = query(collectionGroup(firestore, 'attendanceRecords'), where('checkInTime', '>=', start), where('checkInTime', '<=', end));
-            const qAttFB = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
+            const qAtt = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
             const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
             
-            const [snapAtt, snapAttFB, snapLeave] = await Promise.all([ getDocs(qAtt), getDocs(qAttFB), getDocs(qLeave) ]);
+            const [snapAtt, snapLeave] = await Promise.all([ getDocs(qAtt), getDocs(qLeave) ]);
 
-            const allAttendance = [...snapAtt.docs, ...snapAttFB.docs].map(d => ({...d.data(), id: d.id }));
+            const allAttendance = snapAtt.docs.map(d => ({...d.data(), id: d.id }));
             const allLeave = snapLeave.docs.map(d => ({ ...d.data(), id: d.id, startDate: d.data().startDate.toDate(), endDate: d.data().endDate.toDate() }));
 
             const offDays: number[] = schoolConfig?.offDays ?? [0, 6];
@@ -88,10 +87,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             const workingDaysSet = new Set(workingDays.map(d => format(d, 'yyyy-MM-dd')));
 
             const userSummary = users.map((u: any) => {
-                let points = 0;
-                let hadirCount = 0;
-                let izinCount = 0;
-                let sakitCount = 0;
+                let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
                 const processedDates = new Set<string>();
 
                 allAttendance.filter(att => att.userId === u.id).forEach((att: any) => {
@@ -99,7 +95,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     if (dStr && workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
                         let p = 0;
                         const desc = (att.reasonForUpdate || '').toLowerCase();
-                        if (desc.includes('dinas') || desc.includes('pulang cepat')) p = 1.0;
+                        if (desc.includes('dinas') || desc.includes('kehadiran penuh') || desc.includes('luar sekolah')) p = 1.0;
                         else if (att.checkInTime && att.checkOutTime) {
                             let isLate = false;
                             if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
@@ -108,7 +104,12 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                             }
                             p = isLate ? 0.95 : 1.0;
                         } else p = 0.5;
-                        points += p; hadirCount++; processedDates.add(dStr);
+                        points += p; 
+                        
+                        if (desc.includes('luar sekolah')) izinCount++;
+                        else hadirCount++;
+                        
+                        processedDates.add(dStr);
                     }
                 });
 
@@ -116,10 +117,14 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     eachDayOfInterval({ start: leave.startDate, end: leave.endDate }).forEach(day => {
                         const dStr = format(day, 'yyyy-MM-dd');
                         if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
+                            const type = (leave.type || '').toLowerCase();
+                            const reason = (leave.reason || '').toLowerCase();
                             let p = 0;
-                            if (leave.type === 'Sakit') { p = 0.9; sakitCount++; }
-                            else if (leave.type === 'Izin' || leave.type === 'Izin Pribadi') { p = 0.7; izinCount++; }
-                            else { p = 1.0; hadirCount++; }
+                            if (type.includes('sakit')) { p = 0.9; sakitCount++; }
+                            else if (type.includes('cuti')) { p = 1.0; hadirCount++; }
+                            else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) { p = 1.0; izinCount++; }
+                            else if (type.includes('dinas')) { p = 1.0; hadirCount++; }
+                            else { p = 0.7; izinCount++; }
                             points += p; processedDates.add(dStr);
                         }
                     });
@@ -127,7 +132,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
 
                 const pastWorkingDays = workingDays.filter(day => isBefore(day, startOfDay(new Date())) || isSameDay(day, new Date()));
                 const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-
                 const presentasi = Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%';
                 return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: alpaCount, terlambat: 0, presentasi };
             });
@@ -181,21 +185,11 @@ const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLo
                                         <span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-center font-black text-green-600">
-                                    {Math.ceil(item.hadir)}
-                                </TableCell>
-                                <TableCell className="text-center font-black text-blue-500">
-                                    {item.izin}
-                                </TableCell>
-                                <TableCell className="text-center font-black text-orange-500">
-                                    {item.sakit}
-                                </TableCell>
-                                <TableCell className="text-center font-black text-red-500">
-                                    {item.alpa}
-                                </TableCell>
-                                <TableCell className="text-center font-black text-primary">
-                                    {item.presentasi}
-                                </TableCell>
+                                <TableCell className="text-center font-black text-green-600">{Math.ceil(item.hadir)}</TableCell>
+                                <TableCell className="text-center font-black text-blue-500">{item.izin}</TableCell>
+                                <TableCell className="text-center font-black text-orange-500">{item.sakit}</TableCell>
+                                <TableCell className="text-center font-black text-red-500">{item.alpa}</TableCell>
+                                <TableCell className="text-center font-black text-primary">{item.presentasi}</TableCell>
                                 <TableCell className="text-center">
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10" onClick={() => router.push(`/dashboard/laporan/${item.id}?month=${format(currentMonth, 'yyyy-MM')}`)}>
                                         <Eye className="h-4 w-4 text-primary" />
@@ -240,41 +234,22 @@ function StaffReportView() {
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                     <TabsList className="overflow-x-auto whitespace-nowrap"><TabsTrigger value="guru">Data Guru</TabsTrigger><TabsTrigger value="pegawai">Data Pegawai</TabsTrigger><TabsTrigger value="kepala_sekolah">Kepala Sekolah</TabsTrigger></TabsList>
-                    
                     <div className="flex w-full items-center justify-center md:justify-end gap-2 md:w-auto">
                          <div className="flex items-center justify-between w-full md:w-auto bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1 shrink-0">
                             <div className="flex items-center gap-2">
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isLoading || currentMonth <= minDate}><ChevronLeft className="h-4 w-4 text-primary" /></Button>
-                                
                                 <div className="flex items-center gap-1.5 px-2 border-l border-muted-foreground/10 min-w-max">
                                     <CalendarDays className="h-3.5 w-3.5 text-primary/70" />
-                                    <div className="flex flex-col min-w-max">
-                                        <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span>
-                                        <span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span>
-                                    </div>
+                                    <div className="flex flex-col min-w-max"><span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">THN AJARAN</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div>
                                 </div>
                             </div>
-
-                            <div className="flex items-center gap-2">
-                                <span className="font-bold text-sm text-primary tracking-tight text-center capitalize whitespace-nowrap min-w-[100px]">
-                                    {format(currentMonth, 'MMMM yyyy', { locale: id })}
-                                </span>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4 text-primary" /></Button>
-                            </div>
+                            <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[100px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl shrink-0" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-4 w-4 text-primary" /></Button></div>
                         </div>
                     </div>
                 </div>
-                
                 <div className="bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5 mb-6">
-                    <div className="space-y-1.5 max-w-md">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari Nama</Label>
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                            <Input placeholder="Cari nama personil..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                        </div>
-                    </div>
+                    <div className="space-y-1.5 max-w-md"><Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Cari Nama</Label><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Cari nama personil..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div></div>
                 </div>
-
                 <TabsContent value="guru"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
                 <TabsContent value="pegawai"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
                 <TabsContent value="kepala_sekolah"><StaffReportTable data={filteredData} isLoading={isLoading} currentMonth={currentMonth} /></TabsContent>
