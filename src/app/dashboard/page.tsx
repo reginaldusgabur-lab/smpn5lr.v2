@@ -55,7 +55,9 @@ const LiveClockUI = memo(() => {
     return (
         <div className="flex flex-col items-center justify-center py-2 w-full min-h-[80px]" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
             <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">{format(time, 'HH:mm:ss')}</h2>
-            <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">{format(time, 'eeee, d MMMM yyyy', { locale: id })}</p>
+            <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">
+                {format(time, 'eeee, d MMMM yyyy', { locale: id })}
+            </p>
         </div>
     );
 });
@@ -119,7 +121,7 @@ export default function DashboardPage() {
         loadMonthlySummary(summaryMonth);
     }
     return () => { isMounted.current = false; };
-  }, [loadDashboardData, loadMonthlySummary, summaryMonth, user?.uid, iisUserLoading, isAdmin, isKepsek]);
+  }, [loadDashboardData, loadMonthlySummary, summaryMonth, user?.uid, isUserLoading, isAdmin, isKepsek]);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const todaysAttendanceQuery = useMemoFirebase(() => {
