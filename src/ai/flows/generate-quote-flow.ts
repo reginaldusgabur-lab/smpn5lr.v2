@@ -1,8 +1,8 @@
 'use server';
 /**
  * @fileOverview AI Flow untuk menyajikan kutipan nyata dari tokoh dunia/nasional.
- * Sistem bertindak sebagai kurator kutipan inspiratif yang relevan dengan 
- * dunia pendidikan, masyarakat, dan pengabdian.
+ * Sistem bertindak sebagai kurator kutipan inspiratif yang sangat acak dan unik 
+ * untuk setiap user di setiap sesi absensi.
  */
 
 import { ai } from '../genkit';
@@ -61,45 +61,60 @@ const generateQuoteFlow = ai.defineFlow(
     const isEntry = input.attendanceType === 'in';
     const hash = getHash(`${input.userId}|${input.creativeSeed}`);
     
-    // Tentukan Kategori Tokoh berdasarkan Hash untuk variasi
+    // Daftar kategori yang sangat luas untuk menjamin keunikan
     const categories = [
-        "Tokoh Pendidikan Indonesia (Ki Hajar Dewantara, RA Kartini, dll)",
-        "Filsuf Klasik (Socrates, Plato, Marcus Aurelius)",
-        "Pemimpin Dunia (Nelson Mandela, Winston Churchill, Bung Karno)",
-        "Ilmuwan & Inovator (Albert Einstein, Marie Curie, B.J. Habibie)",
-        "Tokoh Kemanusiaan (Bunda Teresa, Mahatma Gandhi)"
+        "Tokoh Pendidikan Indonesia (Ki Hajar Dewantara, RA Kartini, Tan Malaka)",
+        "Filsuf Stoik dan Klasik (Socrates, Marcus Aurelius, Seneca)",
+        "Pemimpin Besar Dunia (Nelson Mandela, Winston Churchill, Soekarno, Gandhi)",
+        "Ilmuwan Abad 20 & 21 (Albert Einstein, Stephen Hawking, Marie Curie, B.J. Habibie)",
+        "Sastrawan & Penyair Dunia (Rumi, Kahlil Gibran, Pramoedya Ananta Toer, Maya Angelou)",
+        "Tokoh Kemanusiaan & Spiritual (Bunda Teresa, Dalai Lama, Gus Dur)",
+        "Inovator Visi Modern (Steve Jobs, Elon Musk, Da Vinci)",
+        "Pakar Psikologi & Pengembangan Diri (Viktor Frankl, Carl Jung, Brené Brown)",
+        "Atlet Legendaris dengan Mentalitas Juara (Muhammad Ali, Kobe Bryant, Pelé)",
+        "Pahlawan Nasional Indonesia era Kemerdekaan"
     ];
-    const selectedCategory = categories[hash % categories.length];
 
-    // Tema berdasarkan peran
-    let focusTheme = "Pendidikan dan pengabdian masyarakat.";
-    if (input.role === 'kepala_sekolah') focusTheme = "Kepemimpinan, visi, dan tanggung jawab sosial.";
-    if (input.role === 'guru') focusTheme = "Inspirasi belajar, kesabaran, dan mencerdaskan bangsa.";
-    if (input.role === 'pegawai') focusTheme = "Dedikasi, integritas dalam pelayanan, dan kerjasama tim.";
+    const moods = [
+        "Sangat bersemangat dan penuh energi",
+        "Bijak, tenang, dan reflektif",
+        "Tegas, disiplin, dan berwibawa",
+        "Hangat, penuh kasih, dan puitis",
+        "Logis, tajam, dan analitis"
+    ];
+
+    const selectedCategory = categories[hash % categories.length];
+    const selectedMood = moods[hash % moods.length];
 
     try {
       const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         config: {
-          temperature: 1.0,
-          maxOutputTokens: 200,
+          temperature: 1.4, // Menaikkan suhu untuk variasi yang lebih liar/kreatif
+          topP: 0.95,
+          maxOutputTokens: 250,
         },
-        system: `Anda adalah "Kurator Kebijaksanaan E-SPENLI". 
-TUGAS: Berikan SATU kutipan nyata (asli) dari tokoh terkenal (nasional atau internasional).
-Kutipan harus berkaitan dengan: ${focusTheme}
+        system: `Anda adalah "Global Wisdom Oracle" untuk komunitas sekolah E-SPENLI. 
+TUGAS: Berikan SATU kutipan nyata (bukan buatan) dari tokoh dunia atau nasional.
 
-PANDUAN:
-1. Cari kutipan dari kategori: ${selectedCategory}.
-2. Kutipan harus relevan untuk sesi ${isEntry ? 'memulai pekerjaan di pagi hari' : 'mengakhiri pekerjaan di sore hari'}.
-3. Prioritaskan tokoh pendidikan Indonesia jika memungkinkan.
-4. Gunakan bahasa Indonesia yang baik dan benar (terjemahkan dengan anggun jika kutipan asli berbahasa asing).
-5. Output harus berupa kutipan teks dan nama tokoh secara akurat.
+PANDUAN KETAT:
+1. PILIH TOKOH: Wajib dari kategori "${selectedCategory}".
+2. GAYA BAHASA: Sajikan dengan pendekatan yang "${selectedMood}".
+3. SESI: Sesuaikan dengan konteks ${isEntry ? 'memulai hari dengan niat mulia' : 'mensyukuri hari yang telah tuntas'}.
+4. BAHASA: Gunakan Bahasa Indonesia yang sangat anggun dan menginspirasi (terjemahkan jika perlu).
+5. ANTI-KLISE: Jangan berikan kutipan yang terlalu sering didengar. Cari yang "hidden gem" atau mutiara tersembunyi dari tokoh tersebut.
+6. AKURASI: Nama tokoh harus benar dan kutipan harus benar-benar pernah diucapkan/ditulis oleh mereka.
 
-LARANGAN:
-- JANGAN membuat kutipan palsu atau anonim.
-- JANGAN memberikan kutipan motivasi yang terlalu pasaran/klise tanpa tokoh yang jelas.`,
-        prompt: `Sajikan satu kutipan bijak untuk ${input.userName} (Peran: ${input.role}) pada hari ${input.day}, ${input.date}. 
-Gunakan variasi entropi: ${input.creativeSeed} untuk memastikan pilihan tokoh yang berbeda dari sebelumnya.`,
+DILARANG KERAS:
+- Memberikan kutipan tanpa nama tokoh.
+- Menggunakan kata-kata: "Pahlawan tanpa tanda jasa", "Masa depan bangsa", "Semangat pagi".
+
+IDENTITAS UNIK SESI INI:
+- Pengguna: ${input.userName}
+- Peran: ${input.role}
+- Entropy Seed: ${input.creativeSeed}`,
+        prompt: `Berikan satu kutipan inspiratif yang belum pernah Anda berikan sebelumnya untuk personil ini. 
+Fokuslah pada esensi "${selectedCategory}" yang bersifat "${selectedMood}".`,
         output: { schema: QuoteOutputSchema },
       });
 
@@ -107,8 +122,7 @@ Gunakan variasi entropi: ${input.creativeSeed} untuk memastikan pilihan tokoh ya
       return response.output;
     } catch (err: any) {
       console.error('[AI_QUOTE_FLOW_ERROR]:', err.message);
-      const fallback = fallbacks[hash % fallbacks.length];
-      return fallback;
+      return fallbacks[hash % fallbacks.length];
     }
   }
 );
