@@ -79,7 +79,6 @@ const AbsentUsersTable = () => {
             return;
         }
 
-        // FIX: Include 'Cuti' status in the staff query
         const usersQuery = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -95,16 +94,14 @@ const AbsentUsersTable = () => {
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();
         
-        const staffIdsSet = new Set(allStaff.map(s => s.id));
-        
         attendanceSnap.forEach(doc => {
           const userId = doc.data().userId || doc.ref.parent.parent?.id;
-          if (userId && staffIdsSet.has(userId)) presentUserIds.add(userId);
+          if (userId) presentUserIds.add(userId);
         });
 
-        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
+        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
         const leaveSnap = await getDocs(leaveQuery);
-        const onLeaveUserIds = new Map<string, string>();
+        const userStatusMap = new Map<string, { status: string; type: string }>();
 
         leaveSnap.forEach(doc => {
           const leave = doc.data();
@@ -114,9 +111,11 @@ const AbsentUsersTable = () => {
           if (startDate && endDate && isWithinInterval(today, { start: startOfDay(startDate), end: endOfDay(endDate) })) {
             const userId = leave.userId || doc.ref.parent.parent?.id;
             if (userId) {
-                let type = leave.type;
-                if (type === 'Cuti Resmi') type = 'Cuti';
-                onLeaveUserIds.set(userId, type);
+                // Prioritaskan 'approved' daripada 'pending'
+                const current = userStatusMap.get(userId);
+                if (!current || leave.status === 'approved') {
+                    userStatusMap.set(userId, { status: leave.status, type: leave.type });
+                }
             }
           }
         });
@@ -125,15 +124,27 @@ const AbsentUsersTable = () => {
           .filter(user => !presentUserIds.has(user.id))
           .sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999)) 
           .map((user, index) => {
-            const leaveType = onLeaveUserIds.get(user.id);
-            // If the user's account status is 'Cuti', prioritize that label
-            const displayStatus = user.status === 'Cuti' ? 'Cuti' : (leaveType || 'Alpa');
+            let status = 'Alpa';
+            
+            if (user.status === 'Cuti') {
+                status = 'Cuti';
+            } else {
+                const leaveInfo = userStatusMap.get(user.id);
+                if (leaveInfo) {
+                    if (leaveInfo.status === 'approved') {
+                        status = leaveInfo.type || 'Izin';
+                    } else if (leaveInfo.status === 'pending') {
+                        status = 'Menunggu';
+                    }
+                }
+            }
+            
             return {
                 no: index + 1,
                 name: user.name,
                 nip: user.nip || '-',
                 position: user.position || 'Staf',
-                status: displayStatus,
+                status: status,
             };
           });
 
@@ -164,6 +175,7 @@ const AbsentUsersTable = () => {
       if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
       if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return 'bg-amber-500 text-white border-none shadow-sm';
       if (s === 'cuti') return 'bg-blue-600 text-white border-none shadow-sm';
+      if (s === 'menunggu') return 'bg-slate-500 text-white border-none shadow-sm';
       
       return 'bg-emerald-500 text-white border-none shadow-sm';
   }

@@ -57,11 +57,11 @@ const calculatePoints = (status: string, description: string, hasIn: boolean, ha
 
 /**
  * Agregasi Statistik Harian untuk Dashboard.
+ * DISINKRONKAN: Menghitung personil secara eksklusif agar total pas.
  */
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const endOfToday = Timestamp.fromDate(endOfDay(today));
 
     try {
         const [configSnap, monthlySnap] = await Promise.all([
@@ -73,50 +73,83 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const isManualOff = config.isAttendanceActive === false;
         const isHoliday = isManualOff || (mConfig.holidays || []).includes(todayStr) || (config.offDays || [0, 6]).includes(today.getDay());
 
-        // FIX: Include 'Cuti' status in the staff query
+        // Ambil semua personil Aktif & Cuti
         const qUsers = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
             where('status', 'in', ['Aktif', 'Cuti'])
         );
-        const countUsers = await getCountFromServer(qUsers);
-        const totalStaff = countUsers.data().count;
+        const usersSnap = await getDocs(qUsers);
+        const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
         if (isHoliday) {
-            return { totalStaff, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: true };
+            return { totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: true };
         }
 
+        // Dapatkan yang hadir hari ini
         const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
-        const countPresent = await getCountFromServer(qPresent);
-        const hadirCount = countPresent.data().count;
+        const attSnap = await getDocs(qPresent);
+        const presentIds = new Set();
+        attSnap.forEach(d => {
+            const uid = d.data().userId || d.ref.parent.parent?.id;
+            if (uid) presentIds.add(uid);
+        });
 
-        const qLeave = query(
-            collectionGroup(firestore, 'leaveRequests'),
-            where('status', '==', 'approved'),
-            where('startDate', '<=', endOfToday)
-        );
+        // Dapatkan semua izin yang mencakup hari ini (baik approved maupun pending)
+        const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
         const leaveSnap = await getDocs(qLeave);
-        const activeLeaves = leaveSnap.docs.filter(d => {
+        const leavesToday = leaveSnap.docs.filter(d => {
             const l = d.data();
-            return isWithinInterval(today, { start: startOfDay(l.startDate.toDate()), end: endOfDay(l.endDate.toDate()) });
+            const start = l.startDate?.toDate();
+            const end = l.endDate?.toDate();
+            return start && end && isWithinInterval(today, { start: startOfDay(start), end: endOfDay(end) });
         });
 
-        let izinCount = 0; let sakitCount = 0; let cutiCount = 0;
-        activeLeaves.forEach(d => {
-            const l = d.data();
-            if (l.type === 'Sakit') sakitCount++;
-            else if (l.type === 'Cuti' || l.type === 'Cuti Resmi') cutiCount++;
-            else if (!['Pulang Cepat', 'Dinas Siang', 'Izin Pulang Cepat'].includes(l.type)) izinCount++;
+        let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let cutiCount = 0; let pendingCount = 0; let alpaCount = 0;
+
+        allStaff.forEach((u: any) => {
+            // 1. Prioritas Utama: Apakah dia melakukan absen (Hadir)
+            if (presentIds.has(u.id)) {
+                hadirCount++;
+                return;
+            }
+
+            // 2. Prioritas Kedua: Apakah status akunnya sedang Cuti (dari Managemen User)
+            if (u.status === 'Cuti') {
+                cutiCount++;
+                return;
+            }
+
+            // 3. Prioritas Ketiga: Apakah ada pengajuan Izin/Sakit/Cuti hari ini
+            const userLeaveDoc = leavesToday.find(d => (d.data().userId || d.ref.parent.parent?.id) === u.id);
+            if (userLeaveDoc) {
+                const l = userLeaveDoc.data();
+                if (l.status === 'approved') {
+                    const type = (l.type || '').toLowerCase();
+                    if (type.includes('sakit')) sakitCount++;
+                    else if (type.includes('cuti')) cutiCount++;
+                    else izinCount++;
+                } else {
+                    // Masuk kategori Menunggu (bukan Alpa)
+                    pendingCount++;
+                }
+            } else {
+                // Tidak ada data sama sekali = Alpa
+                alpaCount++;
+            }
         });
 
-        const qPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
-        const countPending = await getCountFromServer(qPending);
-
-        const alpaCount = Math.max(0, totalStaff - (hadirCount + izinCount + sakitCount + cutiCount));
-
-        return { 
-            totalStaff, hadir: hadirCount, izin: izinCount, sakit: sakitCount, cuti: cutiCount,
-            pending: countPending.data().count, alpa: alpaCount, isHoliday: false 
+        return {
+            totalStaff: allStaff.length,
+            hadir: hadirCount,
+            izin: izinCount,
+            sakit: sakitCount,
+            cuti: cutiCount,
+            pending: pendingCount,
+            alpa: alpaCount,
+            isHoliday: false,
+            isManualDisabled: isManualOff,
+            isCalendarHoliday: (mConfig.holidays || []).includes(todayStr)
         };
     } catch (e) {
         console.error("Daily stats calculation error:", e);

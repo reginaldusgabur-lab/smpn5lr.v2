@@ -74,7 +74,7 @@ export default function DashboardPage() {
   const isKepsek = user?.role === 'kepala_sekolah';
 
   const [summaryMonth, setSummaryMonth] = useState(new Date());
-  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false });
+  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [personalSummary, setPersonalSummary] = useState({ percentage: '0.0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
@@ -86,7 +86,7 @@ export default function DashboardPage() {
     try {
         const dailyStats = await getDailyStaffAttendanceStats(firestore);
         if (isMounted.current) {
-            setStats(dailyStats);
+            setStats(dailyStats as any);
             setIsStatsLoading(false);
         }
     } catch (error) { if (isMounted.current) setIsStatsLoading(false); }
@@ -115,7 +115,6 @@ export default function DashboardPage() {
   useEffect(() => {
     isMounted.current = true;
     if (!isUserLoading && user?.uid) {
-        // PERBAIKAN: Hanya panggil data dashboard global untuk Admin/Kepsek (Menghemat reads & menghentikan error permission)
         if (isAdmin || isKepsek) {
             loadDashboardData();
         }
@@ -194,8 +193,6 @@ export default function DashboardPage() {
 
   if (isUserLoading || !isClient) return <div className="p-4 space-y-4"><Skeleton className="h-20 w-full rounded-xl" /><Skeleton className="h-64 w-full rounded-xl" /></div>;
 
-  const isStaffOnly = ['guru', 'pegawai', 'siswa'].includes(user?.role || '');
-
   return (
     <div className="w-full space-y-4 pb-10 flex flex-col items-stretch">
         <div className="w-full px-0 space-y-1 mb-2">
@@ -227,10 +224,10 @@ export default function DashboardPage() {
         {(isAdmin || isKepsek) && (
             <div className="w-full space-y-3 pt-2 flex flex-col items-stretch">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-                    <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('recent-attendance')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.hadir}</div></Card>
-                    <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.izin + stats.sakit}</div></Card>
-                    <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={navigateToApproval}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span><MailWarning className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.pending}</div></Card>
-                    <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.alpa}</div></Card>
+                    <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('recent-attendance')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.hadir}</div></Card>
+                    <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Izin/Sakit/Cuti</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.izin + stats.sakit + stats.cuti}</div></Card>
+                    <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={navigateToApproval}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Menunggu</span><MailWarning className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.pending}</div></Card>
+                    <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.alpa}</div></Card>
                 </div>
                 <div id="recent-attendance" className="scroll-mt-20"><RecentAttendanceTable /></div>
                 <div id="absent-users" className="scroll-mt-20"><AbsentUsersTable /></div>
