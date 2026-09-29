@@ -18,10 +18,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Inbox } from 'lucide-react';
+import { Loader2, Inbox, Calendar } from 'lucide-react';
 import { useFirestore, useMemoFirebase, useUser, useDoc, useCollection } from '@/firebase';
 import { collection, doc, query, where, Timestamp, getDocs, type DocumentData } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,17 +109,26 @@ export default function PersetujuanIzinPage() {
             const results = await Promise.all(requestPromises);
             const allFetchedRequests = results.flat();
 
-
+            const today = startOfDay(new Date());
             const sixDaysAgo = new Date();
             sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
             sixDaysAgo.setHours(0, 0, 0, 0);
 
-            const recentRequests = allFetchedRequests.filter(req => {
+            // LOGIKA FILTER:
+            // 1. Tampilkan semua yang berstatus 'pending'
+            // 2. Tampilkan yang dimulai dalam 6 hari terakhir
+            // 3. Khusus CUTI: Tampilkan sampai tanggal berakhir (endDate >= today)
+            const filteredRequests = allFetchedRequests.filter(req => {
                 const startDate = req.startDate?.toDate();
-                return startDate && startDate >= sixDaysAgo;
+                const endDate = req.endDate?.toDate();
+                const isCuti = (req.type || '').toLowerCase().includes('cuti');
+                
+                return req.status === 'pending' || 
+                       (startDate && startDate >= sixDaysAgo) || 
+                       (isCuti && endDate && endDate >= today);
             });
             
-            setAllRequests(recentRequests);
+            setAllRequests(filteredRequests);
 
         } catch (error) {
             console.error("Failed to fetch leave requests:", error);
@@ -200,8 +209,12 @@ export default function PersetujuanIzinPage() {
                             {req.type}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-[10px] font-bold text-muted-foreground">
-                          {req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''} - {req.endDate?.toDate ? format(req.endDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}
+                        <TableCell>
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-[10px] font-black text-foreground">{req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}</span>
+                                <span className="text-[9px] font-bold text-muted-foreground italic">sampai</span>
+                                <span className="text-[10px] font-black text-foreground">{req.endDate?.toDate ? format(req.endDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}</span>
+                            </div>
                         </TableCell>
                         <TableCell className="max-w-xs truncate text-[11px] font-bold" title={req.reason}>{req.reason}</TableCell>
                       </TableRow>
@@ -216,8 +229,8 @@ export default function PersetujuanIzinPage() {
 
       <Card className="overflow-hidden border shadow-none rounded-3xl bg-card">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-          <CardTitle className="font-bold text-sm tracking-tight">Riwayat persetujuan</CardTitle>
-          <CardDescription className="text-muted-foreground font-bold pt-1">Riwayat permintaan izin atau sakit yang telah diproses dalam 6 hari terakhir.</CardDescription>
+          <CardTitle className="font-bold text-sm tracking-tight">Riwayat persetujuan & Cuti Aktif</CardTitle>
+          <CardDescription className="text-muted-foreground font-bold pt-1">Daftar izin yang telah diproses. Khusus pengajuan Cuti akan tetap tampil di sini sampai masa cuti berakhir.</CardDescription>
         </CardHeader>
         <CardContent className="p-0 sm:p-6">
           {isDataLoading ? (
@@ -247,8 +260,12 @@ export default function PersetujuanIzinPage() {
                           {req.type}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-[10px] font-bold text-muted-foreground">
-                        {req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''} - {req.endDate?.toDate ? format(req.endDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}
+                      <TableCell>
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-black text-foreground">{req.startDate?.toDate ? format(req.startDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}</span>
+                            <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">s/d</span>
+                            <span className="text-[10px] font-black text-foreground">{req.endDate?.toDate ? format(req.endDate.toDate(), 'd MMM yyyy', { locale: id }) : ''}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="max-w-xs truncate text-[11px] font-bold" title={req.reason}>{req.reason}</TableCell>
                       <TableCell className="text-center">
