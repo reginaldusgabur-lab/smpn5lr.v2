@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Info, Calculator, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Info, Calculator, TrendingUp, PlaneTakeoff } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -45,7 +45,7 @@ interface ReportItem {
 const PointLegend = () => (
     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas / Cuti</p>
             <p className="text-sm font-black text-green-600">1.0 Poin</p>
         </div>
         <div className="space-y-1">
@@ -173,8 +173,20 @@ export default function LaporanPage() {
     if (s === 'alpa') return "bg-red-500 text-white";
     if (s === 'sakit') return "bg-orange-500 text-white";
     if (s.includes('izin') || s.includes('dinas') || d.includes('cepat') || d.includes('luar sekolah')) return "bg-amber-500 text-white";
+    if (s === 'cuti') return "bg-blue-500 text-white";
     return "bg-emerald-500 text-white";
   };
+
+  // Pisahkan Data Berdasarkan Status 'Cuti'
+  const { regularData, cutiData } = useMemo(() => {
+      const reg: ReportItem[] = [];
+      const cuti: ReportItem[] = [];
+      monthlyReportData.forEach(d => {
+          if (d.status === 'Cuti') cuti.push(d);
+          else reg.push(d);
+      });
+      return { regularData: reg, cutiData: cuti };
+  }, [monthlyReportData]);
 
   const isLoading = isAuthLoading || isConfigLoading || isReportLoading;
   const canGoPrev = currentMonth > new Date(2026, 0, 1);
@@ -256,8 +268,8 @@ export default function LaporanPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {monthlyReportData.length > 0 ? (
-                                monthlyReportData.map((record, index) => (
+                            {regularData.length > 0 ? (
+                                regularData.map((record, index) => (
                                     <TableRow key={record.id} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
                                         <TableCell className="text-center font-bold text-muted-foreground text-sm">{index + 1}</TableCell>
                                         <TableCell className="font-bold text-sm text-foreground whitespace-nowrap">{record.dateString}</TableCell>
@@ -265,7 +277,7 @@ export default function LaporanPage() {
                                         <TableCell className="text-center font-mono text-xs font-bold">{record.checkOut}</TableCell>
                                         <TableCell className="text-center">
                                             <span className={cn(
-                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm",
+                                                "inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap",
                                                 getStatusColorClass(record.status, record.description)
                                             )}>
                                                 {record.status}
@@ -276,12 +288,36 @@ export default function LaporanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data.</TableCell>
+                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data kehadiran reguler.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
                     </Table>
                 </div>
+
+                {/* SEKSI KHUSUS CUTI RESMI */}
+                {cutiData.length > 0 && (
+                    <div className="mt-8 border-t border-muted-foreground/10 bg-blue-50/20">
+                        <div className="p-6 flex items-center gap-3 border-b border-blue-500/10">
+                            <PlaneTakeoff className="h-5 w-5 text-blue-600" />
+                            <h3 className="text-sm font-bold text-blue-800 uppercase tracking-widest">Daftar Cuti Resmi & Keterangan Khusus</h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableBody>
+                                    {cutiData.map((item, index) => (
+                                        <TableRow key={item.id} className="border-blue-500/5 hover:bg-blue-500/5">
+                                            <TableCell className='text-center font-bold text-blue-600/40 text-xs w-[60px]'>{index + 1}</TableCell>
+                                            <TableCell className="whitespace-nowrap font-bold text-sm text-blue-900 w-[200px]">{item.dateString}</TableCell>
+                                            <TableCell className="text-center w-[120px]"><Badge className="bg-blue-600 text-white border-none px-4">CUTI</Badge></TableCell>
+                                            <TableCell className="text-xs font-bold text-blue-700 italic">{item.description}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                )}
                 
                 <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
                     <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm max-w-2xl mx-auto">

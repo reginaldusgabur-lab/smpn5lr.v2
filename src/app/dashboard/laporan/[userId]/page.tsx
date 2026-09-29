@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -159,7 +160,7 @@ export default function UserReportDetailPage() {
 
             if (type === 'reset-alpa') {
                 // Done in deletion loops above
-            } else if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah', 'lengkapi-masuk', 'lengkapi-pulang'].includes(type)) {
+            } else if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
                 const inEnd = (schoolConfigData as any).checkInEndTime || '07:30';
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
@@ -179,7 +180,7 @@ export default function UserReportDetailPage() {
                 } else {
                     if (existingAtt?.checkInTime) {
                         data.checkInTime = Timestamp.fromDate(parseISO(existingAtt.checkInTime));
-                    } else if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'dinas-siang', 'pulang-cepat'].includes(type)) {
+                    } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                         const randomInOffsetSecs = Math.floor(Math.random() * 299) + 1;
                         data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffsetSecs * 1000));
                     } else {
@@ -189,7 +190,7 @@ export default function UserReportDetailPage() {
                     if (existingAtt?.checkOutTime) {
                         data.checkOutTime = Timestamp.fromDate(parseISO(existingAtt.checkOutTime));
                     } else if (!isToday || (isToday && now > limitOutStart)) {
-                        if (['hadir', 'lengkapi-masuk', 'lengkapi-pulang', 'terlambat', 'dinas-pagi'].includes(type)) {
+                        if (['hadir', 'terlambat', 'dinas-pagi'].includes(type)) {
                             const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
                             data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                         }
@@ -256,8 +257,11 @@ export default function UserReportDetailPage() {
         doc.setFontSize(11).text(`Nama : ${userData.name}`, margin, currentYStart); currentYStart += 6;
         doc.text(`NIP : ${userData.nip || '-'}`, margin, currentYStart); currentYStart += 10;
 
+        // Pisahkan data Cuti untuk tampilan khusus di akhir (Opsional untuk PDF)
+        const activeReport = monthlyReportData.filter(d => d.status !== 'Cuti');
+
         const tableHead = [['No', 'Tanggal', 'Masuk', 'Pulang', 'Status', 'Keterangan']];
-        const tableRows = monthlyReportData.map((item, index) => [
+        const tableRows = activeReport.map((item, index) => [
             index + 1,
             safeFormat(item.date, 'eeee, dd MMMM yyyy'),
             (item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? '-' : safeFormat(item.checkInTime, 'HH:mm:ss'),
@@ -278,7 +282,6 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
-        // --- SMART BOTTOM ANCHOR LOGIC ---
         const footerLineY = pHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
@@ -353,8 +356,20 @@ export default function UserReportDetailPage() {
         if (s === 'alpa') return "bg-red-500 text-white border-none shadow-sm";
         if (s === 'sakit') return "bg-orange-500 text-white border-none shadow-sm";
         if (s.includes('izin') || s.includes('dinas') || d.includes('cepat') || d.includes('luar sekolah')) return "bg-amber-500 text-white border-none shadow-sm";
+        if (s === 'cuti') return "bg-blue-500 text-white border-none shadow-sm";
         return "bg-emerald-500 text-white border-none shadow-sm";
     };
+
+    // Pisahkan Data Berdasarkan Status 'Cuti' untuk Tampilan Front-End
+    const { regularData, cutiData } = useMemo(() => {
+        const reg: MonthlyReportData[] = [];
+        const cuti: MonthlyReportData[] = [];
+        monthlyReportData.forEach(d => {
+            if (d.status === 'Cuti') cuti.push(d);
+            else reg.push(d);
+        });
+        return { regularData: reg, cutiData: cuti };
+    }, [monthlyReportData]);
 
     if (isLoading || !userData) return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
 
@@ -413,7 +428,7 @@ export default function UserReportDetailPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {monthlyReportData.length > 0 ? monthlyReportData.map((item, index) => {
+                                    {regularData.length > 0 ? regularData.map((item, index) => {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
@@ -466,10 +481,46 @@ export default function UserReportDetailPage() {
                                                 <TableCell className="text-[11px] font-medium text-muted-foreground italic whitespace-nowrap">{item.description}</TableCell>
                                             </TableRow>
                                         );
-                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data.</TableCell></TableRow>}
+                                    }) : <TableRow><TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40">Tidak ada data kehadiran reguler.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>
+
+                        {/* SEKSI KHUSUS CUTI RESMI */}
+                        {cutiData.length > 0 && (
+                            <div className="mt-8 border-t border-muted-foreground/10 bg-blue-50/20">
+                                <div className="p-6 bg-blue-500/5 flex items-center gap-3 border-b border-blue-500/10">
+                                    <PlaneTakeoff className="h-5 w-5 text-blue-600" />
+                                    <h3 className="text-sm font-bold text-blue-800 uppercase tracking-widest">Daftar Cuti Resmi & Keterangan Khusus</h3>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableBody>
+                                            {cutiData.map((item, index) => (
+                                                <TableRow key={item.id} className="border-blue-500/5 hover:bg-blue-500/5">
+                                                    <TableCell className='text-center font-bold text-blue-600/40 text-xs w-[60px]'>{index + 1}</TableCell>
+                                                    <TableCell className="whitespace-nowrap font-bold text-sm text-blue-900 w-[200px]">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
+                                                    <TableCell className="text-center w-[120px]"><Badge className="bg-blue-600 text-white border-none px-4">CUTI</Badge></TableCell>
+                                                    <TableCell className="text-xs font-bold text-blue-700 italic">{item.description}</TableCell>
+                                                    {isAdmin && (
+                                                        <TableCell className="text-right pr-4">
+                                                            <button className="h-8 w-8 rounded-full hover:bg-blue-500/10 flex items-center justify-center text-blue-600" onClick={() => handleStatusChange(item.date, 'reset-alpa')}>
+                                                                <RotateCcw className="h-4 w-4" />
+                                                            </button>
+                                                        </TableCell>
+                                                    )}
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                <div className="p-4 px-8 border-t border-blue-500/10">
+                                    <p className="text-[10px] font-bold text-blue-600/60 leading-relaxed italic">
+                                        *Data di atas adalah riwayat cuti resmi yang tidak dihitung sebagai pelanggaran kehadiran dan mendapatkan poin penuh.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="p-6 border-t border-muted-foreground/10 space-y-6 bg-muted/5">
                             <div className="bg-white/60 dark:bg-slate-900/40 rounded-3xl border border-primary/10 overflow-hidden shadow-sm max-w-2xl mx-auto">

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, collectionGroup, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, collectionGroup, doc, getDoc } from 'firebase/firestore';
 import { isWithinInterval, startOfDay, endOfDay, format } from 'date-fns';
 import { Loader2, UserCheck, AlertCircle, CalendarOff, AlertTriangle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -54,8 +54,7 @@ const AbsentUsersTable = () => {
       setError(null);
       try {
         const today = new Date();
-        const startOfToday = startOfDay(today);
-        const endOfToday = endOfDay(today);
+        const todayStr = format(today, 'yyyy-MM-dd');
 
         const schoolConfigSnap = await getDoc(doc(firestore, 'schoolConfig', 'default'));
         const schoolConfig = schoolConfigSnap.data();
@@ -67,7 +66,6 @@ const AbsentUsersTable = () => {
         const isHolidayToday = (() => {
             if (!schoolConfig) return false;
             if (schoolConfig.isAttendanceActive === false) return true;
-            const todayStr = format(today, 'yyyy-MM-dd');
             if (monthlyConfig?.holidays?.includes(todayStr)) return true;
             const offDays: number[] = schoolConfig.offDays ?? [0, 6];
             return offDays.includes(today.getDay());
@@ -91,7 +89,7 @@ const AbsentUsersTable = () => {
 
         const attendanceQuery = query(
           collectionGroup(firestore, 'attendanceRecords'), 
-          where('date', '==', format(today, 'yyyy-MM-dd'))
+          where('date', '==', todayStr)
         );
         const attendanceSnap = await getDocs(attendanceQuery);
         const presentUserIds = new Set<string>();
@@ -103,12 +101,9 @@ const AbsentUsersTable = () => {
           if (userId && staffIdsSet.has(userId)) presentUserIds.add(userId);
         });
 
-        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'));
+        const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
         const leaveSnap = await getDocs(leaveQuery);
-        const onLeaveOrPendingUserIds = new Map<string, {
-            status: 'approved' | 'pending' | 'rejected'; 
-            type: string;
-        }>();
+        const onLeaveUserIds = new Map<string, string>();
 
         leaveSnap.forEach(doc => {
           const leave = doc.data();
@@ -118,9 +113,10 @@ const AbsentUsersTable = () => {
           if (startDate && endDate && isWithinInterval(today, { start: startOfDay(startDate), end: endOfDay(endDate) })) {
             const userId = leave.userId || doc.ref.parent.parent?.id;
             if (userId) {
-                if (!onLeaveOrPendingUserIds.has(userId) || leave.status === 'approved') {
-                    onLeaveOrPendingUserIds.set(userId, { status: leave.status, type: leave.type });
-                }
+                // Sederhanakan tipe cuti untuk dashboard
+                let type = leave.type;
+                if (type === 'Cuti Resmi') type = 'Cuti';
+                onLeaveUserIds.set(userId, type);
             }
           }
         });
@@ -129,23 +125,13 @@ const AbsentUsersTable = () => {
           .filter(user => !presentUserIds.has(user.id))
           .sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999)) 
           .map((user, index) => {
-            const leaveInfo = onLeaveOrPendingUserIds.get(user.id);
-            let status = 'Alpa';
-
-            if(leaveInfo) {
-                if(leaveInfo.status === 'approved') {
-                    status = leaveInfo.type || 'Izin';
-                } else if (leaveInfo.status === 'pending') {
-                    status = 'Menunggu';
-                }
-            }
-            
+            const leaveType = onLeaveUserIds.get(user.id);
             return {
                 no: index + 1,
                 name: user.name,
                 nip: user.nip || '-',
                 position: user.position || 'Staf',
-                status: status,
+                status: leaveType || 'Alpa',
             };
           });
 
@@ -175,7 +161,7 @@ const AbsentUsersTable = () => {
       if (s === 'alpa') return 'bg-red-500 text-white border-none shadow-sm';
       if (s === 'sakit') return 'bg-orange-500 text-white border-none shadow-sm';
       if (s.includes('izin') || s.includes('dinas') || s.includes('cepat') || s.includes('luar sekolah')) return 'bg-amber-500 text-white border-none shadow-sm';
-      if (s === 'menunggu') return 'bg-slate-500 text-white border-none shadow-sm';
+      if (s === 'cuti') return 'bg-blue-600 text-white border-none shadow-sm';
       
       return 'bg-emerald-500 text-white border-none shadow-sm';
   }
@@ -189,11 +175,11 @@ const AbsentUsersTable = () => {
               <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
             <div className="space-y-1">
-              <CardTitle className="font-bold text-base tracking-tight text-destructive">
+              <CardTitle className="font-bold text-base tracking-tight text-destructive uppercase">
                 Daftar Ketidakhadiran
               </CardTitle>
               <p className="text-sm font-medium text-muted-foreground">
-                Staf tanpa absen & izin
+                Staf tanpa absen & izin aktif hari ini
               </p>
             </div>
           </div>
@@ -204,9 +190,9 @@ const AbsentUsersTable = () => {
               <Table>
                   <TableHeader className="bg-destructive/5">
                   <TableRow className="border-none">
-                      <TableHead className="w-[60px] text-center font-semibold text-[10px] text-destructive">No</TableHead>
-                      <TableHead className="font-semibold text-[10px] text-destructive">Nama & Posisi</TableHead>
-                      <TableHead className="text-center font-semibold text-[10px] text-destructive">Status</TableHead>
+                      <TableHead className="w-[60px] text-center font-semibold text-[10px] text-destructive uppercase tracking-widest">No</TableHead>
+                      <TableHead className="font-semibold text-[10px] text-destructive uppercase tracking-widest">Nama & Posisi</TableHead>
+                      <TableHead className="text-center font-semibold text-[10px] text-destructive uppercase tracking-widest">Status</TableHead>
                   </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -215,10 +201,10 @@ const AbsentUsersTable = () => {
                       <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                       <TableCell>
                           <div className="font-bold text-sm text-foreground">{user.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-bold tracking-tight">{user.position}</div>
+                          <div className="text-[10px] text-muted-foreground font-bold tracking-tight uppercase">{user.position}</div>
                       </TableCell>
                       <TableCell className="text-center">
-                          <Badge variant="outline" className={cn("text-[10px] font-bold px-4 py-1 rounded-full", getStatusStyle(user.status))}>
+                          <Badge variant="outline" className={cn("text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-tighter", getStatusStyle(user.status))}>
                               {user.status}
                           </Badge>
                       </TableCell>
