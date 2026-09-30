@@ -1,8 +1,7 @@
+export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { generateQuote } from '@/ai/flows/generate-quote-flow';
-
-export const dynamic = 'force-dynamic';
 
 /**
  * API Route untuk menghasilkan kutipan motivasi menggunakan AI.
@@ -31,6 +30,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error: any) {
+    console.error("Gemini API Error:", error);
     console.error('[API_QUOTE_FAILURE]:', error);
     
     return NextResponse.json(

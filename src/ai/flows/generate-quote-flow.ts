@@ -88,7 +88,7 @@ const generateQuoteFlow = ai.defineFlow(
 
     try {
       const response = await ai.generate({
-        model: 'googleai/gemini-2.0-flash',
+        model: 'googleai/gemini-1.5-flash',
         config: {
           temperature: 1.4, // Menaikkan suhu untuk variasi yang lebih liar/kreatif
           topP: 0.95,
@@ -103,7 +103,7 @@ PANDUAN KETAT:
 3. SESI: Sesuaikan dengan konteks ${isEntry ? 'memulai hari dengan niat mulia' : 'mensyukuri hari yang telah tuntas'}.
 4. BAHASA: Gunakan Bahasa Indonesia yang sangat anggun dan menginspirasi (terjemahkan jika perlu).
 5. ANTI-KLISE: Jangan berikan kutipan yang terlalu sering didengar. Cari yang "hidden gem" atau mutiara tersembunyi dari tokoh tersebut.
-6. AKURASI: Nama tokoh harus benar dan kutipan harus benar-benar pernah diucapkan/ditulis oleh mereka.
+6. AKURASI: Nama tokoh harus benar and kutipan harus benar-benar pernah diucapkan/ditulis oleh mereka.
 
 DILARANG KERAS:
 - Memberikan kutipan tanpa nama tokoh.
