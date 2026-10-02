@@ -4,6 +4,7 @@
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes, isValid } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { getFromCache, setInCache } from './cache';
 
 export interface MonthlyReportData {
@@ -84,7 +85,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
         const attSnap = await getDocs(qPresent);
         
-        // FIX: Gunakan Map untuk deduplikasi user dengan pengambilan data terbaik
         const presentMap = new Map();
         attSnap.forEach(d => {
             const data = d.data();
@@ -150,7 +150,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             pending: pendingCount,
             alpa: alpaCount,
             isHoliday: false,
-            isManualDisabled: isManualOff,
+            isManualDisabled: false,
             isCalendarHoliday: holidays.includes(todayStr)
         };
     } catch (e) {
@@ -185,7 +185,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
         
-        // FIX: Gunakan Map untuk menyeleksi data terbaik harian per user dalam range tanggal
         const attMap = new Map();
         attendanceSnap.docs.forEach(d => {
             const data = d.data();
@@ -268,7 +267,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const holidays = Array.isArray(mConfig.holidays) ? mConfig.holidays : [];
         const offDays = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
 
-        // FIX: Deduplikasi catatan kehadiran bulanan per user (ambil yang terbaik)
         const attMap = new Map();
         attSnap.docs.forEach(d => {
             const data = d.data();
@@ -315,7 +313,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const isSpecialStatus = lowerDesc.includes('dinas') || lowerDesc.includes('luar sekolah') || lowerDesc.includes('cuti');
                 if (!isSpecialStatus) {
                     if (checkInDate && !checkOutDate && !lowerDesc.includes('cepat')) finalDesc = 'Belum absen pulang';
-                    else if (!checkInTime && checkOutDate && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
+                    else if (!checkInDate && checkOutDate && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
                 }
                 
                 const statusLabel = lowerDesc.includes('luar sekolah') ? 'Izin' : 'Hadir';
