@@ -178,40 +178,39 @@ export default function DashboardPage() {
     const isCheckedIn = !!record?.checkInTime;
     const isCheckedOut = !!record?.checkOutTime;
     const disabledStyle = "w-full bg-primary/10 text-primary/40 border border-primary/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm transition-all shadow-none";
-    if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> Memuat...</div>;
-    if (currentActiveLeave) return <div className="w-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm">{currentActiveLeave.type} Disetujui</div>;
-    if (isCheckedOut) return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
-    if (windowStatus === 'DISABLED' || stats.isManualDisabled) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Sistem Non-Aktif</div>;
-    if (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Hari Libur</div>;
+    if (windowStatus === 'LOADING' || isAttendanceLoading || isLeaveLoading) return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4 animate-spin" /> memuat...</div>;
+    if (currentActiveLeave) return <div className="w-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm">{currentActiveLeave.type} disetujui</div>;
+    if (isCheckedOut) return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><Sparkles className="mr-2 w-4 h-4" /> absensi selesai</div>;
+    if (windowStatus === 'DISABLED' || stats.isManualDisabled) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> sistem non-aktif</div>;
+    if (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> hari libur</div>;
     
     if (windowStatus === 'CHECK_OUT_OPEN') {
-        const isOutLate = isLate; // Not technically used for checkout but for symmetry
         return (
             <Button asChild size="lg" className={cn("w-full font-semibold rounded-xl h-12 bg-blue-600 hover:bg-blue-700 text-white shadow-none active:scale-95 transition-all")}>
-                <Link href="/dashboard/absen">Absen pulang sekarang</Link>
+                <Link href="/dashboard/absen">absen pulang sekarang</Link>
             </Button>
         );
     }
 
     if (!isCheckedIn) {
-        if (windowStatus === 'BEFORE_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
+        if (windowStatus === 'BEFORE_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> belum waktu jam masuk</div>;
         if (windowStatus === 'CHECK_IN_OPEN') {
             return (
                 <Button 
                     asChild 
                     size="lg" 
                     className={cn(
-                        "w-full font-black rounded-xl h-12 shadow-lg active:scale-95 transition-all uppercase tracking-widest text-[11px]",
+                        "w-full font-bold rounded-xl h-12 shadow-lg active:scale-95 transition-all text-sm",
                         isLate ? "bg-destructive hover:bg-destructive/90 shadow-destructive/20" : "bg-primary shadow-primary/20"
                     )}
                 >
-                    <Link href="/dashboard/absen">{isLate ? "Absen masuk (Terlambat)" : "Absen masuk sekarang"}</Link>
+                    <Link href="/dashboard/absen">{isLate ? "absen masuk (terlambat)" : "absen masuk sekarang"}</Link>
                 </Button>
             );
         }
-        if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
+        if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><AlertCircle className="mr-2 h-4 w-4" /> batas jam masuk berakhir</div>;
     }
-    return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Menunggu Jadwal</div>;
+    return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> menunggu jadwal</div>;
   };
 
   return (
@@ -236,7 +235,7 @@ export default function DashboardPage() {
                             <div className="bg-green-500/5 rounded-2xl p-4 text-center border border-green-500/10 flex items-center gap-3 relative overflow-hidden"><div className="bg-green-500 p-2.5 rounded-full text-white shrink-0"><LogIn className="h-4 w-4" /></div><div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--')}</p></div></div>
                             <div className="bg-blue-500/5 rounded-2xl p-4 text-center border border-blue-500/10 flex items-center gap-3 relative overflow-hidden"><div className="bg-blue-500 p-2.5 rounded-full text-white shrink-0"><LogOut className="h-4 w-4" /></div><div className="text-left"><p className="text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p><p className="text-xl font-bold tabular-nums text-foreground leading-none">{isAttendanceLoading ? '...' : (todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--')}</p></div></div>
                         </div>
-                        <div className="flex flex-col items-stretch gap-3">{renderAttendanceButton()}<Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground"><Link href="/dashboard/laporan">Lihat riwayat lengkap</Link></Button></div>
+                        <div className="flex flex-col items-stretch gap-3">{renderAttendanceButton()}<Button variant="link" size="sm" asChild className="h-auto p-0 text-xs font-semibold text-muted-foreground"><Link href="/dashboard/laporan">lihat riwayat lengkap</Link></Button></div>
                     </CardContent>
                 </Card>
             </div>
