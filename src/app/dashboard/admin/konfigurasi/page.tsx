@@ -33,7 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -317,7 +317,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
             <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 px-8 shadow-none" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                SIMPAN PENGATURAN BULANAN
+                SIMPAN PENGATURAN BULANI
             </Button>
         </CardFooter>
     </Card>
@@ -346,8 +346,8 @@ export default function KonfigurasiAbsenPage() {
   const [longitude, setLongitude] = useState('120.46667');
   const [radius, setRadius] = useState(100);
   const [checkInStart, setCheckInStart] = useState('06:00');
-  const [checkInEnd, setCheckInEnd] = useState('08:00');
-  const [checkInLateLimit, setCheckInLateLimit] = useState('08:15');
+  const [checkInEnd, setCheckInEnd] = useState('07:30');
+  const [lateLimitMinutes, setLateLimitMinutes] = useState(15);
   const [checkOutStart, setCheckOutStart] = useState('14:00');
   const [checkOutEnd, setCheckOutEnd] = useState('16:00');
   const [qrCodeValue, setQrCodeValue] = useState('');
@@ -395,8 +395,8 @@ export default function KonfigurasiAbsenPage() {
       setLongitude(schoolConfigData.longitude?.toString() ?? '120.46667');
       setRadius(schoolConfigData.radius ?? 100);
       setCheckInStart(schoolConfigData.checkInStartTime ?? '06:00');
-      setCheckInEnd(schoolConfigData.checkInEndTime ?? '08:00');
-      setCheckInLateLimit(schoolConfigData.checkInLateLimitTime ?? '08:15');
+      setCheckInEnd(schoolConfigData.checkInEndTime ?? '07:30');
+      setLateLimitMinutes(schoolConfigData.lateLimitMinutes ?? 15);
       setCheckOutStart(schoolConfigData.checkOutStartTime ?? '14:00');
       setCheckOutEnd(schoolConfigData.checkOutEndTime ?? '16:00');
       
@@ -513,7 +513,7 @@ export default function KonfigurasiAbsenPage() {
       radius: Number(radius),
       checkInStartTime: checkInStart,
       checkInEndTime: checkInEnd,
-      checkInLateLimitTime: checkInLateLimit,
+      lateLimitMinutes: Number(lateLimitMinutes),
       checkOutStartTime: checkOutStart,
       checkOutEndTime: checkOutEnd,
       dailyCheckOutTimes: dailyCheckOutTimes,
@@ -689,12 +689,15 @@ export default function KonfigurasiAbsenPage() {
                                   <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
                               </div>
                               <div className="space-y-1.5">
-                                  <Label htmlFor="checkin-late-limit" className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Batas Terlambat</Label>
-                                  <Input id="checkin-late-limit" type="time" className="rounded-xl h-10 bg-destructive/5 font-bold shadow-none border-destructive/10 text-destructive" value={checkInLateLimit} onChange={e => setCheckInLateLimit(e.target.value)} disabled={holidayMode} />
+                                  <Label htmlFor="late-limit" className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Durasi Terlambat</Label>
+                                  <div className="flex items-center gap-2">
+                                      <Input id="late-limit" type="number" className="rounded-xl h-10 bg-destructive/5 font-bold shadow-none border-destructive/10 text-destructive w-20" value={lateLimitMinutes} onChange={e => setLateLimitMinutes(Number(e.target.value))} disabled={holidayMode} />
+                                      <span className="text-[10px] font-black text-destructive/60">MENIT</span>
+                                  </div>
                               </div>
                           </div>
                           <p className="text-[9px] font-bold text-muted-foreground leading-tight px-1 italic">
-                            Personil masih bisa absen masuk hingga "Batas Terlambat", namun sistem akan otomatis mencatat status sebagai "Terlambat".
+                            Tombol absen tetap muncul selama {lateLimitMinutes} menit setelah "Batas Masuk", namun status otomatis dicatat sebagai "Terlambat".
                           </p>
                       </div>
 

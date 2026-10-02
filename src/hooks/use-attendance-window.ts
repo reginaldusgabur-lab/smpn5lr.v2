@@ -14,7 +14,7 @@ export interface SchoolConfig {
   useTimeValidation?: boolean;
   checkInStartTime?: string;
   checkInEndTime?: string;
-  checkInLateLimitTime?: string;
+  lateLimitMinutes?: number; // Menggunakan durasi menit
   checkOutStartTime?: string;
   checkOutEndTime?: string;
   dailyCheckOutTimes?: Record<string, { start: string, end: string }>;
@@ -80,8 +80,10 @@ export const useAttendanceWindow = () => {
 
         const inStart = parseToMinutes(config.checkInStartTime || "06:00");
         const inEndNormal = parseToMinutes(config.checkInEndTime || "08:00");
-        // Gunakan checkInLateLimitTime jika ada, jika tidak fallback ke inEndNormal
-        const inEndLate = parseToMinutes(config.checkInLateLimitTime || config.checkInEndTime || "08:15");
+        
+        // Perhitungan Batas Terlambat: Batas Masuk + Toleransi Menit
+        const lateTolerance = (config as any).lateLimitMinutes || 0;
+        const inEndLate = inEndNormal + Number(lateTolerance);
         
         // Dapatkan jadwal pulang dinamis sesuai hari
         const dailyOut = (config as any).dailyCheckOutTimes?.[dayOfWeek.toString()];
@@ -91,7 +93,7 @@ export const useAttendanceWindow = () => {
         if (currentTime < inStart) {
             setStatus("BEFORE_IN");
         } else if (currentTime >= inStart && currentTime <= inEndLate) {
-            // Tombol tetap muncul hingga batas terlambat
+            // Tombol tetap muncul hingga batas toleransi menit tercapai
             setStatus("CHECK_IN_OPEN");
         } else if (currentTime > inEndLate && currentTime < outStart) {
             setStatus("AFTER_IN");
