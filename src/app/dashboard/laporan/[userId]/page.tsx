@@ -273,6 +273,7 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
+        // --- SMART BOTTOM ANCHOR LOGIC ---
         const footerLineY = pHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
@@ -301,6 +302,7 @@ export default function UserReportDetailPage() {
             closureStartY = finalTableY + 10;
         }
 
+        // Render Signature (Top part of closure)
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
@@ -309,6 +311,7 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
+        // Render Notes (ANCHORED TO BOTTOM LINE)
         if (mConfig.isHolidayNotesActive) {
             const listItemsStartY = bottomSafeLimit - totalNotesHeight;
             const labelsStartY = listItemsStartY - labelAreaHeight + 2;
@@ -490,7 +493,7 @@ export default function UserReportDetailPage() {
                                                 <TableRow key={item.id} className="border-blue-500/5 hover:bg-blue-500/5">
                                                     <TableCell className='text-center font-bold text-blue-600/40 text-xs w-[60px]'>{index + 1}</TableCell>
                                                     <TableCell className="whitespace-nowrap font-bold text-sm text-blue-900 w-[200px]">{safeFormat(item.date, 'eeee, dd MMMM yyyy')}</TableCell>
-                                                    <TableCell className="text-center w-[120px]"><Badge className="bg-blue-600 text-white border-none px-4">CUTI</Badge></TableCell>
+                                                    <TableCell className="text-center w-[120px]"><Badge className="bg-blue-600 text-white border-none px-4">Cuti</Badge></TableCell>
                                                     <TableCell className="text-xs font-bold text-blue-700 italic">{item.description}</TableCell>
                                                     {isAdmin && (
                                                         <TableCell className="text-right pr-4">

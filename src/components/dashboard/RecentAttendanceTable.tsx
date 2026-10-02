@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -96,7 +97,6 @@ const RecentAttendanceTable = () => {
         const userMap = new Map();
         usersSnap.forEach(d => userMap.set(d.id, d.data()));
 
-        // FIX: Deduplikasi berdasarkan userId untuk menghindari baris ganda
         const activitiesMap = new Map<string, Omit<Activity, 'no'>>();
 
         attendanceSnap.docs.forEach(attendanceDoc => {
@@ -127,7 +127,6 @@ const RecentAttendanceTable = () => {
               userId: userId
             };
 
-            // Jika sudah ada data user ini, pilih yang lebih lengkap (misal: yang sudah check-out)
             const existing = activitiesMap.get(userId);
             if (!existing || (existing.checkOutTime === '-' && activityRecord.checkOutTime !== '-')) {
                 activitiesMap.set(userId, activityRecord);
@@ -212,7 +211,7 @@ const RecentAttendanceTable = () => {
                       <TableCell className="text-center font-mono text-xs font-bold">{act.checkInTime}</TableCell>
                       <TableCell className="text-center font-mono text-xs font-bold">{act.checkOutTime}</TableCell>
                        <TableCell className="text-center">
-                        <Badge variant="outline" className={cn("text-[9px] font-bold px-3 py-1 rounded-full uppercase", getStatusBadgeStyle(act.status))}>{act.status}</Badge>
+                        <Badge variant="outline" className={cn("text-[9px] font-bold px-3 py-1 rounded-full", getStatusBadgeStyle(act.status))}>{act.status}</Badge>
                       </TableCell>
                     </TableRow>
                   ))}
