@@ -14,6 +14,7 @@ export interface SchoolConfig {
   useTimeValidation?: boolean;
   checkInStartTime?: string;
   checkInEndTime?: string;
+  checkInLateLimitTime?: string;
   checkOutStartTime?: string;
   checkOutEndTime?: string;
   dailyCheckOutTimes?: Record<string, { start: string, end: string }>;
@@ -29,7 +30,7 @@ export type AttendanceWindowStatus =
   | "DISABLED"         // Dinonaktifkan secara manual oleh Admin
   | "SESSION_INACTIVE" // Hari libur terjadwal (rutin atau kalender)
   | "BEFORE_IN"        // Belum jam masuk
-  | "CHECK_IN_OPEN"    // Jendela masuk terbuka
+  | "CHECK_IN_OPEN"    // Jendela masuk terbuka (termasuk masa terlambat)
   | "AFTER_IN"         // Batas jam masuk berakhir (menunggu jam pulang)
   | "CHECK_OUT_OPEN"   // Jendela pulang terbuka
   | "CLOSED";          // Sesi hari ini berakhir
@@ -78,7 +79,9 @@ export const useAttendanceWindow = () => {
         };
 
         const inStart = parseToMinutes(config.checkInStartTime || "06:00");
-        const inEnd = parseToMinutes(config.checkInEndTime || "08:00");
+        const inEndNormal = parseToMinutes(config.checkInEndTime || "08:00");
+        // Gunakan checkInLateLimitTime jika ada, jika tidak fallback ke inEndNormal
+        const inEndLate = parseToMinutes(config.checkInLateLimitTime || config.checkInEndTime || "08:15");
         
         // Dapatkan jadwal pulang dinamis sesuai hari
         const dailyOut = (config as any).dailyCheckOutTimes?.[dayOfWeek.toString()];
@@ -87,9 +90,10 @@ export const useAttendanceWindow = () => {
 
         if (currentTime < inStart) {
             setStatus("BEFORE_IN");
-        } else if (currentTime >= inStart && currentTime <= inEnd) {
+        } else if (currentTime >= inStart && currentTime <= inEndLate) {
+            // Tombol tetap muncul hingga batas terlambat
             setStatus("CHECK_IN_OPEN");
-        } else if (currentTime > inEnd && currentTime < outStart) {
+        } else if (currentTime > inEndLate && currentTime < outStart) {
             setStatus("AFTER_IN");
         } else if (currentTime >= outStart && currentTime <= outEnd) {
             setStatus("CHECK_OUT_OPEN");

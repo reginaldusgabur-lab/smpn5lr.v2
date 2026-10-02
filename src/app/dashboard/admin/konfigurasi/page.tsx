@@ -347,6 +347,7 @@ export default function KonfigurasiAbsenPage() {
   const [radius, setRadius] = useState(100);
   const [checkInStart, setCheckInStart] = useState('06:00');
   const [checkInEnd, setCheckInEnd] = useState('08:00');
+  const [checkInLateLimit, setCheckInLateLimit] = useState('08:15');
   const [checkOutStart, setCheckOutStart] = useState('14:00');
   const [checkOutEnd, setCheckOutEnd] = useState('16:00');
   const [qrCodeValue, setQrCodeValue] = useState('');
@@ -395,6 +396,7 @@ export default function KonfigurasiAbsenPage() {
       setRadius(schoolConfigData.radius ?? 100);
       setCheckInStart(schoolConfigData.checkInStartTime ?? '06:00');
       setCheckInEnd(schoolConfigData.checkInEndTime ?? '08:00');
+      setCheckInLateLimit(schoolConfigData.checkInLateLimitTime ?? '08:15');
       setCheckOutStart(schoolConfigData.checkOutStartTime ?? '14:00');
       setCheckOutEnd(schoolConfigData.checkOutEndTime ?? '16:00');
       
@@ -511,6 +513,7 @@ export default function KonfigurasiAbsenPage() {
       radius: Number(radius),
       checkInStartTime: checkInStart,
       checkInEndTime: checkInEnd,
+      checkInLateLimitTime: checkInLateLimit,
       checkOutStartTime: checkOutStart,
       checkOutEndTime: checkOutEnd,
       dailyCheckOutTimes: dailyCheckOutTimes,
@@ -676,7 +679,7 @@ export default function KonfigurasiAbsenPage() {
                   <div className="space-y-6 pt-4 border-t border-muted-foreground/10">
                       <div className="space-y-4">
                           <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Masuk</Label>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                               <div className="space-y-1.5">
                                   <Label htmlFor="checkin-start" className="text-[10px] font-bold">Mulai masuk</Label>
                                   <Input id="checkin-start" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInStart} onChange={e => setCheckInStart(e.target.value)} disabled={holidayMode} />
@@ -685,7 +688,14 @@ export default function KonfigurasiAbsenPage() {
                                   <Label htmlFor="checkin-end" className="text-[10px] font-bold">Batas masuk</Label>
                                   <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
                               </div>
+                              <div className="space-y-1.5">
+                                  <Label htmlFor="checkin-late-limit" className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Batas Terlambat</Label>
+                                  <Input id="checkin-late-limit" type="time" className="rounded-xl h-10 bg-destructive/5 font-bold shadow-none border-destructive/10 text-destructive" value={checkInLateLimit} onChange={e => setCheckInLateLimit(e.target.value)} disabled={holidayMode} />
+                              </div>
                           </div>
+                          <p className="text-[9px] font-bold text-muted-foreground leading-tight px-1 italic">
+                            Personil masih bisa absen masuk hingga "Batas Terlambat", namun sistem akan otomatis mencatat status sebagai "Terlambat".
+                          </p>
                       </div>
 
                       <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
