@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -180,7 +179,7 @@ const RecentAttendanceTable = () => {
           <div className="flex items-start gap-3">
             <History className="h-5 w-5 text-green-700 mt-0.5" />
             <div>
-              <CardTitle className="font-bold text-base tracking-tight text-green-700 uppercase">Aktivitas Kehadiran</CardTitle>
+              <CardTitle className="font-bold text-base tracking-tight text-green-700">Aktivitas Kehadiran</CardTitle>
               <p className="text-sm font-medium text-muted-foreground">Absensi harian tercatat per {format(new Date(), "d MMMM yyyy", { locale: indonesiaLocale })}</p>
             </div>
           </div>
@@ -195,11 +194,11 @@ const RecentAttendanceTable = () => {
               <Table>
                 <TableHeader className="bg-green-500/5">
                   <TableRow className="border-none">
-                    <TableHead className="w-[60px] text-center font-semibold text-[10px] text-green-700 uppercase tracking-widest">No</TableHead>
-                    <TableHead className="font-semibold text-[10px] text-green-700 uppercase tracking-widest">Nama & NIP</TableHead>
-                    <TableHead className="text-center font-semibold text-[10px] text-green-700 uppercase tracking-widest">Masuk</TableHead>
-                    <TableHead className="text-center font-semibold text-[10px] text-green-700 uppercase tracking-widest">Pulang</TableHead>
-                    <TableHead className="text-center font-semibold text-[10px] text-green-700 uppercase tracking-widest">Status</TableHead>
+                    <TableHead className="w-[60px] text-center font-semibold text-[10px] text-green-700">No</TableHead>
+                    <TableHead className="font-semibold text-[10px] text-green-700">Nama & NIP</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Masuk</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Pulang</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

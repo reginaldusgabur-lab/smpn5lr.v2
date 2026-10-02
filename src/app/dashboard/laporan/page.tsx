@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -238,7 +237,7 @@ export default function LaporanPage() {
                             <div className="flex items-center gap-1 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max">
                                 <CalendarDays className="h-4 w-4 text-primary/70" />
                                 <div className="flex flex-col">
-                                    <span className="text-[7px] font-black uppercase text-muted-foreground/60 leading-none">Tahun ajaran</span>
+                                    <span className="text-[7px] font-bold text-muted-foreground/50 leading-none">Tahun ajaran</span>
                                     <span className="text-[10px] font-black text-primary leading-none mt-0.5">{academicYear || "-"}</span>
                                 </div>
                             </div>
@@ -288,7 +287,7 @@ export default function LaporanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest uppercase">Tidak ada data kehadiran reguler.</TableCell>
+                                    <TableCell colSpan={6} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest">Tidak ada data.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -309,7 +308,7 @@ export default function LaporanPage() {
                                         <TableRow key={item.id} className="border-blue-500/5 hover:bg-blue-500/5">
                                             <TableCell className='text-center font-bold text-blue-600/40 text-xs w-[60px]'>{index + 1}</TableCell>
                                             <TableCell className="whitespace-nowrap font-bold text-sm text-blue-900 w-[200px]">{item.dateString}</TableCell>
-                                            <TableCell className="text-center w-[120px]"><Badge className="bg-blue-600 text-white border-none px-4">CUTI</Badge></TableCell>
+                                            <TableCell className="text-center w-[120px]"><Badge className="bg-blue-600 text-white border-none px-4">Cuti</Badge></TableCell>
                                             <TableCell className="text-xs font-bold text-blue-700 italic">{item.description}</TableCell>
                                         </TableRow>
                                     ))}

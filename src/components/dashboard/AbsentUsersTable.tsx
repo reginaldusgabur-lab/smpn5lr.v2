@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -189,7 +188,7 @@ const AbsentUsersTable = () => {
               <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
             <div className="space-y-1">
-              <CardTitle className="font-bold text-base tracking-tight text-destructive uppercase">
+              <CardTitle className="font-bold text-base tracking-tight text-destructive">
                 Daftar Ketidakhadiran
               </CardTitle>
               <p className="text-sm font-medium text-muted-foreground">
@@ -204,9 +203,9 @@ const AbsentUsersTable = () => {
               <Table>
                   <TableHeader className="bg-destructive/5">
                   <TableRow className="border-none">
-                      <TableHead className="w-[60px] text-center font-semibold text-[10px] text-destructive uppercase tracking-widest">No</TableHead>
-                      <TableHead className="font-semibold text-[10px] text-destructive uppercase tracking-widest">Nama & Posisi</TableHead>
-                      <TableHead className="text-center font-semibold text-[10px] text-destructive uppercase tracking-widest">Status</TableHead>
+                      <TableHead className="w-[60px] text-center font-semibold text-[10px] text-destructive">No</TableHead>
+                      <TableHead className="font-semibold text-[10px] text-destructive">Nama & Posisi</TableHead>
+                      <TableHead className="text-center font-semibold text-[10px] text-destructive">Status</TableHead>
                   </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -215,10 +214,10 @@ const AbsentUsersTable = () => {
                       <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                       <TableCell>
                           <div className="font-bold text-sm text-foreground">{user.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-bold tracking-tight uppercase">{user.position}</div>
+                          <div className="text-[10px] text-muted-foreground font-bold tracking-tight">{user.position}</div>
                       </TableCell>
                       <TableCell className="text-center">
-                          <Badge variant="outline" className={cn("text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-tighter", getStatusStyle(user.status))}>
+                          <Badge variant="outline" className={cn("text-[10px] font-bold px-4 py-1 rounded-full", getStatusStyle(user.status))}>
                               {user.status}
                           </Badge>
                       </TableCell>

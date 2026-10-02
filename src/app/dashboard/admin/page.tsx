@@ -153,10 +153,10 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-            <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.hadir}</div></Card>
-            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Izin/Sakit</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.izin + stats.sakit}</div></Card>
-            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Menunggu</span><Clock className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.pending}</div></Card>
-            <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.alpa}</div></Card>
+            <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.hadir}</div></Card>
+            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.izin + stats.sakit}</div></Card>
+            <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span><Clock className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.pending}</div></Card>
+            <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.alpa}</div></Card>
         </div>
 
         <Card className="shadow-none overflow-hidden border-muted-foreground/10 bg-primary/5 rounded-xl">
@@ -166,11 +166,11 @@ export default function AdminDashboardPage() {
                     <Table>
                         <TableHeader className="bg-muted/30">
                             <TableRow className="border-none">
-                                <TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">Nama & Peran</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Masuk</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Pulang</TableHead>
-                                <TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead>
+                                <TableHead className="w-[60px] text-center font-bold text-[10px]">No</TableHead>
+                                <TableHead className="font-bold text-[10px]">Nama & Peran</TableHead>
+                                <TableHead className="text-center font-bold text-[10px]">Masuk</TableHead>
+                                <TableHead className="text-center font-bold text-[10px]">Pulang</TableHead>
+                                <TableHead className="text-center font-bold text-[10px]">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -180,7 +180,7 @@ export default function AdminDashboardPage() {
                                     <TableCell><div className="font-bold text-sm">{item.name}</div><div className="text-[10px] text-muted-foreground font-bold uppercase">{item.role}</div></TableCell>
                                     <TableCell className="text-center font-mono text-xs font-bold">{item.in}</TableCell>
                                     <TableCell className="text-center font-mono text-xs font-bold">{item.out}</TableCell>
-                                    <TableCell className="text-center"><Badge variant="outline" className={cn("text-[9px] font-bold uppercase text-white border-none px-3 py-1 rounded-full", item.statusClass)}>{item.status}</Badge></TableCell>
+                                    <TableCell className="text-center"><Badge variant="outline" className={cn("text-[9px] font-bold px-3 py-1 rounded-full text-white border-none", item.statusClass)}>{item.status}</Badge></TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow><TableCell colSpan={5} className="h-48 text-center text-muted-foreground font-bold text-xs tracking-widest opacity-40 uppercase">Belum ada aktivitas</TableCell></TableRow>

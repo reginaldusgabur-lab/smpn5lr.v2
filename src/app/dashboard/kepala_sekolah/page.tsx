@@ -187,9 +187,9 @@ export default function KepalaSekolahDashboardPage() {
         </div>
 
         <div className="space-y-4">
-          <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.hadir}</div></Card>
-          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Persetujuan</span><ClipboardCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="flex items-center justify-between"><div className="text-3xl font-normal tracking-tight">{stats.pending}</div><Button asChild variant="ghost" size="sm" className="h-7 text-white hover:bg-white/10 text-[10px] tracking-widest uppercase">Detail</Button></div></Card>
-          <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest uppercase">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.alpa}</div></Card>
+          <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.hadir}</div></Card>
+          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Persetujuan</span><ClipboardCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="flex items-center justify-between"><div className="text-3xl font-normal tracking-tight">{stats.pending}</div><Button asChild variant="ghost" size="sm" className="h-7 text-white hover:bg-white/10 text-[10px] tracking-widest">Detail</Button></div></Card>
+          <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.alpa}</div></Card>
         </div>
       </div>
 
@@ -198,7 +198,7 @@ export default function KepalaSekolahDashboardPage() {
         <CardContent className="p-0">
             <div className="overflow-x-auto">
                 <Table>
-                    <TableHeader className="bg-muted/30"><TableRow className="border-none"><TableHead className="w-[50px] text-center font-bold text-[10px] uppercase">No</TableHead><TableHead className="font-bold text-[10px] uppercase">Nama</TableHead><TableHead className="text-center font-bold text-[10px] uppercase">Masuk</TableHead><TableHead className="text-center font-bold text-[10px] uppercase">Pulang</TableHead><TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead></TableRow></TableHeader>
+                    <TableHeader className="bg-muted/30"><TableRow className="border-none"><TableHead className="w-[50px] text-center font-bold text-[10px] tracking-widest">No</TableHead><TableHead className="font-bold text-[10px] tracking-widest">Nama</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Masuk</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Pulang</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Status</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {processedRecentAttendance.length > 0 ? processedRecentAttendance.map((item, idx) => (
                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
@@ -206,7 +206,7 @@ export default function KepalaSekolahDashboardPage() {
                                 <TableCell className="font-bold text-sm">{item.name}</TableCell>
                                 <TableCell className="text-center font-mono text-xs font-bold">{item.in}</TableCell>
                                 <TableCell className="text-center font-mono text-xs font-bold">{item.out}</TableCell>
-                                <TableCell className="text-center"><Badge variant="outline" className={cn("text-[9px] font-bold uppercase px-3 py-1 rounded-full text-white border-none", item.statusClass)}>{item.status}</Badge></TableCell>
+                                <TableCell className="text-center"><Badge variant="outline" className={cn("text-[9px] font-bold px-3 py-1 rounded-full text-white border-none", item.statusClass)}>{item.status}</Badge></TableCell>
                             </TableRow>
                         )) : (
                             <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Belum ada aktivitas hari ini.</TableCell></TableRow>
