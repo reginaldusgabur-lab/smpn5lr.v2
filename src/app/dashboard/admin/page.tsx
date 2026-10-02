@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -6,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { UserCheck, BookUser, MailWarning, Clock, UserX, Calendar, UserCircle, RefreshCw } from 'lucide-react';
 import {
@@ -84,7 +86,7 @@ export default function AdminDashboardPage() {
   const isAdmin = userData?.role === 'admin';
 
   const attendanceQuery = useMemoFirebase(() => 
-    (isAdmin && firestore) ? query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr), limit(100)) : null,
+    (isAdmin && firestore) ? query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr), limit(200)) : null,
     [firestore, isAdmin, todayStr]
   );
   const { data: globalAttendance, isLoading: isGlobalLoading } = useCollection(user, attendanceQuery);
@@ -92,10 +94,23 @@ export default function AdminDashboardPage() {
   const usersQuery = useMemoFirebase(() => (isAdmin && firestore) ? query(collection(firestore, 'users'), where('status', '==', 'Aktif')) : null, [firestore, isAdmin]);
   const { data: usersData } = useCollection(user, usersQuery);
 
+  // FIX: Deduplikasi aktivitas terbaru agar satu user hanya muncul satu kali (data terbaik menang)
   const recentUserActivity = useMemo(() => {
     if (!usersData || !globalAttendance) return [];
     const userMap = new Map(usersData.map(u => [u.id, u]));
-    return [...globalAttendance]
+    
+    // Proses deduplikasi berdasarkan userId
+    const uniqueMap = new Map();
+    [...globalAttendance].forEach(att => {
+        const userId = att.userId || att.id; // Fallback jika userId tidak ada di doc data
+        const existing = uniqueMap.get(userId);
+        // Prioritaskan yang punya checkOut atau yang paling lengkap
+        if (!existing || (!existing.checkOutTime && att.checkOutTime)) {
+            uniqueMap.set(userId, att);
+        }
+    });
+
+    return Array.from(uniqueMap.values())
         .sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (b.checkInTime?.toDate().getTime() || 0))
         .map((att, idx) => {
             const u = userMap.get(att.userId);

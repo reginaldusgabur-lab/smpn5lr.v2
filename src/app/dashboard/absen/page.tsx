@@ -105,7 +105,13 @@ export default function AbsenPage() {
     return query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', todayStr));
   }, [user?.uid, firestore, todayStr]);
   const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
-  const todaysRecord = useMemo(() => todaysAttendance?.[0], [todaysAttendance]);
+  
+  // FIX: Memilih record terbaik jika ada pendobelan (misal: yang sudah punya check-in)
+  const todaysRecord = useMemo(() => {
+      if (!todaysAttendance || todaysAttendance.length === 0) return null;
+      const recordWithCheckIn = todaysAttendance.find(a => !!a.checkInTime);
+      return recordWithCheckIn || todaysAttendance[0];
+  }, [todaysAttendance]);
 
   const activeLeavesQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;

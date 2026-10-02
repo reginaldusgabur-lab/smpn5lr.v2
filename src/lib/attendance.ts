@@ -17,9 +17,6 @@ export interface MonthlyReportData {
     points: number;
 }
 
-/**
- * Helper untuk mengonversi data waktu dari Firestore (Timestamp atau String) ke objek Date JS.
- */
 const parseFirestoreDate = (input: any): Date | null => {
     if (!input) return null;
     if (typeof input.toDate === 'function') return input.toDate();
@@ -86,11 +83,18 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
         const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
         const attSnap = await getDocs(qPresent);
+        
+        // FIX: Gunakan Map untuk deduplikasi user dengan pengambilan data terbaik
         const presentMap = new Map();
         attSnap.forEach(d => {
             const data = d.data();
             const uid = data.userId || d.ref.parent.parent?.id;
-            if (uid) presentMap.set(uid, data);
+            if (uid) {
+                const existing = presentMap.get(uid);
+                if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
+                    presentMap.set(uid, data);
+                }
+            }
         });
 
         const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
@@ -108,7 +112,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             const attData = presentMap.get(u.id);
             if (attData) {
                 const desc = (attData.reasonForUpdate || '').toLowerCase();
-                // Kategorikan Luar Sekolah ke kolom Izin di Dashboard
                 if (desc.includes('luar sekolah')) izinCount++;
                 else hadirCount++;
                 return;
@@ -182,21 +185,30 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
         
+        // FIX: Gunakan Map untuk menyeleksi data terbaik harian per user dalam range tanggal
+        const attMap = new Map();
         attendanceSnap.docs.forEach(d => {
-            const att = d.data();
-            const dayStr = att.date || (att.checkInTime ? format(parseFirestoreDate(att.checkInTime)!, 'yyyy-MM-dd') : '');
-            if (dayStr && !processedDates.has(dayStr)) {
-                if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr)) {
-                    const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
-                    const checkInDate = parseFirestoreDate(att.checkInTime);
-                    const checkOutDate = parseFirestoreDate(att.checkOutTime);
-                    totalPoints += calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate);
-                    
-                    if (desc.includes('luar sekolah')) izinCount++;
-                    else hadirCount++;
-                    
-                    processedDates.add(dayStr);
+            const data = d.data();
+            const dStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
+            if (dStr) {
+                const existing = attMap.get(dStr);
+                if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
+                    attMap.set(dStr, data);
                 }
+            }
+        });
+
+        attMap.forEach((att, dayStr) => {
+            if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr)) {
+                const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
+                const checkInDate = parseFirestoreDate(att.checkInTime);
+                const checkOutDate = parseFirestoreDate(att.checkOutTime);
+                totalPoints += calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate);
+                
+                if (desc.includes('luar sekolah')) izinCount++;
+                else hadirCount++;
+                
+                processedDates.add(dayStr);
             }
         });
 
@@ -213,17 +225,11 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                         const typeLower = (leave.type || '').toLowerCase();
                         const reasonLower = (leave.reason || '').toLowerCase();
                         
-                        if (typeLower.includes('sakit')) {
-                            sakitCount++;
-                        } else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) {
-                            izinCount++;
-                        } else if (typeLower.includes('cuti') || typeLower.includes('dinas')) {
-                            hadirCount++;
-                        } else if (p < 1.0) {
-                            izinCount++;
-                        } else {
-                            hadirCount++;
-                        }
+                        if (typeLower.includes('sakit')) sakitCount++;
+                        else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) izinCount++;
+                        else if (typeLower.includes('cuti') || typeLower.includes('dinas')) hadirCount++;
+                        else if (p < 1.0) izinCount++;
+                        else hadirCount++;
                         processedDates.add(dayStr);
                     }
                 });
@@ -262,11 +268,17 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const holidays = Array.isArray(mConfig.holidays) ? mConfig.holidays : [];
         const offDays = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
 
+        // FIX: Deduplikasi catatan kehadiran bulanan per user (ambil yang terbaik)
         const attMap = new Map();
         attSnap.docs.forEach(d => {
             const data = d.data();
             const dayStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
-            if (dayStr) attMap.set(dayStr, { id: d.id, ...data });
+            if (dayStr) {
+                const existing = attMap.get(dayStr);
+                if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
+                    attMap.set(dayStr, { id: d.id, ...data });
+                }
+            }
         });
 
         const leaveMap = new Map();
@@ -303,10 +315,9 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const isSpecialStatus = lowerDesc.includes('dinas') || lowerDesc.includes('luar sekolah') || lowerDesc.includes('cuti');
                 if (!isSpecialStatus) {
                     if (checkInDate && !checkOutDate && !lowerDesc.includes('cepat')) finalDesc = 'Belum absen pulang';
-                    else if (!checkInDate && checkOutDate && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
+                    else if (!checkInTime && checkOutDate && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
                 }
                 
-                // FORCE: Status "Izin" label for Luar Sekolah in Attendance Records
                 const statusLabel = lowerDesc.includes('luar sekolah') ? 'Izin' : 'Hadir';
 
                 return { 
@@ -323,12 +334,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const pts = calculatePoints(type, leave.reason || type, false, false);
                 const typeLower = type.toLowerCase();
                 const reasonLower = (leave.reason || '').toLowerCase();
-                
-                // FORCE: Status "Izin" label for Luar Sekolah in Leave Records
                 let statusLabel = (type === 'Cuti') ? 'Cuti' : (pts === 1.0 ? 'Hadir' : type);
-                if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) {
-                    statusLabel = 'Izin';
-                }
+                if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) statusLabel = 'Izin';
 
                 return { 
                     id: `${leave.id}-${dayStr}`, date: dayStr, status: statusLabel, 

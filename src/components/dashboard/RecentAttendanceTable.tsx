@@ -28,6 +28,7 @@ interface Activity {
   rawCheckInTime: Date | null;
   status: string;
   keterangan: string;
+  userId: string;
 }
 
 const RecentAttendanceTable = () => {
@@ -77,7 +78,6 @@ const RecentAttendanceTable = () => {
             return;
         }
 
-        // FIX: Include 'Cuti' status in the staff query
         const usersQuery = query(
             collection(firestore, 'users'), 
             where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
@@ -97,11 +97,14 @@ const RecentAttendanceTable = () => {
         const userMap = new Map();
         usersSnap.forEach(d => userMap.set(d.id, d.data()));
 
-        const activitiesData: Omit<Activity, 'no'>[] = [];
+        // FIX: Deduplikasi berdasarkan userId untuk menghindari baris ganda
+        const activitiesMap = new Map<string, Omit<Activity, 'no'>>();
 
         attendanceSnap.docs.forEach(attendanceDoc => {
           const attendanceData = attendanceDoc.data();
           const userId = attendanceData.userId || attendanceDoc.ref.parent.parent?.id;
+          
+          if (!userId) return;
           const userData = userMap.get(userId);
 
           if (userData) {
@@ -114,7 +117,7 @@ const RecentAttendanceTable = () => {
             let statusLabel = checkOutDate ? 'Pulang' : 'Hadir';
             if (isSpecial) statusLabel = attendanceData.reasonForUpdate;
 
-            activitiesData.push({
+            const activityRecord = {
               name: userData.name || '-',
               nip: userData.nip || '-',
               rawCheckInTime: checkInDate || checkOutDate, 
@@ -122,11 +125,18 @@ const RecentAttendanceTable = () => {
               checkOutTime: (checkOutDate && !isSpecial) ? format(checkOutDate, 'HH:mm:ss') : '-',
               status: statusLabel,
               keterangan: attendanceData.reasonForUpdate || (checkOutDate ? 'Absensi selesai' : 'Sedang bertugas'),
-            });
+              userId: userId
+            };
+
+            // Jika sudah ada data user ini, pilih yang lebih lengkap (misal: yang sudah check-out)
+            const existing = activitiesMap.get(userId);
+            if (!existing || (existing.checkOutTime === '-' && activityRecord.checkOutTime !== '-')) {
+                activitiesMap.set(userId, activityRecord);
+            }
           }
         });
 
-        const sortedActivities = activitiesData.sort((a, b) => {
+        const sortedActivities = Array.from(activitiesMap.values()).sort((a, b) => {
             const tA = a.rawCheckInTime?.getTime() || 0;
             const tB = b.rawCheckInTime?.getTime() || 0;
             return tB - tA;
@@ -170,8 +180,8 @@ const RecentAttendanceTable = () => {
           <div className="flex items-start gap-3">
             <History className="h-5 w-5 text-green-700 mt-0.5" />
             <div>
-              <CardTitle className="font-bold text-base tracking-tight text-green-700">Aktivitas Kehadiran</CardTitle>
-              <p className="text-sm font-medium text-muted-foreground">Absensi tercatat pada {format(new Date(), "d MMMM yyyy", { locale: indonesiaLocale })}</p>
+              <CardTitle className="font-bold text-base tracking-tight text-green-700 uppercase">Aktivitas Kehadiran</CardTitle>
+              <p className="text-sm font-medium text-muted-foreground">Absensi harian tercatat per {format(new Date(), "d MMMM yyyy", { locale: indonesiaLocale })}</p>
             </div>
           </div>
         </CardHeader>
@@ -185,16 +195,16 @@ const RecentAttendanceTable = () => {
               <Table>
                 <TableHeader className="bg-green-500/5">
                   <TableRow className="border-none">
-                    <TableHead className="w-[60px] text-center font-semibold text-[10px] text-green-700">No</TableHead>
-                    <TableHead className="font-semibold text-[10px] text-green-700">Nama & NIP</TableHead>
-                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Masuk</TableHead>
-                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Pulang</TableHead>
-                    <TableHead className="text-center font-semibold text-[10px] text-green-700">Status</TableHead>
+                    <TableHead className="w-[60px] text-center font-semibold text-[10px] text-green-700 uppercase tracking-widest">No</TableHead>
+                    <TableHead className="font-semibold text-[10px] text-green-700 uppercase tracking-widest">Nama & NIP</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700 uppercase tracking-widest">Masuk</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700 uppercase tracking-widest">Pulang</TableHead>
+                    <TableHead className="text-center font-semibold text-[10px] text-green-700 uppercase tracking-widest">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {activities.map((act) => (
-                    <TableRow key={act.no} className="border-muted-foreground/5 hover:bg-green-500/5 transition-colors">
+                    <TableRow key={act.userId} className="border-muted-foreground/5 hover:bg-green-500/5 transition-colors">
                       <TableCell className="text-center font-bold text-xs text-muted-foreground">{act.no}</TableCell>
                       <TableCell>
                          <div className="font-bold text-sm text-foreground">{act.name}</div>
@@ -213,7 +223,7 @@ const RecentAttendanceTable = () => {
           ) : (
             <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-center">
                 <WifiOff className="w-10 h-10 mb-2 opacity-30" />
-                <p className="text-xs font-bold uppercase tracking-widest opacity-60">Belum ada aktivitas masuk</p>
+                <p className="text-xs font-bold uppercase tracking-widest opacity-60">Belum ada aktivitas hari ini</p>
             </div>
           )}
         </CardContent>
