@@ -45,7 +45,9 @@ const playSuccessFeedback = async (customAudioBase64?: string) => {
             if (!AudioContextClass) return;
 
             const context = new AudioContextClass();
-            if (context.state === 'suspended') await context.resume();
+            if (context.state === 'suspended') {
+                await context.resume();
+            }
 
             const oscillator = context.createOscillator();
             const gain = context.createGain();
@@ -306,19 +308,19 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
         const loadingIcon = <Loader2 className={cn(iconSize, "animate-spin text-primary")} />;
         
         switch (status) {
-            case 'processing': return { icon: loadingIcon, title: 'MEMPROSES', desc: 'Sedang memvalidasi data absensi...' };
-            case 'locating': return { icon: loadingIcon, title: 'MENCARI LOKASI', desc: 'Menghubungkan ke satelit GPS...' };
+            case 'processing': return { icon: loadingIcon, title: 'Memproses', desc: 'Sedang memvalidasi data absensi...' };
+            case 'locating': return { icon: loadingIcon, title: 'Mencari Lokasi', desc: 'Menghubungkan ke satelit GPS...' };
             case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
-            case 'success_in_late': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'ABSEN TERLAMBAT', desc: 'Absensi terekam, namun Anda melewati batas waktu masuk normal.' };
+            case 'success_in_late': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'Absen Terlambat', desc: 'Absensi terekam, namun Anda melewati batas waktu masuk normal.' };
             case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
-            case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
-            case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'JADWAL TUTUP', desc: 'Sesi absensi untuk saat ini telah ditutup.' };
-            case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'BATAS MASUK BERAKHIR', desc: 'Waktu absen masuk berakhir, silahkan tunggu absen pulang.' };
-            case 'info_holiday': return { icon: <CalendarOff className={cn(iconSize, "text-amber-500")} />, title: 'HARI LIBUR', desc: 'Sistem absensi tidak aktif hari ini.' };
-            case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: 'ABSENSI SELESAI', desc: 'Absensi Anda hari ini telah tuntas.' };
-            case 'info_no_camera': return { icon: <CameraOff className={cn(iconSize, "text-red-500")} />, title: 'KAMERA ERROR', desc: 'Izinkan akses kamera di pengaturan browser Anda.' };
-            case 'info_leave': return { icon: <FileText className={cn(iconSize, "text-blue-500")} />, title: `IZIN DISETUJUI`, desc: `Anda memiliki izin/sakit sah hari ini.` };
-            default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'GAGAL', desc: 'Terjadi kesalahan sistem. Coba lagi.' };
+            case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
+            case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'Jadwal Tutup', desc: 'Sesi absensi untuk saat ini telah ditutup.' };
+            case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'Batas Masuk Berakhir', desc: 'Waktu absen masuk berakhir, silahkan tunggu absen pulang.' };
+            case 'info_holiday': return { icon: <CalendarOff className={cn(iconSize, "text-amber-500")} />, title: 'Hari Libur', desc: 'Sistem absensi tidak aktif hari ini.' };
+            case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: 'Absensi Selesai', desc: 'Absensi Anda hari ini telah tuntas.' };
+            case 'info_no_camera': return { icon: <CameraOff className={cn(iconSize, "text-red-500")} />, title: 'Kamera Error', desc: 'Izinkan akses kamera di pengaturan browser Anda.' };
+            case 'info_leave': return { icon: <FileText className={cn(iconSize, "text-blue-500")} />, title: `Izin Disetujui`, desc: `Anda memiliki izin/sakit sah hari ini.` };
+            default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'Gagal', desc: 'Terjadi kesalahan sistem. Coba lagi.' };
         }
     }, [status]);
 

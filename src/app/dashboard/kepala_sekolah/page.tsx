@@ -62,7 +62,7 @@ const KepalaSekolahDashboardSkeleton = () => (
 );
 
 export default function KepalaSekolahDashboardPage() {
-  const { user } = useUser();
+  const { user, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const isMounted = useRef(true);
@@ -85,7 +85,7 @@ export default function KepalaSekolahDashboardPage() {
         try {
             const daily = await getDailyStaffAttendanceStats(firestore);
             if (isMounted.current) {
-                setStats(daily);
+                setStats(daily as any);
                 localStorage.setItem('espenli_kepsek_stats_v2', JSON.stringify(daily));
                 setIsStatsLoading(false);
             }
@@ -128,11 +128,21 @@ export default function KepalaSekolahDashboardPage() {
         }).reverse();
   }, [usersData, globalAttendance]);
 
+  const todaysPersonalAttendanceQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'attendanceRecords'),
+      where('date', '==', todayStr),
+      limit(1)
+    );
+  }, [user?.uid, firestore, todayStr]);
+  const { data: todaysAttendance } = useCollection(user, todaysPersonalAttendanceQuery);
+
   useEffect(() => {
     if (!isUserDataLoading && user && !isHeadmaster) router.replace('/dashboard');
   }, [isUserDataLoading, isHeadmaster, router, user]);
 
-  if (isLoading || !isHeadmaster) {
+  if (isUserDataLoading || isGlobalLoading) {
     return <KepalaSekolahDashboardSkeleton />;
   }
 
@@ -142,11 +152,11 @@ export default function KepalaSekolahDashboardPage() {
     const hasOut = !!record?.checkOutTime;
 
     if (hasIn && !hasOut) {
-        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all">absen pulang</Button>;
+        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
     } else if (!hasIn) {
-        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all">absen masuk</Button>;
+        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
     } else {
-        return <Button disabled size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all">absensi selesai</Button>;
+        return <Button disabled size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all">Absensi Selesai</Button>;
     }
   };
 
@@ -168,11 +178,11 @@ export default function KepalaSekolahDashboardPage() {
         <div className="w-full lg:col-span-2 space-y-1">
             <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
                 <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><UserCircle className="w-24 h-24 text-white" /></div>
-                <CardContent className="p-6 relative z-10"><div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div><div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau aktivitas personil.</p></div></div></CardContent>
+                <CardContent className="p-6 relative z-10"><div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div><div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran Hari Ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau aktivitas personil.</p></div></div></CardContent>
             </Card>
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
                 <CardContent className="p-8 space-y-6 text-center"><LiveClock /></CardContent>
-                <CardFooter className="flex flex-col gap-2 p-6 pt-0"><Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-none"><Link href="/dashboard/absen">buka panel absensi</Link></Button></CardFooter>
+                <CardFooter className="flex flex-col gap-2 p-6 pt-0"><Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-none"><Link href="/dashboard/absen">Buka Panel Absensi</Link></Button></CardFooter>
             </Card>
         </div>
 

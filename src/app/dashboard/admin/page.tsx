@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -94,24 +93,21 @@ export default function AdminDashboardPage() {
   const usersQuery = useMemoFirebase(() => (isAdmin && firestore) ? query(collection(firestore, 'users'), where('status', '==', 'Aktif')) : null, [firestore, isAdmin]);
   const { data: usersData } = useCollection(user, usersQuery);
 
-  // FIX: Deduplikasi aktivitas terbaru agar satu user hanya muncul satu kali (data terbaik menang)
   const recentUserActivity = useMemo(() => {
     if (!usersData || !globalAttendance) return [];
     const userMap = new Map(usersData.map(u => [u.id, u]));
     
-    // Proses deduplikasi berdasarkan userId
     const uniqueMap = new Map();
     [...globalAttendance].forEach(att => {
-        const userId = att.userId || att.id; // Fallback jika userId tidak ada di doc data
+        const userId = att.userId || att.id;
         const existing = uniqueMap.get(userId);
-        // Prioritaskan yang punya checkOut atau yang paling lengkap
         if (!existing || (!existing.checkOutTime && att.checkOutTime)) {
             uniqueMap.set(userId, att);
         }
     });
 
     return Array.from(uniqueMap.values())
-        .sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (b.checkInTime?.toDate().getTime() || 0))
+        .sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (a.checkInTime?.toDate().getTime() || 0))
         .map((att, idx) => {
             const u = userMap.get(att.userId);
             const isOut = !!att.checkOutTime;
@@ -145,7 +141,7 @@ export default function AdminDashboardPage() {
         <div className="w-full space-y-1">
             <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0 mb-1 bg-gradient-to-br from-blue-600 to-blue-400 text-white relative">
                 <div className="absolute right-[-10px] bottom-[-20px] opacity-10 rotate-12"><UserCircle className="w-24 h-24 text-white" /></div>
-                <CardContent className="p-6 relative z-10"><div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div><div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran hari ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Pantauan aktivitas personil secara real-time.</p></div></div></CardContent>
+                <CardContent className="p-6 relative z-10"><div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div><div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran Hari Ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Pantauan aktivitas personil secara real-time.</p></div></div></CardContent>
             </Card>
 
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
