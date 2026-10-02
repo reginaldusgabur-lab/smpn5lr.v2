@@ -304,46 +304,47 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     }, [status]);
 
     const feedback = useMemo(() => {
-        const iconSize = "h-14 w-14";
+        const iconSize = "h-12 w-12";
         const loadingIcon = <Loader2 className={cn(iconSize, "animate-spin text-primary")} />;
         
         switch (status) {
             case 'processing': return { icon: loadingIcon, title: 'Memproses', desc: 'Sedang memvalidasi data absensi...' };
             case 'locating': return { icon: loadingIcon, title: 'Mencari Lokasi', desc: 'Menghubungkan ke satelit GPS...' };
-            case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
-            case 'success_in_late': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'Absen Terlambat', desc: 'Absensi terekam, namun Anda melewati batas waktu masuk normal.' };
+            case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam.' };
+            case 'success_in_late': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'Absen Terlambat', desc: 'Absensi terekam dengan status terlambat.' };
             case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
-            case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
+            case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'Di Luar Radius', desc: 'Anda harus berada di dalam area sekolah.' };
             case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'Jadwal Tutup', desc: 'Sesi absensi untuk saat ini telah ditutup.' };
-            case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'Batas Masuk Berakhir', desc: 'Waktu absen masuk berakhir, silahkan tunggu absen pulang.' };
+            case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'Batas Masuk Berakhir', desc: 'Silahkan tunggu sesi absen pulang.' };
             case 'info_holiday': return { icon: <CalendarOff className={cn(iconSize, "text-amber-500")} />, title: 'Hari Libur', desc: 'Sistem absensi tidak aktif hari ini.' };
             case 'info_checked_out': return { icon: <Sparkles className={cn(iconSize, "text-emerald-500")} />, title: 'Absensi Selesai', desc: 'Absensi Anda hari ini telah tuntas.' };
-            case 'info_no_camera': return { icon: <CameraOff className={cn(iconSize, "text-red-500")} />, title: 'Kamera Error', desc: 'Izinkan akses kamera di pengaturan browser Anda.' };
-            case 'info_leave': return { icon: <FileText className={cn(iconSize, "text-blue-500")} />, title: `Izin Disetujui`, desc: `Anda memiliki izin/sakit sah hari ini.` };
+            case 'info_no_camera': return { icon: <CameraOff className={cn(iconSize, "text-red-500")} />, title: 'Kamera Error', desc: 'Izinkan akses kamera di browser Anda.' };
+            case 'info_leave': return { icon: <FileText className={cn(iconSize, "text-blue-500")} />, title: `Izin Disetujui`, desc: `Anda memiliki izin sah hari ini.` };
             default: return { icon: <X className={cn(iconSize, "text-red-500")} />, title: 'Gagal', desc: 'Terjadi kesalahan sistem. Coba lagi.' };
         }
     }, [status]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-8">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md px-6">
             <div className={cn(
-                "w-full max-w-sm text-center p-10 rounded-[1.5rem] border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative",
+                "w-full max-w-sm text-center p-6 rounded-[2rem] border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative flex flex-col",
                 theme.border
             )} onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-5 w-5" /></button>
+                <button onClick={onClose} className="absolute top-5 right-5 p-2 opacity-30 hover:opacity-100 transition-opacity z-10"><X className="h-5 w-5" /></button>
                 <div className="flex flex-col items-center">
-                    <div className="mb-8">{feedback.icon}</div>
-                    <h3 className="text-xl font-black mb-3 text-foreground tracking-tighter leading-none px-2 whitespace-nowrap">{feedback.title}</h3>
-                    <p className="text-muted-foreground text-sm font-medium leading-relaxed px-2 mb-8">{feedback.desc}</p>
+                    <div className="mb-4 mt-2">{feedback.icon}</div>
+                    <h3 className="text-xl font-black mb-1 text-foreground tracking-tighter leading-none px-2 whitespace-nowrap">{feedback.title}</h3>
+                    <p className="text-muted-foreground text-[11px] font-bold leading-relaxed px-4 mb-4">{feedback.desc}</p>
+                    
                     {status.startsWith('success') && (
-                        <div className="w-full">
+                        <div className="w-full flex-1">
                             <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_out' ? 'out' : 'in'} />
                         </div>
                     )}
                     
-                    <div className="mt-12 pt-8 border-t border-border/10 w-full flex flex-col items-center gap-1.5 opacity-40">
-                        <p className="text-[10px] font-black text-foreground tracking-[0.2em] uppercase">SMP NEGERI 5 LANGKE REMBONG</p>
-                        <p className="text-[9px] font-bold text-muted-foreground tracking-widest">©2026 | All Rights Reserved.</p>
+                    <div className="mt-6 pt-5 border-t border-border/10 w-full flex flex-col items-center gap-1 opacity-40">
+                        <p className="text-[9px] font-black text-foreground tracking-[0.2em] uppercase">SMP NEGERI 5 LANGKE REMBONG</p>
+                        <p className="text-[8px] font-bold text-muted-foreground">©2026 | All Rights Reserved.</p>
                     </div>
                 </div>
             </div>
