@@ -38,6 +38,7 @@ export type AttendanceWindowStatus =
 export const useAttendanceWindow = () => {
   const { schoolConfig: config, monthlyConfig: mConfig, isCacheLoading: configLoading } = useCache();
   const [status, setStatus] = useState<AttendanceWindowStatus>("LOADING");
+  const [isLate, setIsLate] = useState(false);
 
   useEffect(() => {
     if (configLoading || !config) {
@@ -69,6 +70,7 @@ export const useAttendanceWindow = () => {
         // 3. Jika validasi waktu dimatikan (mode bebas)
         if (config.useTimeValidation === false) {
             setStatus("CHECK_IN_OPEN");
+            setIsLate(false);
             return;
         }
 
@@ -79,7 +81,7 @@ export const useAttendanceWindow = () => {
         };
 
         const inStart = parseToMinutes(config.checkInStartTime || "06:00");
-        const inEndNormal = parseToMinutes(config.checkInEndTime || "08:00");
+        const inEndNormal = parseToMinutes(config.checkInEndTime || "07:30");
         
         // Perhitungan Batas Terlambat: Batas Masuk + Toleransi Menit
         const lateTolerance = (config as any).lateLimitMinutes || 0;
@@ -92,15 +94,19 @@ export const useAttendanceWindow = () => {
 
         if (currentTime < inStart) {
             setStatus("BEFORE_IN");
+            setIsLate(false);
         } else if (currentTime >= inStart && currentTime <= inEndLate) {
-            // Tombol tetap muncul hingga batas toleransi menit tercapai
             setStatus("CHECK_IN_OPEN");
+            setIsLate(currentTime > inEndNormal);
         } else if (currentTime > inEndLate && currentTime < outStart) {
             setStatus("AFTER_IN");
+            setIsLate(false);
         } else if (currentTime >= outStart && currentTime <= outEnd) {
             setStatus("CHECK_OUT_OPEN");
+            setIsLate(false);
         } else {
             setStatus("CLOSED");
+            setIsLate(false);
         }
     };
 
@@ -111,5 +117,5 @@ export const useAttendanceWindow = () => {
     
   }, [config, mConfig, configLoading]);
 
-  return { status, config: config as SchoolConfig | null, monthlyConfig: mConfig };
+  return { status, config: config as SchoolConfig | null, monthlyConfig: mConfig, isLate };
 };

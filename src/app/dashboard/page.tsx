@@ -18,6 +18,7 @@ import { calculateAttendanceStats, getDailyStaffAttendanceStats } from '@/lib/at
 import { useAttendanceWindow } from '@/hooks/use-attendance-window';
 import AbsentUsersTable from '@/components/dashboard/AbsentUsersTable';
 import RecentAttendanceTable from '@/components/dashboard/RecentAttendanceTable';
+import { cn } from '@/lib/utils';
 
 const chartConfig = {
   Jumlah: {
@@ -67,7 +68,7 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const { status: windowStatus } = useAttendanceWindow();
+  const { status: windowStatus, isLate } = useAttendanceWindow();
   const isMounted = useRef(true);
   const [isClient, setIsClient] = useState(false);
 
@@ -182,11 +183,33 @@ export default function DashboardPage() {
     if (isCheckedOut) return <div className="w-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><Sparkles className="mr-2 w-4 h-4" /> Absensi selesai</div>;
     if (windowStatus === 'DISABLED' || stats.isManualDisabled) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Sistem Non-Aktif</div>;
     if (windowStatus === 'SESSION_INACTIVE' || stats.isHoliday) return <div className={disabledStyle}><Lock className="mr-2 h-4 w-4" /> Hari Libur</div>;
-    if (windowStatus === 'CHECK_OUT_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 bg-blue-600 hover:bg-blue-700 text-white"><Link href="/dashboard/absen">Absen pulang sekarang</Link></Button>;
+    
+    if (windowStatus === 'CHECK_OUT_OPEN') {
+        const isOutLate = isLate; // Not technically used for checkout but for symmetry
+        return (
+            <Button asChild size="lg" className={cn("w-full font-semibold rounded-xl h-12 bg-blue-600 hover:bg-blue-700 text-white shadow-none active:scale-95 transition-all")}>
+                <Link href="/dashboard/absen">Absen pulang sekarang</Link>
+            </Button>
+        );
+    }
+
     if (!isCheckedIn) {
         if (windowStatus === 'BEFORE_IN') return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Belum waktu jam masuk</div>;
-        if (windowStatus === 'CHECK_IN_OPEN') return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 shadow-none"><Link href="/dashboard/absen">Absen masuk sekarang</Link></Button>;
-        if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
+        if (windowStatus === 'CHECK_IN_OPEN') {
+            return (
+                <Button 
+                    asChild 
+                    size="lg" 
+                    className={cn(
+                        "w-full font-black rounded-xl h-12 shadow-lg active:scale-95 transition-all uppercase tracking-widest text-[11px]",
+                        isLate ? "bg-destructive hover:bg-destructive/90 shadow-destructive/20" : "bg-primary shadow-primary/20"
+                    )}
+                >
+                    <Link href="/dashboard/absen">{isLate ? "Absen masuk (Terlambat)" : "Absen masuk sekarang"}</Link>
+                </Button>
+            );
+        }
+        if (windowStatus === 'AFTER_IN') return <div className="w-full bg-destructive/10 text-destructive/60 border border-destructive/20 font-semibold rounded-xl h-12 flex items-center justify-center text-sm shadow-none"><AlertCircle className="mr-2 h-4 w-4" /> Batas jam masuk berakhir</div>;
     }
     return <div className={disabledStyle}><Clock className="mr-2 h-4 w-4" /> Menunggu Jadwal</div>;
   };
