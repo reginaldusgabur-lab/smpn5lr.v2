@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -263,6 +264,20 @@ export default function AbsenPage() {
 }
 
 const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
+    const theme = useMemo(() => {
+        const isError = status.startsWith('error') || status === 'info_no_camera';
+        const isSuccess = status.startsWith('success');
+        const isInfo = status.startsWith('info') && status !== 'info_no_camera';
+
+        if (isError) return { border: 'border-red-500/60', iconColor: 'text-red-500' };
+        if (isSuccess) {
+            if (status === 'success_in') return { border: 'border-emerald-500/60', iconColor: 'text-emerald-500' };
+            return { border: 'border-blue-500/60', iconColor: 'text-blue-500' };
+        }
+        if (isInfo) return { border: 'border-amber-500/60', iconColor: 'text-amber-500' };
+        return { border: 'border-primary/60', iconColor: 'text-primary' };
+    }, [status]);
+
     const feedback = useMemo(() => {
         const iconSize = "h-14 w-14";
         const loadingIcon = <Loader2 className={cn(iconSize, "animate-spin text-primary")} />;
@@ -285,7 +300,10 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-8">
-            <div className="w-full max-w-sm text-center p-10 rounded-[1.5rem] border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative" onClick={(e) => e.stopPropagation()}>
+            <div className={cn(
+                "w-full max-w-sm text-center p-10 rounded-[1.5rem] border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative",
+                theme.border
+            )} onClick={(e) => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-5 w-5" /></button>
                 <div className="flex flex-col items-center">
                     <div className="mb-8">{feedback.icon}</div>
