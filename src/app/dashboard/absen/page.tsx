@@ -270,7 +270,7 @@ export default function AbsenPage() {
             </div>
         )}
         <div className="absolute top-12 left-0 right-0 z-50 text-center pointer-events-none">
-            <h2 className="text-white text-2xl font-black tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">Pindai QR Code</h2>
+            <h2 className="text-white text-2xl font-black tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Scan Qr Code</h2>
             <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-1">SMP NEGERI 5 LANGKE REMBONG</p>
         </div>
         <div className="absolute inset-0 z-10 pointer-events-none">
@@ -333,7 +333,7 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
                 <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-5 w-5" /></button>
                 <div className="flex flex-col items-center">
                     <div className="mb-8">{feedback.icon}</div>
-                    <h3 className="text-xl font-black mb-3 text-foreground tracking-tighter leading-none uppercase whitespace-nowrap">{feedback.title}</h3>
+                    <h3 className="text-xl font-black mb-3 text-foreground tracking-tighter leading-none px-2 whitespace-nowrap">{feedback.title}</h3>
                     <p className="text-muted-foreground text-sm font-medium leading-relaxed px-2 mb-8">{feedback.desc}</p>
                     {status.startsWith('success') && (
                         <div className="w-full">
