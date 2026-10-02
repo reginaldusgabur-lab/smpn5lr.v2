@@ -285,11 +285,11 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-8">
-            <div className="w-full max-w-sm text-center p-10 rounded-[2.5rem] border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative" onClick={(e) => e.stopPropagation()}>
+            <div className="w-full max-w-sm text-center p-10 rounded-[1.5rem] border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative" onClick={(e) => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-5 w-5" /></button>
                 <div className="flex flex-col items-center">
                     <div className="mb-8">{feedback.icon}</div>
-                    <h3 className="text-2xl font-black mb-3 text-foreground tracking-tight leading-tight">{feedback.title}</h3>
+                    <h3 className="text-xl font-black mb-3 text-foreground tracking-tighter leading-none uppercase whitespace-nowrap">{feedback.title}</h3>
                     <p className="text-muted-foreground text-sm font-medium leading-relaxed px-2 mb-8">{feedback.desc}</p>
                     {(status === 'success_in' || status === 'success_out') && (
                         <div className="w-full">
