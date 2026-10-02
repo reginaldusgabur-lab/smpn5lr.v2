@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -689,10 +690,10 @@ export default function KonfigurasiAbsenPage() {
                                   <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
                               </div>
                               <div className="space-y-1.5">
-                                  <Label htmlFor="late-limit" className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Durasi Terlambat</Label>
+                                  <Label htmlFor="late-limit" className="text-[10px] font-bold text-destructive">Durasi terlambat</Label>
                                   <div className="flex items-center gap-2">
                                       <Input id="late-limit" type="number" className="rounded-xl h-10 bg-destructive/5 font-bold shadow-none border-destructive/10 text-destructive w-20" value={lateLimitMinutes} onChange={e => setLateLimitMinutes(Number(e.target.value))} disabled={holidayMode} />
-                                      <span className="text-[10px] font-black text-destructive/60">MENIT</span>
+                                      <span className="text-[10px] font-bold text-destructive/60">menit</span>
                                   </div>
                               </div>
                           </div>
