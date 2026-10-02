@@ -18,6 +18,8 @@ import { id as indonesiaLocale } from 'date-fns/locale';
 import { Loader2, WifiOff, CalendarOff, History } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface Activity {
   no: number;
@@ -142,7 +144,12 @@ const RecentAttendanceTable = () => {
 
         setActivities(sortedActivities.map((act, i) => ({ ...act, no: i + 1 })));
       } catch (e: any) {
-        console.error("Error fetching activities:", e);
+        if (e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'users/{uid}/attendanceRecords',
+                operation: 'list'
+            }));
+        }
         setError("Gagal memuat aktivitas hari ini.");
       } finally {
         setIsLoading(false);
@@ -165,7 +172,7 @@ const RecentAttendanceTable = () => {
           <Card className="border border-muted-foreground/10 shadow-none rounded-xl overflow-hidden bg-primary/5">
               <CardContent className="h-40 flex flex-col items-center justify-center text-muted-foreground text-center">
                   <CalendarOff className="w-10 h-10 mb-2 opacity-40" />
-                  <p className="text-sm font-bold uppercase tracking-widest opacity-60">Hari Libur Sekolah</p>
+                  <p className="text-sm font-bold tracking-widest opacity-60">Hari libur sekolah</p>
               </CardContent>
           </Card>
       );
@@ -186,7 +193,7 @@ const RecentAttendanceTable = () => {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center h-40 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin mr-3" /><span className="text-xs font-bold uppercase tracking-widest">Memuat...</span>
+              <Loader2 className="h-8 w-8 animate-spin mr-3" /><span className="text-xs font-bold tracking-widest">Memuat data...</span>
             </div>
           ) : activities.length > 0 ? (
             <div className="overflow-x-auto">
@@ -221,7 +228,7 @@ const RecentAttendanceTable = () => {
           ) : (
             <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-center">
                 <WifiOff className="w-10 h-10 mb-2 opacity-30" />
-                <p className="text-xs font-bold uppercase tracking-widest opacity-60">Belum ada aktivitas hari ini</p>
+                <p className="text-xs font-bold tracking-widest opacity-60">Belum ada aktivitas hari ini</p>
             </div>
           )}
         </CardContent>

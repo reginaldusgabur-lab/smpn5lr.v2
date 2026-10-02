@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -16,6 +17,8 @@ import { isWithinInterval, startOfDay, endOfDay, format } from 'date-fns';
 import { Loader2, UserCheck, AlertCircle, CalendarOff, AlertTriangle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface AbsentUser {
   no: number;
@@ -110,7 +113,6 @@ const AbsentUsersTable = () => {
           if (startDate && endDate && isWithinInterval(today, { start: startOfDay(startDate), end: endOfDay(endDate) })) {
             const userId = leave.userId || doc.ref.parent.parent?.id;
             if (userId) {
-                // Prioritaskan 'approved' daripada 'pending'
                 const current = userStatusMap.get(userId);
                 if (!current || leave.status === 'approved') {
                     userStatusMap.set(userId, { status: leave.status, type: leave.type });
@@ -150,7 +152,12 @@ const AbsentUsersTable = () => {
         setAbsentUsers(usersToDisplay);
 
       } catch (e: any) {
-        console.error("Error finding absent users:", e);
+        if (e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'users/{uid}/attendanceRecords',
+                operation: 'list'
+            }));
+        }
         setError("Gagal memuat daftar staf tidak hadir.");
       } finally {
         setIsLoading(false);
