@@ -422,14 +422,17 @@ export default function UserReportDetailPage() {
                                         const hasIn = !!item.checkInTime;
                                         const hasOut = !!item.checkOutTime;
                                         const isAlpa = item.status === 'Alpa';
+                                        const isTerlambat = item.description === 'Terlambat';
                                         const canEdit = isAdmin && (isAlpa || !hasIn || !hasOut || item.manualEntry);
 
                                         return (
                                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-muted/20 transition-colors">
                                                 <TableCell className='text-center font-bold text-muted-foreground text-sm'>{index + 1}</TableCell>
                                                 <TableCell className="whitespace-nowrap font-bold text-sm text-foreground">{safeFormat(item.date, 'eeee, d MMMM yyyy')}</TableCell>
-                                                <TableCell className='text-center font-mono text-xs font-bold'>{(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}</TableCell>
-                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{(item.description === 'Pulang cepat' || item.description === 'Dinas siang' || item.description === 'Kegiatan luar sekolah') && !item.checkOutTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
+                                                <TableCell className={cn('text-center font-mono text-xs font-bold', isTerlambat && 'text-red-500')}>
+                                                    {(item.description === 'Terlambat' || item.description === 'Dinas pagi' || item.description === 'Kegiatan luar sekolah') && !item.checkInTime ? <span className="font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
+                                                </TableCell>
+                                                <TableCell className='text-center font-mono text-xs font-bold text-foreground'>{(item.description === 'Pulang cepat' || item.description === 'Dinas siang' || item.description === 'Kegiatan luar sekolah') && !item.checkOutTime ? <span className="font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description))}>{item.status}</Badge>

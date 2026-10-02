@@ -9,7 +9,7 @@ import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@
 import { doc, collection, query, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { format, startOfDay, endOfDay, isWithinInterval, setHours, setMinutes } from 'date-fns';
 import QuoteOfTheDay from '@/components/layout/quote-of-the-day';
 import { useAttendanceWindow } from '@/hooks/use-attendance-window';
 import { invalidateCache } from '@/lib/cache';
@@ -74,7 +74,7 @@ const playSuccessFeedback = async (customAudioBase64?: string) => {
     }
 };
 
-type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'success_out' | 'error_radius' | 'error_time' | 'error_checkin_closed' | 'error_already_in' | 'error_already_out' | 'error_generic' | 'error_location' | 'info_holiday' | 'info_checked_out' | 'info_no_camera' | 'info_disabled' | 'info_leave';
+type FeedbackStatus = 'idle' | 'processing' | 'locating' | 'success_in' | 'success_in_late' | 'success_out' | 'error_radius' | 'error_time' | 'error_checkin_closed' | 'error_already_in' | 'error_already_out' | 'error_generic' | 'error_location' | 'info_holiday' | 'info_checked_out' | 'info_no_camera' | 'info_disabled' | 'info_leave';
 
 export default function AbsenPage() {
   const [status, setStatus] = useState<FeedbackStatus>('idle');
@@ -106,7 +106,6 @@ export default function AbsenPage() {
   }, [user?.uid, firestore, todayStr]);
   const { data: todaysAttendance, isLoading: isAttendanceLoading } = useCollection(user, todaysAttendanceQuery);
   
-  // FIX: Memilih record terbaik jika ada pendobelan (misal: yang sudah punya check-in)
   const todaysRecord = useMemo(() => {
       if (!todaysAttendance || todaysAttendance.length === 0) return null;
       const recordWithCheckIn = todaysAttendance.find(a => !!a.checkInTime);
@@ -175,14 +174,35 @@ export default function AbsenPage() {
 
         if (windowStatus === 'CHECK_IN_OPEN') {
             if (todaysRecord?.checkInTime) return setStatus('error_already_in');
+            
+            // CEK TERLAMBAT
+            let isLate = false;
+            if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
+                const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
+                const deadline = setMinutes(setHours(startOfDay(now), h), m);
+                if (now > deadline) isLate = true;
+            }
+
+            const attendanceData = { 
+                date: tDateStr, 
+                checkInTime: now, 
+                checkInLatitude: latitude, 
+                checkInLongitude: longitude,
+                reasonForUpdate: isLate ? 'Terlambat' : 'Kehadiran penuh'
+            };
+
             if (todaysRecord) {
-                await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), { date: tDateStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude });
+                await updateDoc(doc(firestore, 'users', user.uid, 'attendanceRecords', todaysRecord.id), attendanceData);
             } else {
-                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { userId: user.uid, date: tDateStr, checkInTime: now, checkInLatitude: latitude, checkInLongitude: longitude, checkOutTime: null });
+                await addDoc(collection(firestore, 'users', user.uid, 'attendanceRecords'), { 
+                    userId: user.uid, 
+                    ...attendanceData,
+                    checkOutTime: null 
+                });
             }
             invalidateCache();
             await playSuccessFeedback((schoolConfig as any).successSoundUrl);
-            setStatus('success_in');
+            setStatus(isLate ? 'success_in_late' : 'success_in');
         } else if (windowStatus === 'CHECK_OUT_OPEN') {
             if (todaysRecord?.checkOutTime) return setStatus('error_already_out');
             if (!todaysRecord) {
@@ -271,7 +291,7 @@ export default function AbsenPage() {
 
 const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     const theme = useMemo(() => {
-        const isError = status.startsWith('error') || status === 'info_no_camera';
+        const isError = status.startsWith('error') || status === 'info_no_camera' || status === 'success_in_late';
         const isSuccess = status.startsWith('success');
         const isInfo = status.startsWith('info') && status !== 'info_no_camera';
 
@@ -292,6 +312,7 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
             case 'processing': return { icon: loadingIcon, title: 'MEMPROSES', desc: 'Sedang memvalidasi data absensi...' };
             case 'locating': return { icon: loadingIcon, title: 'MENCARI LOKASI', desc: 'Menghubungkan ke satelit GPS...' };
             case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
+            case 'success_in_late': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'ABSEN TERLAMBAT', desc: 'Absensi terekam, namun Anda melewati batas waktu masuk normal.' };
             case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
             case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
             case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'JADWAL TUTUP', desc: 'Sesi absensi untuk saat ini telah ditutup.' };
@@ -315,9 +336,9 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
                     <div className="mb-8">{feedback.icon}</div>
                     <h3 className="text-xl font-black mb-3 text-foreground tracking-tighter leading-none uppercase whitespace-nowrap">{feedback.title}</h3>
                     <p className="text-muted-foreground text-sm font-medium leading-relaxed px-2 mb-8">{feedback.desc}</p>
-                    {(status === 'success_in' || status === 'success_out') && (
+                    {status.startsWith('success') && (
                         <div className="w-full">
-                            <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_in' ? 'in' : 'out'} />
+                            <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_out' ? 'out' : 'in'} />
                         </div>
                     )}
                     

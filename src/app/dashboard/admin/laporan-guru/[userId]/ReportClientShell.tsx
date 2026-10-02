@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -404,16 +405,17 @@ export default function ReportClientShell({
                                         reportDetails.map((item, index) => {
                                             const hasIn = !!item.checkInTime;
                                             const hasOut = !!item.checkOutTime;
-                                            const isProblematic = item.status === 'Alpa' || !hasIn || !hasOut || item.points < 1.0;
-                                            const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
+                                            const isProblematic = item.status === 'Alpa' || !hasIn || !hasOut;
+                                            const isTerlambat = item.description === 'Terlambat';
+                                            const isManualLate = item.status === 'Terlambat' || isTerlambat;
                                             const isLuarSekolah = item.description === 'Kegiatan luar sekolah';
 
                                             return (
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className="text-center font-mono text-xs font-bold">
-                                                        {(isManualLate || isLuarSekolah || item.description === 'Dinas pagi') && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
+                                                    <TableCell className={cn('text-center font-mono text-xs font-bold', isTerlambat && 'text-red-500')}>
+                                                        {(isManualLate || isLuarSekolah || item.description === 'Dinas pagi') && !item.checkInTime ? <span className="font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
                                                     </TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">
                                                         {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
