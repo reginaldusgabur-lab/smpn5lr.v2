@@ -264,14 +264,14 @@ export default function AbsenPage() {
 
 const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     const feedback = useMemo(() => {
-        const iconSize = "h-12 w-12";
+        const iconSize = "h-14 w-14";
         const loadingIcon = <Loader2 className={cn(iconSize, "animate-spin text-primary")} />;
         
         switch (status) {
             case 'processing': return { icon: loadingIcon, title: 'MEMPROSES', desc: 'Sedang memvalidasi data absensi...' };
             case 'locating': return { icon: loadingIcon, title: 'MENCARI LOKASI', desc: 'Menghubungkan ke satelit GPS...' };
-            case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'ABSEN MASUK BERHASIL', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
-            case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'ABSEN PULANG BERHASIL', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
+            case 'success_in': return { icon: <CheckCircle className={cn(iconSize, "text-emerald-500")} />, title: 'Absen Masuk Berhasil', desc: 'Kehadiran Anda telah terekam. Selamat beraktivitas!' };
+            case 'success_out': return { icon: <CheckCircle className={cn(iconSize, "text-blue-500")} />, title: 'Absen Pulang Berhasil', desc: 'Absen pulang terekam. Hati-hati di jalan!' };
             case 'error_radius': return { icon: <MapPin className={cn(iconSize, "text-red-500")} />, title: 'DI LUAR RADIUS', desc: 'Anda harus berada di dalam area sekolah untuk absensi.' };
             case 'error_time': return { icon: <ClockIcon className={cn(iconSize, "text-red-500")} />, title: 'JADWAL TUTUP', desc: 'Sesi absensi untuk saat ini telah ditutup.' };
             case 'error_checkin_closed': return { icon: <ClockIcon className={cn(iconSize, "text-amber-500")} />, title: 'BATAS MASUK BERAKHIR', desc: 'Waktu absen masuk berakhir, silahkan tunggu absen pulang.' };
@@ -284,18 +284,23 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     }, [status]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-10">
-            <div className="w-full max-w-sm text-center p-6 rounded-2xl border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-xl px-8">
+            <div className="w-full max-w-sm text-center p-10 rounded-[2.5rem] border border-border/40 bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative" onClick={(e) => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-40 hover:opacity-100 transition-opacity"><X className="h-5 w-5" /></button>
                 <div className="flex flex-col items-center">
-                    <div className="mb-4">{feedback.icon}</div>
-                    <h3 className="text-sm font-medium mb-1 uppercase text-foreground whitespace-nowrap overflow-hidden text-ellipsis w-full tracking-tight">{feedback.title}</h3>
-                    <p className="text-muted-foreground text-[10px] font-normal leading-relaxed px-2 mb-6">{feedback.desc}</p>
+                    <div className="mb-8">{feedback.icon}</div>
+                    <h3 className="text-2xl font-black mb-3 text-foreground tracking-tight leading-tight">{feedback.title}</h3>
+                    <p className="text-muted-foreground text-sm font-medium leading-relaxed px-2 mb-8">{feedback.desc}</p>
                     {(status === 'success_in' || status === 'success_out') && (
                         <div className="w-full">
                             <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_in' ? 'in' : 'out'} />
                         </div>
                     )}
+                    
+                    <div className="mt-12 pt-8 border-t border-border/10 w-full flex flex-col items-center gap-1.5 opacity-40">
+                        <p className="text-[10px] font-black text-foreground tracking-[0.2em] uppercase">SMP NEGERI 5 LANGKE REMBONG</p>
+                        <p className="text-[9px] font-bold text-muted-foreground tracking-widest">©2026 | All Rights Reserved.</p>
+                    </div>
                 </div>
             </div>
         </div>
