@@ -13,6 +13,7 @@ import QuoteOfTheDay from '@/components/layout/quote-of-the-day';
 import { useAttendanceWindow } from '@/hooks/use-attendance-window';
 import { invalidateCache } from '@/lib/cache';
 
+// --- Helper Functions ---
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 6371e3; 
     const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
@@ -31,6 +32,9 @@ const getCurrentPosition = (options?: PositionOptions): Promise<GeolocationPosit
     navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
 
+/**
+ * Menghasilkan konfirmasi audio dan getaran.
+ */
 const playSuccessFeedback = async (customAudioBase64?: string) => {
     try {
         if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
@@ -69,7 +73,7 @@ const playSuccessFeedback = async (customAudioBase64?: string) => {
             setTimeout(() => context.close(), 1000);
         }
     } catch (e) {
-        console.warn("Feedback failed", e);
+        console.warn("Feedback audio/vibration failed", e);
     }
 };
 
@@ -93,7 +97,10 @@ export default function AbsenPage() {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const readerId = "qr-reader-fullscreen-v3";
 
-  useEffect(() => { setIsClient(true); }, []);
+  // Hydration safety
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: userData } = useDoc(user, userDocRef);
@@ -146,7 +153,9 @@ export default function AbsenPage() {
   const handleAttendance = useCallback(async () => {
     if (statusRef.current !== 'idle' && statusRef.current !== 'processing') return;
     setLocationError(null);
-    if (!user || !firestore || !schoolConfig) return;
+    if (!user || !firestore || !schoolConfig) {
+        return;
+    }
     
     setStatus('processing');
     try {
@@ -154,7 +163,7 @@ export default function AbsenPage() {
         if (schoolConfig.useLocationValidation) {
             setStatus('locating');
             try {
-                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 });
+                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
                 latitude = pos.coords.latitude; longitude = pos.coords.longitude;
                 if (schoolConfig.radius && schoolConfig.latitude && schoolConfig.longitude) {
                     if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) {
@@ -162,7 +171,7 @@ export default function AbsenPage() {
                         return;
                     }
                 }
-            } catch (error: any) { 
+            } catch (error: any) {
                 setStatus('error_location');
                 return;
             }
@@ -174,7 +183,6 @@ export default function AbsenPage() {
         if (windowStatus === 'CHECK_IN_OPEN') {
             if (todaysRecord?.checkInTime) return setStatus('error_already_in');
             
-            // CEK TERLAMBAT
             let isLate = false;
             if (schoolConfig.useTimeValidation && schoolConfig.checkInEndTime) {
                 const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
@@ -213,8 +221,10 @@ export default function AbsenPage() {
             await playSuccessFeedback((schoolConfig as any).successSoundUrl);
             setStatus('success_out');
         }
-    } catch (error) { setStatus('error_generic'); }
-  }, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
+    } catch (error) {
+        setStatus('error_generic');
+    }
+}, [user, firestore, schoolConfig, todaysRecord, windowStatus]);
 
   const onScanSuccess = useCallback((decodedText: string) => {
     if (statusRef.current === 'idle' && decodedText === schoolConfig?.qrCodeValue) {
@@ -269,7 +279,7 @@ export default function AbsenPage() {
                 `}</style>
             </div>
         )}
-        <div className="absolute top-12 left-0 right-0 z-50 text-center pointer-events-none">
+        <div className="absolute top-12 left-0 right-0 z-50 text-center pointer-events-none px-10">
             <h2 className="text-white text-2xl font-black tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Scan Qr Code</h2>
             <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-1">SMP NEGERI 5 LANGKE REMBONG</p>
         </div>
@@ -294,13 +304,13 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
         const isSuccess = status.startsWith('success');
         const isInfo = status.startsWith('info') && status !== 'info_no_camera';
 
-        if (isError) return { border: 'border-red-500/60', iconColor: 'text-red-500' };
+        if (isError) return { border: 'border-red-500/40', iconColor: 'text-red-500' };
         if (isSuccess) {
-            if (status === 'success_in') return { border: 'border-emerald-500/60', iconColor: 'text-emerald-500' };
-            return { border: 'border-blue-500/60', iconColor: 'text-blue-500' };
+            if (status === 'success_in') return { border: 'border-emerald-500/40', iconColor: 'text-emerald-500' };
+            return { border: 'border-blue-500/40', iconColor: 'text-blue-500' };
         }
-        if (isInfo) return { border: 'border-amber-500/60', iconColor: 'text-amber-500' };
-        return { border: 'border-primary/60', iconColor: 'text-primary' };
+        if (isInfo) return { border: 'border-amber-500/40', iconColor: 'text-amber-500' };
+        return { border: 'border-primary/40', iconColor: 'text-primary' };
     }, [status]);
 
     const feedback = useMemo(() => {
@@ -325,24 +335,26 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     }, [status]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md px-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md px-6 py-10 overflow-y-auto">
             <div className={cn(
-                "w-full max-w-sm text-center p-6 rounded-[2rem] border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative flex flex-col",
+                "w-full max-w-sm text-center p-8 rounded-[2rem] border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative flex flex-col my-auto",
                 theme.border
             )} onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-5 right-5 p-2 opacity-30 hover:opacity-100 transition-opacity z-10"><X className="h-5 w-5" /></button>
+                <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-30 hover:opacity-100 transition-opacity z-10"><X className="h-5 w-5" /></button>
                 <div className="flex flex-col items-center">
-                    <div className="mb-4 mt-2">{feedback.icon}</div>
-                    <h3 className="text-xl font-black mb-1 text-foreground tracking-tighter leading-none px-2 whitespace-nowrap">{feedback.title}</h3>
-                    <p className="text-muted-foreground text-[11px] font-bold leading-relaxed px-4 mb-4">{feedback.desc}</p>
+                    <div className="mb-6 mt-4 p-2 rounded-full border-[0.5px] border-border/40">{feedback.icon}</div>
+                    <div className="space-y-1 mb-8">
+                        <h3 className="text-2xl font-black text-foreground tracking-tighter leading-tight px-2">{feedback.title}</h3>
+                        <p className="text-muted-foreground text-[11px] font-bold leading-relaxed px-4">{feedback.desc}</p>
+                    </div>
                     
-                    {status.startsWith('success') && (
-                        <div className="w-full flex-1">
+                    {status.includes('success') && (
+                        <div className="w-full flex-1 min-h-[140px]">
                             <QuoteOfTheDay category={userData?.role} attendanceType={status === 'success_out' ? 'out' : 'in'} />
                         </div>
                     )}
                     
-                    <div className="mt-6 pt-5 border-t border-border/10 w-full flex flex-col items-center gap-1 opacity-40">
+                    <div className="mt-10 pt-6 border-t border-border/10 w-full flex flex-col items-center gap-1.5 opacity-40">
                         <p className="text-[9px] font-black text-foreground tracking-[0.2em] uppercase">SMP NEGERI 5 LANGKE REMBONG</p>
                         <p className="text-[8px] font-bold text-muted-foreground">©2026 | All Rights Reserved.</p>
                     </div>

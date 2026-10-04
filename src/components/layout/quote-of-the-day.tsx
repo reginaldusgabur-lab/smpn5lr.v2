@@ -18,7 +18,7 @@ interface Quote {
 }
 
 const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
-  const { user } = useUser();
+  const { user } = userUser();
   const firestore = useFirestore();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,7 +106,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
 
   return (
     <div className="mt-2 pt-4">
-      <div className="flex items-center justify-center text-[10px] font-black mb-3 text-muted-foreground/50 uppercase tracking-[0.2em]">
+      <div className="flex items-center justify-center text-[10px] font-black mb-4 text-muted-foreground/50 uppercase tracking-[0.2em]">
         <Sparkles className="h-3 w-3 mr-2 text-amber-500 animate-pulse" />
         Kutipan Untuk Anda
       </div>
@@ -117,11 +117,11 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
             <span className="text-[9px] font-black uppercase tracking-widest">Meramu kata...</span>
           </div>
         ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 w-full space-y-2">
-            <blockquote className="font-bold text-[13px] text-foreground/90 leading-snug italic text-center px-2 overflow-hidden break-words">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-1000 w-full space-y-4">
+            <blockquote className="font-bold text-[16px] text-foreground/90 leading-snug italic text-center px-2">
               "{quote?.quote}"
             </blockquote>
-            <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40">
+            <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">
               — {quote?.author || "AI E-SPENLI"}
             </p>
           </div>
