@@ -60,7 +60,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           return;
       }
       
-      // 2. Jalur Normal: Fetch dari AI Flow (yang sekarang punya 100 fallback)
+      // 2. Jalur Normal: Fetch dari AI Flow (yang sekarang punya 200+ fallback)
       const now = new Date();
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
