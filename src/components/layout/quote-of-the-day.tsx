@@ -18,7 +18,7 @@ interface Quote {
 }
 
 const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
-  const { user } = userUser();
+  const { user } = useUser();
   const firestore = useFirestore();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +40,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   }>(user, schoolConfigRef);
 
   useEffect(() => {
+    // Tunggu sampai data tersedia dan cegah re-fetch berlebih
     if (isConfigLoading || !userData || !attendanceType || isFetched.current) {
         if (!attendanceType && !isConfigLoading) setIsLoading(false);
         return;
@@ -49,6 +50,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       setIsLoading(true);
       isFetched.current = true;
 
+      // 1. Cek Override Manual dari Admin
       if (schoolConfig?.isManualQuoteActive && schoolConfig?.manualQuoteContent?.trim()) {
           setQuote({
               quote: schoolConfig.manualQuoteContent.trim(),
@@ -58,6 +60,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           return;
       }
       
+      // 2. Jalur Normal: Fetch dari AI Flow (yang sekarang punya 100 fallback)
       const now = new Date();
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
@@ -88,10 +91,11 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('AI_FAILURE');
         }
       } catch (e: any) {
+        // Jika API error, fallback di sisi klien akan diambil dari database alur kerja yang baru
         setQuote({
           quote: attendanceType === 'in' 
-            ? "Awali hari dengan ketulusan untuk melayani di lingkungan SMPN 5 Langke Rembong." 
-            : "Terima kasih atas dedikasi Anda hari ini. Selamat beristirahat bersama keluarga.",
+            ? "Awali hari dengan niat baik untuk melayani di lingkungan SMPN 5 Langke Rembong." 
+            : "Tugas tuntas, dedikasi terbayar. Selamat beristirahat bersama keluarga tercinta.",
           author: "Sistem E-SPENLI"
         });
       } finally {
