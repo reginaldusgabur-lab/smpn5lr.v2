@@ -73,7 +73,7 @@ const playSuccessFeedback = async (customAudioBase64?: string) => {
             setTimeout(() => context.close(), 1000);
         }
     } catch (e) {
-        console.warn("Feedback audio/vibration failed", e);
+        console.warn("Feedback failed", e);
     }
 };
 
@@ -337,7 +337,7 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md px-6 py-10 overflow-y-auto">
             <div className={cn(
-                "w-full max-w-sm text-center p-8 rounded-[2rem] border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative flex flex-col my-auto",
+                "w-full max-w-sm text-center p-8 rounded-3xl border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-500 relative flex flex-col my-auto",
                 theme.border
             )} onClick={(e) => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-30 hover:opacity-100 transition-opacity z-10"><X className="h-5 w-5" /></button>
