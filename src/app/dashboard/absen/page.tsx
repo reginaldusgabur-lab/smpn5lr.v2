@@ -334,9 +334,9 @@ const StatusFeedbackOverlay = ({ status, onClose, userData }: any) => {
                 <button onClick={onClose} className="absolute top-6 right-6 p-2 opacity-30 hover:opacity-100 transition-opacity z-10"><X className="h-5 w-5" /></button>
                 <div className="flex flex-col items-center">
                     <div className="mb-2 mt-4">{feedback.icon}</div>
-                    <div className="space-y-1 mb-8">
-                        <h3 className="text-2xl font-black text-foreground tracking-tighter leading-tight px-2">{feedback.title}</h3>
-                        <p className="text-muted-foreground text-[11px] font-bold leading-relaxed px-4">{feedback.desc}</p>
+                    <div className="space-y-1 mb-6">
+                        <h3 className="text-2xl font-semibold text-foreground tracking-tight leading-tight px-2">{feedback.title}</h3>
+                        <p className="text-muted-foreground text-[11px] font-medium leading-relaxed px-4">{feedback.desc}</p>
                     </div>
                     
                     {status.includes('success') && (

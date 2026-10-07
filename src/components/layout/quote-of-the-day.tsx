@@ -109,7 +109,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   if (!attendanceType) return null;
 
   return (
-    <div className="mt-2 pt-4">
+    <div className="mt-6 pt-6 border-t border-border/30">
       <div className="flex items-center justify-center text-[10px] font-black mb-4 text-muted-foreground/50 uppercase tracking-[0.2em]">
         <Sparkles className="h-3 w-3 mr-2 text-amber-500 animate-pulse" />
         Kutipan Untuk Anda
