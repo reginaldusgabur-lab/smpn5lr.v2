@@ -90,7 +90,7 @@ export default function AdminDashboardPage() {
   );
   const { data: globalAttendance, isLoading: isGlobalLoading } = useCollection(user, attendanceQuery);
 
-  const usersQuery = useMemoFirebase(() => (isAdmin && firestore) ? query(collection(firestore, 'users'), where('status', '==', 'Aktif')) : null, [firestore, isAdmin]);
+  const usersQuery = useMemoFirebase(() => (isAdmin && firestore) ? query(collection(firestore, 'users'), where('status', 'in', ['Aktif', 'Cuti'])) : null, [firestore, isAdmin]);
   const { data: usersData } = useCollection(user, usersQuery);
 
   const recentUserActivity = useMemo(() => {
@@ -123,6 +123,16 @@ export default function AdminDashboardPage() {
         }).reverse();
   }, [usersData, globalAttendance]);
 
+  const personalCheckIn = useMemo(() => {
+    const record = globalAttendance?.find(a => a.userId === user?.uid);
+    return record?.checkInTime ? format(record.checkInTime.toDate(), 'HH:mm') : null;
+  }, [globalAttendance, user?.uid]);
+
+  const personalCheckOut = useMemo(() => {
+    const record = globalAttendance?.find(a => a.userId === user?.uid);
+    return record?.checkOutTime ? format(record.checkOutTime.toDate(), 'HH:mm') : null;
+  }, [globalAttendance, user?.uid]);
+
   useEffect(() => {
     if (!isUserDataLoading && user && !isAdmin) router.replace('/dashboard');
   }, [isUserDataLoading, isAdmin, router, user]);
@@ -145,9 +155,22 @@ export default function AdminDashboardPage() {
             </Card>
 
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
-                <CardContent className="p-8 space-y-2 text-center">
-                    <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">{currentTime ? format(currentTime, 'HH:mm:ss') : '--:--:--'}</h2>
-                    <p className="text-xs font-medium text-muted-foreground opacity-60">{currentTime ? format(currentTime, 'eeee, d MMMM yyyy', { locale: id }) : '...'}</p>
+                <CardContent className="p-8 space-y-6 pt-10 text-center">
+                    <div className="flex flex-col items-center justify-center py-2 w-full min-h-[80px]">
+                        <h2 className="text-5xl font-bold tracking-tighter tabular-nums text-foreground leading-none">{currentTime ? format(currentTime, 'HH:mm:ss') : '--:--:--'}</h2>
+                        <p className="text-xs font-medium text-muted-foreground mt-2 opacity-60">{currentTime ? format(currentTime, 'eeee, d MMMM yyyy', { locale: id }) : '...'}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:gap-4 w-full max-w-md mx-auto pt-4">
+                        <div className="bg-green-500/5 rounded-2xl p-2.5 sm:p-4 text-center border border-green-500/10 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+                            <div className="bg-green-500 p-2 sm:p-2.5 rounded-full text-white shrink-0 relative z-10"><LogIn className="h-4 w-4" /></div>
+                            <div className="text-left relative z-10"><p className="text-[9px] sm:text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p><p className="text-lg sm:text-xl font-bold tabular-nums text-foreground leading-none">{personalCheckIn || '--:--'}</p></div>
+                        </div>
+                        <div className="bg-blue-500/5 rounded-2xl p-2.5 sm:p-4 text-center border border-blue-500/10 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+                            <div className="bg-blue-500 p-2 sm:p-2.5 rounded-full text-white shrink-0 relative z-10"><LogOut className="h-4 w-4" /></div>
+                            <div className="text-left relative z-10"><p className="text-[9px] sm:text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p><p className="text-lg sm:text-xl font-bold tabular-nums text-foreground leading-none">{personalCheckOut || '--:--'}</p></div>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>

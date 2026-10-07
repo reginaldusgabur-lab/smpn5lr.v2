@@ -105,13 +105,23 @@ export default function KepalaSekolahDashboardPage() {
   );
   const { data: globalAttendance, isLoading: isGlobalLoading } = useCollection(user, attendanceQuery);
 
-  const usersQuery = useMemoFirebase(() => (isHeadmaster && firestore) ? query(collection(firestore, 'users'), where('status', '==', 'Aktif')) : null, [firestore, isHeadmaster]);
+  const usersQuery = useMemoFirebase(() => (isHeadmaster && firestore) ? query(collection(firestore, 'users'), where('status', 'in', ['Aktif', 'Cuti'])) : null, [firestore, isHeadmaster]);
   const { data: usersData } = useCollection(user, usersQuery);
 
   const processedRecentAttendance = useMemo(() => {
     if (!usersData || !globalAttendance) return [];
     const userMap = new Map(usersData.map(u => [u.id, u]));
-    return [...globalAttendance]
+    
+    const uniqueMap = new Map();
+    [...globalAttendance].forEach(att => {
+        const userId = att.userId || att.id;
+        const existing = uniqueMap.get(userId);
+        if (!existing || (!existing.checkOutTime && att.checkOutTime)) {
+            uniqueMap.set(userId, att);
+        }
+    });
+
+    return Array.from(uniqueMap.values())
         .sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (a.checkInTime?.toDate().getTime() || 0))
         .map((att, index) => {
             const u = userMap.get(att.userId);
@@ -146,20 +156,6 @@ export default function KepalaSekolahDashboardPage() {
     return <KepalaSekolahDashboardSkeleton />;
   }
 
-  const personalButtonAction = () => {
-    const record = todaysAttendance?.[0];
-    const hasIn = !!record?.checkInTime;
-    const hasOut = !!record?.checkOutTime;
-
-    if (hasIn && !hasOut) {
-        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Pulang</Link></Button>;
-    } else if (!hasIn) {
-        return <Button asChild size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all"><Link href="/dashboard/absen">Absen Masuk</Link></Button>;
-    } else {
-        return <Button disabled size="lg" className="w-full font-semibold rounded-xl h-12 active:scale-95 transition-all">Absensi Selesai</Button>;
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="space-y-1">
@@ -181,7 +177,19 @@ export default function KepalaSekolahDashboardPage() {
                 <CardContent className="p-6 relative z-10"><div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-2xl text-white shrink-0 border border-white/10 shadow-sm backdrop-blur-sm"><Calendar className="h-6 w-6" /></div><div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight leading-tight">Kehadiran Hari Ini</h2><p className="text-[11px] font-medium text-white/80 leading-relaxed">Kelola absensi dan pantau aktivitas personil.</p></div></div></CardContent>
             </Card>
             <Card className="w-full border border-muted-foreground/10 shadow-none rounded-xl bg-primary/5 overflow-hidden">
-                <CardContent className="p-8 space-y-6 text-center"><LiveClock /></CardContent>
+                <CardContent className="p-8 space-y-6 text-center">
+                    <LiveClock />
+                    <div className="grid grid-cols-2 gap-2 sm:gap-4 w-full max-w-md mx-auto pt-4">
+                        <div className="bg-green-500/5 rounded-2xl p-2.5 sm:p-4 text-center border border-green-500/10 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+                            <div className="bg-green-500 p-2 sm:p-2.5 rounded-full text-white shrink-0 relative z-10"><LogIn className="h-4 w-4" /></div>
+                            <div className="text-left relative z-10"><p className="text-[9px] sm:text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p><p className="text-lg sm:text-xl font-bold tabular-nums text-foreground leading-none">{todaysAttendance?.[0]?.checkInTime ? format(todaysAttendance[0].checkInTime.toDate(), 'HH:mm') : '--:--'}</p></div>
+                        </div>
+                        <div className="bg-blue-500/5 rounded-2xl p-2.5 sm:p-4 text-center border border-blue-500/10 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+                            <div className="bg-blue-500 p-2 sm:p-2.5 rounded-full text-white shrink-0 relative z-10"><LogOut className="h-4 w-4" /></div>
+                            <div className="text-left relative z-10"><p className="text-[9px] sm:text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p><p className="text-lg sm:text-xl font-bold tabular-nums text-foreground leading-none">{todaysAttendance?.[0]?.checkOutTime ? format(todaysAttendance[0].checkOutTime.toDate(), 'HH:mm') : '--:--'}</p></div>
+                        </div>
+                    </div>
+                </CardContent>
                 <CardFooter className="flex flex-col gap-2 p-6 pt-0"><Button asChild size="lg" className="w-full font-bold rounded-xl h-12 shadow-none"><Link href="/dashboard/absen">Buka Panel Absensi</Link></Button></CardFooter>
             </Card>
         </div>
@@ -198,7 +206,7 @@ export default function KepalaSekolahDashboardPage() {
         <CardContent className="p-0">
             <div className="overflow-x-auto">
                 <Table>
-                    <TableHeader className="bg-muted/30"><TableRow className="border-none"><TableHead className="w-[50px] text-center font-bold text-[10px] tracking-widest">No</TableHead><TableHead className="font-bold text-[10px] tracking-widest">Nama</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Masuk</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Pulang</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Status</TableHead></TableRow></TableHeader>
+                    <TableHeader className="bg-muted/30"><TableRow className="border-none"><TableHead className="w-[50px] text-center font-bold text-[10px] tracking-widest">No.</TableHead><TableHead className="font-bold text-[10px] tracking-widest">Nama</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Masuk</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Pulang</TableHead><TableHead className="text-center font-bold text-[10px] tracking-widest">Status</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {processedRecentAttendance.length > 0 ? processedRecentAttendance.map((item, idx) => (
                             <TableRow key={item.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
@@ -206,10 +214,10 @@ export default function KepalaSekolahDashboardPage() {
                                 <TableCell className="font-bold text-sm">{item.name}</TableCell>
                                 <TableCell className="text-center font-mono text-xs font-bold">{item.in}</TableCell>
                                 <TableCell className="text-center font-mono text-xs font-bold">{item.out}</TableCell>
-                                <TableCell className="text-center"><Badge variant="outline" className={cn("text-[9px] font-bold px-3 py-1 rounded-full text-white border-none", item.statusClass)}>{item.status}</Badge></TableCell>
+                                <TableCell className="text-center"><Badge variant="outline" className={cn("text-[9px] font-bold px-3 py-1 rounded-full text-white border-none shadow-none", item.statusClass)}>{item.status}</Badge></TableCell>
                             </TableRow>
                         )) : (
-                            <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Belum ada aktivitas hari ini.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-bold uppercase text-[10px] tracking-widest opacity-40">Belum ada aktivitas</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>
