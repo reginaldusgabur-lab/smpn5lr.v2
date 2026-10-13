@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -25,15 +26,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
     Accordion,
+    AccordionContent,
     AccordionItem,
     AccordionTrigger,
-    AccordionContent,
 } from "@/components/ui/accordion";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle, Clock } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, CalendarRange, Plus, Trash2, Info, AlertCircle, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -67,9 +68,9 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
 
   const monthlyConfigId = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
   const monthlyConfigRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore) return null;
     return doc(firestore, 'monthlyConfigs', monthlyConfigId);
-  }, [firestore, user?.uid, monthlyConfigId]);
+  }, [firestore, monthlyConfigId]);
   
   const { data: monthlyConfigData, isLoading: isMonthlyConfigLoading } = useDoc(user, monthlyConfigRef);
   
@@ -92,11 +93,11 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
       setIsHolidayNotesActive(false);
       setHolidayNotes([]);
     }
-  }, [monthlyConfigData, schoolConfig?.academicYear]);
+  }, [monthlyConfigData, schoolConfig]);
 
   const calculatedWorkDays = useMemo(() => {
     if (!schoolConfig) return 0;
-    const recurringOffDays: number[] = schoolConfig.offDays ?? [0, 6];
+    const recurringOffDays: number[] = schoolConfig.offDays ?? [0];
     const specificHolidays = new Set(holidays.map(d => format(d, 'yyyy-MM-dd')));
 
     const workDays = allDaysInMonth.filter(day => {
@@ -293,9 +294,9 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
                                                     <AlertCircle className="h-2.5 w-2.5" /> Tandai Merah
                                                 </Label>
                                             </div>
-                                            <button className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-full flex items-center justify-center transition-colors" onClick={() => removeNote(note.id)}>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => removeNote(note.id)}>
                                                 <Trash2 className="h-3.5 w-3.5" />
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
@@ -317,7 +318,7 @@ function MonthlyConfigCalendar({ user, schoolConfig }: { user: any, schoolConfig
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
             <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 px-8 shadow-none" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Simpan Pengaturan Bulanan
+                SIMPAN PENGATURAN BULANAN
             </Button>
         </CardFooter>
     </Card>
@@ -346,8 +347,7 @@ export default function KonfigurasiAbsenPage() {
   const [longitude, setLongitude] = useState('120.46667');
   const [radius, setRadius] = useState(100);
   const [checkInStart, setCheckInStart] = useState('06:00');
-  const [checkInEnd, setCheckInEnd] = useState('07:30');
-  const [lateLimitMinutes, setLateLimitMinutes] = useState(15);
+  const [checkInEnd, setCheckInEnd] = useState('08:00');
   const [checkOutStart, setCheckOutStart] = useState('14:00');
   const [checkOutEnd, setCheckOutEnd] = useState('16:00');
   const [qrCodeValue, setQrCodeValue] = useState('');
@@ -366,17 +366,21 @@ export default function KonfigurasiAbsenPage() {
   const schoolConfigRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'schoolConfig', 'default');
-  }, [firestore, user?.uid]);
+  }, [firestore, user]);
   const { data: schoolConfigData, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user?.uid]);
+  }, [firestore, user]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc(user, userDocRef);
 
   const isLoading = isAuthLoading || isConfigLoading || isUserDataLoading;
   const isAdmin = !isLoading && userData?.role === 'admin';
+
+  // Memastikan accordion jam pulang terbuka sesuai hari saat ini (0-6)
+  const currentDayValue = useMemo(() => new Date().getDay().toString(), []);
+  
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
@@ -395,8 +399,7 @@ export default function KonfigurasiAbsenPage() {
       setLongitude(schoolConfigData.longitude?.toString() ?? '120.46667');
       setRadius(schoolConfigData.radius ?? 100);
       setCheckInStart(schoolConfigData.checkInStartTime ?? '06:00');
-      setCheckInEnd(schoolConfigData.checkInEndTime ?? '07:30');
-      setLateLimitMinutes(schoolConfigData.lateLimitMinutes ?? 15);
+      setCheckInEnd(schoolConfigData.checkInEndTime ?? '08:00');
       setCheckOutStart(schoolConfigData.checkOutStartTime ?? '14:00');
       setCheckOutEnd(schoolConfigData.checkOutEndTime ?? '16:00');
       
@@ -513,7 +516,6 @@ export default function KonfigurasiAbsenPage() {
       radius: Number(radius),
       checkInStartTime: checkInStart,
       checkInEndTime: checkInEnd,
-      lateLimitMinutes: Number(lateLimitMinutes),
       checkOutStartTime: checkOutStart,
       checkOutEndTime: checkOutEnd,
       dailyCheckOutTimes: dailyCheckOutTimes,
@@ -548,13 +550,11 @@ export default function KonfigurasiAbsenPage() {
     );
   }
 
-  const currentDayValue = new Date().getDay().toString();
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-24">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <Card className="lg:col-span-1 overflow-hidden border shadow-none rounded-xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-          <CardTitle className="font-bold text-sm tracking-tight uppercase">Kode QR absensi</CardTitle>
+          <CardTitle className="font-bold text-sm tracking-tight">Kode QR absensi</CardTitle>
           <CardDescription className="text-muted-foreground font-bold">Gunakan kode QR ini untuk absensi harian.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center gap-4 p-4 sm:p-6">
@@ -596,7 +596,7 @@ export default function KonfigurasiAbsenPage() {
 
       <Card className="lg:col-span-2 overflow-hidden border shadow-none rounded-xl">
         <CardHeader className="p-4 sm:p-6 text-primary border-b border-muted-foreground/10">
-          <CardTitle className="font-bold text-sm tracking-tight uppercase">Pengaturan umum</CardTitle>
+          <CardTitle className="font-bold text-sm tracking-tight">Pengaturan umum</CardTitle>
           <CardDescription className="text-muted-foreground font-bold">Atur parameter sistem absensi sekolah.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 p-4 sm:p-6">
@@ -663,6 +663,28 @@ export default function KonfigurasiAbsenPage() {
                   <Label htmlFor="radius" className="text-xs font-bold">Radius sekolah (Meter)</Label>
                   <Input id="radius" type="number" className="h-10 rounded-xl bg-muted/30 font-bold shadow-none" value={radius} onChange={(e) => setRadius(Number(e.target.value))} placeholder="100" disabled={holidayMode} />
                 </div>
+                {/* PRATINJAU PETA */}
+                <div className="space-y-2 pt-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5" /> Pratinjau Lokasi di Peta
+                  </Label>
+                  <div className="aspect-video w-full overflow-hidden rounded-2xl border border-muted-foreground/10 bg-muted/20 relative shadow-inner">
+                    <iframe
+                      key={`${latitude}-${longitude}`}
+                      width="100%"
+                      height="100%"
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=id&z=17&output=embed`}
+                      title="Pratinjau Lokasi Peta"
+                      className="border-none grayscale-[0.2] contrast-[1.1]"
+                    ></iframe>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground font-bold italic px-1 leading-tight">
+                    *Titik merah menunjukkan lokasi sekolah. Pengguna harus berada dalam radius {radius}m dari titik ini.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -679,32 +701,23 @@ export default function KonfigurasiAbsenPage() {
                   <div className="space-y-6 pt-4 border-t border-muted-foreground/10">
                       <div className="space-y-4">
                           <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Masuk</Label>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-1.5">
                                   <Label htmlFor="checkin-start" className="text-[10px] font-bold">Mulai masuk</Label>
                                   <Input id="checkin-start" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInStart} onChange={e => setCheckInStart(e.target.value)} disabled={holidayMode} />
                               </div>
                               <div className="space-y-1.5">
-                                  <Label htmlFor="checkin-end" className="text-[10px] font-bold">Batas masuk</Label>
+                                  <Label htmlFor="checkin-end" className="text-[10px] font-bold">Selesai masuk</Label>
                                   <Input id="checkin-end" type="time" className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" value={checkInEnd} onChange={e => setCheckInEnd(e.target.value)} disabled={holidayMode} />
                               </div>
-                              <div className="space-y-1.5">
-                                  <Label htmlFor="late-limit" className="text-[10px] font-bold text-destructive">Batas terlambat</Label>
-                                  <div className="flex items-center gap-2">
-                                      <Input id="late-limit" type="number" className="rounded-xl h-10 bg-destructive/5 font-bold shadow-none border-destructive/10 text-destructive w-20" value={lateLimitMinutes} onChange={e => setLateLimitMinutes(Number(e.target.value))} disabled={holidayMode} />
-                                      <span className="text-[10px] font-bold text-destructive/60">menit</span>
-                                  </div>
-                              </div>
                           </div>
-                          <p className="text-[9px] font-bold text-muted-foreground leading-tight px-1 italic">
-                            Tombol absen tetap muncul selama {lateLimitMinutes} menit setelah "Batas Masuk", namun status otomatis dicatat sebagai "Terlambat".
-                          </p>
                       </div>
 
                       <div className="space-y-4 pt-4 border-t border-muted-foreground/10">
                           <div className="flex items-center justify-between">
-                            <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Pulang Harian</Label>
+                            <Label className="text-xs font-bold uppercase tracking-wider text-primary">Jadwal Pulang Spesifik</Label>
                           </div>
+                          <p className="text-[10px] text-muted-foreground font-bold">Atur jam pulang berbeda untuk setiap hari.</p>
                           
                           <Accordion type="single" collapsible className="w-full" defaultValue={currentDayValue}>
                               {daysOfWeek.map((day) => {
@@ -714,25 +727,28 @@ export default function KonfigurasiAbsenPage() {
                                           key={day.value} 
                                           value={day.value.toString()} 
                                           className={cn(
-                                              "border-muted-foreground/10 transition-all duration-300",
-                                              isToday ? "bg-primary/5 rounded-2xl px-2" : ""
+                                              "border-muted-foreground/10 transition-all duration-300 overflow-hidden",
+                                              isToday ? "border-l-4 border-l-primary bg-primary/5 rounded-r-2xl" : "rounded-none"
                                           )}
                                       >
-                                          <AccordionTrigger className="hover:no-underline py-3 px-1 shadow-none">
+                                          <AccordionTrigger className="hover:no-underline py-3 px-3 shadow-none">
                                               <div className="flex items-center gap-3">
                                                   <div className={cn(
-                                                      "w-2 h-2 rounded-full", 
-                                                      offDays.includes(day.value) ? "bg-muted-foreground/30" : "bg-primary"
+                                                      "w-2.5 h-2.5 rounded-full transition-all", 
+                                                      offDays.includes(day.value) ? "bg-muted-foreground/30" : "bg-primary",
+                                                      isToday && !offDays.includes(day.value) && "animate-pulse shadow-[0_0_8px_rgba(63,81,181,0.5)]"
                                                   )} />
                                                   <span className={cn(
-                                                      "text-xs font-bold", 
-                                                      offDays.includes(day.value) && "text-muted-foreground"
+                                                      "text-xs font-bold transition-colors", 
+                                                      offDays.includes(day.value) && "text-muted-foreground",
+                                                      isToday && "text-primary"
                                                   )}>
                                                       {day.label} {offDays.includes(day.value) && "(Libur)"}
+                                                      {isToday && <span className="ml-2 opacity-80">(Hari Ini)</span>}
                                                   </span>
                                               </div>
                                           </AccordionTrigger>
-                                          <AccordionContent className="pt-2 pb-4 px-1">
+                                          <AccordionContent className="pt-2 pb-4 px-3">
                                               <div className="grid grid-cols-2 gap-4">
                                                   <div className="space-y-1.5">
                                                       <Label className="text-[10px] font-bold">Mulai pulang</Label>
@@ -745,7 +761,7 @@ export default function KonfigurasiAbsenPage() {
                                                       />
                                                   </div>
                                                   <div className="space-y-1.5">
-                                                      <Label className="text-[10px] font-bold">Batas pulang</Label>
+                                                      <Label className="text-[10px] font-bold">Selesai pulang</Label>
                                                       <Input 
                                                           type="time" 
                                                           className="rounded-xl h-10 bg-muted/30 font-bold shadow-none" 
@@ -768,7 +784,7 @@ export default function KonfigurasiAbsenPage() {
          <CardFooter className="border-t p-4 sm:p-6 bg-muted/5">
             <Button onClick={handleSave} className="w-full sm:w-auto font-bold rounded-xl h-11 px-8 shadow-none" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Simpan Pengaturan Umum
+                SIMPAN PENGATURAN UMUM
             </Button>
         </CardFooter>
       </Card>
