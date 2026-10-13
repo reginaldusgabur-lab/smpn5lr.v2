@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -109,23 +110,23 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
   if (!attendanceType) return null;
 
   return (
-    <div className="mt-6 pt-6 border-t border-border/30">
-      <div className="flex items-center justify-center text-[10px] font-black mb-4 text-muted-foreground/50 uppercase tracking-[0.2em]">
+    <div className="mt-1 pt-3 border-t border-border/10">
+      <div className="flex items-center justify-center text-[9px] font-bold mb-2 text-muted-foreground/40 uppercase tracking-[0.2em]">
         <Sparkles className="h-3 w-3 mr-2 text-amber-500 animate-pulse" />
         Kutipan Untuk Anda
       </div>
-      <div className="text-center min-h-[60px] flex flex-col items-center justify-center px-2">
+      <div className="text-center min-h-[60px] flex flex-col items-center justify-center px-0">
         {isLoading ? (
           <div className="flex flex-col items-center gap-2 text-muted-foreground/30">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-[9px] font-black uppercase tracking-widest">Meramu kata...</span>
+            <span className="text-[8px] font-black uppercase tracking-widest">Meramu kata...</span>
           </div>
         ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-1000 w-full space-y-4">
-            <blockquote className="font-bold text-[16px] text-foreground/90 leading-snug italic text-center px-2">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-1000 w-full space-y-3">
+            <blockquote className="font-bold text-[14px] text-foreground/90 leading-snug italic text-center px-0 whitespace-pre-line">
               "{quote?.quote}"
             </blockquote>
-            <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">
+            <p className="text-[8px] font-black uppercase text-muted-foreground/30 tracking-widest">
               — {quote?.author || "AI E-SPENLI"}
             </p>
           </div>
