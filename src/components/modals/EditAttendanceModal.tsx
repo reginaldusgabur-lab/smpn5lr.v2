@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -20,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { format, parseISO, isValid, startOfDay, endOfDay, addMinutes, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { MoreVertical, CheckCircle2, AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
+import { MoreVertical, CheckCircle2, AlertTriangle, Loader2, RotateCcw, PencilLine } from 'lucide-react';
 import { invalidateCache } from '@/lib/cache';
 import { cn } from '@/lib/utils';
 
@@ -295,9 +296,9 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
                                         </div>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                                                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                                                </Button>
+                                                <button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90">
+                                                    <PencilLine className="h-4 w-4 text-primary" />
+                                                </button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-none p-2">
                                                 <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Kehadiran</DropdownMenuLabel>
@@ -344,3 +345,4 @@ export default function EditAttendanceModal({ user, month, isOpen, onClose, curr
         </Dialog>
     );
 }
+

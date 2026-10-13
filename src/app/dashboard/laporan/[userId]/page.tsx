@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -15,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserMonthlyReportData, type MonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, RotateCcw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, RotateCcw, PencilLine } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -440,7 +441,7 @@ export default function UserReportDetailPage() {
                                                         <Badge className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap border-none shadow-sm", getStatusColorClass(item.status, item.description))}>{item.status}</Badge>
                                                         {canEdit && (
                                                             <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><MoreVertical className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
+                                                                <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                     <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                     {hasIn && !hasOut ? (
