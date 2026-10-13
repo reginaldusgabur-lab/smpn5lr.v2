@@ -36,8 +36,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
     [firestore]
   );
   const { data: schoolConfig, isLoading: isConfigLoading } = useDoc<{
-    isManualQuoteActive?: boolean;
-    manualQuoteContent?: string;
+    geminiApiKey?: string;
   }>(user, schoolConfigRef);
 
   useEffect(() => {
@@ -51,17 +50,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       setIsLoading(true);
       isFetched.current = true;
 
-      // 1. Cek Override Manual dari Admin
-      if (schoolConfig?.isManualQuoteActive && schoolConfig?.manualQuoteContent?.trim()) {
-          setQuote({
-              quote: schoolConfig.manualQuoteContent.trim(),
-              author: "AI E-SPENLI"
-          });
-          setIsLoading(false);
-          return;
-      }
-      
-      // 2. Jalur Normal: Fetch dari AI Flow (yang sekarang punya 200+ fallback)
+      // Jalur Normal: Fetch dari AI Flow (Alur ini otomatis memprioritaskan API Key dari DB)
       const now = new Date();
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
@@ -92,7 +81,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('AI_FAILURE');
         }
       } catch (e: any) {
-        // Jika API error, fallback di sisi klien akan diambil dari database alur kerja yang baru
+        // Fallback statis jika sistem benar-benar gagal
         setQuote({
           quote: attendanceType === 'in' 
             ? "Awali hari dengan niat baik untuk melayani di lingkungan SMPN 5 Langke Rembong." 

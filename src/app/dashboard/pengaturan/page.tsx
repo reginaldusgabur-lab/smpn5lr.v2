@@ -35,7 +35,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle, Sparkles } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle, Sparkles, Cpu, ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -44,17 +44,35 @@ import { invalidateCache } from '@/lib/cache';
 import Cropper, { Area, Point } from 'react-easy-crop';
 import { cn } from '@/lib/utils';
 
+/**
+ * Helper to process image cropping and compression on a canvas.
+ */
 const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string> => {
     const image = new Image();
     image.src = imageSrc;
     await new Promise((resolve) => { image.onload = resolve; });
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+
     if (!ctx) return '';
+
     const targetSize = 800;
     canvas.width = targetSize;
     canvas.height = targetSize;
-    ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, targetSize, targetSize);
+
+    ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        targetSize,
+        targetSize
+    );
+
     return canvas.toDataURL('image/jpeg', 0.8);
 };
 
@@ -100,8 +118,8 @@ export default function PengaturanPage() {
   const [isNotificationActive, setIsNotificationActive] = useState(false);
   const [notificationInterval, setNotificationInterval] = useState(3);
 
-  const [isManualQuoteActive, setIsManualQuoteActive] = useState(false);
-  const [manualQuoteContent, setManualQuoteContent] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
 
   const [isAudioSaving, setIsAudioSaving] = useState(false);
   const [successSoundBase64, setSuccessSoundBase64] = useState<string | null>(null);
@@ -142,8 +160,7 @@ export default function PengaturanPage() {
       notificationContent?: string;
       isNotificationActive?: boolean;
       notificationInterval?: number;
-      isManualQuoteActive?: boolean;
-      manualQuoteContent?: string;
+      geminiApiKey?: string;
       successSoundUrl?: string;
       successSoundName?: string;
   }>(user, schoolConfigRef);
@@ -167,12 +184,14 @@ export default function PengaturanPage() {
       setReportCity(schoolConfigData.reportCity ?? '');
       setAcademicYear(schoolConfigData.academicYear ?? '');
       setReportFooterNote(schoolConfigData.reportFooterNote ?? 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.');
+      
       setNotificationTitle(schoolConfigData.notificationTitle ?? '');
       setNotificationContent(schoolConfigData.notificationContent ?? '');
       setIsNotificationActive(schoolConfigData.isNotificationActive ?? false);
       setNotificationInterval(schoolConfigData.notificationInterval ?? 3);
-      setIsManualQuoteActive(schoolConfigData.isManualQuoteActive ?? false);
-      setManualQuoteContent(schoolConfigData.manualQuoteContent ?? '');
+
+      setGeminiApiKey(schoolConfigData.geminiApiKey ?? '');
+
       setSuccessSoundBase64(schoolConfigData.successSoundUrl ?? null);
       setSuccessSoundName(schoolConfigData.successSoundName ?? '');
     }
@@ -238,24 +257,34 @@ export default function PengaturanPage() {
     const rawUser = auth.currentUser;
     if (!rawUser || !userDocRef) return;
     setIsProfileLoading(true);
+
     try {
       const authUpdates: any = {};
       const firestoreUpdates: any = {};
+
       if (name.trim() && name !== userData?.name) {
           authUpdates.displayName = name;
           firestoreUpdates.name = name;
       }
+
       if (photoPreview) {
           authUpdates.photoURL = photoPreview;
           firestoreUpdates.photoURL = photoPreview;
       }
+
       if (userData?.role !== 'admin') {
           if (nip !== (userData?.nip || '')) firestoreUpdates.nip = nip;
           if (position !== (userData?.position || '')) firestoreUpdates.position = position;
       }
+
       const updatePromises: Promise<any>[] = [];
-      if (Object.keys(authUpdates).length > 0) updatePromises.push(updateProfile(rawUser, authUpdates));
-      if (Object.keys(firestoreUpdates).length > 0) updatePromises.push(setDoc(userDocRef, firestoreUpdates, { merge: true }));
+      if (Object.keys(authUpdates).length > 0) {
+          updatePromises.push(updateProfile(rawUser, authUpdates));
+      }
+      if (Object.keys(firestoreUpdates).length > 0) {
+          updatePromises.push(setDoc(userDocRef, firestoreUpdates, { merge: true }));
+      }
+      
       if (updatePromises.length > 0) {
           await Promise.all(updatePromises);
           invalidateCache();
@@ -265,6 +294,7 @@ export default function PengaturanPage() {
       }
       setPhotoPreview(null);
     } catch (error: any) {
+      console.error("Update Profile Error:", error);
       toast({ variant: 'destructive', title: 'Gagal', description: error.message });
     } finally {
       setIsProfileLoading(false);
@@ -309,10 +339,9 @@ export default function PengaturanPage() {
       notificationContent, 
       isNotificationActive, 
       notificationInterval: Number(notificationInterval),
-      isManualQuoteActive,
-      manualQuoteContent: manualQuoteContent.trim()
+      geminiApiKey: geminiApiKey.trim()
     }, { merge: true });
-    toast({ title: 'Disimpan', description: 'Pengumuman dan Kutipan manual diperbarui.' });
+    toast({ title: 'Disimpan', description: 'Pengumuman dan API Key diperbarui.' });
     setIsNotificationSaving(false);
   };
 
@@ -327,7 +356,7 @@ export default function PengaturanPage() {
       setIsAudioSaving(false);
   };
 
-  const getInitialsIcon = (n: string | null) => n ? n.split(' ').map(x => x[0]).join('').substring(0, 2).toUpperCase() : 'U';
+  const getInitials = (n: string | null) => n ? n.split(' ').map(x => x[0]).join('').substring(0, 2).toUpperCase() : 'U';
   const currentPhoto = photoPreview || userData?.photoURL;
   const isTeacherOrStaff = ['guru', 'pegawai', 'kepala_sekolah'].includes(userData?.role || '');
   const isAdmin = userData?.role === 'admin';
@@ -356,7 +385,7 @@ export default function PengaturanPage() {
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-2 border-primary/10 shadow-xl">
                       <AvatarImage src={currentPhoto ?? undefined} className="object-cover" />
-                      <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{getInitialsIcon(name)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{getInitials(name)}</AvatarFallback>
                     </Avatar>
                     <Button type="button" size="icon" variant="outline" className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 bg-primary text-white border-none shadow-lg active:scale-95 transition-all" onClick={() => fileInputRef.current?.click()}>
                       <Camera className="h-4 w-4" />
@@ -491,23 +520,28 @@ export default function PengaturanPage() {
                   <div className="pt-8 border-t mt-6">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                           <div className="flex items-center gap-3">
-                            <Sparkles className="h-5 w-5 text-blue-500" />
+                            <Cpu className="h-5 w-5 text-blue-500" />
                             <div>
-                                <Label className="font-bold text-xs uppercase tracking-widest">Kutipan Manual</Label>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Override kutipan AI dengan teks buatan Admin.</p>
+                                <Label className="font-bold text-xs uppercase tracking-widest">Konfigurasi Gemini API Key</Label>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Atur kunci API Gemini Anda sendiri di sini.</p>
                             </div>
                           </div>
-                          <Switch checked={isManualQuoteActive} onCheckedChange={setIsManualQuoteActive} />
                       </div>
                       <div className="space-y-4">
-                        <Textarea 
-                          placeholder="Tuliskan kutipan manual di sini..." 
-                          value={manualQuoteContent} 
-                          onChange={e => setManualQuoteContent(e.target.value)} 
-                          className="rounded-xl bg-muted/30 shadow-none min-h-[100px] font-medium" 
-                        />
+                        <div className="relative">
+                          <Input 
+                            type={showApiKey ? "text" : "password"} 
+                            placeholder="Tempel Gemini API Key di sini..." 
+                            value={geminiApiKey} 
+                            onChange={e => setGeminiApiKey(e.target.value)} 
+                            className="h-11 rounded-xl bg-muted/30 pr-12 font-bold shadow-none border-muted-foreground/10" 
+                          />
+                          <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none" onClick={() => setShowApiKey(!showApiKey)}>
+                            {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
                         <p className="text-[10px] text-muted-foreground font-bold italic">
-                          Jika diaktifkan, kutipan ini akan muncul setelah absensi. Jika kosong atau dinonaktifkan, sistem kembali menggunakan AI.
+                          Jika diisi, sistem akan menggunakan API Key ini untuk menghasilkan kutipan motivasi. Jika kosong, sistem menggunakan kunci bawaan server.
                         </p>
                       </div>
                   </div>
@@ -549,9 +583,9 @@ export default function PengaturanPage() {
                   </div>
               </CardContent>
               <CardFooter className="border-t px-6 py-5 bg-muted/5 flex flex-wrap gap-3">
-                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="w-full sm:w-auto font-bold rounded-xl h-11 px-6 shadow-none">SIMPAN DATA PDF</Button>
-                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="w-full sm:w-auto font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN & KUTIPAN</Button>
-                  <Button onClick={handleAudioSettingsSave} disabled={isAudioSaving} variant="secondary" className="w-full sm:w-auto font-bold rounded-xl h-11 px-6 shadow-none bg-primary/10 text-primary hover:bg-primary/20">SIMPAN NADA</Button>
+                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-6 shadow-none">SIMPAN DATA PDF</Button>
+                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN & API KEY</Button>
+                  <Button onClick={handleAudioSettingsSave} disabled={isAudioSaving} variant="secondary" className="font-bold rounded-xl h-11 px-6 shadow-none bg-primary/10 text-primary hover:bg-primary/20">SIMPAN NADA</Button>
               </CardFooter>
           </Card>
         )}
