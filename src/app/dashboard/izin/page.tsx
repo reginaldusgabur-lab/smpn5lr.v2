@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -68,7 +67,7 @@ const TYPE_GUIDES: Record<string, string> = {
   'Dinas Pagi': 'Anda melaksanakan tugas luar di pagi hari. Anda tetap diharapkan berada di sekolah pada siang hari dan wajib melakukan absen pulang di sore hari.',
   'Dinas Siang': 'Anda melaksanakan tugas luar di siang hari. Anda tetap wajib melakukan absen masuk di pagi hari sebelum berangkat ke lokasi dinas.',
   'Kegiatan Luar Sekolah': 'Anda bertugas penuh di luar sekolah. Anda tidak perlu melakukan absen mandiri, sistem akan menghitung kehadiran penuh (1.0).',
-  'Terlambat': 'Izin ini hanya memvalidasi alasan keterlambatan Anda. Anda tetap wajib melakukan absen masuk (scan QR) segera setelah tiba di sekolah.',
+  'Terlambat': 'Izin ini memvalidasi keterlambatan Anda. Anda tidak perlu melakukan absen masuk, cukup pastikan melakukan absen pulang di sore hari karena poin kehadiran Anda akan disesuaikan secara otomatis.',
   'Pulang Cepat': 'Izin ini memungkinkan Anda pulang sebelum jadwal berakhir. Pastikan Anda sudah melakukan absen masuk di pagi hari.',
   'Cuti Resmi': 'Masa cuti resmi dihitung sebagai kehadiran penuh (1.0). Gunakan rentang tanggal yang sesuai dengan surat izin cuti Anda.',
 };
@@ -242,7 +241,7 @@ export default function IzinPage() {
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)}>
                             <CardHeader className="p-6 border-b border-muted-foreground/5 bg-muted/20">
-                                <CardTitle className="text-blue-600 dark:text-blue-400 font-bold text-sm uppercase tracking-widest">Informasi Pengajuan</CardTitle>
+                                <CardTitle className="text-blue-600 dark:text-blue-400 font-semibold text-sm uppercase tracking-widest">Informasi Pengajuan</CardTitle>
                                 <CardDescription className="text-[10px] font-bold text-muted-foreground">Silakan lengkapi detail ketidakhadiran Anda.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-8 space-y-6">
