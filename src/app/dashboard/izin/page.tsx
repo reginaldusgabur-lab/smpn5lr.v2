@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser, useDoc, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, where, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, MessageSquare, MailCheck, Clock, CheckCircle2, Calendar, Info, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Loader2, Trash2, MessageSquare, MailCheck, Clock, CheckCircle2, Calendar, Info, AlertTriangle, ShieldCheck, ArrowRightCircle } from 'lucide-react';
 import { startOfDay, endOfDay, addDays, format, parse, isValid } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -60,17 +60,17 @@ const leaveRequestSchema = z.object({
 });
 
 /**
- * Mapping template alasan berdasarkan jenis pengajuan.
+ * Instruksi Prosedur Absensi berdasarkan Jenis Izin.
  */
-const REASON_TEMPLATES: Record<string, string> = {
-  'Sakit': 'Izin tidak hadir hari ini karena sakit.',
-  'Izin Pribadi': 'Ada urusan keluarga mendesak yang tidak bisa ditinggalkan.',
-  'Dinas Pagi': 'Melaksanakan tugas dinas luar (rapat/MGMP) di [Sebutkan Tempat].',
-  'Dinas Siang': 'Melaksanakan tugas dinas siang di [Sebutkan Tempat] mulai pukul [Jam].',
-  'Kegiatan Luar Sekolah': 'Mendampingi siswa dalam kegiatan [Nama Kegiatan] di luar sekolah.',
-  'Terlambat': 'Mohon izin terlambat masuk karena kendala [Sebutkan Alasan] di perjalanan.',
-  'Pulang Cepat': 'Izin pulang lebih awal pada pukul [Jam] karena [Alasan Mendesak].',
-  'Cuti Resmi': 'Menjalankan cuti resmi sesuai dengan ketentuan yang berlaku.',
+const TYPE_GUIDES: Record<string, string> = {
+  'Sakit': 'Anda tidak diwajibkan melakukan absen masuk/pulang. Pastikan surat keterangan dokter diarsipkan jika diperlukan.',
+  'Izin Pribadi': 'Anda tidak diwajibkan absen pada tanggal ini. Seluruh poin kehadiran akan disesuaikan secara otomatis.',
+  'Dinas Pagi': 'Anda melaksanakan tugas luar di pagi hari. Anda tetap diharapkan berada di sekolah pada siang hari dan wajib melakukan absen pulang di sore hari.',
+  'Dinas Siang': 'Anda melaksanakan tugas luar di siang hari. Anda tetap wajib melakukan absen masuk di pagi hari sebelum berangkat ke lokasi dinas.',
+  'Kegiatan Luar Sekolah': 'Anda bertugas penuh di luar sekolah. Anda tidak perlu melakukan absen mandiri, sistem akan menghitung kehadiran penuh (1.0).',
+  'Terlambat': 'Izin ini hanya memvalidasi alasan keterlambatan Anda. Anda tetap wajib melakukan absen masuk (scan QR) segera setelah tiba di sekolah.',
+  'Pulang Cepat': 'Izin ini memungkinkan Anda pulang sebelum jadwal berakhir. Pastikan Anda sudah melakukan absen masuk di pagi hari.',
+  'Cuti Resmi': 'Masa cuti resmi dihitung sebagai kehadiran penuh (1.0). Gunakan rentang tanggal yang sesuai dengan surat izin cuti Anda.',
 };
 
 export default function IzinPage() {
@@ -100,24 +100,11 @@ export default function IzinPage() {
     const watchedType = form.watch('type');
     const isCutiSelected = watchedType === 'Cuti Resmi';
 
-    // Efek untuk mengatur rentang tanggal otomatis pada Cuti Resmi
     useEffect(() => {
         if (isCutiSelected) {
             form.setValue('leaveDate', 'range');
         }
     }, [isCutiSelected, form]);
-
-    // Efek untuk mengisi template alasan otomatis
-    useEffect(() => {
-        if (watchedType) {
-            const template = REASON_TEMPLATES[watchedType];
-            const currentReason = form.getValues('reason');
-            // Hanya isi jika kolom alasan kosong atau masih berisi template lain
-            if (!currentReason || Object.values(REASON_TEMPLATES).includes(currentReason)) {
-                form.setValue('reason', template);
-            }
-        }
-    }, [watchedType, form]);
 
     const { today, tomorrow } = useMemo(() => {
         const t = startOfDay(currentTime);
@@ -141,7 +128,6 @@ export default function IzinPage() {
 
     const isTomorrowLocked = useMemo(() => isDateHoliday(tomorrow), [isDateHoliday, tomorrow]);
 
-    // Data Presence Check
     const attendanceQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'users', user.uid, 'attendanceRecords'), where('date', '==', format(today, 'yyyy-MM-dd')));
@@ -151,7 +137,6 @@ export default function IzinPage() {
     const hasCheckedIn = !!(todayAttendance && todayAttendance[0]?.checkInTime);
     const hasCheckedOut = !!(todayAttendance && todayAttendance[0]?.checkOutTime);
 
-    // Conflict Check (Existing Requests)
     const selectedDateValue = form.watch('leaveDate');
     const targetDateForConflict = useMemo(() => selectedDateValue === 'tomorrow' ? tomorrow : today, [selectedDateValue, today, tomorrow]);
     const targetDateConflictStart = useMemo(() => startOfDay(targetDateForConflict), [targetDateForConflict]);
@@ -243,7 +228,7 @@ export default function IzinPage() {
                                     {currentDayConflict.status === 'approved' ? 'Pengajuan Sudah Disetujui' : 'Pengajuan Sedang Ditinjau'}
                                 </p>
                                 <p className="text-[10px] font-bold opacity-80 leading-tight mt-1">
-                                    Anda sudah memiliki pengajuan tipe <span className="italic">"{currentDayConflict.type}"</span> untuk tanggal ini. Mohon tidak melakukan pengajuan ganda.
+                                    Anda sudah memiliki pengajuan tipe <span className="italic">"{currentDayConflict.type}"</span> untuk tanggal ini.
                                 </p>
                             </div>
                             {currentDayConflict.status === 'pending' && (
@@ -288,7 +273,7 @@ export default function IzinPage() {
                                         <FormItem className="space-y-2">
                                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Pilih Sesi/Waktu</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value} disabled={isCutiSelected}>
-                                                <FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold"><SelectValue /></SelectTrigger></FormControl>
+                                                <FormControl><SelectTrigger className="h-11 rounded-xl bg-muted/30 border-muted-foreground/10 shadow-none font-bold"><SelectValue placeholder="Pilih tanggal" /></SelectTrigger></FormControl>
                                                 <SelectContent className="rounded-xl border-none shadow-2xl">
                                                     <SelectItem value="today" disabled={isTodayLocked} className="font-bold">Hari Ini</SelectItem>
                                                     <SelectItem value="tomorrow" disabled={isTomorrowLocked} className="font-bold">Besok</SelectItem>
@@ -299,6 +284,16 @@ export default function IzinPage() {
                                         </FormItem>
                                     )} />
                                 </div>
+
+                                {watchedType && TYPE_GUIDES[watchedType] && (
+                                    <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl flex items-start gap-3 animate-in slide-in-from-left-2 duration-300">
+                                        <ArrowRightCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none mb-1.5">Panduan Prosedur:</p>
+                                            <p className="text-[11px] font-bold text-foreground/80 leading-relaxed">{TYPE_GUIDES[watchedType]}</p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {(form.watch('leaveDate') === 'range' || isCutiSelected) && (
                                     <div className="grid grid-cols-2 gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-500">
@@ -318,27 +313,27 @@ export default function IzinPage() {
                                 )}
 
                                 <FormField control={form.control} name="reason" render={({ field }) => (
-                                    <FormItem className="space-y-2"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Alasan Detail</FormLabel><FormControl><Textarea placeholder="Tuliskan alasan pengajuan Anda secara ringkas..." {...field} className="min-h-[80px] rounded-xl bg-muted/30 border-muted-foreground/10 transition-all font-bold text-sm shadow-none" /></FormControl><FormMessage className="text-[10px] font-bold" /></FormItem>
+                                    <FormItem className="space-y-2">
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Alasan Pengajuan</FormLabel>
+                                        <FormControl>
+                                            <Textarea 
+                                                placeholder="Contoh: Mengikuti rapat dinas di Kantor Dinas Pendidikan mulai pukul 08:00 WIB..." 
+                                                {...field} 
+                                                className="min-h-[80px] rounded-xl bg-muted/30 border-muted-foreground/10 transition-all font-bold text-sm shadow-none" 
+                                            />
+                                        </FormControl>
+                                        <FormMessage className="text-[10px] font-bold" />
+                                    </FormItem>
                                 )} />
                                 
                                 <div className="space-y-3">
                                     <div className="p-4 bg-blue-50/60 border border-blue-200 rounded-xl flex items-start gap-3">
                                         <MessageSquare className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                                         <p className="text-[10px] font-bold text-slate-600 leading-relaxed">
-                                            <span className="text-blue-600 uppercase tracking-widest mr-1">Petunjuk:</span>
-                                            Isi dengan alasan singkat saja. Kalimat sapaan lengkap harap dikirim langsung kepada <span className="text-foreground">Kepala Sekolah melalui WhatsApp atau menyesuaikan aturan sekolah.</span>
+                                            <span className="text-blue-600 uppercase tracking-widest mr-1">Catatan:</span>
+                                            Isi dengan alasan singkat namun jelas. Informasi lengkap harap tetap dikoordinasikan secara langsung melalui grup WhatsApp atau Kepala Sekolah.
                                         </p>
                                     </div>
-
-                                    {isCutiSelected && (
-                                        <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl flex items-start gap-3 animate-in zoom-in-95 duration-300">
-                                            <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                                            <p className="text-[10px] font-bold text-amber-800 leading-relaxed">
-                                                <span className="uppercase tracking-widest mr-1">Petunjuk Cuti:</span>
-                                                Pengajuan <span className="italic">Cuti Resmi</span> dihitung poin penuh (1.0). Pastikan rentang tanggal sudah benar sesuai surat izin resmi.
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
                             </CardContent>
                             <CardFooter className="p-6 border-t border-muted-foreground/5 bg-muted/5">
