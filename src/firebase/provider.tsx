@@ -53,10 +53,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: null,
-    isUserLoading: true,
-    userError: null,
+  const [userAuthState, setUserAuthState] = useState<UserAuthState>(() => {
+    // Optimasi: Pulihkan user dari session storage secara sinkron untuk menghindari flash loading
+    if (typeof window !== 'undefined') {
+        const cached = sessionStorage.getItem('espenli_user_profile');
+        if (cached) {
+            try {
+                return { user: JSON.parse(cached), isUserLoading: false, userError: null };
+            } catch (e) {}
+        }
+    }
+    return { user: null, isUserLoading: true, userError: null };
   });
 
   useEffect(() => {
@@ -79,6 +86,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 ...userProfile,
                 id: userDocSnap.id,
               };
+              
+              sessionStorage.setItem('espenli_user_profile', JSON.stringify(combinedUser));
               setUserAuthState({ user: combinedUser, isUserLoading: false, userError: null });
             } else {
               setUserAuthState({ user: null, isUserLoading: false, userError: null });
@@ -87,6 +96,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             setUserAuthState(prev => ({ ...prev, userError: error as Error, isUserLoading: false }));
           }
         } else {
+          sessionStorage.removeItem('espenli_user_profile');
           setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },

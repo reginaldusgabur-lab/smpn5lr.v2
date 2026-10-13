@@ -102,7 +102,7 @@ export default function UserReportDetailPage() {
                 calculateAttendanceStats(firestore, userId, { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) })
             ]);
 
-            if (!userSnap.exists()) throw new Error('Staf tidak ditemukan.');
+            if (!userSnap.exists()) throw new Error('Profil staf tidak ditemukan.');
             
             if (isMounted.current) {
                 setUserData(userSnap.data());
@@ -163,7 +163,7 @@ export default function UserReportDetailPage() {
                 const [hE, mE] = inEnd.split(':').map(Number);
                 const limitIn = setMinutes(setHours(startOfDay(targetDate), hE), mE);
                 
-                const existingAtt = monthlyReportData.find(d => d.date === todayStr);
+                const existingAtt = monthlyReportData.find(d => format(parseISO(d.date), 'yyyy-MM-dd') === todayStr);
 
                 let data: any = {
                     userId, date: todayStr,
