@@ -59,6 +59,20 @@ const leaveRequestSchema = z.object({
   endDate: z.string().optional(),
 });
 
+/**
+ * Mapping template alasan berdasarkan jenis pengajuan.
+ */
+const REASON_TEMPLATES: Record<string, string> = {
+  'Sakit': 'Izin tidak hadir hari ini karena sakit.',
+  'Izin Pribadi': 'Ada urusan keluarga mendesak yang tidak bisa ditinggalkan.',
+  'Dinas Pagi': 'Melaksanakan tugas dinas luar (rapat/MGMP) di [Sebutkan Tempat].',
+  'Dinas Siang': 'Melaksanakan tugas dinas siang di [Sebutkan Tempat] mulai pukul [Jam].',
+  'Kegiatan Luar Sekolah': 'Mendampingi siswa dalam kegiatan [Nama Kegiatan] di luar sekolah.',
+  'Terlambat': 'Mohon izin terlambat masuk karena kendala [Sebutkan Alasan] di perjalanan.',
+  'Pulang Cepat': 'Izin pulang lebih awal pada pukul [Jam] karena [Alasan Mendesak].',
+  'Cuti Resmi': 'Menjalankan cuti resmi sesuai dengan ketentuan yang berlaku.',
+};
+
 export default function IzinPage() {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -86,11 +100,24 @@ export default function IzinPage() {
     const watchedType = form.watch('type');
     const isCutiSelected = watchedType === 'Cuti Resmi';
 
+    // Efek untuk mengatur rentang tanggal otomatis pada Cuti Resmi
     useEffect(() => {
         if (isCutiSelected) {
             form.setValue('leaveDate', 'range');
         }
     }, [isCutiSelected, form]);
+
+    // Efek untuk mengisi template alasan otomatis
+    useEffect(() => {
+        if (watchedType) {
+            const template = REASON_TEMPLATES[watchedType];
+            const currentReason = form.getValues('reason');
+            // Hanya isi jika kolom alasan kosong atau masih berisi template lain
+            if (!currentReason || Object.values(REASON_TEMPLATES).includes(currentReason)) {
+                form.setValue('reason', template);
+            }
+        }
+    }, [watchedType, form]);
 
     const { today, tomorrow } = useMemo(() => {
         const t = startOfDay(currentTime);
@@ -291,7 +318,7 @@ export default function IzinPage() {
                                 )}
 
                                 <FormField control={form.control} name="reason" render={({ field }) => (
-                                    <FormItem className="space-y-2"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Alasan Detail</FormLabel><FormControl><Textarea placeholder="Tuliskan alasan pengajuan Anda secara ringkas..." {...field} className="min-h-[120px] rounded-xl bg-muted/30 border-muted-foreground/10 transition-all font-bold text-sm shadow-none" /></FormControl><FormMessage className="text-[10px] font-bold" /></FormItem>
+                                    <FormItem className="space-y-2"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Alasan Detail</FormLabel><FormControl><Textarea placeholder="Tuliskan alasan pengajuan Anda secara ringkas..." {...field} className="min-h-[80px] rounded-xl bg-muted/30 border-muted-foreground/10 transition-all font-bold text-sm shadow-none" /></FormControl><FormMessage className="text-[10px] font-bold" /></FormItem>
                                 )} />
                                 
                                 <div className="space-y-3">
