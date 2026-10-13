@@ -51,7 +51,7 @@ export function useCollection<T = any>(
       return;
     }
 
-    // Identifikasi kueri secara unik untuk memutus loop yang tidak perlu
+    // Hindari reset loading jika kueri sama (mencegah flickering)
     let currentKey: string;
     if (memoizedTargetRefOrQuery.type === 'collection') {
         currentKey = (memoizedTargetRefOrQuery as CollectionReference).path;
@@ -71,7 +71,7 @@ export function useCollection<T = any>(
       (snapshot: QuerySnapshot<DocumentData>) => {
         if (!isMounted) return;
 
-        // Pastikan pengguna belum berganti atau logout
+        // Validasi sesi: Abaikan jika user sudah berganti/logout
         const currentAuthUser = getAuth().currentUser;
         if (currentAuthUser?.uid !== subscriptionUid) return;
         
@@ -84,9 +84,8 @@ export function useCollection<T = any>(
         const currentAuthUser = getAuth().currentUser;
         if (currentAuthUser?.uid !== subscriptionUid) return;
 
-        // Jangan lempar error jika koneksi sedang tidak stabil (misal saat sleep)
+        // Abaikan error jaringan sementara agar tidak crash saat sleep/bangun
         if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
-            console.warn('Firestore temporary unavailable:', error.message);
             return;
         }
 

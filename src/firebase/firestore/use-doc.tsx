@@ -41,7 +41,6 @@ export function useDoc<T = any>(
       return;
     }
     
-    // Hanya reset loading jika path benar-benar berubah
     if (currentPath !== lastPath.current) {
         setResult({ data: null, isLoading: true, error: null });
         lastPath.current = currentPath;

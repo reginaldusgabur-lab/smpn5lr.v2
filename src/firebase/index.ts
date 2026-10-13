@@ -18,23 +18,21 @@ const auth = getAuth(app);
 
 /**
  * Inisialisasi Firestore dengan Offline Persistence dan Long Polling.
- * experimentalForceLongPolling dipaksa aktif untuk mengatasi error "Could not reach backend"
- * yang umum terjadi di lingkungan proxy/studio yang memblokir WebSocket.
+ * localCache: persistentLocalCache menghemat kuota "Read" Firestore dengan menyimpan data secara lokal.
+ * experimentalForceLongPolling dipaksa aktif untuk stabilitas di lingkungan studio/proxy.
  */
 const firestore = (() => {
   if (typeof window !== 'undefined') {
-    // Di sisi klien, kita coba gunakan inisialisasi kustom dengan cache permanen
     try {
       return initializeFirestore(app, {
         localCache: persistentLocalCache({}),
         experimentalForceLongPolling: true,
       });
     } catch (e) {
-      // Jika terjadi error (misal sudah diinisialisasi), ambil instance yang ada
+      // Jika sudah diinisialisasi (misal saat HMR), ambil instance yang ada
       return getFirestore(app);
     }
   }
-  // Di sisi server, gunakan default
   return getFirestore(app);
 })();
 
