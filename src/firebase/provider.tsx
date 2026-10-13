@@ -118,6 +118,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
+  // JANGAN MEMBLOKIR RENDER DI SINI AGAR SHELL (HEADER/NAV) BISA MUNCUL DULUAN
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />

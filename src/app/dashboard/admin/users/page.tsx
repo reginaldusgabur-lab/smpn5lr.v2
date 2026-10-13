@@ -82,6 +82,7 @@ import { resetUserPassword, updateUserEmail } from '@/app/actions/admin-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
@@ -266,7 +267,7 @@ export default function AdminUsersPage() {
         setIsCutiDialogOpen(false);
     };
 
-    if (isAuthLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    if (isAuthLoading && !usersData) return <div className="p-8 space-y-4"><Skeleton className="h-20 w-full" /><Skeleton className="h-64 w-full" /></div>;
 
     return (
         <div className="flex-1 pt-4 pb-24 md:p-8">
@@ -274,7 +275,7 @@ export default function AdminUsersPage() {
                 <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl p-0">
                     <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-between">
                         <div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-2xl shadow-sm"><UsersIcon className="h-6 w-6" /></div><div className="space-y-0.5"><h1 className="font-bold text-2xl tracking-tight">Manajemen pengguna</h1><p className="text-[11px] font-medium text-white/80">Kelola data personil sekolah.</p></div></div>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10" onClick={() => loadUsers(true)} disabled={isUsersLoading}><RefreshCw className={cn("h-4 w-4", isUsersLoading && "animate-spin")} /></Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => loadUsers(true)} disabled={isUsersLoading}><RefreshCw className={cn("h-4 w-4", isUsersLoading && "animate-spin")} /></Button>
                     </div>
                 </Card>
 
@@ -292,9 +293,9 @@ export default function AdminUsersPage() {
                             <Table>
                                 <TableHeader className="bg-muted/30"><TableRow className="border-none"><TableHead className="w-[60px] text-center font-bold text-[10px] uppercase">No</TableHead><TableHead className="font-bold text-[10px] uppercase">Nama & email</TableHead><TableHead className="font-bold text-[10px] uppercase">Peran</TableHead><TableHead className="font-bold text-[10px] uppercase">Gender</TableHead><TableHead className="font-bold text-[10px] uppercase">NIP</TableHead><TableHead className="text-center font-bold text-[10px] uppercase">Status</TableHead><TableHead className="text-right font-bold text-[10px] uppercase pr-6">Aksi</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {isUsersLoading ? [...Array(5)].map((_, i) => (
+                                    {isUsersLoading && !usersData ? [...Array(5)].map((_, i) => (
                                         <TableRow key={i} className="border-muted-foreground/5">
-                                            <TableCell colSpan={7} className="h-16 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-primary/30" /></TableCell>
+                                            <TableCell colSpan={7} className="h-16"><Skeleton className="h-10 w-full" /></TableCell>
                                         </TableRow>
                                     )) : filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
                                         <TableRow key={u.id} className="border-muted-foreground/5 hover:bg-primary/5 transition-colors">
