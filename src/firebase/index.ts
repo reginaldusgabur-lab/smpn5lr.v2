@@ -23,10 +23,8 @@ const auth = getAuth(app);
  */
 const firestore = (() => {
   if (typeof window !== 'undefined') {
-    // Di sisi klien, kita coba gunakan inisialisasi kustom
+    // Di sisi klien, kita coba gunakan inisialisasi kustom dengan cache permanen
     try {
-      // Jika sudah ada instance, getFirestore akan mengembalikannya.
-      // initializeFirestore hanya dipanggil sekali.
       return initializeFirestore(app, {
         localCache: persistentLocalCache({}),
         experimentalForceLongPolling: true,

@@ -70,6 +70,8 @@ export function useDoc<T = any>(
         const currentAuthUser = getAuth().currentUser;
         if (currentAuthUser?.uid !== subscriptionUid) return;
 
+        if (error.code === 'unavailable') return;
+
         const contextualError = new FirestorePermissionError({
           operation: 'get',
           path: memoizedDocRef.path,
@@ -87,4 +89,3 @@ export function useDoc<T = any>(
 
   return result;
 }
-

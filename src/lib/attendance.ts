@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -18,6 +17,9 @@ export interface MonthlyReportData {
     points: number;
 }
 
+/**
+ * Parsing aman untuk data tanggal dari Firestore (Timestamp atau ISO String).
+ */
 const parseFirestoreDate = (input: any): Date | null => {
     if (!input) return null;
     if (typeof input.toDate === 'function') return input.toDate();

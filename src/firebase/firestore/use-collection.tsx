@@ -71,6 +71,7 @@ export function useCollection<T = any>(
       (snapshot: QuerySnapshot<DocumentData>) => {
         if (!isMounted) return;
 
+        // Pastikan pengguna belum berganti atau logout
         const currentAuthUser = getAuth().currentUser;
         if (currentAuthUser?.uid !== subscriptionUid) return;
         
@@ -82,6 +83,12 @@ export function useCollection<T = any>(
 
         const currentAuthUser = getAuth().currentUser;
         if (currentAuthUser?.uid !== subscriptionUid) return;
+
+        // Jangan lempar error jika koneksi sedang tidak stabil (misal saat sleep)
+        if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+            console.warn('Firestore temporary unavailable:', error.message);
+            return;
+        }
 
         const internalQuery = (memoizedTargetRefOrQuery as unknown as InternalQuery)._query;
         if (internalQuery?.collectionGroup) {
@@ -110,4 +117,3 @@ export function useCollection<T = any>(
 
   return result;
 }
-

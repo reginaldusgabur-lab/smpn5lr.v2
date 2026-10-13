@@ -77,7 +77,16 @@ export default function DashboardPage() {
   const isStaffOnly = ['guru', 'pegawai', 'siswa'].includes(user?.role || '');
 
   const [summaryMonth, setSummaryMonth] = useState(new Date());
-  const [stats, setStats] = useState({ hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false });
+  const [stats, setStats] = useState(() => {
+    if (typeof window !== 'undefined') {
+        try {
+            const cached = localStorage.getItem('espenli_stats_v3');
+            return cached ? JSON.parse(cached) : { hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false };
+        } catch (e) { return { hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false }; }
+    }
+    return { hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false, isManualDisabled: false };
+  });
+
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [personalSummary, setPersonalSummary] = useState({ percentage: '0.0', hadir: 0, izin: 0, sakit: 0, alpa: 0 });
   const [isPersonalSummaryLoading, setIsPersonalSummaryLoading] = useState(true);
@@ -90,6 +99,7 @@ export default function DashboardPage() {
         const dailyStats = await getDailyStaffAttendanceStats(firestore);
         if (isMounted.current) {
             setStats(dailyStats as any);
+            localStorage.setItem('espenli_stats_v3', JSON.stringify(dailyStats));
             setIsStatsLoading(false);
         }
     } catch (error) { if (isMounted.current) setIsStatsLoading(false); }
@@ -248,7 +258,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                     <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('recent-attendance')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.hadir}</div></Card>
                     <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit/Cuti</span><BookUser className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.izin + stats.sakit + stats.cuti}</div></Card>
-                    <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={navigateToApproval}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span><MailWarning className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.pending}</div></Card>
+                    <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl p-3 cursor-pointer text-white" onClick={navigateToApproval}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span><MailWarning className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.pending}</div></Card>
                     <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl overflow-hidden p-3 cursor-pointer text-white" onClick={() => scrollToId('absent-users')}><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60 group-hover:scale-110 transition-transform" /></div><div className="text-3xl font-normal tracking-tight">{isStatsLoading ? '...' : stats.alpa}</div></Card>
                 </div>
                 <div id="recent-attendance" className="scroll-mt-20"><RecentAttendanceTable /></div>
