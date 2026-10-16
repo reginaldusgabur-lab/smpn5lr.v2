@@ -121,7 +121,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                             const reason = (leave.reason || '').toLowerCase();
                             let p = 0;
                             if (type.includes('sakit')) { p = 0.9; sakitCount++; }
-                            else if (type.includes('cuti')) { p = 1.0; hadirCount++; }
+                            else if (type.includes('cuti')) { p = 1.0; izinCount++; }
                             else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) { p = 1.0; izinCount++; }
                             else if (type.includes('dinas')) { p = 1.0; hadirCount++; }
                             else { p = 0.7; izinCount++; }
@@ -132,7 +132,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
 
                 const pastWorkingDays = workingDays.filter(day => isBefore(day, startOfDay(new Date())) || isSameDay(day, new Date()));
                 const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const presentasi = Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%';
+                const presentasi = u.status === 'Cuti' ? '-' : (Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%');
                 return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: alpaCount, terlambat: 0, presentasi };
             });
 

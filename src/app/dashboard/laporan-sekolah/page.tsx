@@ -163,7 +163,7 @@ export default function SchoolReportPage() {
                             const reason = (leave.reason || '').toLowerCase();
                             let p = 0;
                             if (type.includes('sakit')) { p = 0.9; sakitCount++; }
-                            else if (type.includes('cuti')) { p = 1.0; hadirCount++; }
+                            else if (type.includes('cuti')) { p = 1.0; izinCount++; }
                             else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) { p = 1.0; izinCount++; }
                             else if (type.includes('dinas')) { p = 1.0; hadirCount++; }
                             else { p = 0.7; izinCount++; }
@@ -173,7 +173,7 @@ export default function SchoolReportPage() {
                 });
 
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const persentase = Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%';
+                const persentase = u.status === 'Cuti' ? '-' : (Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%');
 
                 return {
                     uid: u.id, name: u.name, nip: u.nip || '-',
@@ -322,7 +322,7 @@ export default function SchoolReportPage() {
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                 <div className="flex items-center">
                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                                    <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max"><CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-black uppercase text-muted-foreground/60 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div></div>
+                                    <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max"><CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div></div>
                                 </div>
                                 <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
                             </div>
