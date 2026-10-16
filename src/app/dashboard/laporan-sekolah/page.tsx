@@ -41,6 +41,7 @@ interface ReportRowData {
     persentase: string;
     persentaseNum: number;
     sequenceNumber: number | null;
+    status: string;
 }
 
 const minDate = new Date(2026, 0, 1);
@@ -173,14 +174,14 @@ export default function SchoolReportPage() {
                 });
 
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const persentase = u.status === 'Cuti' ? '-' : (Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%');
+                const persentase = u.status === 'Cuti' ? '-' : Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%';
 
                 return {
                     uid: u.id, name: u.name, nip: u.nip || '-',
                     position: u.position || '-', role: u.role || '',
                     sequenceNumber: u.sequenceNumber || null,
                     totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa, 
-                    persentase
+                    persentase, status: u.status
                 };
             });
 
@@ -229,7 +230,8 @@ export default function SchoolReportPage() {
             const tableRows = filteredReports.map((item, index) => [
               item.sequenceNumber || index + 1, item.name, item.nip, 
               (item.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW'), 
-              Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, item.persentase
+              Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, 
+              item.status === 'Cuti' ? '-' : item.persentase
             ]);
 
             autoTable(doc, {
@@ -306,6 +308,9 @@ export default function SchoolReportPage() {
         } finally { setIsExporting(false); }
     };
 
+    const canGoPrev = currentMonth > minDate;
+    const canGoNext = !isSameMonth(currentMonth, new Date());
+
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
@@ -321,10 +326,10 @@ export default function SchoolReportPage() {
                         <div className="p-4 space-y-6">
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                 <div className="flex items-center">
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                                     <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max"><CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div></div>
                                 </div>
-                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
+                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5"><Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label><Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select></div>
@@ -344,7 +349,7 @@ export default function SchoolReportPage() {
                                                 <TableCell className="text-center font-black text-blue-500">{item.totalIzin}</TableCell>
                                                 <TableCell className="text-center font-black text-orange-500">{item.totalSakit}</TableCell>
                                                 <TableCell className="text-center font-black text-red-500">{item.totalAlpa}</TableCell>
-                                                <TableCell className="text-center font-black text-primary">{item.persentase}</TableCell>
+                                                <TableCell className="text-center font-black text-primary">{item.status === 'Cuti' ? '-' : item.persentase}</TableCell>
                                                 <TableCell className="text-center"><Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10"><Eye className="h-4 w-4 text-primary" /></Button></Link></TableCell>
                                             </TableRow>
                                         )) : <TableRow><TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest uppercase">Data tidak ditemukan</TableCell></TableRow>}

@@ -76,7 +76,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             const qAtt = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
             const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
             
-            const [snapAtt, snapLeave] = await Promise.all([ getDocs(qAtt), getDocs(qLeave) ]);
+            const [snapAtt, snapLeave] = await Promise.all([ getDocs(qAtt), getDocs(snapLeave) ]);
 
             const allAttendance = snapAtt.docs.map(d => ({...d.data(), id: d.id }));
             const allLeave = snapLeave.docs.map(d => ({ ...d.data(), id: d.id, startDate: d.data().startDate.toDate(), endDate: d.data().endDate.toDate() }));

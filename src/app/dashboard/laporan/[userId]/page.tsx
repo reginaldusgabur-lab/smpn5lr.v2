@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserMonthlyReportData, type MonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, RotateCcw, PencilLine } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, RotateCcw, PencilLine, PlaneTakeoff } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -527,11 +527,21 @@ export default function UserReportDetailPage() {
                                 <div className="grid grid-cols-2">
                                     <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
-                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats?.totalPoints || "0.00"}</span></div>
+                                        <div className="flex items-center gap-2">
+                                            <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" />
+                                            <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">
+                                                {userData?.status === 'Cuti' ? "-" : (stats?.totalPoints || "0.00")}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
-                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats?.persentase || "0.0%"}</span></div>
+                                        <div className="flex items-center gap-2">
+                                            <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
+                                            <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">
+                                                {userData?.status === 'Cuti' ? "-" : (stats?.persentase || "0.0%")}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

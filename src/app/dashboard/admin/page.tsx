@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -8,7 +9,7 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
-import { UserCheck, BookUser, MailWarning, Clock, UserX, Calendar, UserCircle, RefreshCw } from 'lucide-react';
+import { UserCheck, BookUser, MailWarning, Clock, UserX, Calendar, UserCircle, RefreshCw, LogIn, LogOut } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -28,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { getDailyStaffAttendanceStats } from '@/lib/attendance';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const AdminDashboardSkeletons = () => (
     <div className="space-y-6">
@@ -49,9 +51,9 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState(() => {
     if (typeof window !== 'undefined') {
         const cached = localStorage.getItem('espenli_admin_stats_v2');
-        return cached ? JSON.parse(cached) : { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+        return cached ? JSON.parse(cached) : { hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false };
     }
-    return { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+    return { hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false };
   });
 
   const [isStatsLoading, setIsStatsLoading] = useState(true);
@@ -70,7 +72,7 @@ export default function AdminDashboardPage() {
         try {
             const daily = await getDailyStaffAttendanceStats(firestore);
             if (isMounted.current) {
-                setStats(daily);
+                setStats(daily as any);
                 localStorage.setItem('espenli_admin_stats_v2', JSON.stringify(daily));
                 setIsStatsLoading(false);
             }
@@ -108,7 +110,7 @@ export default function AdminDashboardPage() {
 
     return Array.from(uniqueMap.values())
         .sort((a, b) => (a.checkInTime?.toDate().getTime() || 0) - (a.checkInTime?.toDate().getTime() || 0))
-        .map((att, idx) => {
+        .map((att) => {
             const u = userMap.get(att.userId);
             const isOut = !!att.checkOutTime;
             return {
@@ -177,7 +179,7 @@ export default function AdminDashboardPage() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
             <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.hadir}</div></Card>
-            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.izin + stats.sakit}</div></Card>
+            <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit/Cuti</span><BookUser className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.izin + stats.sakit + stats.cuti}</div></Card>
             <Card className="bg-gradient-to-br from-[#ff9100] to-[#f39c12] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Menunggu</span><Clock className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.pending}</div></Card>
             <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.alpa}</div></Card>
         </div>

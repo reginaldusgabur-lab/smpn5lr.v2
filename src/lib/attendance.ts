@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -163,17 +164,19 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v909_${userId}_${format(start, 'yyyyMM')}`;
+    const cacheKey = `stats_v910_${userId}_${format(start, 'yyyyMM')}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     try {
-        const [schoolConfigSnap, monthlyConfigSnap, attendanceSnap, leaveSnap] = await Promise.all([
+        const [schoolConfigSnap, monthlyConfigSnap, attendanceSnap, leaveSnap, userSnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
             getDoc(doc(firestore, 'monthlyConfigs', format(start, 'yyyy-MM'))),
             getDocs(collection(firestore, 'users', userId, 'attendanceRecords')),
-            getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
+            getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved'))),
+            getDoc(doc(firestore, 'users', userId))
         ]);
         const schoolConfig = schoolConfigSnap.data() || {};
         const monthlyConfig = monthlyConfigSnap.data() || {};
+        const userData = userSnap.data();
         const todayStr = format(new Date(), 'yyyy-MM-dd');
         
         const holidays = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
@@ -227,8 +230,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                         const reasonLower = (leave.reason || '').toLowerCase();
                         
                         if (typeLower.includes('sakit')) sakitCount++;
-                        else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) izinCount++;
-                        else if (typeLower.includes('cuti') || typeLower.includes('dinas')) hadirCount++;
+                        else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah') || typeLower.includes('cuti')) {
+                            izinCount++;
+                        }
+                        else if (typeLower.includes('dinas')) hadirCount++;
                         else if (p < 1.0) izinCount++;
                         else hadirCount++;
                         processedDates.add(dayStr);
@@ -244,9 +249,12 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const finalPercentage = (totalPoints / denominator) * 100;
 
         const result = {
-            totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa: alpaCount,
-            totalPoints: totalPoints.toFixed(2),
-            persentase: Math.min(finalPercentage, 100).toFixed(1) + '%'
+            totalHadir: hadirCount, 
+            totalIzin: izinCount, 
+            totalSakit: sakitCount, 
+            totalAlpa: alpaCount,
+            totalPoints: userData?.status === 'Cuti' ? "-" : totalPoints.toFixed(2),
+            persentase: userData?.status === 'Cuti' ? "-" : (Math.min(finalPercentage, 100).toFixed(1) + '%')
         };
         setInCache(cacheKey, result); return result;
     } catch (e) {
