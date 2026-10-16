@@ -125,7 +125,6 @@ export default function SchoolReportPage() {
             const holidays: string[] = (mConfig as any)?.holidays ?? [];
             const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(allWorkingDays.map(day => format(day, 'yyyy-MM-dd')));
-            const isTodayAWorkingDay = workingDaysSet.has(todayStr);
 
             const results = allUsers.map(u => {
                 let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
@@ -169,12 +168,7 @@ export default function SchoolReportPage() {
                 const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 
-                let denominator = pastWorkingDays.length;
-                if (isTodayAWorkingDay && !processedDates.has(todayStr) && denominator > 0) {
-                    denominator -= 1; 
-                }
-                denominator = Math.max(1, denominator);
-
+                const denominator = Math.max(1, allWorkingDays.length);
                 const persentase = u.status === 'Cuti' ? '-' : Math.min((points / denominator) * 100, 100).toFixed(1) + '%';
 
                 return {

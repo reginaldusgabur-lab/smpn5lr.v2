@@ -181,7 +181,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v925_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v932_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -205,9 +205,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             !holidays.includes(format(day, 'yyyy-MM-dd'))
         );
 
-        const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
-        const hasAktivitasHariIni = pastWorkingDays.some(day => format(day, 'yyyy-MM-dd') === todayStr);
-
         let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
         
@@ -223,8 +220,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        pastWorkingDays.forEach((day) => {
+        baseWorkingDays.forEach((day) => {
             const dayStr = format(day, 'yyyy-MM-dd');
+            if (dayStr > todayStr) return; // Belum dilalui
+
             const isToday = dayStr === todayStr;
             const att = attMap.get(dayStr);
 
@@ -263,15 +262,10 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-        
-        let denominator = pastWorkingDays.length;
-        if (hasAktivitasHariIni && !processedDates.has(todayStr) && denominator > 0) {
-            denominator -= 1; 
-        }
-        denominator = Math.max(1, denominator);
-
+        const denominator = Math.max(1, baseWorkingDays.length);
         const finalPercentage = (totalPoints / denominator) * 100;
+        const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+        const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
         const result = {
             totalHadir: hadirCount, 

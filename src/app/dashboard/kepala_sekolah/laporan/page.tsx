@@ -87,7 +87,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             const holidays: string[] = monthlyConfig?.holidays ?? [];
             const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(allWorkingDays.map(d => format(d, 'yyyy-MM-dd')));
-            const isTodayAWorkingDay = workingDaysSet.has(todayStr);
 
             const userSummary = users.map((u: any) => {
                 let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
@@ -118,7 +117,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                             points += p; 
                             
                             if (type.includes('sakit')) sakitCount++;
-                            else if (type.includes('cuti')) izinCount++; // Cuti Resmi masuk Izin
+                            else if (type.includes('cuti')) izinCount++; // Cuti masuk ke kolom izin
                             else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                             else if (type.includes('dinas')) hadirCount++;
                             else izinCount++;
@@ -131,12 +130,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                 const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 
-                let denominator = pastWorkingDays.length;
-                if (isTodayAWorkingDay && !processedDates.has(todayStr) && denominator > 0) {
-                    denominator -= 1; 
-                }
-                denominator = Math.max(1, denominator);
-
+                const denominator = Math.max(1, allWorkingDays.length);
                 const presentasi = u.status === 'Cuti' ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
                 
                 return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: totalAlpa, terlambat: 0, presentasi };
@@ -168,8 +162,8 @@ const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLo
     return (
         <div className="overflow-x-auto border rounded-xl mt-4">
             <Table>
-                <TableHeader className="bg-muted/30">
-                    <TableRow className="border-none">
+                <TableHeader>
+                    <TableRow className="bg-muted/30 border-none">
                         <TableHead className="w-[50px] text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">No</TableHead>
                         <TableHead className="min-w-[200px] font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Nama & Identitas</TableHead>
                         <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest text-muted-foreground border-none">Hadir</TableHead>
