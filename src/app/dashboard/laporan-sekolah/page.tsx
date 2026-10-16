@@ -43,7 +43,7 @@ interface ReportRowData {
     status: string;
 }
 
-const minDate = new Date(2026, 0, 1);
+const minDate = new Date(2025, 0, 1);
 
 export default function SchoolReportPage() {
     const { user, isUserLoading } = useUser();
@@ -224,7 +224,7 @@ export default function SchoolReportPage() {
                             <div className="bg-white/20 p-3 rounded-2xl shadow-sm"><FileText className="h-6 w-6" /></div>
                             <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight">Laporan sekolah</h2><p className="text-[11px] font-medium text-white/80">Rekapitulasi kehadiran seluruh personil.</p></div>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10" onClick={() => { invalidateCache(); loadData(); }} disabled={isReportLoading}><RefreshCw className={cn("h-4 w-4", isReportLoading && "animate-spin")} /></Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => { invalidateCache(); loadData(); }} disabled={isReportLoading}><RefreshCw className={cn("h-4 w-4", isReportLoading && "animate-spin")} /></Button>
                     </div>
                     <CardContent className="p-4 space-y-6">
                         <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border p-1">

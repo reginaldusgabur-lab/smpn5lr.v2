@@ -340,7 +340,7 @@ export default function UserReportDetailPage() {
     };
 
     const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'kepala_sekolah';
-    const canGoPrev = currentMonth > new Date(2026, 0, 1);
+    const canGoPrev = currentMonth > new Date(2025, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
     const getStatusColorClass = (status: string, desc: string) => {

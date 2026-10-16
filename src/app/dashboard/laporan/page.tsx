@@ -84,7 +84,7 @@ export default function LaporanPage() {
     }
   }, [schoolConfig, academicYear]);
 
-  const cacheKey = useMemo(() => user ? `user_report_v218_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
+  const cacheKey = useMemo(() => user ? `user_report_v219_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
 
   const fetchReport = useCallback(async (forceRefresh = false) => {
     if (!user || !firestore || !schoolConfig || !cacheKey) return;
@@ -155,7 +155,7 @@ export default function LaporanPage() {
   };
 
   const handlePrevMonth = () => {
-    const minDate = new Date(2026, 0, 1);
+    const minDate = new Date(2025, 0, 1);
     setCurrentMonth(prev => {
         const next = subMonths(prev, 1);
         return next < minDate ? prev : next;
@@ -188,7 +188,7 @@ export default function LaporanPage() {
   }, [monthlyReportData]);
 
   const isLoading = isAuthLoading || isConfigLoading || isReportLoading;
-  const canGoPrev = currentMonth > new Date(2026, 0, 1);
+  const canGoPrev = currentMonth > new Date(2025, 0, 1);
 
   if (isLoading && monthlyReportData.length === 0) {
     return (
@@ -327,7 +327,7 @@ export default function LaporanPage() {
                                     <div className="flex items-center gap-2">
                                         <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" />
                                         <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">
-                                            {stats?.totalPoints || "0.00"}
+                                            {user?.status === 'Cuti' ? "-" : (stats?.totalPoints || "0.00")}
                                         </span>
                                     </div>
                                     {user?.status !== 'Cuti' && stats && (
@@ -342,7 +342,7 @@ export default function LaporanPage() {
                                 <div className="flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
                                     <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">
-                                        {stats?.persentase || "0.0%"}
+                                        {user?.status === 'Cuti' ? "-" : (stats?.persentase || "0.0%")}
                                     </span>
                                 </div>
                             </div>
