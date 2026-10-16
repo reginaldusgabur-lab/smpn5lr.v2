@@ -156,7 +156,7 @@ export default function SchoolReportPage() {
                             points += p; 
                             
                             if (type.includes('sakit')) sakitCount++;
-                            else if (type.includes('cuti')) izinCount++;
+                            else if (type.includes('cuti')) izinCount++; // Cuti masuk ke kolom izin
                             else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                             else if (type.includes('dinas')) hadirCount++;
                             else izinCount++;

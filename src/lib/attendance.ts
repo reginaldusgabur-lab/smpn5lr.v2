@@ -44,6 +44,7 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Logika Poin Profesional.
+ * Cuti tetap 1.0 poin agar tidak merusak persentase.
  */
 export const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean, isToday: boolean = false): number => {
     const s = status.toLowerCase();
@@ -65,7 +66,7 @@ export const calculatePoints = (status: string, description: string, hasIn: bool
     
     // Lupa absen salah satu
     if (hasIn || hasOut) {
-        return isToday ? 1.0 : 0.5; // Hari ini optimis agar % tidak turun saat kerja
+        return isToday ? 1.0 : 0.5;
     }
     
     return 0.0; // Alpa
@@ -136,7 +137,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             }
 
             if (u.status === 'Cuti') {
-                cutiCount++;
+                izinCount++; // Cuti masuk ke kolom izin secara visual
                 return;
             }
 
@@ -147,7 +148,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                     const type = (l.type || '').toLowerCase();
                     const reason = (l.reason || '').toLowerCase();
                     if (type.includes('sakit')) sakitCount++;
-                    else if (type.includes('cuti')) cutiCount++;
+                    else if (type.includes('cuti')) izinCount++; // Cuti masuk ke kolom izin
                     else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                     else if (type.includes('dinas')) hadirCount++;
                     else izinCount++;
@@ -168,8 +169,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             pending: pendingCount,
             alpa: alpaCount,
             isHoliday: false,
-            isManualDisabled: false,
-            isCalendarHoliday: holidays.includes(todayStr)
+            isManualDisabled: false
         };
     } catch (e) {
         console.error("Daily stats calculation error:", e);
@@ -181,7 +181,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v920_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v925_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -243,7 +243,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 totalPoints += p;
                 
                 if (type.includes('sakit')) sakitCount++;
-                else if (type.includes('cuti')) izinCount++; // Cuti Resmi masuk Izin
+                else if (type.includes('cuti')) izinCount++; // Cuti masuk ke kolom izin
                 else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                 else if (type.includes('dinas')) hadirCount++;
                 else izinCount++;
@@ -265,10 +265,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
         
-        // Denominator Dinamis
         let denominator = pastWorkingDays.length;
-        const isBelumHadirHariIni = hasAktivitasHariIni && !processedDates.has(todayStr);
-        if (isBelumHadirHariIni && denominator > 0) {
+        if (hasAktivitasHariIni && !processedDates.has(todayStr) && denominator > 0) {
             denominator -= 1; 
         }
         denominator = Math.max(1, denominator);
