@@ -125,7 +125,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return start && end && isWithinInterval(today, { start: startOfDay(start), end: endOfDay(end) });
         });
 
-        let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let cutiCount = 0; let pendingCount = 0; let alpaCount = 0;
+        let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let pendingCount = 0; let alpaCount = 0;
 
         allStaff.forEach((u: any) => {
             const attData = presentMap.get(u.id);
@@ -137,7 +137,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             }
 
             if (u.status === 'Cuti') {
-                izinCount++; // Cuti masuk ke kolom izin secara visual
+                izinCount++; // Cuti diarahkan ke kolom izin
                 return;
             }
 
@@ -165,7 +165,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             hadir: hadirCount,
             izin: izinCount,
             sakit: sakitCount,
-            cuti: cutiCount,
             pending: pendingCount,
             alpa: alpaCount,
             isHoliday: false,
@@ -173,7 +172,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         };
     } catch (e) {
         console.error("Daily stats calculation error:", e);
-        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false };
+        return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
     }
 }
 
@@ -181,7 +180,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v932_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v940_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -200,7 +199,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const holidays = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
         const offDays = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
 
-        const baseWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
+        const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
             !offDays.includes(day.getDay()) && 
             !holidays.includes(format(day, 'yyyy-MM-dd'))
         );
@@ -220,9 +219,9 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        baseWorkingDays.forEach((day) => {
+        allWorkingDays.forEach((day) => {
             const dayStr = format(day, 'yyyy-MM-dd');
-            if (dayStr > todayStr) return; // Belum dilalui
+            if (dayStr > todayStr) return; 
 
             const isToday = dayStr === todayStr;
             const att = attMap.get(dayStr);
@@ -262,9 +261,12 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        const denominator = Math.max(1, baseWorkingDays.length);
+        // Denominator: Total Hari Kerja Efektif Bulanan
+        const denominator = Math.max(1, allWorkingDays.length);
         const finalPercentage = (totalPoints / denominator) * 100;
-        const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+        
+        // Alpa hanya dihitung dari hari yang sudah dilewati
+        const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
         const result = {
@@ -343,8 +345,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const lowerDesc = finalDesc.toLowerCase();
                 const isSpecialStatus = lowerDesc.includes('dinas') || lowerDesc.includes('luar sekolah') || lowerDesc.includes('cuti');
                 if (!isSpecialStatus) {
-                    if (checkInDate && !checkOutDate && !lowerDesc.includes('cepat')) finalDesc = 'Belum absen pulang';
-                    else if (!checkInDate && checkOutDate && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
+                    if (checkInDate && !checkOutTime && !lowerDesc.includes('cepat')) finalDesc = 'Belum absen pulang';
+                    else if (!checkInTime && checkOutTime && !lowerDesc.includes('terlambat')) finalDesc = 'Belum absen masuk';
                 }
                 
                 const statusLabel = lowerDesc.includes('luar sekolah') ? 'Izin' : 'Hadir';
