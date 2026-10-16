@@ -39,7 +39,6 @@ interface ReportRowData {
     totalSakit: number;
     totalAlpa: number;
     persentase: string;
-    persentaseNum: number;
     sequenceNumber: number | null;
     status: string;
 }
@@ -71,24 +70,16 @@ export default function SchoolReportPage() {
 
     const loadData = useCallback(async () => {
         if (!firestore || !user?.uid || !isMounted.current || !schoolConfigData) return;
-        
         setIsReportLoading(true);
         setError(null);
-        
         try {
             const start = startOfMonth(currentMonth);
             const end = endOfMonth(currentMonth);
-            const monthId = format(currentMonth, 'yyyy-MM');
             const today = startOfDay(new Date());
             const todayStr = format(today, 'yyyy-MM-dd');
-
-            const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthId);
+            const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
             
-            const usersQuery = query(
-                collection(firestore, 'users'), 
-                where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
-                where('status', 'in', ['Aktif', 'Cuti'])
-            );
+            const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']), where('status', 'in', ['Aktif', 'Cuti']));
             const [usersSnap, monthlySnap] = await Promise.all([getDocs(usersQuery), getDoc(monthlyConfigRef)]);
 
             const mConfig = monthlySnap.exists() ? monthlySnap.data() : {};
@@ -98,97 +89,69 @@ export default function SchoolReportPage() {
             }
             
             const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+            const qAtt = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
+            const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
+            const [attSnap, leaveSnap] = await Promise.all([getDocs(qAtt), getDocs(qLeave)]);
 
-            const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
-            const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
-
-            const [attSnap, leaveSnap] = await Promise.all([
-                getDocs(attendanceQuery), 
-                getDocs(leaveQuery)
-            ]);
-
-            const attendanceByUserId: Record<string, any[]> = {};
+            const attByUser: Record<string, any[]> = {};
             attSnap.docs.forEach(d => {
-                const data = d.data();
-                const uid = data.userId || d.ref.parent.parent?.id;
-                if (uid) (attendanceByUserId[uid] = attendanceByUserId[uid] || []).push(data);
+                const uid = d.data().userId || d.ref.parent.parent?.id;
+                if (uid) (attByUser[uid] = attByUser[uid] || []).push(d.data());
             });
 
-            const leaveByUserId: Record<string, any[]> = {};
+            const leaveByUser: Record<string, any[]> = {};
             leaveSnap.docs.forEach(d => {
-                const data = d.data();
-                const uid = data.userId || d.ref.parent.parent?.id;
-                if (uid) (leaveByUserId[uid] = leaveByUserId[uid] || []).push(data);
+                const uid = d.data().userId || d.ref.parent.parent?.id;
+                if (uid) (leaveByUser[uid] = leaveByUser[uid] || []).push(d.data());
             });
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
             const holidays: string[] = (mConfig as any)?.holidays ?? [];
-            const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
-            const workingDaysSet = new Set(allWorkingDays.map(day => format(day, 'yyyy-MM-dd')));
+            const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
+            const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
 
             const results = allUsers.map(u => {
                 let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
-                const processedDates = new Set<string>();
+                const processed = new Set<string>();
 
-                (attendanceByUserId[u.id] || []).forEach(att => {
-                    const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-                    if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
-                        const isToday = attDateStr === todayStr;
+                (attByUser[u.id] || []).forEach(att => {
+                    const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+                    if (dStr && workingDaysSet.has(dStr) && !processed.has(dStr)) {
                         const desc = (att.reasonForUpdate || '').toLowerCase();
-                        let p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, isToday);
-                        
-                        points += p; 
-                        if (desc.includes('luar sekolah')) izinCount++;
-                        else hadirCount++;
-                        
-                        processedDates.add(attDateStr);
+                        points += calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, dStr === todayStr);
+                        if (desc.includes('luar sekolah')) izinCount++; else hadirCount++;
+                        processed.add(dStr);
                     }
                 });
 
-                (leaveByUserId[u.id] || []).forEach(leave => {
-                    eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
+                (leaveByUser[u.id] || []).forEach(leave => {
+                    const lS = leave.startDate.toDate(); const lE = leave.endDate.toDate();
+                    eachDayOfInterval({ start: lS, end: lE }).forEach(day => {
                         const dStr = format(day, 'yyyy-MM-dd');
-                        if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
+                        if (workingDaysSet.has(dStr) && !processed.has(dStr)) {
                             const type = (leave.type || '').toLowerCase();
-                            const reason = (leave.reason || '').toLowerCase();
-                            let p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
-                            points += p; 
-                            
-                            if (type.includes('sakit')) sakitCount++;
-                            else if (type.includes('cuti')) izinCount++; // Cuti masuk ke kolom izin
-                            else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
-                            else if (type.includes('dinas')) hadirCount++;
-                            else izinCount++;
-                            
-                            processedDates.add(dStr);
+                            points += calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
+                            if (type.includes('sakit')) sakitCount++; else izinCount++;
+                            processed.add(dStr);
                         }
                     });
                 });
 
-                const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
-                const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                
-                const denominator = Math.max(1, allWorkingDays.length);
-                const persentase = u.status === 'Cuti' ? '-' : Math.min((points / denominator) * 100, 100).toFixed(1) + '%';
+                const totalAlpa = workingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processed.has(format(day, 'yyyy-MM-dd'))).length;
+                const persentase = u.status === 'Cuti' ? '-' : (Math.min((points / Math.max(1, workingDays.length)) * 100, 100).toFixed(1) + '%');
 
                 return {
-                    uid: u.id, name: u.name, nip: u.nip || '-',
-                    position: u.position || '-', role: u.role || '',
-                    sequenceNumber: u.sequenceNumber || null,
-                    totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa, 
+                    uid: u.id, name: u.name, nip: u.nip || '-', position: u.position || '-', role: u.role || '',
+                    sequenceNumber: u.sequenceNumber || null, totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa, 
                     persentase, status: u.status
                 };
             });
 
-            results.sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
             if (isMounted.current) {
-                setReportData(results.map((r, i) => ({ ...r, no: i + 1 })));
+                setReportData(results.sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999)).map((r, i) => ({ ...r, no: i + 1 })));
                 setIsReportLoading(false);
             }
-        } catch (err) { 
-            console.error("Error loading report data:", err);
-            if (isMounted.current) { setIsReportLoading(false); setError("Gagal memuat data."); }
-        }
+        } catch (err) { if (isMounted.current) setIsReportLoading(false); }
     }, [firestore, user?.uid, currentMonth, schoolConfigData]);
 
     useEffect(() => {
@@ -201,9 +164,7 @@ export default function SchoolReportPage() {
 
     const handleMonthChange = (amount: number) => {
         const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
-        if (next >= minDate && next <= new Date()) {
-            setCurrentMonth(next);
-        }
+        if (next >= minDate && next <= new Date()) setCurrentMonth(next);
     };
 
     const canGoPrev = currentMonth > minDate;
@@ -216,28 +177,21 @@ export default function SchoolReportPage() {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
-            const centerX = pageWidth / 2;
             const margin = 14;
             const config = schoolConfigData || ({} as any);
             const mConfig = monthlyConfig || {};
 
-            doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
-            doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
-            doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
-            doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
+            doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), pageWidth/2, 15, { align: 'center' });
+            doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), pageWidth/2, 21, { align: 'center' });
+            doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), pageWidth/2, 28, { align: 'center' });
+            doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, pageWidth/2, 34, { align: 'center' });
             doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
-            doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-            doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
-            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
-            doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
+            doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', pageWidth/2, 48, { align: 'center' });
+            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, pageWidth/2, 54, { align: 'center' });
+            doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, pageWidth/2, 60, { align: 'center' });
 
-            const tableRows = filteredReports.map((item, index) => [
-              item.sequenceNumber || index + 1, item.name, item.nip, 
-              (item.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW'), 
-              Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, 
-              item.status === 'Cuti' ? '-' : item.persentase
-            ]);
+            const tableRows = filteredReports.map((item, i) => [item.sequenceNumber || i + 1, item.name, item.nip, item.position.replace('PPPK Paruh Waktu (PW)', 'PPPK PW'), Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, item.status === 'Cuti' ? '-' : item.persentase]);
 
             autoTable(doc, {
                 startY: 68,
@@ -245,70 +199,18 @@ export default function SchoolReportPage() {
                 body: tableRows,
                 theme: 'striped',
                 margin: { bottom: 65 },
-                styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
-                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
-                alternateRowStyles: { fillColor: [235, 245, 255] },
+                styles: { font: 'times', fontSize: 10, cellPadding: 1 },
+                headStyles: { fillColor: [52, 152, 219], halign: 'center' },
                 columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 8: { halign: 'right', cellWidth: 15 } }
             });
 
-            const footerLineY = pageHeight - 15;
-            const bottomSafeLimit = footerLineY - 2; 
-            const signatureHeight = 45;
-            const notesLineHeight = 4;
-            const labelAreaHeight = 16; 
-            
-            let totalNotesHeight = 0;
-            const processedNotes = [];
-            if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
-                mConfig.holidayNotes.forEach((n: any, idx: number) => {
-                    const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
-                    const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
-                    totalNotesHeight += (split.length * notesLineHeight);
-                    processedNotes.push({ split, isRed: n.isRed });
-                });
-            }
-
-            const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
             const currentTableEndY = (doc as any).lastAutoTable.finalY;
-
-            let closureStartY;
-            if (currentTableEndY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
-                doc.addPage();
-                closureStartY = 20;
-            } else {
-                closureStartY = currentTableEndY + 10;
-            }
-
             const signatureX = pageWidth - 85;
-            const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, closureStartY);
-            doc.text('Mengetahui,', signatureX, closureStartY + 6);
-            doc.text('Kepala Sekolah', signatureX, closureStartY + 12);
-            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, closureStartY + 38);
-            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, closureStartY + 44);
+            doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, currentTableEndY + 15);
+            doc.text('Mengetahui, Kepala Sekolah', signatureX, currentTableEndY + 21);
+            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, currentTableEndY + 45);
+            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, currentTableEndY + 51);
 
-            if (mConfig.isHolidayNotesActive) {
-                const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-                const labelsStartY = listItemsStartY - labelAreaHeight + 2;
-                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
-                let noteCursorY = listItemsStartY;
-                processedNotes.forEach((note) => {
-                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    doc.text(note.split, margin, noteCursorY);
-                    noteCursorY += note.split.length * notesLineHeight;
-                });
-            }
-
-            const totalPages = (doc as any).internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                doc.setPage(i);
-                const ph = doc.internal.pageSize.getHeight();
-                doc.setTextColor(0, 0, 0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
-                doc.setFontSize(8).setFont('times', 'italic').text(config.reportFooterNote || 'Dokumen otomatis.', margin, ph - 10);
-                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
-            }
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
         } finally { setIsExporting(false); }
     };
@@ -322,39 +224,35 @@ export default function SchoolReportPage() {
                             <div className="bg-white/20 p-3 rounded-2xl shadow-sm"><FileText className="h-6 w-6" /></div>
                             <div className="space-y-0.5"><h2 className="font-bold text-2xl tracking-tight">Laporan sekolah</h2><p className="text-[11px] font-medium text-white/80">Rekapitulasi kehadiran seluruh personil.</p></div>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => { invalidateCache(); loadData(); }} disabled={isReportLoading}><RefreshCw className={cn("h-4 w-4", isReportLoading && "animate-spin")} /></Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10" onClick={() => { invalidateCache(); loadData(); }} disabled={isReportLoading}><RefreshCw className={cn("h-4 w-4", isReportLoading && "animate-spin")} /></Button>
                     </div>
-                    <CardContent className="p-0 min-h-[500px]">
-                        <div className="p-4 space-y-6">
-                            <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
-                                <div className="flex items-center">
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(-1)} disabled={isReportLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                                    <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max"><CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div></div>
-                                </div>
-                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(1)} disabled={isReportLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
-                                <div className="space-y-1.5"><Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label><Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select></div>
-                                <div className="space-y-1.5 md:col-span-2"><Label className="text-[10px] font-bold text-muted-foreground ml-1">Cari nama</Label><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Nama personil..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div></div>
-                            </div>
-                            <Button className="w-full font-bold bg-primary h-12 rounded-xl text-xs active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>{isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF</Button>
+                    <CardContent className="p-4 space-y-6">
+                        <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border p-1">
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(-1)} disabled={isReportLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                            <span className="font-bold text-sm text-primary capitalize text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(1)} disabled={isReportLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
                         </div>
-                        <div className="border-t border-muted-foreground/10 overflow-x-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
+                            <Input placeholder="Cari nama..." className="md:col-span-2 h-11 rounded-xl bg-background" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        </div>
+                        <Button className="w-full font-bold h-12 rounded-xl" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>{isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF</Button>
+                        <div className="overflow-x-auto border rounded-xl">
                             <Table>
-                                <TableHeader className="bg-muted/30"><TableRow className="border-none h-11"><TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none">No</TableHead><TableHead className="min-w-[200px] font-bold text-xs text-muted-foreground border-none">Nama & Nip</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">Hadir</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">Izin</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">Sakit</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">Alpa</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">%</TableHead><TableHead className="w-[80px] text-center font-bold text-xs text-muted-foreground border-none">Aksi</TableHead></TableRow></TableHeader>
+                                <TableHeader className="bg-muted/30"><TableRow><TableHead className="w-[60px] text-center text-xs">No</TableHead><TableHead className="text-xs">Nama & Nip</TableHead><TableHead className="text-center text-xs">Hadir</TableHead><TableHead className="text-center text-xs">Izin</TableHead><TableHead className="text-center text-xs">Sakit</TableHead><TableHead className="text-center text-xs">Alpa</TableHead><TableHead className="text-center text-xs">%</TableHead><TableHead className="w-[80px] text-center text-xs">Aksi</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {isReportLoading ? [...Array(6)].map((_, i) => (<TableRow key={i} className="border-muted-foreground/5"><TableCell colSpan={8}><Skeleton className="h-10 w-full rounded-lg" /></TableCell></TableRow>)) : filteredReports.length > 0 ? filteredReports.map((item) => (
-                                            <TableRow key={item.uid} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
-                                                <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.no}</TableCell>
-                                                <TableCell><div className="flex flex-col"><span className="font-bold text-sm text-foreground">{item.name}</span><span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span></div></TableCell>
+                                    {isReportLoading ? [...Array(6)].map((_, i) => (<TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell></TableRow>)) : filteredReports.length > 0 ? filteredReports.map((item) => (
+                                            <TableRow key={item.uid} className="hover:bg-primary/5">
+                                                <TableCell className="text-center font-bold text-sm">{item.no}</TableCell>
+                                                <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{item.name}</span><span className="text-[10px]">{item.nip}</span></div></TableCell>
                                                 <TableCell className="text-center font-black text-green-600">{Math.ceil(item.totalHadir)}</TableCell>
                                                 <TableCell className="text-center font-black text-blue-500">{item.totalIzin}</TableCell>
                                                 <TableCell className="text-center font-black text-orange-500">{item.totalSakit}</TableCell>
                                                 <TableCell className="text-center font-black text-red-500">{item.totalAlpa}</TableCell>
-                                                <TableCell className="text-center font-black text-primary">{item.status === 'Cuti' ? '-' : item.persentase}</TableCell>
-                                                <TableCell className="text-center"><Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10"><Eye className="h-4 w-4 text-primary" /></Button></Link></TableCell>
+                                                <TableCell className="text-center font-black text-primary">{item.persentase}</TableCell>
+                                                <TableCell className="text-center"><Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><Eye className="h-4 w-4 text-primary" /></Button></Link></TableCell>
                                             </TableRow>
-                                        )) : <TableRow><TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest uppercase">Data tidak ditemukan</TableCell></TableRow>}
+                                        )) : <TableRow><TableCell colSpan={8} className="h-32 text-center text-muted-foreground font-bold">Data tidak ditemukan</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>
