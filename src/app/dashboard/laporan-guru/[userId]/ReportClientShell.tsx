@@ -21,7 +21,7 @@ import {
     DropdownMenuLabel 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, PencilLine } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, RotateCcw, PencilLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -33,9 +33,11 @@ interface ReportDetail {
   status: string;
   description: string;
   points?: number;
+  pastWorkingDaysCount?: number;
+  totalWorkingDaysCount?: number;
 }
 
-interface UserData { name?: string; role?: string; nip?: string; position?: string; }
+interface UserData { name?: string; role?: string; nip?: string; position?: string; status?: string; }
 interface ClientShellProps {
   userId: string;
   initialUserData: UserData;
@@ -48,7 +50,7 @@ interface ClientShellProps {
 const PointLegend = () => (
     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas / Cuti</p>
             <p className="text-sm font-black text-green-600">1.0 Poin</p>
         </div>
         <div className="space-y-1">
@@ -88,15 +90,20 @@ export default function ReportClientShell({
     const [currentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
 
     const stats = useMemo(() => {
-        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%" };
+        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%", pastCount: 0, totalCount: 1 };
         const total = reportDetails.reduce((acc, curr) => acc + (curr.points || 0), 0);
+        
+        // Count unique working days in reportDetails
         const count = reportDetails.length;
         const perc = (total / (count || 1)) * 100;
+        
         return {
             totalPoints: total.toFixed(2),
-            persentase: Math.min(perc, 100).toFixed(1) + "%"
+            persentase: Math.min(perc, 100).toFixed(1) + "%",
+            pastCount: count,
+            totalCount: initialMonthlyConfig?.manualWorkDays || initialSchoolConfig?.manualWorkDays || count
         };
-    }, [reportDetails]);
+    }, [reportDetails, initialMonthlyConfig, initialSchoolConfig]);
 
     const handleMonthChange = (amount: number) => {
         const newMonthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
@@ -144,7 +151,10 @@ export default function ReportClientShell({
             const snapL = await getDocs(qL);
             snapL.forEach(d => batch.delete(d.ref));
 
-            if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
+            if (type === 'reset-alpa') {
+                // Deletion already queued in the snapA/snapL loops above.
+                // Just proceed to commit.
+            } else if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
                 const currentItem = reportDetails.find(d => d.date.startsWith(todayStr));
                 
                 let data: any = {
@@ -192,9 +202,9 @@ export default function ReportClientShell({
                 batch.set(newLeaveDoc, {
                     id: newLeaveDoc.id,
                     userId, userName: userData.name,
-                    type: type === 'sakit' ? 'Sakit' : 'Izin Pribadi',
+                    type: type === 'sakit' ? 'Sakit' : (type === 'cuti' ? 'Cuti Resmi' : 'Izin Pribadi'),
                     status: 'approved',
-                    reason: type === 'sakit' ? 'Sakit' : 'Izin pribadi',
+                    reason: type === 'sakit' ? 'Sakit' : (type === 'cuti' ? 'Cuti resmi' : 'Izin pribadi'),
                     startDate: Timestamp.fromDate(startOfDay(targetDate)),
                     endDate: Timestamp.fromDate(endOfDay(targetDate)),
                     createdAt: serverTimestamp(), approvedBy: authUser.uid, approvedAt: serverTimestamp()
@@ -326,6 +336,7 @@ export default function ReportClientShell({
         if (s === 'alpa') return "bg-red-500 text-white";
         if (s === 'sakit') return "bg-orange-500 text-white";
         if (s.includes('izin') || s.includes('dinas') || d.includes('luar sekolah') || d.includes('cepat')) return "bg-amber-500 text-white";
+        if (s === 'cuti') return "bg-blue-500 text-white";
         return "bg-emerald-500 text-white";
     };
 
@@ -408,7 +419,7 @@ export default function ReportClientShell({
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className="text-center font-mono text-xs font-bold">
+                                                    <TableCell className="text-center font-mono text-xs font-bold text-foreground">
                                                         {(isManualLate || isLuarSekolah || item.description === 'Dinas pagi') && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
                                                     </TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">
@@ -462,11 +473,20 @@ export default function ReportClientShell({
                                 <div className="grid grid-cols-2">
                                     <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
-                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats.totalPoints}</span></div>
+                                        <div className="flex flex-col items-center">
+                                            <div className="flex items-center gap-2">
+                                                <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{(userData?.status === 'Cuti') ? "-" : stats.totalPoints}</span>
+                                            </div>
+                                            {userData?.status !== 'Cuti' && (
+                                                <p className="text-[10px] font-bold text-muted-foreground mt-1">
+                                                    ({stats.pastCount} dari {stats.totalCount} hari)
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
-                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats.persentase}</span></div>
+                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{(userData?.status === 'Cuti') ? "-" : stats.persentase}</span></div>
                                     </div>
                                 </div>
                             </div>

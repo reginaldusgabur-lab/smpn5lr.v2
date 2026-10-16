@@ -526,7 +526,16 @@ export default function UserReportDetailPage() {
                                 <div className="grid grid-cols-2">
                                     <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
-                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{(userData?.status === 'Cuti') ? "-" : (stats?.totalPoints || "0.00")}</span></div>
+                                        <div className="flex flex-col items-center">
+                                            <div className="flex items-center gap-2">
+                                                <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{(userData?.status === 'Cuti') ? "-" : (stats?.totalPoints || "0.00")}</span>
+                                            </div>
+                                            {userData?.status !== 'Cuti' && stats && (
+                                                <p className="text-[10px] font-bold text-muted-foreground mt-1">
+                                                    ({stats.pastWorkingDaysCount} dari {stats.totalWorkingDaysCount} hari)
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>

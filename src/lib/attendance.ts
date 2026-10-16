@@ -133,6 +133,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                     const type = (l.type || '').toLowerCase();
                     if (type.includes('sakit')) sakitCount++;
                     else if (type.includes('cuti')) cutiCount++;
+                    else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                     else if (type.includes('dinas')) hadirCount++;
                     else izinCount++;
                 } else {
@@ -156,11 +157,11 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v950_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v951_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
-        const [configSnap, monthlySnap, attendanceSnap, leaveSnap, userSnap] = await Promise.all([
+        const [configSnap, monthlyConfigSnap, attendanceSnap, leaveSnap, userSnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
             getDoc(doc(firestore, 'monthlyConfigs', format(start, 'yyyy-MM'))),
             getDocs(collection(firestore, 'users', userId, 'attendanceRecords')),
@@ -169,7 +170,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         ]);
         
         const config = configSnap.data() || {};
-        const mConfig = monthlySnap.data() || {};
+        const mConfig = monthlyConfigSnap.data() || {};
         const userData = userSnap.data();
         
         const holidays = Array.isArray(mConfig.holidays) ? mConfig.holidays : [];
@@ -225,11 +226,13 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const result = {
             totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa: alpaCount,
             totalPoints: userData?.status === 'Cuti' ? "-" : totalPoints.toFixed(2),
-            persentase: userData?.status === 'Cuti' ? "-" : (Math.min((totalPoints / denominator) * 100, 100).toFixed(1) + '%')
+            persentase: userData?.status === 'Cuti' ? "-" : (Math.min((totalPoints / denominator) * 100, 100).toFixed(1) + '%'),
+            pastWorkingDaysCount: pastWorkingDays.length,
+            totalWorkingDaysCount: allWorkingDays.length
         };
         setInCache(cacheKey, result); return result;
     } catch (e) {
-        return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%' };
+        return { totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0, persentase: '0.0%', pastWorkingDaysCount: 0, totalWorkingDaysCount: 1 };
     }
 }
 
@@ -282,8 +285,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 }
                 const lowerDesc = desc.toLowerCase();
                 if (!lowerDesc.includes('dinas') && !lowerDesc.includes('luar sekolah') && !lowerDesc.includes('cuti')) {
-                    if (checkInDate && !checkOutDate && !lowerDesc.includes('cepat')) desc = 'Belum absen pulang';
-                    else if (!checkInDate && checkOutDate && !lowerDesc.includes('terlambat')) desc = 'Belum absen masuk';
+                    if (checkInDate && !checkOutTime && !lowerDesc.includes('cepat')) desc = 'Belum absen pulang';
+                    else if (!checkInDate && checkOutTime && !lowerDesc.includes('terlambat')) desc = 'Belum absen masuk';
                 }
                 return { 
                     id: att.id, date: dayStr, checkInTime: checkInDate?.toISOString() || null, checkOutTime: checkOutDate?.toISOString() || null, 
