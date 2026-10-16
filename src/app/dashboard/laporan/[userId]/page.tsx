@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, writeBatch, collection, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
-import { format, isValid, parseISO, startOfDay, endOfDay, isSameMonth, startOfMonth, endOfMonth, setHours, setMinutes, subMonths, addMonths, isBefore, isSameDay } from 'date-fns';
+import { format, isValid, parseISO, startOfDay, endOfDay, isSameMonth, startOfMonth, endOfMonth, setHours, setMinutes, subMonths, addMonths, isBefore, isSameDay, isWithinInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -276,7 +277,7 @@ export default function UserReportDetailPage() {
         const footerLineY = pHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
-        const notesLineHeight = 5;
+        const notesLineHeight = 4;
         const labelAreaHeight = 16; 
         
         let totalNotesHeight = 0;
@@ -290,7 +291,15 @@ export default function UserReportDetailPage() {
             });
         }
 
-        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        let presentationNoteHeight = 0;
+        let splitPresentationNote: string[] = [];
+        if (config.isPresentationNoteActive && config.presentationNoteContent) {
+            splitPresentationNote = doc.splitTextToSize(config.presentationNoteContent, pageWidth - (margin * 2));
+            presentationNoteHeight = (splitPresentationNote.length * 4) + 8;
+        }
+
+        const holidayBlockHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        const notesBlockTotalHeight = holidayBlockHeight + presentationNoteHeight;
         const finalTableY = (doc as any).lastAutoTable.finalY;
 
         let closureStartY;
@@ -311,20 +320,31 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
         // Render Notes (ANCHORED TO BOTTOM LINE)
-        if (mConfig.isHolidayNotesActive) {
-            const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-            const labelsStartY = listItemsStartY - labelAreaHeight + 2;
+        if (notesBlockTotalHeight > 0) {
+            let cursorY = bottomSafeLimit - notesBlockTotalHeight;
 
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7.5);
+            // Render Presentation Note first (Above holiday notes)
+            if (config.isPresentationNoteActive && config.presentationNoteContent) {
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text('Keterangan Perhitungan Persentase:', margin, cursorY + 2);
+                doc.setFontSize(8).setFont('times', 'italic');
+                doc.text(splitPresentationNote, margin, cursorY + 7);
+                cursorY += presentationNoteHeight;
+            }
 
-            let noteCursorY = listItemsStartY;
-            processedNotes.forEach((note) => {
-                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                doc.text(note.split, margin, noteCursorY);
-                noteCursorY += note.split.length * notesLineHeight;
-            });
+            // Render Holiday Notes
+            if (mConfig.isHolidayNotesActive) {
+                const labelsStartY = cursorY + 2;
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7.5);
+
+                let noteCursorY = labelsStartY + 11.5;
+                processedNotes.forEach((note) => {
+                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    doc.text(note.split, margin, noteCursorY);
+                    noteCursorY += note.split.length * notesLineHeight;
+                });
+            }
         }
 
         const footerNoteText = config.reportFooterNote || "Laporan ini sah dan dihasilkan secara otomatis.";

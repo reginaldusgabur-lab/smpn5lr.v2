@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { format, parseISO, isValid, startOfDay, setHours, setMinutes, isSameDay, isSameMonth, subMonths, addMonths } from 'date-fns';
+import { format, parseISO, isValid, startOfDay, setHours, setMinutes, isSameDay, isSameMonth, subMonths, addMonths, isWithinInterval } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -21,7 +22,7 @@ import {
     DropdownMenuLabel 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, RotateCcw, PencilLine } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, RotateCcw, PencilLine, PlaneTakeoff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -33,8 +34,6 @@ interface ReportDetail {
   status: string;
   description: string;
   points?: number;
-  pastWorkingDaysCount?: number;
-  totalWorkingDaysCount?: number;
 }
 
 interface UserData { name?: string; role?: string; nip?: string; position?: string; status?: string; }
@@ -92,16 +91,14 @@ export default function ReportClientShell({
     const stats = useMemo(() => {
         if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%", pastCount: 0, totalCount: 1 };
         const total = reportDetails.reduce((acc, curr) => acc + (curr.points || 0), 0);
-        
-        // Count unique working days in reportDetails
         const count = reportDetails.length;
-        const perc = (total / (count || 1)) * 100;
-        
+        const totalCount = initialMonthlyConfig?.manualWorkDays || initialSchoolConfig?.manualWorkDays || count;
+        const perc = (total / Math.max(1, totalCount)) * 100;
         return {
             totalPoints: total.toFixed(2),
             persentase: Math.min(perc, 100).toFixed(1) + "%",
             pastCount: count,
-            totalCount: initialMonthlyConfig?.manualWorkDays || initialSchoolConfig?.manualWorkDays || count
+            totalCount: totalCount
         };
     }, [reportDetails, initialMonthlyConfig, initialSchoolConfig]);
 
@@ -266,11 +263,11 @@ export default function ReportClientShell({
             columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
         });
 
-        // --- SMART ANCHOR LOGIC ---
+        // Closure / Anchor Logic
         const footerLineY = pageHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
-        const notesLineHeight = 5;
+        const notesLineHeight = 4;
         const labelAreaHeight = 16; 
         
         let totalNotesHeight = 0;
@@ -284,7 +281,15 @@ export default function ReportClientShell({
             });
         }
 
-        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        let presentationNoteHeight = 0;
+        let splitPresentationNote: string[] = [];
+        if (config.isPresentationNoteActive && config.presentationNoteContent) {
+            splitPresentationNote = doc.splitTextToSize(config.presentationNoteContent, pageWidth - (margin * 2));
+            presentationNoteHeight = (splitPresentationNote.length * 4) + 8;
+        }
+
+        const holidayBlockHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        const notesBlockTotalHeight = holidayBlockHeight + presentationNoteHeight;
         const finalTableY = (doc as any).lastAutoTable.finalY;
 
         let closureStartY;
@@ -303,20 +308,29 @@ export default function ReportClientShell({
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
-        if (mConfig.isHolidayNotesActive) {
-            const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-            const labelsStartY = listItemsStartY - labelAreaHeight + 2;
+        if (notesBlockTotalHeight > 0) {
+            let cursorY = bottomSafeLimit - notesBlockTotalHeight;
 
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+            if (config.isPresentationNoteActive && config.presentationNoteContent) {
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text('Keterangan Perhitungan Persentase:', margin, cursorY + 2);
+                doc.setFontSize(8).setFont('times', 'italic');
+                doc.text(splitPresentationNote, margin, cursorY + 7);
+                cursorY += presentationNoteHeight;
+            }
 
-            let noteCursorY = listItemsStartY;
-            processedNotes.forEach((note) => {
-                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                doc.text(note.split, margin, noteCursorY);
-                noteCursorY += note.split.length * notesLineHeight;
-            });
+            if (mConfig.isHolidayNotesActive) {
+                const labelsStartY = cursorY + 2;
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+
+                let noteCursorY = labelsStartY + 11.5;
+                processedNotes.forEach((note) => {
+                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    doc.text(note.split, margin, noteCursorY);
+                    noteCursorY += note.split.length * notesLineHeight;
+                });
+            }
         }
 
         const totalPagesCount = (doc as any).internal.getNumberOfPages();
@@ -340,7 +354,7 @@ export default function ReportClientShell({
         return "bg-emerald-500 text-white";
     };
 
-    const canGoPrev = currentMonth > new Date(2026, 0, 1);
+    const canGoPrev = currentMonth > new Date(2025, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
     return (
@@ -448,10 +462,16 @@ export default function ReportClientShell({
                                                                         <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-primary" onClick={() => handleStatusChange(item.date, 'cuti')}>Jadikan Cuti Resmi</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'luar-sekolah')}>Kegiatan luar sekolah</DropdownMenuItem>
+                                                                        
+                                                                        <DropdownMenuSeparator className='my-1.5 opacity-50' />
+                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-destructive bg-destructive/5" onClick={() => handleStatusChange(item.date, 'reset-alpa')}>
+                                                                            <RotateCcw className="mr-2 h-3.5 w-3.5" />Kembalikan ke Alpa (Batal)
+                                                                        </DropdownMenuItem>
                                                                     </DropdownMenuContent>
                                                                 </DropdownMenu>
                                                             )}
@@ -473,20 +493,11 @@ export default function ReportClientShell({
                                 <div className="grid grid-cols-2">
                                     <div className="p-5 flex flex-col items-center justify-center text-center border-r border-primary/5">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Total Akumulasi Poin</p>
-                                        <div className="flex flex-col items-center">
-                                            <div className="flex items-center gap-2">
-                                                <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{(userData?.status === 'Cuti') ? "-" : stats.totalPoints}</span>
-                                            </div>
-                                            {userData?.status !== 'Cuti' && (
-                                                <p className="text-[10px] font-bold text-muted-foreground mt-1">
-                                                    ({stats.pastCount} dari {stats.totalCount} hari)
-                                                </p>
-                                            )}
-                                        </div>
+                                        <div className="flex items-center gap-2"><Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{stats.totalPoints}</span></div>
                                     </div>
                                     <div className="p-5 flex flex-col items-center justify-center text-center">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
-                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{(userData?.status === 'Cuti') ? "-" : stats.persentase}</span></div>
+                                        <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" /><span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">{stats.persentase}</span></div>
                                     </div>
                                 </div>
                             </div>

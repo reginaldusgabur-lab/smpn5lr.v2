@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -204,13 +205,83 @@ export default function SchoolReportPage() {
                 columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 8: { halign: 'right', cellWidth: 15 } }
             });
 
-            const currentTableEndY = (doc as any).lastAutoTable.finalY;
-            const signatureX = pageWidth - 85;
-            doc.text(`${config.reportCity || 'Mando'}, ${format(new Date(), 'd MMMM yyyy', { locale: id })}`, signatureX, currentTableEndY + 15);
-            doc.text('Mengetahui, Kepala Sekolah', signatureX, currentTableEndY + 21);
-            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, currentTableEndY + 45);
-            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, currentTableEndY + 51);
+            // Closure / Anchor Logic
+            const footerLineY = pageHeight - 15;
+            const bottomSafeLimit = footerLineY - 2;
+            const signatureHeight = 45;
+            const notesLineHeight = 4;
+            const labelAreaHeight = 16;
 
+            let totalNotesHeight = 0;
+            const processedNotes = [];
+            if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
+                mConfig.holidayNotes.forEach((n: any, idx: number) => {
+                    const text = `${idx + 1}. Tanggal ${n.date || '-'}: ${n.content || '-'}`;
+                    const split = doc.splitTextToSize(text, pageWidth - (margin * 2));
+                    totalNotesHeight += (split.length * notesLineHeight);
+                    processedNotes.push({ split, isRed: n.isRed });
+                });
+            }
+
+            let presentationNoteHeight = 0;
+            let splitPresentationNote: string[] = [];
+            if (config.isPresentationNoteActive && config.presentationNoteContent) {
+                splitPresentationNote = doc.splitTextToSize(config.presentationNoteContent, pageWidth - (margin * 2));
+                presentationNoteHeight = (splitPresentationNote.length * 4) + 8;
+            }
+
+            const holidayBlockHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+            const notesBlockTotalHeight = holidayBlockHeight + presentationNoteHeight;
+            const currentTableEndY = (doc as any).lastAutoTable.finalY;
+
+            let closureStartY;
+            if (currentTableEndY + signatureHeight + notesBlockTotalHeight + 10 > bottomSafeLimit) {
+                doc.addPage();
+                closureStartY = 20;
+            } else {
+                closureStartY = currentTableEndY + 10;
+            }
+
+            const signatureX = pageWidth - 85;
+            const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
+            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, signatureX, closureStartY);
+            doc.text('Mengetahui,', signatureX, closureStartY + 6);
+            doc.text('Kepala Sekolah', signatureX, closureStartY + 12);
+            doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, closureStartY + 38);
+            doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, closureStartY + 44);
+
+            if (notesBlockTotalHeight > 0) {
+                let cursorY = bottomSafeLimit - notesBlockTotalHeight;
+
+                if (config.isPresentationNoteActive && config.presentationNoteContent) {
+                    doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text('Keterangan Perhitungan Persentase:', margin, cursorY + 2);
+                    doc.setFontSize(8).setFont('times', 'italic');
+                    doc.text(splitPresentationNote, margin, cursorY + 7);
+                    cursorY += presentationNoteHeight;
+                }
+
+                if (mConfig.isHolidayNotesActive) {
+                    const labelsStartY = cursorY + 2;
+                    doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+                    doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+                    let noteCursorY = labelsStartY + 11.5;
+                    processedNotes.forEach((note) => {
+                        if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                        else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                        doc.text(note.split, margin, noteCursorY);
+                        noteCursorY += note.split.length * notesLineHeight;
+                    });
+                }
+            }
+
+            const totalPages = (doc as any).internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                const ph = doc.internal.pageSize.getHeight();
+                doc.setTextColor(0, 0, 0).setLineWidth(0.2).line(margin, ph - 15, pageWidth - margin, ph - 15);
+                doc.setFontSize(8).setFont('times', 'italic').text(config.reportFooterNote || 'Dokumen otomatis.', margin, ph - 10);
+                doc.setFontSize(9).setFont('times', 'normal').text(`Halaman ${i} dari ${totalPages}`, pageWidth - margin, ph - 10, { align: 'right' });
+            }
             doc.save(`Laporan_Sekolah_${format(currentMonth, 'MMMM_yyyy', { locale: id })}.pdf`);
         } finally { setIsExporting(false); }
     };
@@ -226,33 +297,37 @@ export default function SchoolReportPage() {
                         </div>
                         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 shadow-none" onClick={() => { invalidateCache(); loadData(); }} disabled={isReportLoading}><RefreshCw className={cn("h-4 w-4", isReportLoading && "animate-spin")} /></Button>
                     </div>
-                    <CardContent className="p-4 space-y-6">
-                        <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border p-1">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(-1)} disabled={isReportLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                            <span className="font-bold text-sm text-primary capitalize text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(1)} disabled={isReportLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button>
+                    <CardContent className="p-0 min-h-[500px]">
+                        <div className="p-4 space-y-6">
+                            <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
+                                <div className="flex items-center">
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(-1)} disabled={isReportLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                    <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max"><CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div></div>
+                                </div>
+                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(1)} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
+                                <div className="space-y-1.5"><Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label><Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select></div>
+                                <div className="space-y-1.5 md:col-span-2"><Label className="text-[10px] font-bold text-muted-foreground ml-1">Cari nama</Label><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" /><Input placeholder="Nama personil..." className="pl-11 h-11 rounded-xl bg-background border-muted-foreground/10 font-bold text-xs" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div></div>
+                            </div>
+                            <Button className="w-full font-bold bg-primary h-12 rounded-xl text-xs active:scale-[0.98] transition-all" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>{isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF</Button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select>
-                            <Input placeholder="Cari nama..." className="md:col-span-2 h-11 rounded-xl bg-background" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                        </div>
-                        <Button className="w-full font-bold h-12 rounded-xl" disabled={isReportLoading || !filteredReports.length || isExporting} onClick={handleDownloadPdf}>{isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}UNDUH PDF</Button>
-                        <div className="overflow-x-auto border rounded-xl">
+                        <div className="border-t border-muted-foreground/10 overflow-x-auto">
                             <Table>
-                                <TableHeader className="bg-muted/30"><TableRow><TableHead className="w-[60px] text-center text-xs">No</TableHead><TableHead className="text-xs">Nama & Nip</TableHead><TableHead className="text-center text-xs">Hadir</TableHead><TableHead className="text-center text-xs">Izin</TableHead><TableHead className="text-center text-xs">Sakit</TableHead><TableHead className="text-center text-xs">Alpa</TableHead><TableHead className="text-center text-xs">%</TableHead><TableHead className="w-[80px] text-center text-xs">Aksi</TableHead></TableRow></TableHeader>
+                                <TableHeader className="bg-muted/30"><TableRow className="border-none h-11"><TableHead className="w-[60px] text-center font-bold text-xs text-muted-foreground border-none">No</TableHead><TableHead className="min-w-[200px] font-bold text-xs text-muted-foreground border-none">Nama & Nip</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">Hadir</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">Izin</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">Sakit</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">Alpa</TableHead><TableHead className="text-center font-bold text-xs text-muted-foreground border-none">%</TableHead><TableHead className="w-[80px] text-center font-bold text-xs text-muted-foreground border-none">Aksi</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {isReportLoading ? [...Array(6)].map((_, i) => (<TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell></TableRow>)) : filteredReports.length > 0 ? filteredReports.map((item) => (
-                                            <TableRow key={item.uid} className="hover:bg-primary/5">
-                                                <TableCell className="text-center font-bold text-sm">{item.no}</TableCell>
-                                                <TableCell><div className="flex flex-col"><span className="font-bold text-sm">{item.name}</span><span className="text-[10px]">{item.nip}</span></div></TableCell>
+                                    {isReportLoading ? [...Array(6)].map((_, i) => (<TableRow key={i} className="border-muted-foreground/5"><TableCell colSpan={8}><Skeleton className="h-10 w-full rounded-lg" /></TableCell></TableRow>)) : filteredReports.length > 0 ? filteredReports.map((item) => (
+                                            <TableRow key={item.uid} className="hover:bg-primary/5 transition-colors border-muted-foreground/5">
+                                                <TableCell className="text-center font-bold text-muted-foreground text-sm">{item.no}</TableCell>
+                                                <TableCell><div className="flex flex-col"><span className="font-bold text-sm text-foreground">{item.name}</span><span className="text-[10px] font-bold text-muted-foreground">{item.nip}</span></div></TableCell>
                                                 <TableCell className="text-center font-black text-green-600">{Math.ceil(item.totalHadir)}</TableCell>
                                                 <TableCell className="text-center font-black text-blue-500">{item.totalIzin}</TableCell>
                                                 <TableCell className="text-center font-black text-orange-500">{item.totalSakit}</TableCell>
                                                 <TableCell className="text-center font-black text-red-500">{item.totalAlpa}</TableCell>
                                                 <TableCell className="text-center font-black text-primary">{item.persentase}</TableCell>
-                                                <TableCell className="text-center"><Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><Eye className="h-4 w-4 text-primary" /></Button></Link></TableCell>
+                                                <TableCell className="text-center"><Link href={`/dashboard/laporan/${item.uid}?month=${format(currentMonth, 'yyyy-MM')}`}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10"><Eye className="h-4 w-4 text-primary" /></Button></Link></TableCell>
                                             </TableRow>
-                                        )) : <TableRow><TableCell colSpan={8} className="h-32 text-center text-muted-foreground font-bold">Data tidak ditemukan</TableCell></TableRow>}
+                                        )) : <TableRow><TableCell colSpan={8} className="h-48 text-center font-bold text-muted-foreground opacity-40 text-xs tracking-widest uppercase">Data tidak ditemukan</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </div>

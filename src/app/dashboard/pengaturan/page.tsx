@@ -35,7 +35,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle, Sparkles, Cpu, ShieldCheck } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle, Sparkles, Cpu, ShieldCheck, Info } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -111,6 +111,8 @@ export default function PengaturanPage() {
   const [reportCity, setReportCity] = useState('');
   const [academicYear, setAcademicYear] = useState('');
   const [reportFooterNote, setReportFooterNote] = useState('');
+  const [isPresentationNoteActive, setIsPresentationNoteActive] = useState(false);
+  const [presentationNoteContent, setPresentationNoteContent] = useState('');
 
   const [isNotificationSaving, setIsNotificationSaving] = useState(false);
   const [notificationTitle, setNotificationTitle] = useState('');
@@ -163,6 +165,8 @@ export default function PengaturanPage() {
       geminiApiKey?: string;
       successSoundUrl?: string;
       successSoundName?: string;
+      isPresentationNoteActive?: boolean;
+      presentationNoteContent?: string;
   }>(user, schoolConfigRef);
 
   useEffect(() => {
@@ -184,6 +188,8 @@ export default function PengaturanPage() {
       setReportCity(schoolConfigData.reportCity ?? '');
       setAcademicYear(schoolConfigData.academicYear ?? '');
       setReportFooterNote(schoolConfigData.reportFooterNote ?? 'Dokumen absensi ini adalah dokumen resmi yang dibuat secara otomatis oleh aplikasi.');
+      setIsPresentationNoteActive(schoolConfigData.isPresentationNoteActive ?? false);
+      setPresentationNoteContent(schoolConfigData.presentationNoteContent ?? 'Catatan: Persentase kehadiran dihitung berdasarkan akumulasi poin harian. Nilai persentase akan berkurang apabila personil terlambat, pulang cepat, atau tidak melakukan absensi secara lengkap (hanya masuk saja atau hanya pulang saja).');
       
       setNotificationTitle(schoolConfigData.notificationTitle ?? '');
       setNotificationContent(schoolConfigData.notificationContent ?? '');
@@ -325,7 +331,8 @@ export default function PengaturanPage() {
     if (!schoolConfigRef) return;
     setIsReportSaving(true);
     setDocumentNonBlocking(schoolConfigRef, {
-      governmentAgency, educationAgency, schoolName, address, headmasterName, headmasterNip, reportCity, academicYear, reportFooterNote
+      governmentAgency, educationAgency, schoolName, address, headmasterName, headmasterNip, reportCity, academicYear, reportFooterNote,
+      isPresentationNoteActive, presentationNoteContent
     }, { merge: true });
     toast({ title: 'Disimpan', description: 'Data laporan diperbarui.' });
     setIsReportSaving(false);
@@ -498,6 +505,27 @@ export default function PengaturanPage() {
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Catatan Footer PDF (Keterangan Bawah)</Label>
                         <Textarea placeholder="Teks yang muncul di bagian paling bawah PDF..." value={reportFooterNote} onChange={e => setReportFooterNote(e.target.value)} className="rounded-xl bg-muted/30 shadow-none min-h-[80px] font-medium" />
                       </div>
+                  </div>
+
+                  <div className="pt-8 border-t mt-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                          <div className="flex items-center gap-3">
+                            <Info className="h-5 w-5 text-blue-500" />
+                            <div>
+                                <Label className="font-bold text-xs uppercase tracking-widest">Penjelasan Persentase (PDF)</Label>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Muncul di atas keterangan hari libur pada PDF laporan detail.</p>
+                            </div>
+                          </div>
+                          <Switch checked={isPresentationNoteActive} onCheckedChange={setIsPresentationNoteActive} />
+                      </div>
+                      {isPresentationNoteActive && (
+                        <Textarea 
+                          placeholder="Tuliskan penjelasan pemotongan poin persentase di sini..." 
+                          value={presentationNoteContent} 
+                          onChange={e => setPresentationNoteContent(e.target.value)} 
+                          className="rounded-xl bg-muted/30 shadow-none min-h-[80px] font-medium" 
+                        />
+                      )}
                   </div>
                   
                   <div className="pt-8 border-t mt-6">
