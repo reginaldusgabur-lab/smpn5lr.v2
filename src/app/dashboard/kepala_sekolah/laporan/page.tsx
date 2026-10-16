@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -72,19 +71,25 @@ function useStaffAttendanceSummary(currentMonth: Date) {
 
             const start = startOfMonth(currentMonth);
             const end = endOfMonth(currentMonth);
+            const today = startOfDay(new Date());
+            const todayStr = format(today, 'yyyy-MM-dd');
 
             const qAtt = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
             const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
             
-            const [snapAtt, snapLeave] = await Promise.all([ getDocs(qAtt), getDocs(snapLeave) ]);
+            const [snapAtt, snapLeave] = await Promise.all([ getDocs(qAtt), getDocs(qLeave) ]);
 
             const allAttendance = snapAtt.docs.map(d => ({...d.data(), id: d.id }));
             const allLeave = snapLeave.docs.map(d => ({ ...d.data(), id: d.id, startDate: d.data().startDate.toDate(), endDate: d.data().endDate.toDate() }));
 
             const offDays: number[] = schoolConfig?.offDays ?? [0, 6];
             const holidays: string[] = monthlyConfig?.holidays ?? [];
-            const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
-            const workingDaysSet = new Set(workingDays.map(d => format(d, 'yyyy-MM-dd')));
+            const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
+            const workingDaysSet = new Set(allWorkingDays.map(d => format(d, 'yyyy-MM-dd')));
+            
+            // Hitung hari kerja yang sudah lewat untuk denominator
+            const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+            const isTodayAWorkingDay = workingDaysSet.has(todayStr);
 
             const userSummary = users.map((u: any) => {
                 let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
@@ -93,6 +98,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                 allAttendance.filter(att => att.userId === u.id).forEach((att: any) => {
                     const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : null);
                     if (dStr && workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
+                        const isToday = dStr === todayStr;
                         let p = 0;
                         const desc = (att.reasonForUpdate || '').toLowerCase();
                         if (desc.includes('dinas') || desc.includes('kehadiran penuh') || desc.includes('luar sekolah')) p = 1.0;
@@ -103,7 +109,10 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                                 if (att.checkInTime.toDate() > deadline) isLate = true;
                             }
                             p = isLate ? 0.95 : 1.0;
-                        } else p = 0.5;
+                        } else {
+                            // Lupa absen: Hari ini optimis 1.0, lewat hari penalti 0.5
+                            p = isToday ? 1.0 : 0.5;
+                        }
                         points += p; 
                         
                         if (desc.includes('luar sekolah')) izinCount++;
@@ -130,9 +139,17 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     });
                 });
 
-                const pastWorkingDays = workingDays.filter(day => isBefore(day, startOfDay(new Date())) || isSameDay(day, new Date()));
+                // Denominator dinamis (To-Date)
+                let denominator = pastWorkingDays.length;
+                const isBelumHadirHariIni = isTodayAWorkingDay && !processedDates.has(todayStr);
+                if (isBelumHadirHariIni && denominator > 0) {
+                    denominator -= 1; // Jangan hitung hari ini jika dia belum datang, agar persentase tidak anjlok
+                }
+                denominator = Math.max(1, denominator);
+
                 const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const presentasi = u.status === 'Cuti' ? '-' : (Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%');
+                const presentasi = u.status === 'Cuti' ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
+                
                 return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: alpaCount, terlambat: 0, presentasi };
             });
 
@@ -277,3 +294,4 @@ export default function HeadmasterStaffReportPage() {
     if (isUserLoading || isUserDataLoading || userData?.role !== 'kepala_sekolah') return <div className="flex items-center justify-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     return <StaffReportView />;
 }
+

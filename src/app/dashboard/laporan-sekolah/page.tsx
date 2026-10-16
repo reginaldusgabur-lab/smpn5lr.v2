@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
-import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth } from 'date-fns';
+import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth, isValid } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -79,6 +78,8 @@ export default function SchoolReportPage() {
             const start = startOfMonth(currentMonth);
             const end = endOfMonth(currentMonth);
             const monthId = format(currentMonth, 'yyyy-MM');
+            const today = startOfDay(new Date());
+            const todayStr = format(today, 'yyyy-MM-dd');
 
             const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthId);
             
@@ -87,8 +88,7 @@ export default function SchoolReportPage() {
                 where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
                 where('status', 'in', ['Aktif', 'Cuti'])
             );
-            const usersSnap = await getDocs(usersQuery);
-            const monthlySnap = await getDoc(monthlyConfigRef);
+            const [usersSnap, monthlySnap] = await Promise.all([getDocs(usersQuery), getDoc(monthlyConfigRef)]);
 
             const mConfig = monthlySnap.exists() ? monthlySnap.data() : {};
             if (isMounted.current) {
@@ -122,10 +122,12 @@ export default function SchoolReportPage() {
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
             const holidays: string[] = (mConfig as any)?.holidays ?? [];
-            const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
-            const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
-            const today = startOfDay(new Date());
-            const pastWorkingDays = workingDays.filter(day => isBefore(day, today) || isSameDay(day, today));
+            const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
+            const workingDaysSet = new Set(allWorkingDays.map(day => format(day, 'yyyy-MM-dd')));
+            
+            // Hitung hari kerja yang sudah lewat untuk denominator
+            const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+            const isTodayAWorkingDay = workingDaysSet.has(todayStr);
 
             const results = allUsers.map(u => {
                 let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
@@ -134,6 +136,7 @@ export default function SchoolReportPage() {
                 (attendanceByUserId[u.id] || []).forEach(att => {
                     const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
                     if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
+                        const isToday = attDateStr === todayStr;
                         const desc = (att.reasonForUpdate || '').toLowerCase();
                         let p = 0;
                         if (desc.includes('dinas') || desc.includes('kehadiran penuh') || desc.includes('luar sekolah')) p = 1.0;
@@ -146,7 +149,10 @@ export default function SchoolReportPage() {
                                 if (checkInDate > deadline) isLate = true;
                             }
                             p = isLate ? 0.95 : 1.0;
-                        } else p = 0.5;
+                        } else {
+                            // Lupa absen: Hari ini optimis 1.0, lewat hari kena penalti 0.5
+                            p = isToday ? 1.0 : 0.5;
+                        }
                         points += p; 
                         
                         if (desc.includes('luar sekolah')) izinCount++;
@@ -174,7 +180,16 @@ export default function SchoolReportPage() {
                 });
 
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const persentase = u.status === 'Cuti' ? '-' : Math.min((points / (workingDays.length || 1)) * 100, 100).toFixed(1) + '%';
+                
+                // Denominator dinamis (To-Date)
+                let denominator = pastWorkingDays.length;
+                const isBelumHadirHariIni = isTodayAWorkingDay && !processedDates.has(todayStr);
+                if (isBelumHadirHariIni && denominator > 0) {
+                    denominator -= 1; // Jangan hitung hari ini jika dia belum datang, agar persentase tidak anjlok
+                }
+                denominator = Math.max(1, denominator);
+
+                const persentase = u.status === 'Cuti' ? '-' : Math.min((points / denominator) * 100, 100).toFixed(1) + '%';
 
                 return {
                     uid: u.id, name: u.name, nip: u.nip || '-',
@@ -203,6 +218,16 @@ export default function SchoolReportPage() {
     }, [loadData, user?.uid, isUserLoading, schoolConfigData]);
 
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
+
+    const handleMonthChange = (amount: number) => {
+        const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
+        if (next >= minDate && next <= new Date()) {
+            setCurrentMonth(next);
+        }
+    };
+
+    const canGoPrev = currentMonth > minDate;
+    const canGoNext = !isSameMonth(currentMonth, new Date());
 
     const handleDownloadPdf = async () => {
         if (!filteredReports.length || isExporting) return;
@@ -308,9 +333,6 @@ export default function SchoolReportPage() {
         } finally { setIsExporting(false); }
     };
 
-    const canGoPrev = currentMonth > minDate;
-    const canGoNext = !isSameMonth(currentMonth, new Date());
-
     return (
         <div className="flex-1 pt-2 pb-24 md:p-8">
             <div className="max-w-7xl mx-auto space-y-4">
@@ -326,10 +348,10 @@ export default function SchoolReportPage() {
                         <div className="p-4 space-y-6">
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                 <div className="flex items-center">
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(-1)} disabled={isReportLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
                                     <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max"><CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div></div>
                                 </div>
-                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
+                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(1)} disabled={isReportLoading || !canGoNext}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5"><Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label><Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select></div>
@@ -362,3 +384,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+

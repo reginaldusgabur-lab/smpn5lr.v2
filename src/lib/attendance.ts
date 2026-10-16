@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -43,17 +42,36 @@ const cleanDesc = (desc: any) => {
     return desc.trim() || 'Kehadiran penuh';
 };
 
-const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean): number => {
+/**
+ * Logika Poin Profesional.
+ * isToday: Jika true, berikan 1.0 poin optimis walau baru absen masuk agar persentase tidak anjlok.
+ */
+const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean, isToday: boolean = false): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
+    
+    // Status Prioritas (1.0 Poin)
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh' || s.includes('luar sekolah')) return 1.0;
+    
+    // Kehadiran Normal
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
+    
+    // Kedisiplinan
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
+    
+    // Ketidakhadiran Resmi
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
-    if ((hasIn && !hasOut) || (!hasIn && hasOut)) return 0.5;
-    return 0.0;
+    
+    // Penanganan Lupa Absen / Incomplete
+    if ((hasIn && !hasOut) || (!hasIn && hasOut)) {
+        // Jika hari ini, anggap 1.0 (Optimis) agar user tidak panik melihat persentase turun saat masih kerja.
+        // Jika sudah lewat hari, potong menjadi 0.5 sebagai penalti lupa absen.
+        return isToday ? 1.0 : 0.5;
+    }
+    
+    return 0.0; // Alpa
 };
 
 export async function getDailyStaffAttendanceStats(firestore: Firestore) {
@@ -164,8 +182,11 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
 
 export async function calculateAttendanceStats(firestore: Firestore, userId: string, dateRange: { start: Date, end: Date }) {
     const { start, end } = dateRange;
-    const cacheKey = `stats_v910_${userId}_${format(start, 'yyyyMM')}`;
+    const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
+    const cacheKey = `stats_v912_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
+    
     try {
         const [schoolConfigSnap, monthlyConfigSnap, attendanceSnap, leaveSnap, userSnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
@@ -174,18 +195,23 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved'))),
             getDoc(doc(firestore, 'users', userId))
         ]);
+        
         const schoolConfig = schoolConfigSnap.data() || {};
         const monthlyConfig = monthlyConfigSnap.data() || {};
         const userData = userSnap.data();
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
         
         const holidays = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
         const offDays = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
 
+        // 1. Dapatkan semua hari kerja di bulan ini
         const baseWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
             !offDays.includes(day.getDay()) && 
             !holidays.includes(format(day, 'yyyy-MM-dd'))
         );
+
+        // 2. Hitung jumlah hari kerja yang SUDAH BERJALAN (To-Date)
+        const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+        const hasAktivitasHariIni = pastWorkingDays.some(day => format(day, 'yyyy-MM-dd') === todayStr);
 
         let totalPoints = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
@@ -202,12 +228,40 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        attMap.forEach((att, dayStr) => {
-            if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr)) {
+        // Loop Hari Kerja yang Sudah Berjalan
+        pastWorkingDays.forEach((day) => {
+            const dayStr = format(day, 'yyyy-MM-dd');
+            const isToday = dayStr === todayStr;
+            const att = attMap.get(dayStr);
+
+            // Prioritaskan Izin Resmi jika ada
+            const leaveDoc = leaveSnap.docs.find(ld => {
+                const l = ld.data();
+                const lS = parseFirestoreDate(l.startDate);
+                const lE = parseFirestoreDate(l.endDate);
+                return lS && lE && isWithinInterval(day, { start: startOfDay(lS), end: endOfDay(lE) });
+            });
+
+            if (leaveDoc) {
+                const leave = leaveDoc.data();
+                const type = (leave.type || '').toLowerCase();
+                const reason = (leave.reason || '').toLowerCase();
+                const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
+                totalPoints += p;
+                
+                if (type.includes('sakit')) sakitCount++;
+                else if (type.includes('cuti')) izinCount++;
+                else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
+                else if (type.includes('dinas')) hadirCount++;
+                else izinCount++;
+                
+                processedDates.add(dayStr);
+            } else if (att) {
                 const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
                 const checkInDate = parseFirestoreDate(att.checkInTime);
                 const checkOutDate = parseFirestoreDate(att.checkOutTime);
-                totalPoints += calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate);
+                
+                totalPoints += calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate, isToday);
                 
                 if (desc.includes('luar sekolah')) izinCount++;
                 else hadirCount++;
@@ -216,36 +270,18 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        leaveSnap.docs.forEach(leaveDoc => {
-            const leave = leaveDoc.data();
-            const lStart = parseFirestoreDate(leave.startDate);
-            const lEnd = parseFirestoreDate(leave.endDate);
-            if (lStart && lEnd) {
-                eachDayOfInterval({ start: lStart, end: lEnd }).forEach(day => {
-                    const dayStr = format(day, 'yyyy-MM-dd');
-                    if (baseWorkingDays.some(bw => format(bw, 'yyyy-MM-dd') === dayStr) && !processedDates.has(dayStr)) {
-                        const p = calculatePoints(leave.type, leave.reason || leave.type, false, false);
-                        totalPoints += p;
-                        const typeLower = (leave.type || '').toLowerCase();
-                        const reasonLower = (leave.reason || '').toLowerCase();
-                        
-                        if (typeLower.includes('sakit')) sakitCount++;
-                        else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah') || typeLower.includes('cuti')) {
-                            izinCount++;
-                        }
-                        else if (typeLower.includes('dinas')) hadirCount++;
-                        else if (p < 1.0) izinCount++;
-                        else hadirCount++;
-                        processedDates.add(dayStr);
-                    }
-                });
-            }
-        });
-
-        const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
         
-        const denominator = Math.max(1, baseWorkingDays.length);
+        // --- LOGIKA DENOMINATOR (PEMBAGI) DINAMIS ---
+        // Jika hari ini adalah hari kerja TETAPI personil BELUM absen/izin, jangan hitung hari ini sebagai pembagi (Gunakan data kemarin).
+        // Ini memastikan persentase 100% tetap bertahan di pagi hari sampai dia Alpa (akhir hari) atau Absen (sinkron).
+        let denominator = pastWorkingDays.length;
+        const isBelumHadirHariIni = hasAktivitasHariIni && !processedDates.has(todayStr);
+        if (isBelumHadirHariIni && denominator > 0) {
+            denominator -= 1; 
+        }
+        denominator = Math.max(1, denominator);
+
         const finalPercentage = (totalPoints / denominator) * 100;
 
         const result = {
@@ -266,7 +302,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 export async function fetchUserMonthlyReportData(firestore: Firestore, userId: string, currentMonth: Date, schoolConfig: any) {
     if (!schoolConfig) return [];
     const start = startOfMonth(currentMonth); const end = endOfMonth(currentMonth);
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
     try {
         const [mConfigSnap, attSnap, leaveSnap] = await Promise.all([
             getDoc(doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'))),
@@ -280,9 +317,9 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const attMap = new Map();
         attSnap.docs.forEach(d => {
             const data = d.data();
-            const dayStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
-            if (dayStr) {
-                const existing = attMap.get(dayStr);
+            const dStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
+            if (dStr) {
+                const existing = attMap.get(dStr);
                 if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
                     attMap.set(dayStr, { id: d.id, ...data });
                 }
@@ -305,6 +342,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const dayStr = format(day, 'yyyy-MM-dd');
             if (dayStr > todayStr) return null;
             
+            const isToday = dayStr === todayStr;
             const att = attMap.get(dayStr); 
             const leave = leaveMap.get(dayStr);
 
@@ -333,13 +371,13 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                     checkInTime: checkInDate ? checkInDate.toISOString() : null, 
                     checkOutTime: checkOutDate ? checkOutDate.toISOString() : null, 
                     status: statusLabel, description: finalDesc, 
-                    points: calculatePoints('hadir', finalDesc, !!checkInDate, !!checkOutDate), 
+                    points: calculatePoints('hadir', finalDesc, !!checkInDate, !!checkOutDate, isToday), 
                     manualEntry: att.manualEntry || false 
                 };
             }
             if (leave) {
                 const type = (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') ? 'Cuti' : leave.type;
-                const pts = calculatePoints(type, leave.reason || type, false, false);
+                const pts = calculatePoints(type, leave.reason || type, false, false, false);
                 const typeLower = type.toLowerCase();
                 const reasonLower = (leave.reason || '').toLowerCase();
                 let statusLabel = (type === 'Cuti') ? 'Cuti' : (pts === 1.0 ? 'Hadir' : type);
