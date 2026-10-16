@@ -44,31 +44,28 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Logika Poin Profesional.
- * isToday: Jika true, berikan 1.0 poin optimis walau baru absen masuk agar persentase tidak anjlok.
  */
-const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean, isToday: boolean = false): number => {
+export const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean, isToday: boolean = false): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
     
-    // Status Prioritas (1.0 Poin)
+    // Status Penuh (1.0 Poin) - Termasuk Cuti
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
     if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh' || s.includes('luar sekolah')) return 1.0;
     
     // Kehadiran Normal
     if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
     
-    // Kedisiplinan
+    // Potongan disiplin
     if (d === 'terlambat' || d.includes('cepat')) return 0.95;
     
-    // Ketidakhadiran Resmi
+    // Ketidakhadiran resmi
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
     
-    // Penanganan Lupa Absen / Incomplete
-    if ((hasIn && !hasOut) || (!hasIn && hasOut)) {
-        // Jika hari ini, anggap 1.0 (Optimis) agar user tidak panik melihat persentase turun saat masih kerja.
-        // Jika sudah lewat hari, potong menjadi 0.5 sebagai penalti lupa absen.
-        return isToday ? 1.0 : 0.5;
+    // Lupa absen salah satu
+    if (hasIn || hasOut) {
+        return isToday ? 1.0 : 0.5; // Hari ini optimis agar % tidak turun saat kerja
     }
     
     return 0.0; // Alpa
@@ -184,7 +181,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v912_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v920_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -203,13 +200,11 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const holidays = Array.isArray(monthlyConfig.holidays) ? monthlyConfig.holidays : [];
         const offDays = Array.isArray(schoolConfig.offDays) ? schoolConfig.offDays : [0, 6];
 
-        // 1. Dapatkan semua hari kerja di bulan ini
         const baseWorkingDays = eachDayOfInterval({ start, end }).filter(day => 
             !offDays.includes(day.getDay()) && 
             !holidays.includes(format(day, 'yyyy-MM-dd'))
         );
 
-        // 2. Hitung jumlah hari kerja yang SUDAH BERJALAN (To-Date)
         const pastWorkingDays = baseWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const hasAktivitasHariIni = pastWorkingDays.some(day => format(day, 'yyyy-MM-dd') === todayStr);
 
@@ -228,13 +223,11 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        // Loop Hari Kerja yang Sudah Berjalan
         pastWorkingDays.forEach((day) => {
             const dayStr = format(day, 'yyyy-MM-dd');
             const isToday = dayStr === todayStr;
             const att = attMap.get(dayStr);
 
-            // Prioritaskan Izin Resmi jika ada
             const leaveDoc = leaveSnap.docs.find(ld => {
                 const l = ld.data();
                 const lS = parseFirestoreDate(l.startDate);
@@ -250,7 +243,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 totalPoints += p;
                 
                 if (type.includes('sakit')) sakitCount++;
-                else if (type.includes('cuti')) izinCount++;
+                else if (type.includes('cuti')) izinCount++; // Cuti Resmi masuk Izin
                 else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                 else if (type.includes('dinas')) hadirCount++;
                 else izinCount++;
@@ -272,9 +265,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
         
-        // --- LOGIKA DENOMINATOR (PEMBAGI) DINAMIS ---
-        // Jika hari ini adalah hari kerja TETAPI personil BELUM absen/izin, jangan hitung hari ini sebagai pembagi (Gunakan data kemarin).
-        // Ini memastikan persentase 100% tetap bertahan di pagi hari sampai dia Alpa (akhir hari) atau Absen (sinkron).
+        // Denominator Dinamis
         let denominator = pastWorkingDays.length;
         const isBelumHadirHariIni = hasAktivitasHariIni && !processedDates.has(todayStr);
         if (isBelumHadirHariIni && denominator > 0) {
@@ -321,7 +312,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (dStr) {
                 const existing = attMap.get(dStr);
                 if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
-                    attMap.set(dayStr, { id: d.id, ...data });
+                    attMap.set(dStr, { id: d.id, ...data });
                 }
             }
         });

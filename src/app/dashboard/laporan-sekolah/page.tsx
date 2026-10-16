@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
-import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth, isValid } from 'date-fns';
+import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { calculatePoints } from '@/lib/attendance';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -124,9 +125,6 @@ export default function SchoolReportPage() {
             const holidays: string[] = (mConfig as any)?.holidays ?? [];
             const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
             const workingDaysSet = new Set(allWorkingDays.map(day => format(day, 'yyyy-MM-dd')));
-            
-            // Hitung hari kerja yang sudah lewat untuk denominator
-            const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
             const isTodayAWorkingDay = workingDaysSet.has(todayStr);
 
             const results = allUsers.map(u => {
@@ -138,23 +136,9 @@ export default function SchoolReportPage() {
                     if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
                         const isToday = attDateStr === todayStr;
                         const desc = (att.reasonForUpdate || '').toLowerCase();
-                        let p = 0;
-                        if (desc.includes('dinas') || desc.includes('kehadiran penuh') || desc.includes('luar sekolah')) p = 1.0;
-                        else if (att.checkInTime && att.checkOutTime) {
-                            let isLate = false;
-                            const checkInDate = att.checkInTime.toDate();
-                            if (schoolConfigData.useTimeValidation && (schoolConfigData as any).checkInEndTime) {
-                                const [h, m] = (schoolConfigData as any).checkInEndTime.split(':').map(Number);
-                                const deadline = setMinutes(setHours(startOfDay(checkInDate), h), m);
-                                if (checkInDate > deadline) isLate = true;
-                            }
-                            p = isLate ? 0.95 : 1.0;
-                        } else {
-                            // Lupa absen: Hari ini optimis 1.0, lewat hari kena penalti 0.5
-                            p = isToday ? 1.0 : 0.5;
-                        }
-                        points += p; 
+                        let p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, isToday);
                         
+                        points += p; 
                         if (desc.includes('luar sekolah')) izinCount++;
                         else hadirCount++;
                         
@@ -168,24 +152,26 @@ export default function SchoolReportPage() {
                         if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
                             const type = (leave.type || '').toLowerCase();
                             const reason = (leave.reason || '').toLowerCase();
-                            let p = 0;
-                            if (type.includes('sakit')) { p = 0.9; sakitCount++; }
-                            else if (type.includes('cuti')) { p = 1.0; izinCount++; }
-                            else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) { p = 1.0; izinCount++; }
-                            else if (type.includes('dinas')) { p = 1.0; hadirCount++; }
-                            else { p = 0.7; izinCount++; }
-                            points += p; processedDates.add(dStr);
+                            let p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
+                            points += p; 
+                            
+                            if (type.includes('sakit')) sakitCount++;
+                            else if (type.includes('cuti')) izinCount++;
+                            else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
+                            else if (type.includes('dinas')) hadirCount++;
+                            else izinCount++;
+                            
+                            processedDates.add(dStr);
                         }
                     });
                 });
 
+                const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 
-                // Denominator dinamis (To-Date)
                 let denominator = pastWorkingDays.length;
-                const isBelumHadirHariIni = isTodayAWorkingDay && !processedDates.has(todayStr);
-                if (isBelumHadirHariIni && denominator > 0) {
-                    denominator -= 1; // Jangan hitung hari ini jika dia belum datang, agar persentase tidak anjlok
+                if (isTodayAWorkingDay && !processedDates.has(todayStr) && denominator > 0) {
+                    denominator -= 1; 
                 }
                 denominator = Math.max(1, denominator);
 
@@ -384,4 +370,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-
