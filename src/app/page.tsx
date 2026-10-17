@@ -34,8 +34,9 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { auth, useUser } from '@/firebase';
+import { auth, useUser, firestore } from '@/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Format email tidak valid" }),
@@ -79,13 +80,23 @@ export default function LoginPage() {
 
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoginLoading(true);
-    if (!auth) {
+    if (!auth || !firestore) {
       toast({ variant: "destructive", title: "Gagal", description: "Layanan belum siap." });
       setIsLoginLoading(false);
       return;
     }
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const cred = await signInWithEmailAndPassword(auth, values.email, values.password);
+      
+      // PROACTIVE FETCH: Ambil profil segera setelah login berhasil
+      // Ini akan mempercepat transisi Dashboard secara drastis
+      const userDocSnap = await getDoc(doc(firestore, 'users', cred.user.uid));
+      if (userDocSnap.exists()) {
+          const profile = { ...cred.user, ...userDocSnap.data(), id: userDocSnap.id };
+          localStorage.setItem('espenli_user_profile_v2', JSON.stringify(profile));
+      }
+      
+      // onAuthStateChanged akan menangani redirect setelah data tersimpan di cache
     } catch (error: any) {
       toast({ variant: "destructive", title: "Login gagal", description: "Email atau kata sandi salah." });
       setIsLoginLoading(false);
@@ -107,7 +118,7 @@ export default function LoginPage() {
     }
   };
   
-  if (!isClient || isUserLoading || user) {
+  if (!isClient || (isUserLoading && !user)) {
       return (
         <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
              <div className="flex items-center gap-1.5">
@@ -126,7 +137,6 @@ export default function LoginPage() {
         <Card className="w-full max-w-[370px] bg-card/95 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl rounded-2xl overflow-hidden relative z-10 p-0">
           <CardHeader className="text-center space-y-0 pt-8 pb-2 relative">
             
-            {/* Tech Icons Decoration - Internal Elements restored */}
             <div className="absolute top-8 left-6 opacity-30 -rotate-12">
               <Smartphone className="h-8 w-8 text-blue-600" />
             </div>

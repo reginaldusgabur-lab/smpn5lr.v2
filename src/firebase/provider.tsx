@@ -54,9 +54,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>(() => {
-    // Optimasi: Pulihkan user dari session storage secara sinkron untuk menghindari flash loading
+    // Optimasi: Gunakan localStorage agar profil tetap ada meskipun tab ditutup
     if (typeof window !== 'undefined') {
-        const cached = sessionStorage.getItem('espenli_user_profile');
+        const cached = localStorage.getItem('espenli_user_profile_v2');
         if (cached) {
             try {
                 return { user: JSON.parse(cached), isUserLoading: false, userError: null };
@@ -76,6 +76,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       async (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser) {
+          // Jika sudah ada user di state, jangan tampilkan loading lagi (background sync)
           const userDocRef = doc(firestore, 'users', firebaseUser.uid);
           try {
             const userDocSnap = await getDoc(userDocRef);
@@ -87,16 +88,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 id: userDocSnap.id,
               };
               
-              sessionStorage.setItem('espenli_user_profile', JSON.stringify(combinedUser));
+              localStorage.setItem('espenli_user_profile_v2', JSON.stringify(combinedUser));
               setUserAuthState({ user: combinedUser, isUserLoading: false, userError: null });
             } else {
               setUserAuthState({ user: null, isUserLoading: false, userError: null });
             }
           } catch (error) {
-            setUserAuthState(prev => ({ ...prev, userError: error as Error, isUserLoading: false }));
+            // Jika gagal ambil data (misal offline), tetap gunakan data lama jika ada
+            setUserAuthState(prev => prev.user ? { ...prev, isUserLoading: false } : { user: null, isUserLoading: false, userError: error as Error });
           }
         } else {
-          sessionStorage.removeItem('espenli_user_profile');
+          localStorage.removeItem('espenli_user_profile_v2');
           setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },
@@ -118,7 +120,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // JANGAN MEMBLOKIR RENDER DI SINI AGAR SHELL (HEADER/NAV) BISA MUNCUL DULUAN
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />

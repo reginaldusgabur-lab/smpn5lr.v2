@@ -17,16 +17,15 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 const auth = getAuth(app);
 
 /**
- * Inisialisasi Firestore dengan Offline Persistence dan Long Polling.
+ * Inisialisasi Firestore dengan Offline Persistence.
  * localCache: persistentLocalCache menghemat kuota "Read" Firestore dengan menyimpan data secara lokal.
- * experimentalForceLongPolling dipaksa aktif untuk stabilitas di lingkungan studio/proxy.
+ * experimentalForceLongPolling dihapus untuk memungkinkan browser memilih transport tercepat.
  */
 const firestore = (() => {
   if (typeof window !== 'undefined') {
     try {
       return initializeFirestore(app, {
         localCache: persistentLocalCache({}),
-        experimentalForceLongPolling: true,
       });
     } catch (e) {
       // Jika sudah diinisialisasi (misal saat HMR), ambil instance yang ada
