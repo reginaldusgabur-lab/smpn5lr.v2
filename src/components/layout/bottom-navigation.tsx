@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -18,14 +19,14 @@ const adminNavItems = [
   { href: '/dashboard', icon: Home, label: 'Beranda' },
   { href: '/dashboard/admin/users', icon: Users, label: 'Pengguna' },
   { href: '/dashboard/admin/konfigurasi', icon: QrCode, label: 'Absen' },
-  { href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan' }, // CORRECTED
+  { href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan' }, 
 ];
 
 const headmasterNavItems = [
   { href: '/dashboard', icon: Home, label: 'Beranda' },
   { href: '/dashboard/absen', icon: QrCode, label: 'Absen' },
   { href: '/dashboard/izin-kepala-sekolah', icon: ClipboardCheck, label: 'Persetujuan' },
-  { href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan' }, // CORRECTED
+  { href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan' }, 
 ];
 
 export function BottomNavigation() {
@@ -53,8 +54,8 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-card border-t">
-        <div className="flex h-full items-stretch">
+    <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-transparent">
+        <div className="flex h-full items-stretch backdrop-blur-sm">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 
@@ -65,12 +66,12 @@ export function BottomNavigation() {
                         key={item.label}
                         href={item.href}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
-                            isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary/90'
+                            'flex flex-1 flex-col items-center justify-center gap-1 text-xs font-bold transition-colors',
+                            isActive ? 'text-primary' : 'text-muted-foreground/80 hover:text-primary'
                         )}
                     >
-                        <item.icon className="h-5 w-5" />
-                        <span className="text-center">{item.label}</span>
+                        <item.icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-2")} />
+                        <span className="text-center text-[10px] tracking-tight">{item.label}</span>
                     </Link>
                 );
             })}
