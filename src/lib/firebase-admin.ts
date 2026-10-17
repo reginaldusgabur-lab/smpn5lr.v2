@@ -1,12 +1,13 @@
 
 import admin from "firebase-admin";
+import { firebaseConfig } from "@/firebase/config";
 
 /**
  * Inisialisasi Firebase Admin SDK secara aman.
  * Menangani perbedaan format environment variables antara lokal dan Vercel.
  */
 
-const projectId = process.env.FIREBASE_PROJECT_ID;
+const projectId = process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
@@ -28,9 +29,12 @@ if (admin.apps.length === 0) {
       });
       console.log('Firebase Admin: Berhasil diinisialisasi menggunakan Service Account.');
     } else {
-      // Fallback untuk lingkungan lokal yang mungkin menggunakan ADC
-      admin.initializeApp();
-      console.log('Firebase Admin: Menggunakan Application Default Credentials.');
+      // Fallback untuk lingkungan lokal atau cloud yang menggunakan Application Default Credentials
+      // Sertakan projectId eksplisit dari config agar pembacaan Firestore tidak nyasar
+      admin.initializeApp({
+        projectId: projectId
+      });
+      console.log(`Firebase Admin: Menggunakan ADC untuk Project: ${projectId}`);
     }
   } catch (error: any) {
     console.error('Firebase Admin Initialization Error:', error.message);

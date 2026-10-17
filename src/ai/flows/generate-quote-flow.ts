@@ -32,7 +32,6 @@ export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
  * Database 500 Kutipan Cadangan (Kualitas Premium: Motivasi, Humor, Filosofi, & Psikologi Sekolah)
  */
 const fallbacks = [
-  // --- DATABASE 500 KUTIPAN TETAP DIPERTAHANKAN ---
   { quote: "Pendidikan adalah paspor menuju masa depan, karena hari esok milik mereka yang mempersiapkannya hari ini.", author: "Malcolm X" },
   { quote: "Hiduplah seolah engkau mati besok. Belajarlah seolah engkau hidup selamanya.", author: "Mahatma Gandhi" },
   { quote: "Satu anak, satu guru, satu buku, dan satu pena dapat mengubah dunia.", author: "Malala Yousafzai" },
@@ -75,7 +74,6 @@ const fallbacks = [
   { quote: "Kecerdasan ditambah karakter—itulah tujuan pendidikan sejati.", author: "Martin Luther King Jr." },
   { quote: "Ruang guru: Tempat di mana semua masalah dunia diselesaikan dalam waktu 15 menit jam istirahat.", author: "Humor Sekolah" },
   { quote: "Kopi guru: 70% kafein, 30% doa agar siswa hari ini tenang.", author: "Ramuan Rahasia" }
-  // ... (Sisa database 500 kutipan dianggap ada untuk efisiensi transfer data)
 ];
 
 function getHash(str: string): number {
@@ -104,7 +102,7 @@ const generateQuoteFlow = ai.defineFlow(
     const selectedFallback = fallbacks[hash % fallbacks.length];
 
     try {
-        // Ambil API KEY dinamis dari database Firestore
+        // Ambil API KEY dinamis dari database Firestore (melewati cache untuk pembacaan real-time)
         const configSnap = await adminDb.collection('schoolConfig').doc('default').get();
         const configData = configSnap.data();
         const customApiKey = configData?.geminiApiKey?.trim();
@@ -112,26 +110,42 @@ const generateQuoteFlow = ai.defineFlow(
         // Gunakan Custom API Key jika tersedia, jika tidak gunakan Env Variable
         const effectiveApiKey = customApiKey || process.env.GEMINI_API_KEY;
 
-        if (!effectiveApiKey) throw new Error('NO_API_KEY_FOUND');
+        if (!effectiveApiKey) {
+            console.error("[AI_FLOW_NOTICE]: Tidak ada API Key ditemukan di database maupun environment.");
+            return selectedFallback;
+        }
 
-        // Inisialisasi genkit lokal dengan kunci API yang dipilih
+        // Inisialisasi genkit lokal dengan kunci API yang dipilih untuk pemrosesan instance tunggal
         const dynamicAi = genkit({
             plugins: [googleAI({ apiKey: effectiveApiKey })],
         });
 
+        // Panggil model dengan string identifier eksplisit untuk memastikan plugin instance yang benar digunakan
         const response = await dynamicAi.generate({
-            model: googleAI.model('gemini-1.5-flash'),
-            config: { temperature: 1.2, topP: 0.9, maxOutputTokens: 200 },
-            system: `Anda adalah "E-SPENLI Muse", kurator kutipan terbaik. TUGAS: Berikan SATU kutipan pendek (15-30 kata) yang menginspirasi atau humor cerdas untuk personil sekolah. WAJIB sertakan nama penulisnya.`,
-            prompt: `Berikan kutipan unik untuk ${input.userName} (${input.role}) pada sesi ${input.attendanceType === 'in' ? 'absen masuk' : 'absen pulang'}. Gunakan benih acak: ${input.creativeSeed}`,
+            model: 'googleai/gemini-1.5-flash',
+            config: { 
+                temperature: 1.1, 
+                topP: 0.9, 
+                maxOutputTokens: 256 
+            },
+            system: `Anda adalah "E-SPENLI Muse", kurator kutipan terbaik untuk SMPN 5 Langke Rembong. 
+            TUGAS: Berikan SATU kutipan pendek (maksimal 30 kata) yang menginspirasi atau humor cerdas. 
+            WAJIB sertakan nama penulisnya. Gunakan gaya bahasa yang menyemangat warga sekolah.`,
+            prompt: `Berikan kutipan unik untuk ${input.userName} (${input.role}) pada sesi ${input.attendanceType === 'in' ? 'absen masuk' : 'absen pulang'}. 
+            Hari: ${input.day}, Tanggal: ${input.date}. 
+            Benih acak: ${input.creativeSeed}`,
             output: { schema: QuoteOutputSchema },
         });
 
-        if (!response.output || !response.output.quote) throw new Error('AI_EMPTY');
+        if (!response.output || !response.output.quote) {
+            throw new Error('AI_OUTPUT_EMPTY');
+        }
+
         return response.output;
 
     } catch (err: any) {
-        console.warn(`[AI_FLOW_NOTICE]: Menggunakan database internal (API Key Error: ${err.message})`);
+        // Logging error di sisi server untuk membantu Admin mendiagnosis masalah API Key
+        console.error(`[AI_FLOW_FAILURE]: Gagal memproses permintaan ke Gemini API. Menggunakan database cadangan. Detail Error: ${err.message}`);
         return selectedFallback;
     }
   }
