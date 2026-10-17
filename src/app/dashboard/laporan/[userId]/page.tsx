@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -215,8 +214,8 @@ export default function UserReportDetailPage() {
             }
             await batch.commit();
             invalidateCache();
-            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
             fetchData();
+            toast({ title: 'Berhasil', description: 'Status kehadiran telah diperbarui.' });
         } catch (err) { 
             toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' }); 
         } finally { setIsMutating(false); }

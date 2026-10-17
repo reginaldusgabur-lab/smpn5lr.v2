@@ -84,7 +84,7 @@ export default function LaporanPage() {
     }
   }, [schoolConfig, academicYear]);
 
-  const cacheKey = useMemo(() => user ? `user_report_v220_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
+  const cacheKey = useMemo(() => user ? `user_report_v221_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
 
   const fetchReport = useCallback(async (forceRefresh = false) => {
     if (!user || !firestore || !schoolConfig || !cacheKey) return;

@@ -44,18 +44,19 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Logika Poin Profesional sesuai Skema E-SPENLI.
- * 1.0: Hadir Lengkap, Dinas, Luar Sekolah, Cuti.
- * 0.95: Terlambat, Pulang Cepat.
- * 0.9: Sakit.
- * 0.7: Izin Pribadi.
- * 0.5: Lupa Absen (Hanya Masuk atau Hanya Pulang).
- * 0.0: Alpa / Tanpa Keterangan.
+ * @param checkOutExpired Jika true, artinya waktu untuk absen pulang hari ini sudah lewat/berakhir.
  */
-export const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean, isToday: boolean = false): number => {
+export const calculatePoints = (
+    status: string, 
+    description: string, 
+    hasIn: boolean, 
+    hasOut: boolean, 
+    checkOutExpired: boolean = false
+): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
     
-    // HADIR / DINAS / CUTI (1.0 Poin)
+    // HADIR / DINAS / CUTI (1.0 Poin) - Prioritas Utama
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
     
@@ -75,8 +76,9 @@ export const calculatePoints = (status: string, description: string, hasIn: bool
     
     // LUPA ABSEN (0.5 Poin)
     if (hasIn || hasOut) {
-        // Khusus hari ini tetap beri 1.0 untuk sementara agar persentase tidak anjlok saat user baru absen masuk
-        if (isToday) return 1.0;
+        // Jika jendela absen pulang belum berakhir, berikan poin 1.0 sementara (Grace Period)
+        // Jika waktu absen sudah lewat/tuntas namun data belum lengkap, berikan 0.5
+        if (!checkOutExpired) return 1.0;
         return 0.5;
     }
     
@@ -191,7 +193,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v965_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v966_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -214,6 +216,9 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd'))
         );
 
+        const now = new Date();
+        const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+
         let totalPoints = 0;
         let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
@@ -230,6 +235,15 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             if (dayStr > todayStr) return;
 
             const isToday = dayStr === todayStr;
+            const dayOfWeek = day.getDay().toString();
+            const dailyOut = (config as any).dailyCheckOutTimes?.[dayOfWeek];
+            const outEndTimeStr = dailyOut?.end || config.checkOutEndTime || "16:00";
+            const [h, m] = outEndTimeStr.split(':').map(Number);
+            const outEndMinutes = h * 60 + m;
+
+            // Jika hari ini dan belum melewati jam pulang, grace period = 1.0 poin. Jika sudah lewat = 0.5 poin.
+            const checkOutExpired = !isToday || (currentTimeMinutes > outEndMinutes);
+
             const att = attMap.get(dayStr);
             const leaveDoc = leaveSnap.docs.find(ld => {
                 const l = ld.data();
@@ -255,7 +269,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
                 const checkInDate = parseFirestoreDate(att.checkInTime);
                 const checkOutDate = parseFirestoreDate(att.checkOutTime);
-                const p = calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate, isToday);
+                const p = calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate, checkOutExpired);
                 totalPoints += p;
                 processedDates.add(dayStr);
                 
@@ -325,6 +339,9 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             if (lS && lE) eachDayOfInterval({ start: lS, end: lE }).forEach(day => leaveMap.set(format(day, 'yyyy-MM-dd'), { ...l, id: d.id }));
         });
 
+        const now = new Date();
+        const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+
         const workingDays = eachDayOfInterval({ start, end }).filter(d => !offDays.includes(d.getDay()) && !holidays.includes(format(d, 'yyyy-MM-dd')));
         
         return workingDays.map(day => {
@@ -333,13 +350,22 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const att = attMap.get(dayStr); 
             const leave = leaveMap.get(dayStr);
 
+            const dayOfWeek = day.getDay().toString();
+            const dailyOut = schoolConfig.dailyCheckOutTimes?.[dayOfWeek];
+            const outEndTimeStr = dailyOut?.end || schoolConfig.checkOutEndTime || "16:00";
+            const [h, m] = outEndTimeStr.split(':').map(Number);
+            const outEndMinutes = h * 60 + m;
+
+            // Flag kedaluwarsa untuk pemberian poin lupa absen (0.5 vs 1.0)
+            const checkOutExpired = !isToday || (currentTimeMinutes > outEndMinutes);
+
             if (att) {
                 let desc = cleanDesc(att.reasonForUpdate);
                 const checkInDate = parseFirestoreDate(att.checkInTime);
                 const checkOutDate = parseFirestoreDate(att.checkOutTime);
                 if (checkInDate && schoolConfig.useTimeValidation && schoolConfig.checkInEndTime && !desc.toLowerCase().includes('dinas')) {
-                    const [h, m] = schoolConfig.checkInEndTime.split(':').map(Number);
-                    const deadline = setMinutes(setHours(startOfDay(checkInDate), h), m);
+                    const [hIn, mIn] = schoolConfig.checkInEndTime.split(':').map(Number);
+                    const deadline = setMinutes(setHours(startOfDay(checkInDate), hIn), mIn);
                     if (checkInDate > deadline) desc = 'Terlambat';
                 }
                 const lowerDesc = desc.toLowerCase();
@@ -350,7 +376,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 return { 
                     id: att.id, date: dayStr, checkInTime: checkInDate?.toISOString() || null, checkOutTime: checkOutDate?.toISOString() || null, 
                     status: lowerDesc.includes('luar sekolah') ? 'Izin' : 'Hadir', description: desc, 
-                    points: calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate, isToday), manualEntry: att.manualEntry || false 
+                    points: calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate, checkOutExpired), manualEntry: att.manualEntry || false 
                 };
             }
             if (leave) {
