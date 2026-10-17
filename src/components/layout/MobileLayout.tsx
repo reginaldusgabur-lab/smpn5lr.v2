@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BottomNavigation } from './bottom-navigation';
 import { Header } from './header';

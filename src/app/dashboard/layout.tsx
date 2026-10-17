@@ -42,30 +42,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const updates = { onboardingSelesai: true };
       await setDoc(userDocRef, updates, { merge: true });
       
-      const cached = sessionStorage.getItem('espenli_user_profile');
+      const cached = localStorage.getItem('espenli_user_profile_v2');
       if (cached) {
           const profile = JSON.parse(cached);
-          sessionStorage.setItem('espenli_user_profile', JSON.stringify({ ...profile, ...updates }));
+          localStorage.setItem('espenli_user_profile_v2', JSON.stringify({ ...profile, ...updates }));
       }
     } catch (error) {
       console.error("Gagal menyimpan status onboarding:", error);
     }
   };
 
-  // Optimized: Show dashboard immediately if user is already in state (cache-ready)
-  if (!user && isUserLoading) {
-    return (
-      <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
-        </div>
-      </div>
-    );
-  }
-
-  // Final check to prevent unauthorized render
+  // Optimasi: Jika user belum ada di state (baru login), biarkan NextJS loading.tsx menangani transisi.
+  // Jangan me-render apa pun untuk mencegah flash blank screen putih yang dipaksakan.
   if (!user) return null;
 
   return (
