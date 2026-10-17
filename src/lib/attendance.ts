@@ -43,30 +43,44 @@ const cleanDesc = (desc: any) => {
 };
 
 /**
- * Logika Poin Profesional.
- * Memastikan poin hanya diberikan 1.0 jika BENAR-BENAR lengkap (In & Out) 
- * atau memiliki keterangan tugas luar (Dinas/Luar Sekolah).
+ * Logika Poin Profesional sesuai Skema E-SPENLI.
+ * 1.0: Hadir Lengkap, Dinas, Luar Sekolah, Cuti.
+ * 0.95: Terlambat, Pulang Cepat.
+ * 0.9: Sakit.
+ * 0.7: Izin Pribadi.
+ * 0.5: Lupa Absen (Hanya Masuk atau Hanya Pulang).
+ * 0.0: Alpa / Tanpa Keterangan.
  */
 export const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean, isToday: boolean = false): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
     
-    // Cuti, Dinas, dan Tugas Luar mendapatkan poin penuh tanpa cek jam
+    // HADIR / DINAS / CUTI (1.0 Poin)
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
     
-    // Kehadiran biasa WAJIB ada jam masuk DAN jam pulang untuk poin >= 0.95
+    // SAKIT (0.9 Poin)
+    if (s === 'sakit') return 0.9;
+    
+    // IZIN PRIBADI (0.7 Poin)
+    if (s.includes('izin')) return 0.7;
+
+    // KEHADIRAN BIASA
     if (hasIn && hasOut) {
-        if (d === 'terlambat' || d.includes('cepat')) return 0.95;
+        // TELAT / IZIN CEPAT (0.95 Poin)
+        if (d.includes('terlambat') || d.includes('cepat')) return 0.95;
+        // HADIR LENGKAP & TEPAT WAKTU (1.0 Poin)
         return 1.0;
     }
     
-    // Jika hanya salah satu (Masuk saja atau Pulang saja)
+    // LUPA ABSEN (0.5 Poin)
     if (hasIn || hasOut) {
-        // Khusus hari ini tetap beri 1.0 agar persentase tidak anjlok saat user baru absen masuk
-        return isToday ? 1.0 : 0.5;
+        // Khusus hari ini tetap beri 1.0 untuk sementara agar persentase tidak anjlok saat user baru absen masuk
+        if (isToday) return 1.0;
+        return 0.5;
     }
     
+    // ALPA (0.0 Poin)
     return 0.0;
 };
 
@@ -248,7 +262,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 if (desc.includes('luar sekolah')) {
                     izinCount++;
                 } else {
-                    // Hanya hitung "Hadir" jika poin minimal 0.95 (terlambat/lengkap)
                     if (p >= 0.95) hadirCount++;
                 }
             }
