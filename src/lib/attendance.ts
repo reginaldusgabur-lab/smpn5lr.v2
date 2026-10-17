@@ -28,7 +28,7 @@ const parseFirestoreDate = (input: any): Date | null => {
 };
 
 const cleanDesc = (desc: any) => {
-    if (!desc || typeof desc !== 'string') return 'Absensi mandiri';
+    if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
     const d = desc.toLowerCase();
     if (d === 'terlambat') return 'Terlambat';
     if (d === 'sakit') return 'Sakit';
@@ -39,7 +39,9 @@ const cleanDesc = (desc: any) => {
     if (d === 'pulang cepat') return 'Pulang cepat';
     if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
     if (d === 'kehadiran penuh') return 'Kehadiran penuh';
-    return desc.trim() || 'Absensi mandiri';
+    // Mapping kata kunci admin ke label standar Kehadiran penuh
+    if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi')) return 'Kehadiran penuh';
+    return desc.trim() || 'Kehadiran penuh';
 };
 
 /**
@@ -241,7 +243,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             const [h, m] = outEndTimeStr.split(':').map(Number);
             const outEndMinutes = h * 60 + m;
 
-            // Jika hari ini dan belum melewati jam pulang, grace period = 1.0 poin. Jika sudah lewat = 0.5 poin.
+            // Flag kedaluwarsa untuk pemberian poin lupa absen (0.5 vs 1.0)
             const checkOutExpired = !isToday || (currentTimeMinutes > outEndMinutes);
 
             const att = attMap.get(dayStr);
