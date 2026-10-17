@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Info, Calculator, TrendingUp, PlaneTakeoff } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateAttendanceStats, fetchUserMonthlyReportData } from '@/lib/attendance';
@@ -84,7 +84,7 @@ export default function LaporanPage() {
     }
   }, [schoolConfig, academicYear]);
 
-  const cacheKey = useMemo(() => user ? `user_report_v219_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
+  const cacheKey = useMemo(() => user ? `user_report_v220_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
 
   const fetchReport = useCallback(async (forceRefresh = false) => {
     if (!user || !firestore || !schoolConfig || !cacheKey) return;
@@ -327,10 +327,10 @@ export default function LaporanPage() {
                                     <div className="flex items-center gap-2">
                                         <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" />
                                         <span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">
-                                            {user?.status === 'Cuti' ? "-" : (stats?.totalPoints || "0.00")}
+                                            {user?.status === 'Cuti' && stats?.persentase === '-' ? "-" : (stats?.totalPoints || "0.00")}
                                         </span>
                                     </div>
-                                    {user?.status !== 'Cuti' && stats && (
+                                    {!(user?.status === 'Cuti' && stats?.persentase === '-') && stats && (
                                         <p className="text-[10px] font-bold text-muted-foreground mt-1">
                                             ({stats.pastWorkingDaysCount} dari {stats.totalWorkingDaysCount} hari)
                                         </p>
@@ -342,7 +342,7 @@ export default function LaporanPage() {
                                 <div className="flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
                                     <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">
-                                        {user?.status === 'Cuti' ? "-" : (stats?.persentase || "0.0%")}
+                                        {stats?.persentase || "0.0%"}
                                     </span>
                                 </div>
                             </div>

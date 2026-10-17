@@ -121,7 +121,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                 return;
             }
 
-            // Cek apakah ada izin cuti AKTIF hari ini
             const userLeaveDoc = leavesToday.find(d => (d.data().userId || d.ref.parent.parent?.id) === u.id);
             if (userLeaveDoc) {
                 const l = userLeaveDoc.data();
@@ -137,7 +136,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                     pendingCount++;
                 }
             } else if (u.status === 'Cuti') {
-                // Status akun Cuti tapi tidak ada record izin aktif hari ini? Anggap Cuti (karena status akun menang)
                 cutiCount++;
             } else {
                 alpaCount++;
@@ -157,7 +155,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v954_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v955_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -234,7 +232,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
-        // Requirement: Persentase kosong HANYA jika hari ini masih dalam rentang cuti aktif
         const hasActiveCutiToday = leaveSnap.docs.some(ld => {
             const l = ld.data();
             const lS = parseFirestoreDate(l.startDate);

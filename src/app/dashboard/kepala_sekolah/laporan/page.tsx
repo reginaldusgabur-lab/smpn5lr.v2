@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays, Eye, PlaneTakeoff } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, collectionGroup } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, setHours, setMinutes, isBefore, isSameDay } from 'date-fns';
+import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, setHours, setMinutes, isBefore, isSameDay, isWithinInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -107,6 +107,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     }
                 });
 
+                let hasCutiApprovedToday = false;
                 allLeave.filter(l => l.userId === u.id).forEach(leave => {
                     eachDayOfInterval({ start: leave.startDate, end: leave.endDate }).forEach(day => {
                         const dStr = format(day, 'yyyy-MM-dd');
@@ -117,12 +118,13 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                             points += p; 
                             
                             if (type.includes('sakit')) sakitCount++;
-                            else if (type.includes('cuti')) izinCount++; // Cuti masuk ke kolom izin
+                            else if (type.includes('cuti')) izinCount++;
                             else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                             else if (type.includes('dinas')) hadirCount++;
                             else izinCount++;
                             
                             processedDates.add(dStr);
+                            if (dStr === todayStr && type.includes('cuti')) hasCutiApprovedToday = true;
                         }
                     });
                 });
@@ -130,8 +132,9 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                 const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 
+                const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
                 const denominator = Math.max(1, allWorkingDays.length);
-                const presentasi = u.status === 'Cuti' ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
+                const presentasi = isCutiActiveToday ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
                 
                 return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: totalAlpa, terlambat: 0, presentasi };
             });

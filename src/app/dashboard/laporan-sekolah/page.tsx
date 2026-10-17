@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
-import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth } from 'date-fns';
+import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth, isWithinInterval } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -71,17 +70,26 @@ export default function SchoolReportPage() {
 
     const loadData = useCallback(async () => {
         if (!firestore || !user?.uid || !isMounted.current || !schoolConfigData) return;
+        
         setIsReportLoading(true);
         setError(null);
+        
         try {
             const start = startOfMonth(currentMonth);
             const end = endOfMonth(currentMonth);
             const today = startOfDay(new Date());
             const todayStr = format(today, 'yyyy-MM-dd');
-            const monthlyConfigRef = doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'));
+            const monthId = format(currentMonth, 'yyyy-MM');
+
+            const monthlyConfigRef = doc(firestore, 'monthlyConfigs', monthId);
             
-            const usersQuery = query(collection(firestore, 'users'), where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']), where('status', 'in', ['Aktif', 'Cuti']));
-            const [usersSnap, monthlySnap] = await Promise.all([getDocs(usersQuery), getDoc(monthlyConfigRef)]);
+            const usersQuery = query(
+                collection(firestore, 'users'), 
+                where('role', 'in', ['guru', 'pegawai', 'kepala_sekolah']),
+                where('status', 'in', ['Aktif', 'Cuti'])
+            );
+            const usersSnap = await getDocs(usersQuery);
+            const monthlySnap = await getDoc(monthlyConfigRef);
 
             const mConfig = monthlySnap.exists() ? monthlySnap.data() : {};
             if (isMounted.current) {
@@ -90,20 +98,27 @@ export default function SchoolReportPage() {
             }
             
             const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+
             const qAtt = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
             const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
-            const [attSnap, leaveSnap] = await Promise.all([getDocs(qAtt), getDocs(qLeave)]);
 
-            const attByUser: Record<string, any[]> = {};
+            const [attSnap, leaveSnap] = await Promise.all([
+                getDocs(attendanceQuery), 
+                getDocs(leaveQuery)
+            ]);
+
+            const attendanceByUserId: Record<string, any[]> = {};
             attSnap.docs.forEach(d => {
-                const uid = d.data().userId || d.ref.parent.parent?.id;
-                if (uid) (attByUser[uid] = attByUser[uid] || []).push(d.data());
+                const data = d.data();
+                const uid = data.userId || d.ref.parent.parent?.id;
+                if (uid) (attendanceByUserId[uid] = attendanceByUserId[uid] || []).push(data);
             });
 
-            const leaveByUser: Record<string, any[]> = {};
+            const leaveByUserId: Record<string, any[]> = {};
             leaveSnap.docs.forEach(d => {
-                const uid = d.data().userId || d.ref.parent.parent?.id;
-                if (uid) (leaveByUser[uid] = leaveByUser[uid] || []).push(d.data());
+                const data = d.data();
+                const uid = data.userId || d.ref.parent.parent?.id;
+                if (uid) (leaveByUserId[uid] = leaveByUserId[uid] || []).push(data);
             });
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
@@ -113,46 +128,57 @@ export default function SchoolReportPage() {
 
             const results = allUsers.map(u => {
                 let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
-                const processed = new Set<string>();
+                const processedDates = new Set<string>();
 
-                (attByUser[u.id] || []).forEach(att => {
-                    const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-                    if (dStr && workingDaysSet.has(dStr) && !processed.has(dStr)) {
+                (attendanceByUserId[u.id] || []).forEach(att => {
+                    const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+                    if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
                         const desc = (att.reasonForUpdate || '').toLowerCase();
-                        points += calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, dStr === todayStr);
+                        points += calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, attDateStr === todayStr);
                         if (desc.includes('luar sekolah')) izinCount++; else hadirCount++;
-                        processed.add(dStr);
+                        processedDates.add(attDateStr);
                     }
                 });
 
-                (leaveByUser[u.id] || []).forEach(leave => {
-                    const lS = leave.startDate.toDate(); const lE = leave.endDate.toDate();
+                let hasCutiApprovedToday = false;
+                (leaveByUserId[u.id] || []).forEach(leave => {
+                    const lS = leave.startDate.toDate();
+                    const lE = leave.endDate.toDate();
                     eachDayOfInterval({ start: lS, end: lE }).forEach(day => {
                         const dStr = format(day, 'yyyy-MM-dd');
-                        if (workingDaysSet.has(dStr) && !processed.has(dStr)) {
+                        if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
                             const type = (leave.type || '').toLowerCase();
                             points += calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
                             if (type.includes('sakit')) sakitCount++; else izinCount++;
-                            processed.add(dStr);
+                            processedDates.add(dStr);
+                            if (dStr === todayStr && type.includes('cuti')) hasCutiApprovedToday = true;
                         }
                     });
                 });
 
-                const totalAlpa = workingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processed.has(format(day, 'yyyy-MM-dd'))).length;
-                const persentase = u.status === 'Cuti' ? '-' : (Math.min((points / Math.max(1, workingDays.length)) * 100, 100).toFixed(1) + '%');
+                const totalAlpa = workingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+                
+                const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
+                const persentase = isCutiActiveToday ? '-' : (Math.min((points / Math.max(1, workingDays.length)) * 100, 100).toFixed(1) + '%');
 
                 return {
-                    uid: u.id, name: u.name, nip: u.nip || '-', position: u.position || '-', role: u.role || '',
-                    sequenceNumber: u.sequenceNumber || null, totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa, 
+                    uid: u.id, name: u.name, nip: u.nip || '-',
+                    position: u.position || '-', role: u.role || '',
+                    sequenceNumber: u.sequenceNumber || null,
+                    totalHadir: hadirCount, totalIzin: izinCount, totalSakit: sakitCount, totalAlpa, 
                     persentase, status: u.status
                 };
             });
 
+            results.sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999));
             if (isMounted.current) {
-                setReportData(results.sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999)).map((r, i) => ({ ...r, no: i + 1 })));
+                setReportData(results.map((r, i) => ({ ...r, no: i + 1 })));
                 setIsReportLoading(false);
             }
-        } catch (err) { if (isMounted.current) setIsReportLoading(false); }
+        } catch (err) { 
+            console.error("Error loading report data:", err);
+            if (isMounted.current) { setIsReportLoading(false); setError("Gagal memuat data."); }
+        }
     }, [firestore, user?.uid, currentMonth, schoolConfigData]);
 
     useEffect(() => {
@@ -163,14 +189,6 @@ export default function SchoolReportPage() {
 
     const filteredReports = useMemo(() => reportData.filter(r => (roleFilter === 'all' || r.role === roleFilter) && r.name.toLowerCase().includes(searchTerm.toLowerCase())), [reportData, roleFilter, searchTerm]);
 
-    const handleMonthChange = (amount: number) => {
-        const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
-        if (next >= minDate && next <= new Date()) setCurrentMonth(next);
-    };
-
-    const canGoPrev = currentMonth > minDate;
-    const canGoNext = !isSameMonth(currentMonth, new Date());
-
     const handleDownloadPdf = async () => {
         if (!filteredReports.length || isExporting) return;
         setIsExporting(true);
@@ -178,21 +196,27 @@ export default function SchoolReportPage() {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
+            const centerX = pageWidth / 2;
             const margin = 14;
             const config = schoolConfigData || ({} as any);
             const mConfig = monthlyConfig || {};
 
-            doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), pageWidth/2, 15, { align: 'center' });
-            doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), pageWidth/2, 21, { align: 'center' });
-            doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), pageWidth/2, 28, { align: 'center' });
-            doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, pageWidth/2, 34, { align: 'center' });
+            doc.setFont('times', 'bold').setFontSize(14).text((config.governmentAgency || 'PEMERINTAH KABUPATEN MANGGARAI').toUpperCase(), centerX, 15, { align: 'center' });
+            doc.text((config.educationAgency || 'DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA').toUpperCase(), centerX, 21, { align: 'center' });
+            doc.setFontSize(12).text((config.schoolName || 'SMP NEGERI 5 LANGKE REMBONG').toUpperCase(), centerX, 28, { align: 'center' });
+            doc.setFont('times', 'normal').setFontSize(9).text(`Alamat: ${config.address || 'Alamat Sekolah'}`, centerX, 34, { align: 'center' });
             doc.setLineWidth(0.8).line(margin, 38, pageWidth - margin, 38);
+            doc.setLineWidth(0.2).line(margin, 38.8, pageWidth - margin, 38.8);
 
-            doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', pageWidth/2, 48, { align: 'center' });
-            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, pageWidth/2, 54, { align: 'center' });
-            doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, pageWidth/2, 60, { align: 'center' });
+            doc.setFont('times', 'bold').setFontSize(12).text('LAPORAN KEHADIRAN GURU/TENDIK', centerX, 48, { align: 'center' });
+            doc.text(`Bulan ${format(currentMonth, 'MMMM yyyy', { locale: id })}`, centerX, 54, { align: 'center' });
+            doc.setFontSize(10).setFont('times', 'normal').text(`Tahun Ajaran: ${academicYear || config.academicYear || '-'}`, centerX, 60, { align: 'center' });
 
-            const tableRows = filteredReports.map((item, i) => [item.sequenceNumber || i + 1, item.name, item.nip, item.position.replace('PPPK Paruh Waktu (PW)', 'PPPK PW'), Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, item.status === 'Cuti' ? '-' : item.persentase]);
+            const tableRows = filteredReports.map((item, index) => [
+              item.sequenceNumber || index + 1, item.name, item.nip, 
+              (item.position || '-').replace('PPPK Paruh Waktu (PW)', 'PPPK PW'), 
+              Math.ceil(item.totalHadir), item.totalIzin, item.totalSakit, item.totalAlpa, item.persentase
+            ]);
 
             autoTable(doc, {
                 startY: 68,
@@ -200,18 +224,18 @@ export default function SchoolReportPage() {
                 body: tableRows,
                 theme: 'striped',
                 margin: { bottom: 65 },
-                styles: { font: 'times', fontSize: 10, cellPadding: 1 },
-                headStyles: { fillColor: [52, 152, 219], halign: 'center' },
+                styles: { font: 'times', fontSize: 10, cellPadding: 1.0, valign: 'middle', textColor: [0, 0, 0], lineWidth: 0, fillColor: [248, 250, 252] },
+                headStyles: { fillColor: [52, 152, 219], textColor: 255, halign: 'center', fontStyle: 'bold', minCellHeight: 12 },
+                alternateRowStyles: { fillColor: [235, 245, 255] },
                 columnStyles: { 0: { halign: 'center', cellWidth: 8 }, 8: { halign: 'right', cellWidth: 15 } }
             });
 
-            // Closure / Anchor Logic
             const footerLineY = pageHeight - 15;
-            const bottomSafeLimit = footerLineY - 2;
+            const bottomSafeLimit = footerLineY - 2; 
             const signatureHeight = 45;
             const notesLineHeight = 4;
-            const labelAreaHeight = 16;
-
+            const labelAreaHeight = 16; 
+            
             let totalNotesHeight = 0;
             const processedNotes = [];
             if (mConfig.isHolidayNotesActive && mConfig.holidayNotes) {
@@ -223,15 +247,7 @@ export default function SchoolReportPage() {
                 });
             }
 
-            let presentationNoteHeight = 0;
-            let splitPresentationNote: string[] = [];
-            if (config.isPresentationNoteActive && config.presentationNoteContent) {
-                splitPresentationNote = doc.splitTextToSize(config.presentationNoteContent, pageWidth - (margin * 2));
-                presentationNoteHeight = (splitPresentationNote.length * 4) + 8;
-            }
-
-            const holidayBlockHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
-            const notesBlockTotalHeight = holidayBlockHeight + presentationNoteHeight;
+            const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
             const currentTableEndY = (doc as any).lastAutoTable.finalY;
 
             let closureStartY;
@@ -250,28 +266,18 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, closureStartY + 38);
             doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, closureStartY + 44);
 
-            if (notesBlockTotalHeight > 0) {
-                let cursorY = bottomSafeLimit - notesBlockTotalHeight;
-
-                if (config.isPresentationNoteActive && config.presentationNoteContent) {
-                    doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text('Keterangan Perhitungan Persentase:', margin, cursorY + 2);
-                    doc.setFontSize(8).setFont('times', 'italic');
-                    doc.text(splitPresentationNote, margin, cursorY + 7);
-                    cursorY += presentationNoteHeight;
-                }
-
-                if (mConfig.isHolidayNotesActive) {
-                    const labelsStartY = cursorY + 2;
-                    doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-                    doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
-                    let noteCursorY = labelsStartY + 11.5;
-                    processedNotes.forEach((note) => {
-                        if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                        else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                        doc.text(note.split, margin, noteCursorY);
-                        noteCursorY += note.split.length * notesLineHeight;
-                    });
-                }
+            if (mConfig.isHolidayNotesActive) {
+                const listItemsStartY = bottomSafeLimit - totalNotesHeight;
+                const labelsStartY = listItemsStartY - labelAreaHeight + 2;
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+                let noteCursorY = listItemsStartY;
+                processedNotes.forEach((note) => {
+                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    doc.text(note.split, margin, noteCursorY);
+                    noteCursorY += note.split.length * notesLineHeight;
+                });
             }
 
             const totalPages = (doc as any).internal.getNumberOfPages();
@@ -301,10 +307,10 @@ export default function SchoolReportPage() {
                         <div className="p-4 space-y-6">
                             <div className="flex items-center justify-between w-full bg-muted/40 rounded-2xl border border-muted-foreground/5 p-1">
                                 <div className="flex items-center">
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(-1)} disabled={isReportLoading || !canGoPrev}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
-                                    <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max"><CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div></div>
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))} disabled={isReportLoading || currentMonth < minDate}><ChevronLeft className="h-5 w-5 text-primary" /></Button>
+                                    <div className="flex items-center gap-1.5 pl-0.5 pr-2 border-r border-muted-foreground/10 mr-1 min-w-max"><CalendarDays className="h-4 w-4 text-primary/70" /><div className="flex flex-col"><span className="text-[7px] font-black uppercase text-muted-foreground/60 leading-none">Tahun ajaran</span><span className="text-[10px] font-black text-primary leading-none mt-0.5 whitespace-nowrap">{academicYear || "-"}</span></div></div>
                                 </div>
-                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => handleMonthChange(1)} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
+                                <div className="flex items-center gap-2"><span className="font-bold text-sm text-primary capitalize min-w-[120px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: id })}</span><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))} disabled={isReportLoading || isSameMonth(currentMonth, new Date())}><ChevronRight className="h-5 w-5 text-primary" /></Button></div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-2xl border border-muted-foreground/5">
                                 <div className="space-y-1.5"><Label className="text-[10px] font-bold text-muted-foreground ml-1">Peran</Label><Select value={roleFilter} onValueChange={setRoleFilter}><SelectTrigger className="h-11 rounded-xl bg-background font-bold text-xs border-muted-foreground/10"><SelectValue /></SelectTrigger><SelectContent className="rounded-xl border-none"><SelectItem value="all">Semua peran</SelectItem><SelectItem value="guru">Guru</SelectItem><SelectItem value="pegawai">Pegawai</SelectItem><SelectItem value="kepala_sekolah">Kepala Sekolah</SelectItem></SelectContent></Select></div>
