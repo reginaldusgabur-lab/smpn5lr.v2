@@ -121,24 +121,24 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                 return;
             }
 
-            if (u.status === 'Cuti') {
-                cutiCount++;
-                return;
-            }
-
+            // Cek apakah ada izin cuti AKTIF hari ini
             const userLeaveDoc = leavesToday.find(d => (d.data().userId || d.ref.parent.parent?.id) === u.id);
             if (userLeaveDoc) {
                 const l = userLeaveDoc.data();
                 if (l.status === 'approved') {
                     const type = (l.type || '').toLowerCase();
+                    const reason = (l.reason || '').toLowerCase();
                     if (type.includes('sakit')) sakitCount++;
                     else if (type.includes('cuti')) cutiCount++;
-                    else if (type.includes('luar sekolah') || (l.reason && l.reason.toLowerCase().includes('luar sekolah'))) izinCount++;
+                    else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                     else if (type.includes('dinas')) hadirCount++;
                     else izinCount++;
                 } else {
                     pendingCount++;
                 }
+            } else if (u.status === 'Cuti') {
+                // Status akun Cuti tapi tidak ada record izin aktif hari ini? Anggap Cuti (karena status akun menang)
+                cutiCount++;
             } else {
                 alpaCount++;
             }
@@ -157,7 +157,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v953_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v954_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -234,9 +234,19 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
+        // Requirement: Persentase kosong HANYA jika hari ini masih dalam rentang cuti aktif
+        const hasActiveCutiToday = leaveSnap.docs.some(ld => {
+            const l = ld.data();
+            const lS = parseFirestoreDate(l.startDate);
+            const lE = parseFirestoreDate(l.endDate);
+            return (l.type || '').toLowerCase().includes('cuti') && lS && lE && isWithinInterval(today, { start: startOfDay(lS), end: endOfDay(lE) });
+        });
+
+        const isCurrentlyCuti = userData?.status === 'Cuti' && hasActiveCutiToday;
+
         const result = {
-            totalPoints: userData?.status === 'Cuti' ? "-" : totalPoints.toFixed(2),
-            persentase: userData?.status === 'Cuti' ? "-" : (Math.min((totalPoints / denominator) * 100, 100).toFixed(1) + '%'),
+            totalPoints: isCurrentlyCuti ? "-" : totalPoints.toFixed(2),
+            persentase: isCurrentlyCuti ? "-" : (Math.min((totalPoints / denominator) * 100, 100).toFixed(1) + '%'),
             pastWorkingDaysCount: pastWorkingDays.length,
             totalWorkingDaysCount: allWorkingDays.length,
             totalHadir: hadirCount,
@@ -316,12 +326,11 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 return { id: `${leave.id}-${dayStr}`, date: dayStr, status: statusLabel, description: cleanDesc(leave.reason) || type, points: pts, manualEntry: false };
             }
             
-            // Hanya tampilkan Alpa jika sudah lewat atau hari ini
             if (dayStr <= todayStr) {
                 return { id: dayStr, date: dayStr, status: 'Alpa', description: 'Tanpa keterangan', points: 0.0, manualEntry: false };
             }
 
-            return null; // Sembunyikan hari masa depan yang belum ada aktivitas
+            return null;
         }).filter(Boolean).sort((a: any, b: any) => b.date.localeCompare(a.date));
     } catch (e) { return []; }
 }

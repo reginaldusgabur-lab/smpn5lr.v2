@@ -75,7 +75,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, collection, getDocs } from 'firebase/firestore';
+import { doc, collection, getDocs, updateDoc, query, where } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { resetUserPassword, updateUserEmail } from '@/app/actions/admin-actions';
@@ -83,10 +83,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { startOfDay } from 'date-fns';
 
 const addUserSchema = z.object({
     name: z.string().min(1, { message: 'Nama wajib diisi' }),
-    email: z.string().email({ message: 'Email tidak valid.' }),
+    email: z.string().email({ message: "Format email tidak valid" }),
     role: z.enum(['guru', 'pegawai', 'kepala_sekolah', 'admin']),
     gender: z.enum(['Laki-laki', 'Perempuan'], { required_error: 'Jenis kelamin wajib dipilih' }),
     status: z.enum(['Aktif', 'Nonaktif', 'Cuti']).default('Aktif'),
@@ -125,23 +126,44 @@ export default function AdminUsersPage() {
         if (!firestore) return;
         setIsUsersLoading(true);
         const CACHE_KEY = 'espenli_daftar_guru_v2';
-        if (!forceRefresh) {
-            const cached = typeof window !== 'undefined' ? localStorage.getItem(CACHE_KEY) : null;
-            if (cached) {
-                try {
-                    setUsersData(JSON.parse(cached));
-                    setIsUsersLoading(false);
-                    return;
-                } catch (e) { localStorage.removeItem(CACHE_KEY); }
-            }
-        }
+        
         try {
             const snap = await getDocs(collection(firestore, 'users'));
-            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setUsersData(data);
-            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        } catch (error) { toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memuat data.' }); }
-        finally { setIsUsersLoading(false); }
+            const today = startOfDay(new Date());
+            
+            const rawUsers = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+            const processedUsers = [];
+
+            // REVERT EXPIRED CUTI STATUS
+            for (const u of rawUsers) {
+                if (u.status === 'Cuti') {
+                    const lq = query(
+                        collection(firestore, 'users', u.id, 'leaveRequests'), 
+                        where('status', '==', 'approved')
+                    );
+                    const lsnap = await getDocs(lq);
+                    const activeCuti = lsnap.docs.find(ld => {
+                        const data = ld.data();
+                        const isCutiType = (data.type || '').toLowerCase().includes('cuti');
+                        const end = data.endDate?.toDate();
+                        return isCutiType && end && end >= today;
+                    });
+                    
+                    if (!activeCuti) {
+                        await updateDoc(doc(firestore, 'users', u.id), { status: 'Aktif' });
+                        u.status = 'Aktif';
+                    }
+                }
+                processedUsers.push(u);
+            }
+
+            setUsersData(processedUsers);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(processedUsers));
+        } catch (error) { 
+            toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal memuat data.' }); 
+        } finally { 
+            setIsUsersLoading(false); 
+        }
     }, [firestore, toast]);
 
     useEffect(() => { if (!isAuthLoading && user) loadUsers(); }, [isAuthLoading, user, loadUsers]);
@@ -196,7 +218,6 @@ export default function AdminUsersPage() {
             const parsedSeq = values.sequenceNumber ? parseInt(values.sequenceNumber, 10) : null;
             const finalSeq = (parsedSeq !== null && !isNaN(parsedSeq)) ? parsedSeq : null;
             if (editingUser) {
-                // Perbarui email di Auth jika berubah
                 if (values.email !== editingUser.email) {
                     const res = await updateUserEmail(editingUser.id, values.email);
                     if (!res.success) throw new Error(res.error);

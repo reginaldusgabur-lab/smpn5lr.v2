@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -126,11 +125,16 @@ const AbsentUsersTable = () => {
           .sort((a, b) => (a.sequenceNumber ?? 999) - (b.sequenceNumber ?? 999)) 
           .map((user, index) => {
             let status = 'Alpa';
-            
+            const leaveInfo = userStatusMap.get(user.id);
+
+            // Logic: Only show "Cuti" if the account is in Cuti status AND there is an active Cuti request today.
             if (user.status === 'Cuti') {
-                status = 'Cuti';
+                if (leaveInfo && (leaveInfo.type || '').toLowerCase().includes('cuti')) {
+                    status = 'Cuti';
+                } else {
+                    status = 'Alpa'; // Status is Cuti but leave period expired or none for today? Treat as Alpa
+                }
             } else {
-                const leaveInfo = userStatusMap.get(user.id);
                 if (leaveInfo) {
                     if (leaveInfo.status === 'approved') {
                         status = leaveInfo.type || 'Izin';
