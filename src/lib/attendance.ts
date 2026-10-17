@@ -38,12 +38,12 @@ const cleanDesc = (desc: any) => {
     if (d === 'dinas siang') return 'Dinas siang';
     if (d === 'pulang cepat') return 'Pulang cepat';
     if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
+    if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi')) return 'Kehadiran penuh';
     return desc.trim() || 'Kehadiran penuh';
 };
 
 /**
  * Logika Poin Profesional.
- * Cuti tetap 1.0 poin agar tidak merusak persentase.
  */
 export const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean, isToday: boolean = false): number => {
     const s = status.toLowerCase();
@@ -74,10 +74,12 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         ]);
         const config = configSnap.data() || {};
         const mConfig = monthlySnap.data() || {};
+        const isManualOff = config.isAttendanceActive === false;
         
         const holidays = Array.isArray(mConfig.holidays) ? mConfig.holidays : [];
         const offDays = Array.isArray(config.offDays) ? config.offDays : [0, 6];
-        const isHoliday = config.isAttendanceActive === false || holidays.includes(todayStr) || offDays.includes(today.getDay());
+        
+        const isHoliday = isManualOff || holidays.includes(todayStr) || offDays.includes(today.getDay());
 
         const qUsers = query(
             collection(firestore, 'users'), 
@@ -88,7 +90,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
         if (isHoliday) {
-            return { totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: true };
+            return { totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: true, isManualDisabled: isManualOff };
         }
 
         const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
@@ -98,7 +100,12 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         attSnap.forEach(d => {
             const data = d.data();
             const uid = data.userId || d.ref.parent.parent?.id;
-            if (uid) presentMap.set(uid, data);
+            if (uid) {
+                const existing = presentMap.get(uid);
+                if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
+                    presentMap.set(uid, data);
+                }
+            }
         });
 
         const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
@@ -110,7 +117,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return start && end && isWithinInterval(today, { start: startOfDay(start), end: endOfDay(end) });
         });
 
-        let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let pendingCount = 0; let alpaCount = 0; let cutiCount = 0;
+        let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let cutiCount = 0; let pendingCount = 0; let alpaCount = 0;
 
         allStaff.forEach((u: any) => {
             const attData = presentMap.get(u.id);
@@ -136,17 +143,27 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                     pendingCount++;
                 }
             } else if (u.status === 'Cuti') {
-                cutiCount++;
+                // Jika status akun Cuti tapi tidak ada dokumen izin aktif hari ini -> Hitung Alpa (Cuti Berakhir)
+                alpaCount++;
             } else {
                 alpaCount++;
             }
         });
 
         return {
-            totalStaff: allStaff.length, hadir: hadirCount, izin: izinCount + cutiCount, sakit: sakitCount, cuti: cutiCount, pending: pendingCount, alpa: alpaCount, isHoliday: false
+            totalStaff: allStaff.length,
+            hadir: hadirCount,
+            izin: izinCount,
+            sakit: sakitCount,
+            cuti: cutiCount,
+            pending: pendingCount,
+            alpa: alpaCount,
+            isHoliday: false,
+            isManualDisabled: isManualOff,
+            isCalendarHoliday: holidays.includes(todayStr)
         };
     } catch (e) {
-        console.error(e);
+        console.error("Daily stats calculation error:", e);
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false };
     }
 }
@@ -155,7 +172,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v955_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v960_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {

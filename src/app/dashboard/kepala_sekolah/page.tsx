@@ -70,9 +70,9 @@ export default function KepalaSekolahDashboardPage() {
   const [stats, setStats] = useState(() => {
     if (typeof window !== 'undefined') {
         const cached = localStorage.getItem('espenli_kepsek_stats_v2');
-        return cached ? JSON.parse(cached) : { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+        return cached ? JSON.parse(cached) : { hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false };
     }
-    return { hadir: 0, izin: 0, sakit: 0, pending: 0, alpa: 0, isHoliday: false };
+    return { hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false };
   });
 
   const [isStatsLoading, setIsStatsLoading] = useState(true);
@@ -196,7 +196,7 @@ export default function KepalaSekolahDashboardPage() {
 
         <div className="space-y-4">
           <Card className="bg-gradient-to-br from-[#26c281] to-[#2ab7a8] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Hadir</span><UserCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.hadir}</div></Card>
-          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Persetujuan</span><ClipboardCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="flex items-center justify-between"><div className="text-3xl font-normal tracking-tight">{stats.pending}</div><Button asChild variant="ghost" size="sm" className="h-7 text-white hover:bg-white/10 text-[10px] tracking-widest">Detail</Button></div></Card>
+          <Card className="bg-gradient-to-br from-[#00b0ff] to-[#007aff] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Izin/Sakit/Cuti</span><ClipboardCheck className="h-3.5 w-3.5 opacity-60" /></div><div className="flex items-center justify-between"><div className="text-3xl font-normal tracking-tight">{stats.izin + stats.sakit + stats.cuti}</div><Button asChild variant="ghost" size="sm" className="h-7 text-white hover:bg-white/10 text-[10px] tracking-widest">Detail</Button></div></Card>
           <Card className="bg-gradient-to-br from-[#ff5252] to-[#e74c3c] border-none shadow-md rounded-xl p-3 text-white"><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-normal opacity-80 tracking-widest">Alpa</span><UserX className="h-3.5 w-3.5 opacity-60" /></div><div className="text-3xl font-normal tracking-tight">{stats.alpa}</div></Card>
         </div>
       </div>
