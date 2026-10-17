@@ -28,7 +28,7 @@ const parseFirestoreDate = (input: any): Date | null => {
 };
 
 const cleanDesc = (desc: any) => {
-    if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
+    if (!desc || typeof desc !== 'string') return 'Absensi mandiri';
     const d = desc.toLowerCase();
     if (d === 'terlambat') return 'Terlambat';
     if (d === 'sakit') return 'Sakit';
@@ -38,26 +38,32 @@ const cleanDesc = (desc: any) => {
     if (d === 'dinas siang') return 'Dinas siang';
     if (d === 'pulang cepat') return 'Pulang cepat';
     if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
-    if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi')) return 'Kehadiran penuh';
-    return desc.trim() || 'Kehadiran penuh';
+    if (d === 'kehadiran penuh') return 'Kehadiran penuh';
+    return desc.trim() || 'Absensi mandiri';
 };
 
 /**
  * Logika Poin Profesional.
+ * Memastikan poin hanya diberikan 1.0 jika BENAR-BENAR lengkap (In & Out) 
+ * atau memiliki keterangan tugas luar (Dinas/Luar Sekolah).
  */
 export const calculatePoints = (status: string, description: string, hasIn: boolean, hasOut: boolean, isToday: boolean = false): number => {
     const s = status.toLowerCase();
     const d = description.toLowerCase();
     
+    // Cuti, Dinas, dan Tugas Luar mendapatkan poin penuh tanpa cek jam
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
-    if (d.includes('dinas') || d.includes('luar sekolah') || d === 'kehadiran penuh' || s.includes('luar sekolah')) return 1.0;
+    if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
     
-    if (hasIn && hasOut && s === 'hadir' && d !== 'terlambat' && !d.includes('cepat')) return 1.0;
-    if (d === 'terlambat' || d.includes('cepat')) return 0.95;
-    if (s === 'sakit') return 0.9;
-    if (s.includes('izin')) return 0.7;
+    // Kehadiran biasa WAJIB ada jam masuk DAN jam pulang untuk poin >= 0.95
+    if (hasIn && hasOut) {
+        if (d === 'terlambat' || d.includes('cepat')) return 0.95;
+        return 1.0;
+    }
     
+    // Jika hanya salah satu (Masuk saja atau Pulang saja)
     if (hasIn || hasOut) {
+        // Khusus hari ini tetap beri 1.0 agar persentase tidak anjlok saat user baru absen masuk
         return isToday ? 1.0 : 0.5;
     }
     
@@ -143,7 +149,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                     pendingCount++;
                 }
             } else if (u.status === 'Cuti') {
-                // Jika status akun Cuti tapi tidak ada dokumen izin aktif hari ini -> Hitung Alpa (Cuti Berakhir)
                 alpaCount++;
             } else {
                 alpaCount++;
@@ -172,7 +177,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v960_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v965_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -231,17 +236,21 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 else if (typeLower.includes('cuti')) izinCount++;
                 else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) izinCount++;
                 else if (typeLower.includes('dinas')) hadirCount++;
-                else if (p < 1.0) izinCount++;
-                else hadirCount++;
+                else izinCount++;
             } else if (att) {
                 const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
                 const checkInDate = parseFirestoreDate(att.checkInTime);
                 const checkOutDate = parseFirestoreDate(att.checkOutTime);
-                totalPoints += calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate, isToday);
+                const p = calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate, isToday);
+                totalPoints += p;
                 processedDates.add(dayStr);
                 
-                if (desc.includes('luar sekolah')) izinCount++;
-                else hadirCount++;
+                if (desc.includes('luar sekolah')) {
+                    izinCount++;
+                } else {
+                    // Hanya hitung "Hadir" jika poin minimal 0.95 (terlambat/lengkap)
+                    if (p >= 0.95) hadirCount++;
+                }
             }
         });
 
@@ -291,8 +300,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const attMap = new Map();
         attSnap.docs.forEach(d => {
             const data = d.data();
-            const dStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
-            if (dStr) attMap.set(dStr, { id: d.id, ...data });
+            const dayStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
+            if (dayStr) attMap.set(dayStr, { id: d.id, ...data });
         });
 
         const leaveMap = new Map();

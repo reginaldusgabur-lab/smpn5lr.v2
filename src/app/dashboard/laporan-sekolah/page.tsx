@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -136,8 +135,16 @@ export default function SchoolReportPage() {
                     const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
                     if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
                         const desc = (att.reasonForUpdate || '').toLowerCase();
-                        points += calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, attDateStr === todayStr);
-                        if (desc.includes('luar sekolah')) izinCount++; else hadirCount++;
+                        const p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, attDateStr === todayStr);
+                        points += p; 
+                        
+                        if (desc.includes('luar sekolah')) {
+                            izinCount++;
+                        } else {
+                            // Hanya tambahkan ke kolom Hijau (Hadir) jika poin >= 0.95 (Lengkap/Terlambat)
+                            if (p >= 0.95) hadirCount++;
+                        }
+                        
                         processedDates.add(attDateStr);
                     }
                 });
@@ -150,8 +157,14 @@ export default function SchoolReportPage() {
                         const dStr = format(day, 'yyyy-MM-dd');
                         if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
                             const type = (leave.type || '').toLowerCase();
-                            points += calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
-                            if (type.includes('sakit')) sakitCount++; else izinCount++;
+                            const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
+                            points += p; 
+                            
+                            if (type.includes('sakit')) sakitCount++; 
+                            else if (type.includes('cuti')) izinCount++; // Cuti masuk ke kolom Izin
+                            else if (type.includes('dinas')) hadirCount++; // Dinas masuk kolom Hadir (1.0)
+                            else izinCount++;
+                            
                             processedDates.add(dStr);
                             if (dStr === todayStr && type.includes('cuti')) hasCutiApprovedToday = true;
                         }
@@ -364,3 +377,4 @@ export default function SchoolReportPage() {
         </div>
     );
 }
+
