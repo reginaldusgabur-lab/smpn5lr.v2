@@ -157,7 +157,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v952_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v953_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -181,6 +181,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         );
 
         let totalPoints = 0;
+        let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
         const processedDates = new Set<string>();
         
         const attMap = new Map();
@@ -205,27 +206,47 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
             if (leaveDoc) {
                 const leave = leaveDoc.data();
-                totalPoints += calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
+                const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
+                totalPoints += p;
                 processedDates.add(dayStr);
+                
+                const typeLower = (leave.type || '').toLowerCase();
+                const reasonLower = (leave.reason || '').toLowerCase();
+                if (typeLower.includes('sakit')) sakitCount++;
+                else if (typeLower.includes('cuti')) izinCount++;
+                else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) izinCount++;
+                else if (typeLower.includes('dinas')) hadirCount++;
+                else if (p < 1.0) izinCount++;
+                else hadirCount++;
             } else if (att) {
                 const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
-                totalPoints += calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, isToday);
+                const checkInDate = parseFirestoreDate(att.checkInTime);
+                const checkOutDate = parseFirestoreDate(att.checkOutTime);
+                totalPoints += calculatePoints('hadir', desc, !!checkInDate, !!checkOutDate, isToday);
                 processedDates.add(dayStr);
+                
+                if (desc.includes('luar sekolah')) izinCount++;
+                else hadirCount++;
             }
         });
 
         const denominator = Math.max(1, allWorkingDays.length);
         const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+        const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
         const result = {
             totalPoints: userData?.status === 'Cuti' ? "-" : totalPoints.toFixed(2),
             persentase: userData?.status === 'Cuti' ? "-" : (Math.min((totalPoints / denominator) * 100, 100).toFixed(1) + '%'),
             pastWorkingDaysCount: pastWorkingDays.length,
-            totalWorkingDaysCount: allWorkingDays.length
+            totalWorkingDaysCount: allWorkingDays.length,
+            totalHadir: hadirCount,
+            totalIzin: izinCount,
+            totalSakit: sakitCount,
+            totalAlpa: alpaCount
         };
         setInCache(cacheKey, result); return result;
     } catch (e) {
-        return { totalPoints: "0.00", persentase: '0.0%', pastWorkingDaysCount: 0, totalWorkingDaysCount: 1 };
+        return { totalPoints: "0.00", persentase: '0.0%', pastWorkingDaysCount: 0, totalWorkingDaysCount: 1, totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0 };
     }
 }
 
