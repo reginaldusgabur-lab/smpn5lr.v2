@@ -29,6 +29,10 @@ const headmasterNavItems = [
   { href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan' }, 
 ];
 
+/**
+ * Komponen Navigasi Bawah dengan desain Floating Bar.
+ * Dibatasi lebarnya agar serasi dengan layout halaman.
+ */
 export function BottomNavigation() {
   const pathname = usePathname();
   const { user } = useUser();
@@ -54,8 +58,9 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-transparent">
-        <div className="flex h-full items-stretch backdrop-blur-sm">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-6 px-6">
+        {/* Floating container dengan backdrop-blur dan border halus */}
+        <div className="w-full max-w-sm h-16 bg-background/60 backdrop-blur-xl border border-border/50 rounded-[2rem] flex items-stretch shadow-[0_8px_32px_rgba(0,0,0,0.12)] pointer-events-auto overflow-hidden">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 
@@ -66,12 +71,12 @@ export function BottomNavigation() {
                         key={item.label}
                         href={item.href}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 text-xs font-bold transition-colors',
+                            'flex flex-1 flex-col items-center justify-center gap-1 text-xs font-bold transition-all duration-300 active:scale-90',
                             isActive ? 'text-primary' : 'text-muted-foreground/80 hover:text-primary'
                         )}
                     >
-                        <item.icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-2")} />
-                        <span className="text-center text-[10px] tracking-tight">{item.label}</span>
+                        <item.icon className={cn("h-5 w-5 transition-transform", isActive ? "stroke-[2.5px] scale-110" : "stroke-2")} />
+                        <span className="text-center text-[9px] tracking-tight font-black uppercase">{item.label}</span>
                     </Link>
                 );
             })}
