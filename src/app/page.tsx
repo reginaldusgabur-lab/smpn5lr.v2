@@ -47,6 +47,21 @@ const resetPasswordSchema = z.object({
   email: z.string().email({ message: "Masukkan alamat email yang valid." }),
 });
 
+/**
+ * Komponen Pulse Loader sederhana untuk transisi.
+ */
+function FullscreenLoader() {
+  return (
+    <div className="flex h-svh w-full flex-col items-center justify-center bg-background overflow-hidden">
+      <div className="flex items-center gap-1.5">
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
@@ -72,11 +87,12 @@ export default function LoginPage() {
     setIsClient(true);
   }, []);
 
+  // Redirect secepat mungkin jika user terdeteksi
   useEffect(() => {
-    if (isClient && !isUserLoading && user) {
+    if (isClient && user) {
       router.replace('/dashboard');
     }
-  }, [user, isUserLoading, router, isClient]);
+  }, [user, router, isClient]);
 
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoginLoading(true);
@@ -88,15 +104,12 @@ export default function LoginPage() {
     try {
       const cred = await signInWithEmailAndPassword(auth, values.email, values.password);
       
-      // PROACTIVE FETCH: Ambil profil segera setelah login berhasil
-      // Ini akan mempercepat transisi Dashboard secara drastis
+      // Ambil profil segera untuk mengisi cache localStorage
       const userDocSnap = await getDoc(doc(firestore, 'users', cred.user.uid));
       if (userDocSnap.exists()) {
           const profile = { ...cred.user, ...userDocSnap.data(), id: userDocSnap.id };
           localStorage.setItem('espenli_user_profile_v2', JSON.stringify(profile));
       }
-      
-      // onAuthStateChanged akan menangani redirect setelah data tersimpan di cache
     } catch (error: any) {
       toast({ variant: "destructive", title: "Login gagal", description: "Email atau kata sandi salah." });
       setIsLoginLoading(false);
@@ -118,16 +131,13 @@ export default function LoginPage() {
     }
   };
   
-  if (!isClient || (isUserLoading && !user)) {
-      return (
-        <div className="flex h-svh w-full flex-col items-center justify-center bg-white overflow-hidden">
-             <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
-            </div>
-        </div>
-      );
+  // LOGIKA ANTI-KEDIPAN:
+  // Jangan render Form Login jika:
+  // 1. Masih dalam fase SSR (!isClient)
+  // 2. User sudah terdeteksi di state (hasil recovery cache)
+  // 3. Status loading Firebase masih berjalan
+  if (!isClient || user || isUserLoading) {
+      return <FullscreenLoader />;
   }
 
   return (

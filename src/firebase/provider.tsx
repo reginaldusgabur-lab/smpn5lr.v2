@@ -54,7 +54,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>(() => {
-    // Optimasi: Gunakan localStorage agar profil tetap ada meskipun tab ditutup
+    // Optimasi: Pulihkan user dari localStorage secara sinkron untuk menghindari kedipan login
     if (typeof window !== 'undefined') {
         const cached = localStorage.getItem('espenli_user_profile_v2');
         if (cached) {
@@ -76,7 +76,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       async (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser) {
-          // Jika sudah ada user di state, jangan tampilkan loading lagi (background sync)
           const userDocRef = doc(firestore, 'users', firebaseUser.uid);
           try {
             const userDocSnap = await getDoc(userDocRef);
@@ -94,7 +93,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
               setUserAuthState({ user: null, isUserLoading: false, userError: null });
             }
           } catch (error) {
-            // Jika gagal ambil data (misal offline), tetap gunakan data lama jika ada
+            // Jika error (misal offline), gunakan data cache yang sudah ada di state jika tersedia
             setUserAuthState(prev => prev.user ? { ...prev, isUserLoading: false } : { user: null, isUserLoading: false, userError: error as Error });
           }
         } else {
