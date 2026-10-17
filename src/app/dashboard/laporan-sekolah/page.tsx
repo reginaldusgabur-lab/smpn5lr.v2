@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -99,8 +100,9 @@ export default function SchoolReportPage() {
             
             const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
 
-            const qAtt = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
-            const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
+            // FIX: Corrected variable names to match usage below
+            const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
+            const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
 
             const [attSnap, leaveSnap] = await Promise.all([
                 getDocs(attendanceQuery), 
@@ -158,6 +160,7 @@ export default function SchoolReportPage() {
 
                 const totalAlpa = workingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 
+                // Logic: Only hide percentage if currently in cuti period today
                 const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
                 const persentase = isCutiActiveToday ? '-' : (Math.min((points / Math.max(1, workingDays.length)) * 100, 100).toFixed(1) + '%');
 
@@ -247,7 +250,15 @@ export default function SchoolReportPage() {
                 });
             }
 
-            const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+            const holidayBlockHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+            let presentationNoteHeight = 0;
+            let splitPresentationNote: string[] = [];
+            if (config.isPresentationNoteActive && config.presentationNoteContent) {
+                splitPresentationNote = doc.splitTextToSize(config.presentationNoteContent, pageWidth - (margin * 2));
+                presentationNoteHeight = (splitPresentationNote.length * 4) + 8;
+            }
+
+            const notesBlockTotalHeight = holidayBlockHeight + presentationNoteHeight;
             const currentTableEndY = (doc as any).lastAutoTable.finalY;
 
             let closureStartY;
@@ -266,18 +277,28 @@ export default function SchoolReportPage() {
             doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', signatureX, closureStartY + 38);
             doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, signatureX, closureStartY + 44);
 
-            if (mConfig.isHolidayNotesActive) {
-                const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-                const labelsStartY = listItemsStartY - labelAreaHeight + 2;
-                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
-                let noteCursorY = listItemsStartY;
-                processedNotes.forEach((note) => {
-                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                    doc.text(note.split, margin, noteCursorY);
-                    noteCursorY += note.split.length * notesLineHeight;
-                });
+            if (notesBlockTotalHeight > 0) {
+                let cursorY = bottomSafeLimit - notesBlockTotalHeight;
+
+                if (config.isPresentationNoteActive && config.presentationNoteContent) {
+                    doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text('Keterangan Perhitungan Persentase:', margin, cursorY + 2);
+                    doc.setFontSize(8).setFont('times', 'italic');
+                    doc.text(splitPresentationNote, margin, cursorY + 7);
+                    cursorY += presentationNoteHeight;
+                }
+
+                if (mConfig.isHolidayNotesActive) {
+                    const labelsStartY = cursorY + 2;
+                    doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+                    doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+                    let noteCursorY = labelsStartY + 11.5;
+                    processedNotes.forEach((note) => {
+                        if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                        else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                        doc.text(note.split, margin, noteCursorY);
+                        noteCursorY += note.split.length * notesLineHeight;
+                    });
+                }
             }
 
             const totalPages = (doc as any).internal.getNumberOfPages();
