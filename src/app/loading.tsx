@@ -1,9 +1,11 @@
+
 'use client';
 
 import React from 'react';
 
 /**
  * Global Loading UI minimalis yang tidak mengganggu behavior scroll browser.
+ * Didesain tanpa <style jsx> untuk menghindari hydration error di Next.js App Router.
  */
 export default function Loading() {
   return (
