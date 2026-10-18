@@ -30,7 +30,7 @@ const headmasterNavItems = [
 
 /**
  * Komponen Navigasi Bawah dengan desain Floating Bar yang disesuaikan.
- * Teks menggunakan title-case dan bentuk kartu yang lebih konsisten (rounded-xl).
+ * Teks menggunakan title-case dan bentuk kartu yang lebih konsisten (rounded-3xl).
  */
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -57,9 +57,9 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-2 px-6">
-        {/* Floating container dengan desain sedikit kotak (rounded-xl) dan posisi lebih rendah */}
-        <div className="w-full max-w-sm h-16 bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl flex items-stretch shadow-[0_4px_24px_rgba(0,0,0,0.08)] pointer-events-auto overflow-hidden">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-4 px-6">
+        {/* Floating container dengan desain rounded-3xl agar rata dengan kartu di dashboard */}
+        <div className="w-full max-w-sm h-16 bg-background/80 backdrop-blur-xl border border-border/50 rounded-3xl flex items-stretch shadow-[0_8px_32px_rgba(0,0,0,0.1)] pointer-events-auto overflow-hidden">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 
