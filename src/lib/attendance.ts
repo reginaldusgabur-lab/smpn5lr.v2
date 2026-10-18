@@ -203,7 +203,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v1102_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v1104_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -228,7 +228,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
 
         let totalPoints = 0;
-        let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
+        let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let cutiCount = 0; let lupaAbsenCount = 0;
         const processedDates = new Set<string>();
         
         const attMap = new Map();
@@ -268,7 +268,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 const typeLower = (leave.type || '').toLowerCase();
                 const reasonLower = (leave.reason || '').toLowerCase();
                 if (typeLower.includes('sakit')) sakitCount++;
-                else if (typeLower.includes('cuti')) izinCount++;
+                else if (typeLower.includes('cuti')) cutiCount++;
                 else if (typeLower.includes('luar sekolah') || reasonLower.includes('luar sekolah')) izinCount++;
                 else if (typeLower.includes('dinas')) hadirCount++;
                 else izinCount++;
@@ -282,16 +282,16 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 
                 if (desc.includes('luar sekolah')) {
                     izinCount++;
-                } else if (p > 0) {
-                    hadirCount++; 
+                } else {
+                    hadirCount++; // Semua rekaman fisik dihitung hadir
+                    if (p === 0.5) lupaAbsenCount++;
                 }
             }
         });
 
         const workingDaysElapsed = allWorkingDays.filter(d => format(d, 'yyyy-MM-dd') <= todayStr);
-        // FIX: Denominator uses allWorkingDays.length (monthly full target)
         const denominator = Math.max(1, allWorkingDays.length);
-        const alpaCount = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+        const alpaCount = workingDaysElapsed.length - processedDates.size;
 
         const result = {
             totalPoints: totalPoints.toFixed(2),
@@ -301,11 +301,13 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             totalHadir: hadirCount,
             totalIzin: izinCount,
             totalSakit: sakitCount,
-            totalAlpa: alpaCount
+            totalCuti: cutiCount,
+            totalLupaAbsen: lupaAbsenCount,
+            totalAlpa: Math.max(0, alpaCount)
         };
         setInCache(cacheKey, result); return result;
     } catch (e) {
-        return { totalPoints: "0.00", persentase: '0.0%', pastWorkingDaysCount: 0, totalWorkingDaysCount: 1, totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpa: 0 };
+        return { totalPoints: "0.00", persentase: '0.0%', pastWorkingDaysCount: 0, totalWorkingDaysCount: 1, totalHadir: 0, totalIzin: 0, totalSakit: 0, totalCuti: 0, totalLupaAbsen: 0, totalAlpa: 0 };
     }
 }
 

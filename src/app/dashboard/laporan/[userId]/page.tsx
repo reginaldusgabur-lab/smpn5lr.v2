@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserMonthlyReportData, type MonthlyReportData, calculateAttendanceStats } from '@/lib/attendance';
-import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, RotateCcw, PencilLine, PlaneTakeoff } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ArrowLeft, Loader2, User, CalendarDays, FileText, RefreshCw, Calendar, MoreVertical, Calculator, TrendingUp, Info, RotateCcw, PencilLine, PlaneTakeoff, CheckCircle, Thermometer, MailWarning, UserX, Clock } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -199,7 +199,7 @@ export default function UserReportDetailPage() {
 
                 batch.set(doc(attendanceRef), data);
             } else if (type === 'reset-alpa') {
-                // Done in deletion loops above
+                // Done
             } else {
                 const newLeaveDoc = doc(leaveRef);
                 batch.set(newLeaveDoc, {
@@ -273,7 +273,6 @@ export default function UserReportDetailPage() {
             columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'center', cellWidth: 32 }, 3: { halign: 'center', cellWidth: 32 }, 4: { halign: 'center', cellWidth: 20 }, 5: { cellWidth: 'auto' } }
         });
 
-        // --- SMART BOTTOM ANCHOR LOGIC ---
         const footerLineY = pHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
@@ -310,7 +309,6 @@ export default function UserReportDetailPage() {
             closureStartY = finalTableY + 10;
         }
 
-        // Render Signature (Top part of closure)
         const sigX = pageWidth - 85;
         const todayStr = format(new Date(), 'd MMMM yyyy', { locale: id });
         doc.setTextColor(0,0,0).setFontSize(10).setFont('times', 'normal').text(`${config.reportCity || 'Mando'}, ${todayStr}`, sigX, closureStartY);
@@ -319,11 +317,9 @@ export default function UserReportDetailPage() {
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
-        // Render Notes (ANCHORED TO BOTTOM LINE)
         if (notesBlockTotalHeight > 0) {
             let cursorY = bottomSafeLimit - notesBlockTotalHeight;
 
-            // Render Presentation Note first (Above holiday notes)
             if (config.isPresentationNoteActive && config.presentationNoteContent) {
                 doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text('Keterangan Perhitungan Persentase:', margin, cursorY + 2);
                 doc.setFontSize(8).setFont('times', 'italic');
@@ -331,7 +327,6 @@ export default function UserReportDetailPage() {
                 cursorY += presentationNoteHeight;
             }
 
-            // Render Holiday Notes
             if (mConfig.isHolidayNotesActive) {
                 const labelsStartY = cursorY + 2;
                 doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
@@ -563,6 +558,40 @@ export default function UserReportDetailPage() {
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                                <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-2xl text-center border border-emerald-100 dark:border-emerald-900/30 flex flex-col items-center justify-center gap-2">
+                                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                    <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Hadir</p>
+                                    <p className="text-xl font-black text-emerald-600 leading-none">{stats?.totalHadir || 0}</p>
+                                </div>
+                                <div className="bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-2xl text-center border border-blue-100 dark:border-blue-900/30 flex flex-col items-center justify-center gap-2">
+                                    <MailWarning className="h-4 w-4 text-blue-600" />
+                                    <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Izin/Dinas</p>
+                                    <p className="text-xl font-black text-blue-600 leading-none">{stats?.totalIzin || 0}</p>
+                                </div>
+                                <div className="bg-orange-50/50 dark:bg-orange-950/20 p-4 rounded-2xl text-center border border-orange-100 dark:border-orange-900/30 flex flex-col items-center justify-center gap-2">
+                                    <Thermometer className="h-4 w-4 text-orange-600" />
+                                    <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Sakit</p>
+                                    <p className="text-xl font-black text-orange-600 leading-none">{stats?.totalSakit || 0}</p>
+                                </div>
+                                <div className="bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-2xl text-center border border-indigo-100 dark:border-indigo-900/30 flex flex-col items-center justify-center gap-2">
+                                    <PlaneTakeoff className="h-4 w-4 text-indigo-600" />
+                                    <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Cuti</p>
+                                    <p className="text-xl font-black text-indigo-600 leading-none">{stats?.totalCuti || 0}</p>
+                                </div>
+                                <div className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-2xl text-center border border-amber-100 dark:border-amber-900/30 flex flex-col items-center justify-center gap-2">
+                                    <Clock className="h-4 w-4 text-amber-600" />
+                                    <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Lupa Absen</p>
+                                    <p className="text-xl font-black text-amber-600 leading-none">{stats?.totalLupaAbsen || 0}</p>
+                                </div>
+                                <div className="bg-red-50/50 dark:bg-red-950/20 p-4 rounded-2xl text-center border border-red-100 dark:border-red-900/30 flex flex-col items-center justify-center gap-2">
+                                    <UserX className="h-4 w-4 text-red-600" />
+                                    <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Alpa</p>
+                                    <p className="text-xl font-black text-red-600 leading-none">{stats?.totalAlpa || 0}</p>
+                                </div>
+                            </div>
+
                             <div className="space-y-3"><div className="flex items-center gap-2 px-1"><Info className="h-3 w-3 text-muted-foreground" /><h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Informasi Skema Poin</h3></div><PointLegend /></div>
                         </div>
                     </CardContent>

@@ -19,8 +19,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Info, Calculator, TrendingUp, PlaneTakeoff } from 'lucide-react';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, FileText, Calendar, Info, Calculator, TrendingUp, PlaneTakeoff, CheckCircle, Thermometer, MailWarning, UserX, Clock, AlertTriangle } from 'lucide-react';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { format, isSameMonth, addMonths, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -347,6 +347,39 @@ export default function LaporanPage() {
                                     </span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-2xl text-center border border-emerald-100 dark:border-emerald-900/30 flex flex-col items-center justify-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-emerald-600" />
+                            <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Hadir</p>
+                            <p className="text-xl font-black text-emerald-600 leading-none">{stats?.totalHadir || 0}</p>
+                        </div>
+                        <div className="bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-2xl text-center border border-blue-100 dark:border-blue-900/30 flex flex-col items-center justify-center gap-2">
+                            <MailWarning className="h-4 w-4 text-blue-600" />
+                            <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Izin/Dinas</p>
+                            <p className="text-xl font-black text-blue-600 leading-none">{stats?.totalIzin || 0}</p>
+                        </div>
+                        <div className="bg-orange-50/50 dark:bg-orange-950/20 p-4 rounded-2xl text-center border border-orange-100 dark:border-orange-900/30 flex flex-col items-center justify-center gap-2">
+                            <Thermometer className="h-4 w-4 text-orange-600" />
+                            <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Sakit</p>
+                            <p className="text-xl font-black text-orange-600 leading-none">{stats?.totalSakit || 0}</p>
+                        </div>
+                        <div className="bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-2xl text-center border border-indigo-100 dark:border-indigo-900/30 flex flex-col items-center justify-center gap-2">
+                            <PlaneTakeoff className="h-4 w-4 text-indigo-600" />
+                            <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Cuti</p>
+                            <p className="text-xl font-black text-indigo-600 leading-none">{stats?.totalCuti || 0}</p>
+                        </div>
+                        <div className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-2xl text-center border border-amber-100 dark:border-amber-900/30 flex flex-col items-center justify-center gap-2">
+                            <Clock className="h-4 w-4 text-amber-600" />
+                            <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Lupa Absen</p>
+                            <p className="text-xl font-black text-amber-600 leading-none">{stats?.totalLupaAbsen || 0}</p>
+                        </div>
+                        <div className="bg-red-50/50 dark:bg-red-950/20 p-4 rounded-2xl text-center border border-red-100 dark:border-red-900/30 flex flex-col items-center justify-center gap-2">
+                            <UserX className="h-4 w-4 text-red-600" />
+                            <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Alpa</p>
+                            <p className="text-xl font-black text-red-600 leading-none">{stats?.totalAlpa || 0}</p>
                         </div>
                     </div>
 
