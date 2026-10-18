@@ -125,7 +125,7 @@ export default function SchoolReportPage() {
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
             const holidays: string[] = (mConfig as any)?.holidays ?? [];
             const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
-            const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
+            const workingDaysSet = new Set(allWorkingDays.map(day => format(day, 'yyyy-MM-dd')));
             const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
 
             const now = new Date();
