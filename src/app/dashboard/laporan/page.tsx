@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -373,7 +372,7 @@ export default function LaporanPage() {
                         </div>
                         <div className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-2xl text-center border border-amber-100 dark:border-amber-900/30 flex flex-col items-center justify-center gap-2">
                             <Clock className="h-4 w-4 text-amber-600" />
-                            <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Lupa Absen</p>
+                            <p className="text-[8px] font-bold text-muted-foreground/60 leading-none">Tidak Absen Masuk/Pulang</p>
                             <p className="text-xl font-black text-amber-600 leading-none">{stats?.totalLupaAbsen || 0}</p>
                         </div>
                         <div className="bg-red-50/50 dark:bg-red-950/20 p-4 rounded-2xl text-center border border-red-100 dark:border-red-900/30 flex flex-col items-center justify-center gap-2">
