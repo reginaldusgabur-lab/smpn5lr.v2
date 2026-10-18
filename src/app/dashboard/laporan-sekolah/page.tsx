@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
-import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, endOfDay, setHours, setMinutes, isSameMonth, isWithinInterval } from 'date-fns';
+import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, endOfDay, isWithinInterval, setHours, setMinutes, isSameMonth } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -157,11 +157,11 @@ export default function SchoolReportPage() {
                     });
 
                     if (leave) {
-                        const type = (leave.type || '').toLowerCase();
                         const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
                         points += p;
                         processedDates.add(dStr);
                         
+                        const type = (leave.type || '').toLowerCase();
                         if (type.includes('sakit')) sakitCount++; 
                         else if (type.includes('cuti')) izinCount++;
                         else if (type.includes('dinas')) hadirCount++;
@@ -181,7 +181,7 @@ export default function SchoolReportPage() {
                         if (desc.includes('luar sekolah')) {
                             izinCount++;
                         } else if (p > 0) {
-                            hadirCount++; // Tetap hitung hadir meskipun poin berkurang karena lupa absen
+                            hadirCount++; 
                         }
                     }
                 });
@@ -189,7 +189,9 @@ export default function SchoolReportPage() {
                 const workingDaysElapsed = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
                 const totalAlpa = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
-                const persentase = isCutiActiveToday ? '-' : (Math.min((points / Math.max(1, workingDaysElapsed.length)) * 100, 100).toFixed(1) + '%');
+                
+                const denominator = Math.max(1, workingDaysElapsed.length);
+                const persentase = isCutiActiveToday ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
 
                 return {
                     uid: u.id, name: u.name, nip: u.nip || '-',

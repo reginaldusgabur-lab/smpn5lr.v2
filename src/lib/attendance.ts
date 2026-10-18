@@ -285,7 +285,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 if (desc.includes('luar sekolah')) {
                     izinCount++;
                 } else if (p > 0) {
-                    hadirCount++; // Tetap hitung hadir meskipun poin berkurang karena lupa absen
+                    hadirCount++; 
                 }
             }
         });

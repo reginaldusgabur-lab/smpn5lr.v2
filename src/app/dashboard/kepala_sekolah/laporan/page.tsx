@@ -119,11 +119,11 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     });
 
                     if (leave) {
-                        const type = (leave.type || '').toLowerCase();
                         const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
                         points += p;
                         processedDates.add(dStr);
                         
+                        const type = (leave.type || '').toLowerCase();
                         if (type.includes('sakit')) sakitCount++; 
                         else if (type.includes('cuti')) izinCount++;
                         else if (type.includes('dinas')) hadirCount++;
@@ -143,7 +143,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                         if (desc.includes('luar sekolah')) {
                             izinCount++;
                         } else if (p > 0) {
-                            hadirCount++; // Tetap hitung hadir meskipun poin berkurang karena lupa absen
+                            hadirCount++; 
                         }
                     }
                 });
