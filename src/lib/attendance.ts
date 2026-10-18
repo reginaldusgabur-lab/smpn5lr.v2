@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -45,7 +46,6 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Logika Poin Profesional sesuai Skema E-SPENLI.
- * @param checkOutExpired Jika true, artinya waktu untuk absen pulang hari ini sudah lewat/berakhir.
  */
 export const calculatePoints = (
     status: string, 
@@ -57,34 +57,32 @@ export const calculatePoints = (
     const s = (status || '').toLowerCase();
     const d = (description || '').toLowerCase();
     
-    // CUTI (0.8 Poin) - Permintaan Khusus: Tidak hadir fisik
+    // 1. CUTI (0.8 Poin) - Prioritas Tertinggi (Karena tidak hadir fisik)
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
     
-    // HADIR / DINAS / TUGAS LUAR (1.0 Poin)
-    if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
+    // 2. DINAS / TUGAS LUAR / LUAR SEKOLAH (1.0 Poin)
+    if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
     
-    // SAKIT (0.9 Poin)
+    // 3. SAKIT (0.9 Poin)
     if (s === 'sakit') return 0.9;
     
-    // IZIN PRIBADI (0.7 Poin)
+    // 4. IZIN PRIBADI (0.7 Poin)
     if (s.includes('izin')) return 0.7;
 
-    // KEHADIRAN BIASA
+    // 5. KEHADIRAN MANDIRI (Lengkap)
     if (hasIn && hasOut) {
-        // TELAT / IZIN CEPAT (0.95 Poin)
         if (d.includes('terlambat') || d.includes('cepat')) return 0.95;
-        // HADIR LENGKAP & TEPAT WAKTU (1.0 Poin)
         return 1.0;
     }
     
-    // LUPA ABSEN (0.5 Poin)
+    // 6. LUPA ABSEN (Hanya In atau Hanya Out)
     if (hasIn || hasOut) {
-        // Jika jendela absen pulang belum berakhir, berikan poin 1.0 sementara (Grace Period)
-        if (!checkOutExpired) return 1.0;
-        return 0.5;
+        // Jika jendela absen pulang belum berakhir hari ini, berikan 1.0 (Grace Period)
+        // Jika sudah lewat atau hari kemarin, berikan 0.5
+        return checkOutExpired ? 0.5 : 1.0;
     }
     
-    // ALPA (0.0 Poin)
+    // 7. ALPA (0.0 Poin)
     return 0.0;
 };
 
@@ -206,7 +204,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v978_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v1001_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -254,7 +252,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             const [h, m] = outEndTimeStr.split(':').map(Number);
             const outEndMinutes = h * 60 + m;
 
-            // Flag kedaluwarsa untuk pemberian poin lupa absen (0.5 vs 1.0)
             const checkOutExpired = !isToday || (currentTimeMinutes > outEndMinutes);
 
             const att = attMap.get(dayStr);
@@ -294,8 +291,9 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        const denominator = Math.max(1, allWorkingDays.filter(d => format(d, 'yyyy-MM-dd') <= todayStr).length);
-        const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+        const workingDaysElapsed = allWorkingDays.filter(d => format(d, 'yyyy-MM-dd') <= todayStr);
+        const denominator = Math.max(1, workingDaysElapsed.length);
+        const pastWorkingDays = workingDaysElapsed;
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
         const hasActiveCutiToday = leaveSnap.docs.some(ld => {
@@ -369,7 +367,6 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
             const [h, m] = outEndTimeStr.split(':').map(Number);
             const outEndMinutes = h * 60 + m;
 
-            // Flag kedaluwarsa untuk pemberian poin lupa absen (0.5 vs 1.0)
             const checkOutExpired = !isToday || (currentTimeMinutes > outEndMinutes);
 
             if (att) {
@@ -382,7 +379,8 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                     if (checkInDate > deadline) desc = 'Terlambat';
                 }
                 const lowerDesc = desc.toLowerCase();
-                if (!lowerDesc.includes('dinas') && !lowerDesc.includes('luar sekolah') && !lowerDesc.includes('cuti')) {
+                const isSpecialStatus = lowerDesc.includes('dinas') || lowerDesc.includes('luar sekolah') || lowerDesc.includes('cuti');
+                if (!isSpecialStatus) {
                     if (checkInDate && !checkOutDate && !lowerDesc.includes('cepat')) desc = 'Belum absen pulang';
                     else if (!checkInDate && checkOutDate && !lowerDesc.includes('terlambat')) desc = 'Belum absen masuk';
                 }
