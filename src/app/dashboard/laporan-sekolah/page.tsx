@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -186,9 +185,10 @@ export default function SchoolReportPage() {
                     }
                 });
 
-                const totalAlpa = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+                const workingDaysElapsed = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+                const totalAlpa = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
-                const persentase = isCutiActiveToday ? '-' : (Math.min((points / Math.max(1, allWorkingDays.length)) * 100, 100).toFixed(1) + '%');
+                const persentase = isCutiActiveToday ? '-' : (Math.min((points / Math.max(1, workingDaysElapsed.length)) * 100, 100).toFixed(1) + '%');
 
                 return {
                     uid: u.id, name: u.name, nip: u.nip || '-',
@@ -390,4 +390,3 @@ export default function SchoolReportPage() {
         </div>
     );
 }
-

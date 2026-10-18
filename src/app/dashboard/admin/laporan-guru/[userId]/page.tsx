@@ -1,11 +1,10 @@
-
 'use server';
 
 import { notFound } from 'next/navigation';
 import { adminDb as firestore } from '@/lib/firebase-admin';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ReportClientShell from './ReportClientShell';
-import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
+import { eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, format, isBefore, isSameDay, setHours, setMinutes } from 'date-fns';
 import { Timestamp } from 'firebase-admin/firestore';
 
 const getMonthDate = (monthParam: string | undefined): Date => {
@@ -30,7 +29,7 @@ export default async function UserReportDetailPage(props: {
         const userRef = firestore.collection('users').doc(userId);
         const schoolConfigRef = firestore.collection('schoolConfig').doc('default');
         const monthlyConfigId = format(currentMonth, 'yyyy-MM');
-        const monthlyConfigRef = firestore.collection('monthlyConfigs', monthlyConfigId);
+        const monthlyConfigRef = firestore.collection('monthlyConfigs').doc(monthlyConfigId);
 
         const [userSnap, schoolConfigSnap, monthlyConfigSnap] = await Promise.all([
             userRef.get(),
@@ -48,6 +47,7 @@ export default async function UserReportDetailPage(props: {
 
         const monthStart = startOfMonth(currentMonth);
         const monthEnd = endOfMonth(currentMonth);
+        const today = startOfDay(new Date());
 
         const attendanceHistoryQuery = firestore
             .collection('users').doc(userId).collection('attendanceRecords')
@@ -72,22 +72,20 @@ export default async function UserReportDetailPage(props: {
         const attendanceMap = new Map();
         [...attSnap.docs, ...attFallbackSnap.docs].forEach(d => {
             const data = d.data();
-            const dayStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-            if (dayStr && !attendanceMap.has(dayStr)) attendanceMap.set(dayStr, { id: d.id, ...data });
+            const dStr = data.date || (data.checkInTime ? format(data.checkInTime.toDate(), 'yyyy-MM-dd') : '');
+            if (dStr && !attendanceMap.has(dStr)) attendanceMap.set(dStr, { id: d.id, ...data });
         });
 
         const leaveMap = new Map<string, any>();
         leaveSnap.docs.forEach(d => {
             const leave = d.data();
             eachDayOfInterval({ start: leave.startDate.toDate(), end: leave.endDate.toDate() }).forEach(day => {
-                const dayStr = format(day, 'yyyy-MM-dd');
                 if (isWithinInterval(day, { start: monthStart, end: monthEnd })) {
-                    leaveMap.set(dayStr, { ...leave, id: d.id });
+                    leaveMap.set(format(day, 'yyyy-MM-dd'), { ...leave, id: d.id });
                 }
             });
         });
 
-        const today = startOfDay(new Date());
         const offDays: number[] = schoolConfig.offDays ?? [0, 6];
         const holidays: string[] = monthlyConfig.holidays ?? [];
 
@@ -101,7 +99,8 @@ export default async function UserReportDetailPage(props: {
             const leaveRecord = leaveMap.get(dayStr);
 
             if (!isWorkingDay) return null;
-            if (isBefore(today, day) && !isToday) return null;
+            // Tampilkan baris Alpa jika hari sudah lewat, tapi jangan tampilkan baris kosong untuk masa depan kecuali ada Cuti
+            if (isBefore(today, day) && !isToday && !leaveRecord) return null;
 
             if (attendanceRecord) {
                 const checkInTime = attendanceRecord.checkInTime?.toDate() || null;
@@ -116,28 +115,19 @@ export default async function UserReportDetailPage(props: {
                     }
                 }
 
-                // Penyesuaian keterangan absen lupa
-                const lowerD = description.toLowerCase();
-                if (!lowerD.includes('dinas') && !lowerD.includes('luar sekolah') && !lowerD.includes('cuti')) {
-                    if (checkInTime && !checkOutTime && !lowerD.includes('cepat')) {
-                        description = 'Belum absen pulang';
-                    } else if (!checkInTime && checkOutTime && !lowerD.includes('terlambat')) {
-                        description = 'Belum absen masuk';
-                    }
-                }
-
                 const sD = description.toLowerCase();
                 let pts = 0;
-                if (sD.includes('dinas') || sD.includes('luar sekolah') || sD === 'kehadiran penuh' || sD.includes('cuti')) pts = 1.0;
+                // SKEMA POIN BARU
+                if (sD.includes('dinas') || sD.includes('luar sekolah') || sD === 'kehadiran penuh') pts = 1.0;
                 else if (sD.includes('telat') || sD.includes('terlambat') || sD.includes('cepat')) pts = 0.95;
                 else if (checkInTime && checkOutTime) pts = 1.0;
                 else pts = 0.5;
 
                 return { 
                     id: attendanceRecord.id, 
-                    date: dayStr, 
-                    checkInTime: checkInTime ? checkInTime.toISOString() : null, 
-                    checkOutTime: checkOutTime ? checkOutTime.toISOString() : null, 
+                    date: day, 
+                    checkInTime, 
+                    checkOutTime, 
                     status: 'Hadir', 
                     description,
                     points: pts,
@@ -146,13 +136,19 @@ export default async function UserReportDetailPage(props: {
             }
 
             if (leaveRecord) {
-                const pts = (leaveRecord.type === 'Sakit') ? 0.9 : ((leaveRecord.type === 'Cuti' || leaveRecord.type === 'Cuti Resmi') ? 1.0 : 0.7);
+                const type = (leaveRecord.type || '').toLowerCase();
+                // SKEMA POIN BARU: CUTI = 0.8
+                let pts = 0.7;
+                if (type.includes('sakit')) pts = 0.9;
+                else if (type.includes('cuti')) pts = 0.8;
+                else if (type.includes('dinas')) pts = 1.0;
+
                 return { 
                     id: `${leaveRecord.id}-${dayStr}`, 
-                    date: dayStr, 
+                    date: day, 
                     checkInTime: null, 
                     checkOutTime: null, 
-                    status: leaveRecord.type === 'Cuti Resmi' ? 'Cuti' : leaveRecord.type, 
+                    status: leaveRecord.type, 
                     description: leaveRecord.reason || leaveRecord.type,
                     points: pts,
                     manualEntry: false
@@ -162,7 +158,7 @@ export default async function UserReportDetailPage(props: {
             if (isToday || isBefore(day, today)) {
                 return { 
                     id: dayStr, 
-                    date: dayStr, 
+                    date: day, 
                     checkInTime: null, 
                     checkOutTime: null, 
                     status: 'Alpa', 
@@ -176,13 +172,20 @@ export default async function UserReportDetailPage(props: {
         });
 
         const validReport = report.filter(Boolean) as any[];
-        validReport.sort((a, b) => b.date.localeCompare(a.date));
+        validReport.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+        const reportData = validReport.map(item => ({
+            ...item,
+            date: item.date.toISOString(),
+            checkInTime: item.checkInTime ? item.checkInTime.toISOString() : null,
+            checkOutTime: item.checkOutTime ? item.checkOutTime.toISOString() : null,
+        }));
 
         return (
             <ReportClientShell 
                 userId={userId}
                 initialUserData={userData}
-                initialReportData={validReport}
+                initialReportData={reportData}
                 initialMonth={currentMonth.toISOString()}
                 initialSchoolConfig={schoolConfig}
                 initialMonthlyConfig={monthlyConfig}

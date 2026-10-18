@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -149,9 +147,10 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     }
                 });
 
-                const totalAlpa = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+                const workingDaysElapsed = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+                const totalAlpa = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
-                const denominator = Math.max(1, allWorkingDays.length);
+                const denominator = Math.max(1, workingDaysElapsed.length);
                 const presentasi = isCutiActiveToday ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
                 
                 return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: totalAlpa, terlambat: 0, presentasi };
@@ -297,4 +296,3 @@ export default function HeadmasterStaffReportPage() {
     if (isUserLoading || isUserDataLoading || userData?.role !== 'kepala_sekolah') return <div className="flex items-center justify-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     return <StaffReportView />;
 }
-

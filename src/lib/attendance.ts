@@ -58,8 +58,10 @@ export const calculatePoints = (
     const s = status.toLowerCase();
     const d = description.toLowerCase();
     
-    // HADIR / DINAS / CUTI (1.0 Poin) - Prioritas Utama
-    if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
+    // CUTI (0.8 Poin) - Permintaan Khusus: Tidak hadir fisik
+    if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
+    
+    // HADIR / DINAS / TUGAS LUAR (1.0 Poin)
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
     
     // SAKIT (0.9 Poin)
@@ -79,7 +81,6 @@ export const calculatePoints = (
     // LUPA ABSEN (0.5 Poin)
     if (hasIn || hasOut) {
         // Jika jendela absen pulang belum berakhir, berikan poin 1.0 sementara (Grace Period)
-        // Jika waktu absen sudah lewat/tuntas namun data belum lengkap, berikan 0.5
         if (!checkOutExpired) return 1.0;
         return 0.5;
     }
@@ -152,6 +153,19 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                 return;
             }
 
+            if (u.status === 'Cuti') {
+                const hasActiveCutiDoc = leavesToday.some(d => {
+                    const l = d.data();
+                    const isCorrectUser = (l.userId || d.ref.parent.parent?.id) === u.id;
+                    const isCutiType = (l.type || '').toLowerCase().includes('cuti');
+                    return isCorrectUser && isCutiType && l.status === 'approved';
+                });
+                if (hasActiveCutiDoc) {
+                    cutiCount++;
+                    return;
+                }
+            }
+
             const userLeaveDoc = leavesToday.find(d => (d.data().userId || d.ref.parent.parent?.id) === u.id);
             if (userLeaveDoc) {
                 const l = userLeaveDoc.data();
@@ -166,8 +180,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
                 } else {
                     pendingCount++;
                 }
-            } else if (u.status === 'Cuti') {
-                alpaCount++;
             } else {
                 alpaCount++;
             }
@@ -283,7 +295,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
             }
         });
 
-        const denominator = Math.max(1, allWorkingDays.length);
+        const denominator = Math.max(1, allWorkingDays.filter(d => format(d, 'yyyy-MM-dd') <= todayStr).length);
         const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
         const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
