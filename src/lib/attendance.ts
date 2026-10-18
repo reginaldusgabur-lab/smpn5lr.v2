@@ -289,7 +289,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         });
 
         const workingDaysElapsed = allWorkingDays.filter(d => format(d, 'yyyy-MM-dd') <= todayStr);
-        const denominator = Math.max(1, workingDaysElapsed.length);
+        // FIX: Denominator uses allWorkingDays.length (monthly full target)
+        const denominator = Math.max(1, allWorkingDays.length);
         const alpaCount = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
         const result = {

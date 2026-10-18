@@ -187,7 +187,7 @@ export default function UserReportDetailPage() {
                     const randomOutOffsetSecs = Math.floor(Math.random() * 599) + 1;
                     data.checkOutTime = Timestamp.fromDate(new Date(limitOutStart.getTime() + randomOutOffsetSecs * 1000));
                 } else {
-                    data.checkOutTime = null;
+                    data.checkInTime === null && type !== 'luar-sekolah' ? (data.checkOutTime = null) : null;
                 }
 
                 if (type === 'terlambat') data.reasonForUpdate = 'Terlambat';
@@ -552,7 +552,7 @@ export default function UserReportDetailPage() {
                                             </div>
                                             {!(userData?.status === 'Cuti' && stats?.persentase === '-') && stats && (
                                                 <p className="text-[10px] font-bold text-muted-foreground mt-1 text-primary">
-                                                    ({stats.pastWorkingDaysCount} dari {stats.pastWorkingDaysCount} hari berjalan)
+                                                    ({stats.pastWorkingDaysCount} dari {stats.totalWorkingDaysCount} hari)
                                                 </p>
                                             )}
                                         </div>

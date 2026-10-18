@@ -144,8 +144,9 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     }
                 });
 
+                // Denominator uses total monthly working days (monthly target)
+                const denominator = Math.max(1, allWorkingDays.length);
                 const workingDaysElapsed = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
-                const denominator = Math.max(1, workingDaysElapsed.length);
                 const totalAlpa = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 const presentasi = (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
                 

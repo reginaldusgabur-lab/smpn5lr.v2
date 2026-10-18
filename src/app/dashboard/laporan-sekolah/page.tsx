@@ -184,7 +184,8 @@ export default function SchoolReportPage() {
                     }
                 });
 
-                const denominator = Math.max(1, pastWorkingDays.length);
+                // Denominator uses total monthly working days (monthly target)
+                const denominator = Math.max(1, allWorkingDays.length);
                 const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 const persentase = Math.min((points / denominator) * 100, 100).toFixed(1) + '%';
 
