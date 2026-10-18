@@ -39,7 +39,6 @@ const cleanDesc = (desc: any) => {
     if (d === 'pulang cepat') return 'Pulang cepat';
     if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
     if (d === 'kehadiran penuh') return 'Kehadiran penuh';
-    // Mapping kata kunci admin ke label standar Kehadiran penuh
     if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi')) return 'Kehadiran penuh';
     return desc.trim() || 'Kehadiran penuh';
 };
@@ -55,14 +54,14 @@ export const calculatePoints = (
     hasOut: boolean, 
     checkOutExpired: boolean = false
 ): number => {
-    const s = status.toLowerCase();
-    const d = description.toLowerCase();
+    const s = (status || '').toLowerCase();
+    const d = (description || '').toLowerCase();
     
     // CUTI (0.8 Poin) - Permintaan Khusus: Tidak hadir fisik
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
     
     // HADIR / DINAS / TUGAS LUAR (1.0 Poin)
-    if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
+    if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah') || d === 'kehadiran penuh') return 1.0;
     
     // SAKIT (0.9 Poin)
     if (s === 'sakit') return 0.9;
@@ -207,7 +206,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v966_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v978_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
