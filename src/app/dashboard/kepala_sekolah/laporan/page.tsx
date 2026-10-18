@@ -30,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays, Eye, PlaneTakeoff } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, collectionGroup } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, endOfDay, setHours, setMinutes, isBefore, isSameDay, isWithinInterval } from 'date-fns';
+import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, endOfDay, isWithinInterval, setHours, setMinutes, isBefore, isSameDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -97,8 +97,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                 const userAtts = allAttendance.filter(att => att.userId === u.id);
                 const userLeaves = allLeave.filter(l => l.userId === u.id);
 
-                let hasCutiApprovedToday = false;
-
                 allWorkingDays.forEach(day => {
                     const dStr = format(day, 'yyyy-MM-dd');
                     if (dStr > todayStr) return;
@@ -128,8 +126,6 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                         else if (type.includes('cuti')) izinCount++;
                         else if (type.includes('dinas')) hadirCount++;
                         else izinCount++;
-                        
-                        if (isToday && type.includes('cuti')) hasCutiApprovedToday = true;
                         return;
                     }
 
@@ -149,10 +145,9 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                 });
 
                 const workingDaysElapsed = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
-                const totalAlpa = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
                 const denominator = Math.max(1, workingDaysElapsed.length);
-                const presentasi = isCutiActiveToday ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
+                const totalAlpa = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+                const presentasi = (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
                 
                 return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: totalAlpa, terlambat: 0, presentasi };
             });
@@ -173,7 +168,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
         fetchAllData();
     }, [firestore, user, users, schoolConfig, monthlyConfig, currentMonth, isUsersLoading, isConfigLoading, isMonthlyConfigLoading]);
 
-    return { summary, isLoading, academicYear, schoolConfig };
+    return { summary, isLoading, academicYear, schoolConfig, monthlyConfig };
 }
 
 const StaffReportTable = ({ data, isLoading, currentMonth }: { data: any[], isLoading: boolean, currentMonth: Date }) => {
@@ -229,7 +224,7 @@ function StaffReportView() {
   const [activeTab, setActiveTab] = useState('guru');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
-  const { summary, isLoading, academicYear, schoolConfig } = useStaffAttendanceSummary(currentMonth);
+  const { summary, isLoading, academicYear, schoolConfig, monthlyConfig } = useStaffAttendanceSummary(currentMonth);
 
   const minDate = new Date(2025, 0, 1);
   const filteredData = useMemo(() => (summary[activeTab] || []).filter((u: any) => u.name.toLowerCase().includes(searchQuery.toLowerCase())), [summary, activeTab, searchQuery]);
@@ -246,7 +241,7 @@ function StaffReportView() {
                     <DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto font-normal"><Download className="mr-2 h-4 w-4" />Unduh Laporan<ChevronDown className="ml-2 h-4 w-4" /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => exportToExcel(summary, currentMonth, activeTab)} disabled={isLoading}>Unduh Excel</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => exportToPdf(summary, currentMonth, activeTab, schoolConfig, academicYear)} disabled={isLoading || !schoolConfig}>Unduh PDF</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => exportToPdf(summary, currentMonth, activeTab, schoolConfig, academicYear, monthlyConfig)} disabled={isLoading || !schoolConfig}>Unduh PDF</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

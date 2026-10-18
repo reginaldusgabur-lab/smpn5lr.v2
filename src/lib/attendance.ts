@@ -207,17 +207,15 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
-        const [configSnap, monthlyConfigSnap, attendanceSnap, leaveSnap, userSnap] = await Promise.all([
+        const [configSnap, monthlyConfigSnap, attendanceSnap, leaveSnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
             getDoc(doc(firestore, 'monthlyConfigs', format(start, 'yyyy-MM'))),
             getDocs(collection(firestore, 'users', userId, 'attendanceRecords')),
-            getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved'))),
-            getDoc(doc(firestore, 'users', userId))
+            getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
         ]);
         
         const config = configSnap.data() || {};
         const mConfig = monthlyConfigSnap.data() || {};
-        const userData = userSnap.data();
         
         const holidays = Array.isArray(mConfig.holidays) ? mConfig.holidays : [];
         const offDays = Array.isArray(config.offDays) ? config.offDays : [0, 6];
@@ -294,18 +292,9 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const denominator = Math.max(1, workingDaysElapsed.length);
         const alpaCount = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
-        const hasActiveCutiToday = leaveSnap.docs.some(ld => {
-            const l = ld.data();
-            const lS = parseFirestoreDate(l.startDate);
-            const lE = parseFirestoreDate(l.endDate);
-            return (l.type || '').toLowerCase().includes('cuti') && lS && lE && isWithinInterval(today, { start: startOfDay(lS), end: endOfDay(lE) });
-        });
-
-        const isCurrentlyCuti = userData?.status === 'Cuti' && hasActiveCutiToday;
-
         const result = {
-            totalPoints: isCurrentlyCuti ? "-" : totalPoints.toFixed(2),
-            persentase: isCurrentlyCuti ? "-" : (Math.min((totalPoints / denominator) * 100, 100).toFixed(1) + '%'),
+            totalPoints: totalPoints.toFixed(2),
+            persentase: (Math.min((totalPoints / denominator) * 100, 100).toFixed(1) + '%'),
             pastWorkingDaysCount: workingDaysElapsed.length,
             totalWorkingDaysCount: allWorkingDays.length,
             totalHadir: hadirCount,

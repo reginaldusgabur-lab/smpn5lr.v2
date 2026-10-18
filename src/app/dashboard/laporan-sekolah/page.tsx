@@ -125,7 +125,9 @@ export default function SchoolReportPage() {
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
             const holidays: string[] = (mConfig as any)?.holidays ?? [];
             const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
-            
+            const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
+            const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+
             const now = new Date();
             const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -134,8 +136,6 @@ export default function SchoolReportPage() {
                 const processedDates = new Set<string>();
                 const userAtts = attendanceByUserId[u.id] || [];
                 const userLeaves = leaveByUserId[u.id] || [];
-
-                let hasCutiApprovedToday = false;
 
                 allWorkingDays.forEach(day => {
                     const dStr = format(day, 'yyyy-MM-dd');
@@ -166,8 +166,6 @@ export default function SchoolReportPage() {
                         else if (type.includes('cuti')) izinCount++;
                         else if (type.includes('dinas')) hadirCount++;
                         else izinCount++;
-                        
-                        if (isToday && type.includes('cuti')) hasCutiApprovedToday = true;
                         return;
                     }
 
@@ -186,12 +184,9 @@ export default function SchoolReportPage() {
                     }
                 });
 
-                const workingDaysElapsed = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
-                const totalAlpa = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
-                
-                const denominator = Math.max(1, workingDaysElapsed.length);
-                const persentase = isCutiActiveToday ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
+                const denominator = Math.max(1, pastWorkingDays.length);
+                const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+                const persentase = Math.min((points / denominator) * 100, 100).toFixed(1) + '%';
 
                 return {
                     uid: u.id, name: u.name, nip: u.nip || '-',
