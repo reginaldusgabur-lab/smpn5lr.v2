@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -19,7 +18,7 @@ export interface MonthlyReportData {
 }
 
 /**
- * Parsing aman untuk data tanggal dari Firestore (Timestamp atau ISO String).
+ * Parsing aman untuk data tanggal dari Firestore.
  */
 const parseFirestoreDate = (input: any): Date | null => {
     if (!input) return null;
@@ -39,14 +38,13 @@ const cleanDesc = (desc: any) => {
     if (d === 'dinas siang') return 'Dinas siang';
     if (d === 'pulang cepat') return 'Pulang cepat';
     if (d === 'kegiatan luar sekolah') return 'Kegiatan luar sekolah';
-    if (d === 'kehadiran penuh') return 'Kehadiran penuh';
     if (d.includes('admin') || d.includes('koreksi') || d.includes('lengkapi')) return 'Kehadiran penuh';
     return desc.trim() || 'Kehadiran penuh';
 };
 
 /**
- * Logika Poin Profesional sesuai Skema E-SPENLI.
- * Cuti Resmi: 0.8 Poin secara mutlak.
+ * Logika Poin Profesional E-SPENLI.
+ * Cuti Resmi: 0.8 Poin. Lupa Absen: 0.5 Poin.
  */
 export const calculatePoints = (
     status: string, 
@@ -58,30 +56,20 @@ export const calculatePoints = (
     const s = (status || '').toLowerCase();
     const d = (description || '').toLowerCase();
     
-    // 1. DINAS / TUGAS LUAR / LUAR SEKOLAH (1.0 Poin)
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
-    
-    // 2. CUTI RESMI (0.8 Poin)
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
-    
-    // 3. SAKIT (0.9 Poin)
     if (s === 'sakit') return 0.9;
-    
-    // 4. IZIN PRIBADI (0.7 Poin)
     if (s.includes('izin')) return 0.7;
 
-    // 5. KEHADIRAN MANDIRI (Lengkap)
     if (hasIn && hasOut) {
         if (d.includes('terlambat') || d.includes('cepat')) return 0.95;
         return 1.0;
     }
     
-    // 6. LUPA ABSEN (Hanya In atau Hanya Out)
     if (hasIn || hasOut) {
         return checkOutExpired ? 0.5 : 1.0;
     }
     
-    // 7. ALPA (0.0 Poin)
     return 0.0;
 };
 
@@ -190,11 +178,9 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             pending: pendingCount,
             alpa: alpaCount,
             isHoliday: false,
-            isManualDisabled: isManualOff,
-            isCalendarHoliday: holidays.includes(todayStr)
+            isManualDisabled: isManualOff
         };
     } catch (e) {
-        console.error("Daily stats calculation error:", e);
         return { totalStaff: 0, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: false };
     }
 }
@@ -203,7 +189,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v1104_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v2002_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -283,7 +269,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 if (desc.includes('luar sekolah')) {
                     izinCount++;
                 } else {
-                    hadirCount++; // Semua rekaman fisik dihitung hadir
+                    hadirCount++; 
                     if (p === 0.5) lupaAbsenCount++;
                 }
             }
