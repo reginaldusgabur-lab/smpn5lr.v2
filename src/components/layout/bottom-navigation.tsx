@@ -29,8 +29,8 @@ const headmasterNavItems = [
 ];
 
 /**
- * Komponen Navigasi Bawah dengan desain Floating Bar yang sejajar dengan kartu di atasnya.
- * Menggunakan pb-2 agar posisi bar sedikit lebih merapat ke bawah layar.
+ * Komponen Navigasi Bawah dengan desain Floating Bar yang panjang dan merapat ke bawah.
+ * Menggunakan px-2 agar bar tampil lebih lebar (mendekati tepi layar mobile).
  */
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -57,9 +57,9 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-2 px-4">
-        {/* Kontainer melayang dengan max-w-md agar sejajar sempurna dengan layout utama */}
-        <div className="w-full max-w-md h-16 bg-background/80 backdrop-blur-xl border border-border/50 rounded-3xl flex items-stretch shadow-[0_8px_32px_rgba(0,0,0,0.1)] pointer-events-auto overflow-hidden">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-1 px-2">
+        {/* Kontainer melayang lebar (max-w-md) dengan radius rounded-2xl agar senada dengan kartu konten */}
+        <div className="w-full max-w-md h-16 bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl flex items-stretch shadow-[0_8px_32px_rgba(0,0,0,0.15)] pointer-events-auto overflow-hidden">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 

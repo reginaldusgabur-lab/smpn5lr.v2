@@ -163,11 +163,11 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 sm:gap-4 w-full max-w-md mx-auto pt-4">
-                        <div className="bg-green-500/5 rounded-2xl p-2.5 sm:p-4 text-center border border-green-500/10 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+                        <div className="bg-green-500/5 rounded-xl p-2.5 sm:p-4 text-center border border-green-500/10 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
                             <div className="bg-green-500 p-2 sm:p-2.5 rounded-full text-white shrink-0 relative z-10"><LogIn className="h-4 w-4" /></div>
                             <div className="text-left relative z-10"><p className="text-[9px] sm:text-[10px] font-semibold text-primary leading-none mb-1">Masuk</p><p className="text-lg sm:text-xl font-bold tabular-nums text-foreground leading-none">{personalCheckIn || '--:--'}</p></div>
                         </div>
-                        <div className="bg-blue-500/5 rounded-2xl p-2.5 sm:p-4 text-center border border-blue-500/10 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+                        <div className="bg-blue-500/5 rounded-xl p-2.5 sm:p-4 text-center border border-blue-500/10 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
                             <div className="bg-blue-500 p-2 sm:p-2.5 rounded-full text-white shrink-0 relative z-10"><LogOut className="h-4 w-4" /></div>
                             <div className="text-left relative z-10"><p className="text-[9px] sm:text-[10px] font-semibold text-primary leading-none mb-1">Pulang</p><p className="text-lg sm:text-xl font-bold tabular-nums text-foreground leading-none">{personalCheckOut || '--:--'}</p></div>
                         </div>
