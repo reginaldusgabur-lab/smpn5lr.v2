@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -45,7 +46,7 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Logika Poin Profesional sesuai Skema E-SPENLI.
- * Cuti Resmi: 0.8 Poin (Dikeluarkan dari 1.0 agar akurat).
+ * Cuti Resmi: 0.8 Poin secara mutlak.
  */
 export const calculatePoints = (
     status: string, 
@@ -60,7 +61,7 @@ export const calculatePoints = (
     // 1. DINAS / TUGAS LUAR / LUAR SEKOLAH (1.0 Poin)
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
     
-    // 2. CUTI RESMI (0.8 Poin) - Tidak hadir fisik
+    // 2. CUTI RESMI (0.8 Poin)
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
     
     // 3. SAKIT (0.9 Poin)
@@ -77,8 +78,6 @@ export const calculatePoints = (
     
     // 6. LUPA ABSEN (Hanya In atau Hanya Out)
     if (hasIn || hasOut) {
-        // Jika jendela absen pulang belum berakhir hari ini, berikan 1.0 (Grace Period)
-        // Jika sudah lewat atau hari kemarin, berikan 0.5
         return checkOutExpired ? 0.5 : 1.0;
     }
     
@@ -204,7 +203,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v1101_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v1102_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -285,8 +284,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
                 
                 if (desc.includes('luar sekolah')) {
                     izinCount++;
-                } else {
-                    if (p >= 0.95) hadirCount++;
+                } else if (p > 0) {
+                    hadirCount++; // Tetap hitung hadir meskipun poin berkurang karena lupa absen
                 }
             }
         });
@@ -393,7 +392,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const type = (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') ? 'Cuti' : leave.type;
                 const pts = calculatePoints(type, leave.reason || type, false, false, false);
                 const lowerT = type.toLowerCase();
-                let statusLabel = (type === 'Cuti') ? 'Cuti' : (pts === 1.0 ? 'Hadir' : type);
+                let statusLabel = (type === 'Cuti') ? 'Cuti' : (pts >= 0.95 ? 'Hadir' : type);
                 if (lowerT.includes('luar sekolah')) statusLabel = 'Izin';
                 return { id: `${leave.id}-${dayStr}`, date: dayStr, status: statusLabel, description: cleanDesc(leave.reason) || type, points: pts, manualEntry: false };
             }

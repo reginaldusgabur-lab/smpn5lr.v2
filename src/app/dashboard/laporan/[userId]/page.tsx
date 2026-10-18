@@ -551,8 +551,8 @@ export default function UserReportDetailPage() {
                                                 <Calculator className="h-4 w-4 text-primary opacity-30 shrink-0" /><span className="text-3xl font-black text-primary mt-1.5 tabular-nums leading-none">{(userData?.status === 'Cuti' && stats?.persentase === '-') ? "-" : (stats?.totalPoints || "0.00")}</span>
                                             </div>
                                             {!(userData?.status === 'Cuti' && stats?.persentase === '-') && stats && (
-                                                <p className="text-[10px] font-bold text-muted-foreground mt-1">
-                                                    ({stats.pastWorkingDaysCount} dari {stats.totalWorkingDaysCount} hari)
+                                                <p className="text-[10px] font-bold text-muted-foreground mt-1 text-primary">
+                                                    ({stats.pastWorkingDaysCount} dari {stats.pastWorkingDaysCount} hari berjalan)
                                                 </p>
                                             )}
                                         </div>

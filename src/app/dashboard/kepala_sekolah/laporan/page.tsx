@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -141,8 +142,8 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                         
                         if (desc.includes('luar sekolah')) {
                             izinCount++;
-                        } else if (p >= 0.95) {
-                            hadirCount++;
+                        } else if (p > 0) {
+                            hadirCount++; // Tetap hitung hadir meskipun poin berkurang karena lupa absen
                         }
                     }
                 });
