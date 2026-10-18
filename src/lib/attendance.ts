@@ -57,11 +57,11 @@ export const calculatePoints = (
     const s = (status || '').toLowerCase();
     const d = (description || '').toLowerCase();
     
-    // 1. CUTI (0.8 Poin) - Prioritas Tertinggi (Karena tidak hadir fisik)
-    if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
-    
-    // 2. DINAS / TUGAS LUAR / LUAR SEKOLAH (1.0 Poin)
+    // 1. DINAS / TUGAS LUAR / LUAR SEKOLAH (1.0 Poin)
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
+    
+    // 2. CUTI (0.8 Poin) - Tidak hadir fisik
+    if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
     
     // 3. SAKIT (0.9 Poin)
     if (s === 'sakit') return 0.9;
@@ -204,7 +204,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v1001_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v1002_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {

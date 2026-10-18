@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -41,12 +42,12 @@ const safeFormat = (dateInput: any, formatString: string): string => {
 const PointLegend = () => (
     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas / Cuti</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
             <p className="text-sm font-black text-green-600">1.0 Poin</p>
         </div>
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
-            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Cepat / Cuti</p>
+            <p className="text-sm font-black text-amber-600">0.95 - 0.8 Poin</p>
         </div>
         <div className="space-y-1">
             <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>

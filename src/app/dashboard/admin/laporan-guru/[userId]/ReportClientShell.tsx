@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -21,7 +22,7 @@ import {
     DropdownMenuLabel 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, RotateCcw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, RefreshCw, Calendar, FileText, CalendarDays, ArrowLeft, User, MoreVertical, Info, Calculator, TrendingUp, RotateCcw, PencilLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -35,7 +36,7 @@ interface ReportDetail {
   points?: number;
 }
 
-interface UserData { name?: string; role?: string; nip?: string; position?: string; }
+interface UserData { name?: string; role?: string; nip?: string; position?: string; status?: string; }
 interface ClientShellProps {
   userId: string;
   initialUserData: UserData;
@@ -48,12 +49,12 @@ interface ClientShellProps {
 const PointLegend = () => (
     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas / Cuti</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hadir / Dinas</p>
             <p className="text-sm font-black text-green-600">1.0 Poin</p>
         </div>
         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Izin Cepat</p>
-            <p className="text-sm font-black text-amber-600">0.95 Poin</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Telat / Cepat / Cuti</p>
+            <p className="text-sm font-black text-amber-600">0.95 - 0.8 Poin</p>
         </div>
         <div className="space-y-1">
             <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Sakit / Izin</p>
@@ -88,15 +89,21 @@ export default function ReportClientShell({
     const [currentMonth] = useState(isValid(parsedInitialMonth) ? parsedInitialMonth : new Date());
 
     const stats = useMemo(() => {
-        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%" };
+        if (!reportDetails.length) return { totalPoints: "0.00", persentase: "0.0%", pastCount: 0, totalCount: 1 };
         const total = reportDetails.reduce((acc, curr) => acc + (curr.points || 0), 0);
         const count = reportDetails.length;
-        const perc = (total / (count || 1)) * 100;
+        const totalCount = initialMonthlyConfig?.manualWorkDays || initialSchoolConfig?.manualWorkDays || count;
+        
+        // Denominator must be the count of elapsed working days for day-by-day precision
+        const perc = (total / Math.max(1, count)) * 100;
+        
         return {
             totalPoints: total.toFixed(2),
-            persentase: Math.min(perc, 100).toFixed(1) + "%"
+            persentase: (userData?.status === 'Cuti' && count === 0) ? "-" : Math.min(perc, 100).toFixed(1) + "%",
+            pastCount: count,
+            totalCount: totalCount
         };
-    }, [reportDetails]);
+    }, [reportDetails, initialMonthlyConfig, initialSchoolConfig, userData]);
 
     const handleMonthChange = (amount: number) => {
         const newMonthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + amount, 15);
@@ -145,8 +152,7 @@ export default function ReportClientShell({
             snapL.forEach(d => batch.delete(d.ref));
 
             if (type === 'reset-alpa') {
-                // Deletion already queued in the snapA/snapL loops above.
-                // Just proceed to commit.
+                // Done
             } else if (['hadir', 'terlambat', 'dinas-pagi', 'dinas-siang', 'pulang-cepat', 'luar-sekolah'].includes(type)) {
                 const currentItem = reportDetails.find(d => d.date.startsWith(todayStr));
                 
@@ -166,7 +172,7 @@ export default function ReportClientShell({
                         data.checkInTime = Timestamp.fromDate(parseISO(currentItem.checkInTime));
                     } else if (['hadir', 'dinas-siang', 'pulang-cepat'].includes(type)) {
                         const randomInOffset = Math.floor(Math.random() * 299) + 1;
-                        data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomOffset * 1000));
+                        data.checkInTime = Timestamp.fromDate(new Date(limitIn.getTime() - randomInOffset * 1000));
                     } else {
                         data.checkInTime = null;
                     }
@@ -259,11 +265,11 @@ export default function ReportClientShell({
             columnStyles: { 0: { halign: 'center', cellWidth: 10 } }
         });
 
-        // --- SMART ANCHOR LOGIC ---
+        // Closure / Anchor Logic
         const footerLineY = pageHeight - 15;
         const bottomSafeLimit = footerLineY - 2; 
         const signatureHeight = 45;
-        const notesLineHeight = 5;
+        const notesLineHeight = 4;
         const labelAreaHeight = 16; 
         
         let totalNotesHeight = 0;
@@ -277,7 +283,15 @@ export default function ReportClientShell({
             });
         }
 
-        const notesBlockTotalHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        let presentationNoteHeight = 0;
+        let splitPresentationNote: string[] = [];
+        if (config.isPresentationNoteActive && config.presentationNoteContent) {
+            splitPresentationNote = doc.splitTextToSize(config.presentationNoteContent, pageWidth - (margin * 2));
+            presentationNoteHeight = (splitPresentationNote.length * 4) + 8;
+        }
+
+        const holidayBlockHeight = mConfig.isHolidayNotesActive ? (labelAreaHeight + totalNotesHeight) : 0;
+        const notesBlockTotalHeight = holidayBlockHeight + presentationNoteHeight;
         const finalTableY = (doc as any).lastAutoTable.finalY;
 
         let closureStartY;
@@ -296,20 +310,29 @@ export default function ReportClientShell({
         doc.setFont('times', 'bold').text(config.headmasterName || 'Lodovikus Jangkar, S.Pd.Gr', sigX, closureStartY + 38);
         doc.setFont('times', 'normal').text(`NIP. ${config.headmasterNip || '-'}`, sigX, closureStartY + 44);
 
-        if (mConfig.isHolidayNotesActive) {
-            const listItemsStartY = bottomSafeLimit - totalNotesHeight;
-            const labelsStartY = listItemsStartY - labelAreaHeight + 2;
+        if (notesBlockTotalHeight > 0) {
+            let cursorY = bottomSafeLimit - notesBlockTotalHeight;
 
-            doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
-            doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+            if (config.isPresentationNoteActive && config.presentationNoteContent) {
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text('Keterangan Perhitungan Persentase:', margin, cursorY + 2);
+                doc.setFontSize(8).setFont('times', 'italic');
+                doc.text(splitPresentationNote, margin, cursorY + 7);
+                cursorY += presentationNoteHeight;
+            }
 
-            let noteCursorY = listItemsStartY;
-            processedNotes.forEach((note) => {
-                if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
-                else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
-                doc.text(note.split, margin, noteCursorY);
-                noteCursorY += note.split.length * notesLineHeight;
-            });
+            if (mConfig.isHolidayNotesActive) {
+                const labelsStartY = cursorY + 2;
+                doc.setTextColor(0, 0, 0).setFontSize(10).setFont('times', 'bold').text(`Hari Kerja Efektif: ${mConfig.manualWorkDays || '-'} Hari`, margin, labelsStartY);
+                doc.text('Keterangan Hari Libur:', margin, labelsStartY + 7);
+
+                let noteCursorY = labelsStartY + 11.5;
+                processedNotes.forEach((note) => {
+                    if (note.isRed) doc.setTextColor(255, 0, 0).setFont('times', 'bold');
+                    else doc.setTextColor(0, 0, 0).setFont('times', 'normal');
+                    doc.text(note.split, margin, noteCursorY);
+                    noteCursorY += note.split.length * notesLineHeight;
+                });
+            }
         }
 
         const totalPagesCount = (doc as any).internal.getNumberOfPages();
@@ -333,7 +356,7 @@ export default function ReportClientShell({
         return "bg-emerald-500 text-white";
     };
 
-    const canGoPrev = currentMonth > new Date(2026, 0, 1);
+    const canGoPrev = currentMonth > new Date(2025, 0, 1);
     const canGoNext = !isSameMonth(currentMonth, new Date());
 
     return (
@@ -405,16 +428,15 @@ export default function ReportClientShell({
                                             const hasIn = !!item.checkInTime;
                                             const hasOut = !!item.checkOutTime;
                                             const isProblematic = item.status === 'Alpa' || !hasIn || !hasOut;
-                                            const isTerlambat = item.description === 'Terlambat';
-                                            const isManualLate = item.status === 'Terlambat' || isTerlambat;
+                                            const isManualLate = item.status === 'Terlambat' || item.description === 'Terlambat';
                                             const isLuarSekolah = item.description === 'Kegiatan luar sekolah';
 
                                             return (
                                                 <TableRow key={item.id} className="hover:bg-muted/50 border-muted-foreground/5 transition-all">
                                                     <TableCell className="text-center font-bold text-xs text-muted-foreground">{index + 1}</TableCell>
                                                     <TableCell className="font-bold text-sm whitespace-nowrap">{safeFormat(item.date, 'eeee, dd MMM yyyy')}</TableCell>
-                                                    <TableCell className={cn('text-center font-mono text-xs font-bold', isTerlambat && 'text-red-500')}>
-                                                        {(isManualLate || isLuarSekolah || item.description === 'Dinas pagi') && !item.checkInTime ? <span className="font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
+                                                    <TableCell className="text-center font-mono text-xs font-bold text-foreground">
+                                                        {(isManualLate || isLuarSekolah || item.description === 'Dinas pagi') && !item.checkInTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkInTime, 'HH:mm:ss')}
                                                     </TableCell>
                                                     <TableCell className="text-center font-mono text-xs font-bold text-foreground">
                                                         {(isLuarSekolah || item.description === 'Dinas siang' || item.description === 'Pulang cepat') && !item.checkOutTime ? <span className="text-foreground font-black">-</span> : safeFormat(item.checkOutTime, 'HH:mm:ss')}
@@ -426,7 +448,7 @@ export default function ReportClientShell({
                                                             </Badge>
                                                             {isProblematic && (
                                                                 <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><MoreVertical className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
+                                                                    <DropdownMenuTrigger asChild><button className="h-8 w-8 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all active:scale-90"><PencilLine className="h-4 w-4 text-primary" /></button></DropdownMenuTrigger>
                                                                     <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-2xl border-none p-2 animate-in zoom-in-95 duration-200">
                                                                         <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Koreksi Cepat</DropdownMenuLabel>
                                                                         {hasIn && !hasOut ? (
@@ -442,7 +464,6 @@ export default function ReportClientShell({
                                                                         <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest opacity-50 px-3 py-1">Ketidakhadiran</DropdownMenuLabel>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'sakit')}>Jadikan Sakit</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'izin')}>Jadikan Izin Pribadi</DropdownMenuItem>
-                                                                        <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs text-primary" onClick={() => handleStatusChange(item.date, 'cuti')}>Jadikan Cuti Resmi</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-pagi')}>Dinas Pagi</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'dinas-siang')}>Dinas siang</DropdownMenuItem>
                                                                         <DropdownMenuItem className="rounded-xl py-2.5 px-3 font-bold text-xs" onClick={() => handleStatusChange(item.date, 'pulang-cepat')}>Pulang Cepat</DropdownMenuItem>
@@ -492,3 +513,4 @@ export default function ReportClientShell({
         </div>
     );
 }
+
