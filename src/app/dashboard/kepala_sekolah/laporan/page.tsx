@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -29,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ChevronLeft, ChevronRight, Search, Download, ChevronDown, MoreVertical, CalendarDays, Eye, PlaneTakeoff } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, getDocs, doc, collectionGroup } from 'firebase/firestore';
-import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, setHours, setMinutes, isBefore, isSameDay, isWithinInterval } from 'date-fns';
+import { format, isSameMonth, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, startOfDay, setHours, setMinutes, isBefore, isSameDay, isWithinInterval, endOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -86,52 +87,68 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             const offDays: number[] = schoolConfig?.offDays ?? [0, 6];
             const holidays: string[] = monthlyConfig?.holidays ?? [];
             const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
-            const workingDaysSet = new Set(allWorkingDays.map(d => format(d, 'yyyy-MM-dd')));
+            
+            const now = new Date();
+            const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
 
             const userSummary = users.map((u: any) => {
                 let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
                 const processedDates = new Set<string>();
+                const userAtts = allAttendance.filter(att => att.userId === u.id);
+                const userLeaves = allLeave.filter(l => l.userId === u.id);
 
-                allAttendance.filter(att => att.userId === u.id).forEach((att: any) => {
-                    const dStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : null);
-                    if (dStr && workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
-                        const isToday = dStr === todayStr;
-                        const desc = (att.reasonForUpdate || '').toLowerCase();
-                        let p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, isToday);
-                        
-                        points += p; 
-                        if (desc.includes('luar sekolah')) izinCount++;
-                        else hadirCount++;
-                        
+                let hasCutiApprovedToday = false;
+
+                allWorkingDays.forEach(day => {
+                    const dStr = format(day, 'yyyy-MM-dd');
+                    if (dStr > todayStr) return;
+
+                    const isToday = dStr === todayStr;
+                    const dayOfWeek = day.getDay().toString();
+                    const dailyOut = (schoolConfig as any).dailyCheckOutTimes?.[dayOfWeek];
+                    const outEndTimeStr = dailyOut?.end || schoolConfig.checkOutEndTime || "16:00";
+                    const [h, m] = outEndTimeStr.split(':').map(Number);
+                    const outEndMinutes = h * 60 + m;
+
+                    const checkOutExpired = !isToday || (currentTimeMinutes > outEndMinutes);
+
+                    const leave = userLeaves.find(l => {
+                        const lS = startOfDay(l.startDate);
+                        const lE = endOfDay(l.endDate);
+                        return isWithinInterval(day, { start: lS, end: lE });
+                    });
+
+                    if (leave) {
+                        const type = (leave.type || '').toLowerCase();
+                        const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
+                        points += p;
                         processedDates.add(dStr);
+                        
+                        if (type.includes('sakit')) sakitCount++; 
+                        else if (type.includes('cuti')) izinCount++;
+                        else if (type.includes('dinas')) hadirCount++;
+                        else izinCount++;
+                        
+                        if (isToday && type.includes('cuti')) hasCutiApprovedToday = true;
+                        return;
+                    }
+
+                    const att = userAtts.find(a => (a.date || (a.checkInTime ? format(a.checkInTime.toDate(), 'yyyy-MM-dd') : '')) === dStr);
+                    if (att) {
+                        const desc = (att.reasonForUpdate || '').toLowerCase();
+                        const p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, checkOutExpired);
+                        points += p;
+                        processedDates.add(dStr);
+                        
+                        if (desc.includes('luar sekolah')) {
+                            izinCount++;
+                        } else if (p >= 0.95) {
+                            hadirCount++;
+                        }
                     }
                 });
 
-                let hasCutiApprovedToday = false;
-                allLeave.filter(l => l.userId === u.id).forEach(leave => {
-                    eachDayOfInterval({ start: leave.startDate, end: leave.endDate }).forEach(day => {
-                        const dStr = format(day, 'yyyy-MM-dd');
-                        if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
-                            const type = (leave.type || '').toLowerCase();
-                            const reason = (leave.reason || '').toLowerCase();
-                            let p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
-                            points += p; 
-                            
-                            if (type.includes('sakit')) sakitCount++;
-                            else if (type.includes('cuti')) izinCount++;
-                            else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
-                            else if (type.includes('dinas')) hadirCount++;
-                            else izinCount++;
-                            
-                            processedDates.add(dStr);
-                            if (dStr === todayStr && type.includes('cuti')) hasCutiApprovedToday = true;
-                        }
-                    });
-                });
-
-                const pastWorkingDays = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
-                const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                
+                const totalAlpa = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
                 const denominator = Math.max(1, allWorkingDays.length);
                 const presentasi = isCutiActiveToday ? '-' : (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
@@ -279,3 +296,4 @@ export default function HeadmasterStaffReportPage() {
     if (isUserLoading || isUserDataLoading || userData?.role !== 'kepala_sekolah') return <div className="flex items-center justify-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     return <StaffReportView />;
 }
+

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -99,7 +100,6 @@ export default function SchoolReportPage() {
             
             const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
 
-            // FIX: Corrected variable names to match usage below
             const attendanceQuery = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')));
             const leaveQuery = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
 
@@ -124,58 +124,71 @@ export default function SchoolReportPage() {
 
             const offDays: number[] = (schoolConfigData as any)?.offDays ?? [0, 6];
             const holidays: string[] = (mConfig as any)?.holidays ?? [];
-            const workingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
-            const workingDaysSet = new Set(workingDays.map(day => format(day, 'yyyy-MM-dd')));
+            const allWorkingDays = eachDayOfInterval({ start, end }).filter(day => !offDays.includes(day.getDay()) && !holidays.includes(format(day, 'yyyy-MM-dd')));
+            
+            const now = new Date();
+            const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
 
             const results = allUsers.map(u => {
                 let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
                 const processedDates = new Set<string>();
+                const userAtts = attendanceByUserId[u.id] || [];
+                const userLeaves = leaveByUserId[u.id] || [];
 
-                (attendanceByUserId[u.id] || []).forEach(att => {
-                    const attDateStr = att.date || (att.checkInTime ? format(att.checkInTime.toDate(), 'yyyy-MM-dd') : '');
-                    if (attDateStr && workingDaysSet.has(attDateStr) && !processedDates.has(attDateStr)) {
+                let hasCutiApprovedToday = false;
+
+                allWorkingDays.forEach(day => {
+                    const dStr = format(day, 'yyyy-MM-dd');
+                    if (dStr > todayStr) return;
+
+                    const isToday = dStr === todayStr;
+                    const dayOfWeek = day.getDay().toString();
+                    const dailyOut = (schoolConfigData as any).dailyCheckOutTimes?.[dayOfWeek];
+                    const outEndTimeStr = dailyOut?.end || (schoolConfigData as any).checkOutEndTime || "16:00";
+                    const [h, m] = outEndTimeStr.split(':').map(Number);
+                    const outEndMinutes = h * 60 + m;
+
+                    const checkOutExpired = !isToday || (currentTimeMinutes > outEndMinutes);
+
+                    const leave = userLeaves.find(l => {
+                        const lS = startOfDay(l.startDate.toDate());
+                        const lE = endOfDay(l.endDate.toDate());
+                        return isWithinInterval(day, { start: lS, end: lE });
+                    });
+
+                    if (leave) {
+                        const type = (leave.type || '').toLowerCase();
+                        const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
+                        points += p;
+                        processedDates.add(dStr);
+                        
+                        if (type.includes('sakit')) sakitCount++; 
+                        else if (type.includes('cuti')) izinCount++;
+                        else if (type.includes('dinas')) hadirCount++;
+                        else izinCount++;
+                        
+                        if (isToday && type.includes('cuti')) hasCutiApprovedToday = true;
+                        return;
+                    }
+
+                    const att = userAtts.find(a => (a.date || (a.checkInTime ? format(a.checkInTime.toDate(), 'yyyy-MM-dd') : '')) === dStr);
+                    if (att) {
                         const desc = (att.reasonForUpdate || '').toLowerCase();
-                        const p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, attDateStr === todayStr);
-                        points += p; 
+                        const p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, checkOutExpired);
+                        points += p;
+                        processedDates.add(dStr);
                         
                         if (desc.includes('luar sekolah')) {
                             izinCount++;
-                        } else {
-                            // Hanya tambahkan ke kolom Hijau (Hadir) jika poin >= 0.95 (Lengkap/Terlambat)
-                            if (p >= 0.95) hadirCount++;
+                        } else if (p >= 0.95) {
+                            hadirCount++;
                         }
-                        
-                        processedDates.add(attDateStr);
                     }
                 });
 
-                let hasCutiApprovedToday = false;
-                (leaveByUserId[u.id] || []).forEach(leave => {
-                    const lS = leave.startDate.toDate();
-                    const lE = leave.endDate.toDate();
-                    eachDayOfInterval({ start: lS, end: lE }).forEach(day => {
-                        const dStr = format(day, 'yyyy-MM-dd');
-                        if (workingDaysSet.has(dStr) && !processedDates.has(dStr)) {
-                            const type = (leave.type || '').toLowerCase();
-                            const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
-                            points += p; 
-                            
-                            if (type.includes('sakit')) sakitCount++; 
-                            else if (type.includes('cuti')) izinCount++; // Cuti masuk ke kolom Izin
-                            else if (type.includes('dinas')) hadirCount++; // Dinas masuk kolom Hadir (1.0)
-                            else izinCount++;
-                            
-                            processedDates.add(dStr);
-                            if (dStr === todayStr && type.includes('cuti')) hasCutiApprovedToday = true;
-                        }
-                    });
-                });
-
-                const totalAlpa = workingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                
-                // Logic: Only hide percentage if currently in cuti period today
+                const totalAlpa = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr && !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
                 const isCutiActiveToday = u.status === 'Cuti' && hasCutiApprovedToday;
-                const persentase = isCutiActiveToday ? '-' : (Math.min((points / Math.max(1, workingDays.length)) * 100, 100).toFixed(1) + '%');
+                const persentase = isCutiActiveToday ? '-' : (Math.min((points / Math.max(1, allWorkingDays.length)) * 100, 100).toFixed(1) + '%');
 
                 return {
                     uid: u.id, name: u.name, nip: u.nip || '-',
