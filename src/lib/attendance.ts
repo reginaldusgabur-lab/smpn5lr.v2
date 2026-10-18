@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -46,6 +45,7 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Logika Poin Profesional sesuai Skema E-SPENLI.
+ * Cuti Resmi: 0.8 Poin (Dikeluarkan dari 1.0 agar akurat).
  */
 export const calculatePoints = (
     status: string, 
@@ -60,7 +60,7 @@ export const calculatePoints = (
     // 1. DINAS / TUGAS LUAR / LUAR SEKOLAH (1.0 Poin)
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
     
-    // 2. CUTI (0.8 Poin) - Tidak hadir fisik
+    // 2. CUTI RESMI (0.8 Poin) - Tidak hadir fisik
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
     
     // 3. SAKIT (0.9 Poin)
@@ -204,7 +204,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v1002_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v1101_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -293,8 +293,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
 
         const workingDaysElapsed = allWorkingDays.filter(d => format(d, 'yyyy-MM-dd') <= todayStr);
         const denominator = Math.max(1, workingDaysElapsed.length);
-        const pastWorkingDays = workingDaysElapsed;
-        const alpaCount = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
+        const alpaCount = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
 
         const hasActiveCutiToday = leaveSnap.docs.some(ld => {
             const l = ld.data();
@@ -308,7 +307,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const result = {
             totalPoints: isCurrentlyCuti ? "-" : totalPoints.toFixed(2),
             persentase: isCurrentlyCuti ? "-" : (Math.min((totalPoints / denominator) * 100, 100).toFixed(1) + '%'),
-            pastWorkingDaysCount: pastWorkingDays.length,
+            pastWorkingDaysCount: workingDaysElapsed.length,
             totalWorkingDaysCount: allWorkingDays.length,
             totalHadir: hadirCount,
             totalIzin: izinCount,

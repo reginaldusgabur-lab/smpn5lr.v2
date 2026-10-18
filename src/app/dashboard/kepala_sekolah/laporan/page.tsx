@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -231,6 +230,7 @@ function StaffReportView() {
   const [searchQuery, setSearchQuery] = useState('');
   const { summary, isLoading, academicYear, schoolConfig } = useStaffAttendanceSummary(currentMonth);
 
+  const minDate = new Date(2025, 0, 1);
   const filteredData = useMemo(() => (summary[activeTab] || []).filter((u: any) => u.name.toLowerCase().includes(searchQuery.toLowerCase())), [summary, activeTab, searchQuery]);
 
   return (
