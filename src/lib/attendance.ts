@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -44,7 +45,7 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Logika Poin Profesional E-SPENLI.
- * Cuti Resmi: 0.8 Poin. Lupa Absen: 0.5 Poin.
+ * Cuti Resmi: 0.8 Poin. Lupa Absen (Tidak Absen Masuk/Pulang): 0.5 Poin.
  */
 export const calculatePoints = (
     status: string, 
