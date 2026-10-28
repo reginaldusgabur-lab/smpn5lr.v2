@@ -98,8 +98,13 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const usersSnap = await getDocs(qUsers);
         const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
+        // GLOBAL PENDING COUNT (INBOX STYLE)
+        const qAllPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
+        const allPendingSnap = await getDocs(qAllPending);
+        const pendingCount = allPendingSnap.size;
+
         if (isHoliday) {
-            return { totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: 0, alpa: 0, isHoliday: true, isManualDisabled: isManualOff };
+            return { totalStaff: allStaff.length, hadir: 0, izin: 0, sakit: 0, cuti: 0, pending: pendingCount, alpa: 0, isHoliday: true, isManualDisabled: isManualOff };
         }
 
         const qPresent = query(collectionGroup(firestore, 'attendanceRecords'), where('date', '==', todayStr));
@@ -117,8 +122,8 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             }
         });
 
-        const qLeave = query(collectionGroup(firestore, 'leaveRequests'), where('status', 'in', ['approved', 'pending']));
-        const leaveSnap = await getDocs(qLeave);
+        const qLeaveApproved = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'approved'));
+        const leaveSnap = await getDocs(qLeaveApproved);
         const leavesToday = leaveSnap.docs.filter(d => {
             const l = d.data();
             const start = parseFirestoreDate(l.startDate);
@@ -126,7 +131,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             return start && end && isWithinInterval(today, { start: startOfDay(start), end: endOfDay(end) });
         });
 
-        let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let cutiCount = 0; let pendingCount = 0; let alpaCount = 0;
+        let hadirCount = 0; let izinCount = 0; let sakitCount = 0; let cutiCount = 0; let alpaCount = 0;
 
         allStaff.forEach((u: any) => {
             const attData = presentMap.get(u.id);
@@ -138,32 +143,20 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
             }
 
             if (u.status === 'Cuti') {
-                const hasActiveCutiDoc = leavesToday.some(d => {
-                    const l = d.data();
-                    const isCorrectUser = (l.userId || d.ref.parent.parent?.id) === u.id;
-                    const isCutiType = (l.type || '').toLowerCase().includes('cuti');
-                    return isCorrectUser && isCutiType && l.status === 'approved';
-                });
-                if (hasActiveCutiDoc) {
-                    cutiCount++;
-                    return;
-                }
+                cutiCount++;
+                return;
             }
 
             const userLeaveDoc = leavesToday.find(d => (d.data().userId || d.ref.parent.parent?.id) === u.id);
             if (userLeaveDoc) {
                 const l = userLeaveDoc.data();
-                if (l.status === 'approved') {
-                    const type = (l.type || '').toLowerCase();
-                    const reason = (l.reason || '').toLowerCase();
-                    if (type.includes('sakit')) sakitCount++;
-                    else if (type.includes('cuti')) cutiCount++;
-                    else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
-                    else if (type.includes('dinas')) hadirCount++;
-                    else izinCount++;
-                } else {
-                    pendingCount++;
-                }
+                const type = (l.type || '').toLowerCase();
+                const reason = (l.reason || '').toLowerCase();
+                if (type.includes('sakit')) sakitCount++;
+                else if (type.includes('cuti')) cutiCount++;
+                else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
+                else if (type.includes('dinas')) hadirCount++;
+                else izinCount++;
             } else {
                 alpaCount++;
             }
@@ -189,7 +182,7 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v2002_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    const cacheKey = `stats_v2003_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
