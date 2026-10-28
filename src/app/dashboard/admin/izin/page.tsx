@@ -88,14 +88,14 @@ export default function PersetujuanIzinPage() {
     const fetchLeaveRequests = async () => {
         setIsLeaveRequestsLoading(true);
         try {
-            // FETCH ALL PENDING GLOBALLY
+            // FETCH ALL PENDING GLOBALLY (INBOX)
             const qPending = query(
                 collectionGroup(firestore, 'leaveRequests'),
                 where('status', '==', 'pending'),
                 orderBy('createdAt', 'desc')
             );
             
-            // FETCH RECENT HISTORY
+            // FETCH RECENT HISTORY (6 DAYS)
             const sixDaysAgo = new Date();
             sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
             const qHistory = query(
@@ -245,7 +245,7 @@ export default function PersetujuanIzinPage() {
                       </TableCell>
                       <TableCell className="max-w-xs truncate text-[11px] font-bold" title={req.reason}>{req.reason}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={approvalStatusVariant[req.status] || 'secondary'} className="text-[9px] font-bold uppercase px-3 py-1 rounded-full border-none">
+                        <Badge variant={approvalStatusVariant[req.status] || 'secondary'} className="text-[9px] font-bold uppercase px-3 py-1 rounded-full border-none shadow-none">
                             {req.status === 'approved' ? 'Disetujui' : req.status === 'rejected' ? 'Ditolak' : req.status}
                         </Badge>
                       </TableCell>

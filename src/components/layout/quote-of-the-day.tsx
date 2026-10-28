@@ -16,6 +16,7 @@ interface QuoteOfTheDayProps {
 interface Quote {
   quote: string;
   author: string;
+  isAi?: boolean;
 }
 
 const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
@@ -86,7 +87,8 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           quote: attendanceType === 'in' 
             ? "Awali hari dengan niat baik untuk melayani di lingkungan SMPN 5 Langke Rembong." 
             : "Tugas tuntas, dedikasi terbayar. Selamat beristirahat bersama keluarga tercinta.",
-          author: "Sistem E-SPENLI"
+          author: "Sistem E-SPENLI",
+          isAi: false
         });
       } finally {
         setIsLoading(false);
@@ -116,7 +118,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
               "{quote?.quote}"
             </blockquote>
             <p className="text-[8px] font-black uppercase text-muted-foreground/30 tracking-widest">
-              — {quote?.author || "AI E-SPENLI"}
+              — {quote?.isAi ? "Kutipan AI" : (quote?.author || "AI E-SPENLI")}
             </p>
           </div>
         )}
