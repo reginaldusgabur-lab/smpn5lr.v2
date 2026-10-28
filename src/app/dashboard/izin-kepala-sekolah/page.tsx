@@ -59,21 +59,15 @@ export default function IzinKepalaSekolahPage() {
         setIsLoadingData(true);
         setError(null);
         try {
-            // FETCH ALL PENDING GLOBALLY (INBOX)
+            // Menggunakan kueri dasar untuk Inbox agar terhindar dari error ketiadaan indeks saat pembangunan server
             const qPending = query(
                 collectionGroup(firestore, 'leaveRequests'),
-                where('status', '==', 'pending'),
-                orderBy('createdAt', 'desc')
+                where('status', '==', 'pending')
             );
             
-            // FETCH RECENT HISTORY (6 DAYS)
-            const sixDaysAgo = new Date();
-            sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
             const qHistory = query(
                 collectionGroup(firestore, 'leaveRequests'),
-                where('status', 'in', ['approved', 'rejected']),
-                where('startDate', '>=', Timestamp.fromDate(startOfDay(sixDaysAgo))),
-                orderBy('startDate', 'desc')
+                where('status', 'in', ['approved', 'rejected'])
             );
 
             const [snapPending, snapHistory] = await Promise.all([
@@ -81,23 +75,32 @@ export default function IzinKepalaSekolahPage() {
                 getDocs(qHistory)
             ]);
 
-            setPendingRequests(snapPending.docs.map(d => ({
-                id: d.id,
-                path: d.ref.path,
-                userId: d.ref.parent.parent?.id,
-                ...d.data()
-            })));
+            const sixDaysAgo = new Date();
+            sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
 
-            setRecentHistory(snapHistory.docs.map(d => ({
+            // Sorting dilakukan di memori (in-memory) untuk menjamin akurasi tanpa menunggu deployment indeks cloud selesai
+            const pendingList = snapPending.docs.map(d => ({
                 id: d.id,
                 path: d.ref.path,
                 userId: d.ref.parent.parent?.id,
                 ...d.data()
-            })));
+            } as any)).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+            const historyList = snapHistory.docs.map(d => ({
+                id: d.id,
+                path: d.ref.path,
+                userId: d.ref.parent.parent?.id,
+                ...d.data()
+            } as any))
+            .filter(req => req.startDate?.toMillis() >= startOfDay(sixDaysAgo).getTime())
+            .sort((a, b) => (b.startDate?.toMillis() || 0) - (a.startDate?.toMillis() || 0));
+
+            setPendingRequests(pendingList);
+            setRecentHistory(historyList);
 
         } catch (err: any) {
-            console.error("Error Fetch Izin (Kepsek):", err);
-            setError(`Gagal mengambil data permintaan izin. Mohon pastikan indeks server sudah siap.`);
+            console.error("Gagal mengambil data permohonan:", err);
+            setError(`Gagal memuat data Inbox pimpinan. Mohon muat ulang halaman.`);
         } finally {
             setIsLoadingData(false);
         }

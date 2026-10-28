@@ -88,21 +88,17 @@ export default function PersetujuanIzinPage() {
     const fetchLeaveRequests = async () => {
         setIsLeaveRequestsLoading(true);
         try {
-            // FETCH ALL PENDING GLOBALLY (INBOX)
+            // Menggunakan kueri sederhana untuk menghindari ketergantungan indeks komposit yang sedang dibangun
             const qPending = query(
                 collectionGroup(firestore, 'leaveRequests'),
-                where('status', '==', 'pending'),
-                orderBy('createdAt', 'desc')
+                where('status', '==', 'pending')
             );
             
-            // FETCH RECENT HISTORY (6 DAYS)
             const sixDaysAgo = new Date();
             sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
             const qHistory = query(
                 collectionGroup(firestore, 'leaveRequests'),
-                where('status', 'in', ['approved', 'rejected']),
-                where('startDate', '>=', Timestamp.fromDate(startOfDay(sixDaysAgo))),
-                orderBy('startDate', 'desc')
+                where('status', 'in', ['approved', 'rejected'])
             );
 
             const [snapPending, snapHistory] = await Promise.all([
@@ -110,20 +106,26 @@ export default function PersetujuanIzinPage() {
                 getDocs(qHistory)
             ]);
 
-            setPendingRequests(snapPending.docs.map(d => ({ 
+            // Lakukan pengurutan dan filter tambahan di memori (in-memory) agar aplikasi tetap berjalan normal
+            const pendingList = snapPending.docs.map(d => ({ 
                 ...d.data(), 
                 id: d.id, 
                 userId: d.ref.parent.parent?.id 
-            }) as LeaveRequest));
+            }) as LeaveRequest).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
-            setRecentHistory(snapHistory.docs.map(d => ({ 
+            const historyList = snapHistory.docs.map(d => ({ 
                 ...d.data(), 
                 id: d.id, 
                 userId: d.ref.parent.parent?.id 
-            }) as LeaveRequest));
+            }) as LeaveRequest)
+            .filter(req => req.startDate?.toMillis() >= startOfDay(sixDaysAgo).getTime())
+            .sort((a, b) => (b.startDate?.toMillis() || 0) - (a.startDate?.toMillis() || 0));
+
+            setPendingRequests(pendingList);
+            setRecentHistory(historyList);
 
         } catch (error) {
-            console.error("Failed to fetch leave requests:", error);
+            console.error("Gagal memuat Inbox Izin:", error);
         } finally {
             setIsLeaveRequestsLoading(false);
         }
