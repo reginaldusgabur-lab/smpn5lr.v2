@@ -35,7 +35,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle, Sparkles, Cpu, ShieldCheck, Info } from 'lucide-react';
+import { Loader2, Camera, Eye, EyeOff, UserCircle, Settings2, BellRing, KeyRound, FileText, Check, Scissors, Volume2, Play, AlertTriangle, Sparkles, Cpu, ShieldCheck, Info, RefreshCw } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, updateProfile } from 'firebase/auth';
@@ -122,6 +122,7 @@ export default function PengaturanPage() {
 
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [isApiKeyUpdating, setIsApiKeyUpdating] = useState(false);
 
   const [isAudioSaving, setIsAudioSaving] = useState(false);
   const [successSoundBase64, setSuccessSoundBase64] = useState<string | null>(null);
@@ -319,7 +320,7 @@ export default function PengaturanPage() {
     try {
       await updatePassword(rawUser, newPassword);
       toast({ title: 'Berhasil', description: 'Password telah diubah.' });
-      setNewPassword(''); setConfirmPassword('');
+      setNewPassword(''); setNewConfirmPassword('');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Gagal', description: 'Silakan login ulang untuk keamanan.' });
     } finally {
@@ -345,11 +346,25 @@ export default function PengaturanPage() {
       notificationTitle, 
       notificationContent, 
       isNotificationActive, 
-      notificationInterval: Number(notificationInterval),
-      geminiApiKey: geminiApiKey.trim()
+      notificationInterval: Number(notificationInterval)
     }, { merge: true });
-    toast({ title: 'Disimpan', description: 'Pengumuman dan API Key diperbarui.' });
+    toast({ title: 'Disimpan', description: 'Pengumuman diperbarui.' });
     setIsNotificationSaving(false);
+  };
+
+  const handleUpdateApiKey = async () => {
+    if (!schoolConfigRef) return;
+    setIsApiKeyUpdating(true);
+    try {
+        await updateDocumentNonBlocking(schoolConfigRef, {
+            geminiApiKey: geminiApiKey.trim()
+        });
+        toast({ title: 'Berhasil', description: 'Kunci API Gemini telah diperbarui.' });
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan sistem.' });
+    } finally {
+        setIsApiKeyUpdating(false);
+    }
   };
 
   const handleAudioSettingsSave = () => {
@@ -459,6 +474,7 @@ export default function PengaturanPage() {
         </form>
 
         {isAdmin && (
+          <>
           <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
               <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
                   <div className="flex items-center gap-3">
@@ -527,36 +543,48 @@ export default function PengaturanPage() {
                         />
                       )}
                   </div>
-                  
-                  <div className="pt-8 border-t mt-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                          <div className="flex items-center gap-3">
-                            <BellRing className="h-5 w-5 text-amber-500" />
-                            <div>
-                                <Label className="font-bold text-xs uppercase tracking-widest">Pengumuman Sistem</Label>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Pesan ini akan muncul di dashboard semua pengguna.</p>
-                            </div>
-                          </div>
-                          <Switch checked={isNotificationActive} onCheckedChange={setIsNotificationActive} />
+              </CardContent>
+              <CardFooter className="border-t px-6 py-5 bg-muted/5 flex flex-wrap gap-3">
+                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-8 shadow-none">
+                    {isReportSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    SIMPAN DATA PDF
+                  </Button>
+              </CardFooter>
+          </Card>
+
+          <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
+              <CardHeader className="p-6 bg-muted/20 border-b border-muted-foreground/5">
+                  <div className="flex items-center gap-3">
+                    <BellRing className="h-5 w-5 text-amber-500" />
+                    <CardTitle className="font-bold text-sm uppercase tracking-tight">Pengumuman & API Key</CardTitle>
+                  </div>
+              </CardHeader>
+              <CardContent className="grid gap-6 pt-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-amber-500/10"><Sparkles className="h-4 w-4 text-amber-600" /></div>
+                        <div>
+                            <Label className="font-bold text-xs uppercase tracking-widest">Pengumuman Sistem</Label>
+                            <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Pesan ini akan muncul di dashboard semua pengguna.</p>
+                        </div>
                       </div>
-                      <div className="space-y-4">
-                        <Input placeholder="Judul Pengumuman" value={notificationTitle} onChange={e => setNotificationTitle(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
-                        <Textarea placeholder="Tuliskan isi pesan atau kutipan motivasi di sini..." value={notificationContent} onChange={e => setNotificationContent(e.target.value)} className="rounded-xl bg-muted/30 shadow-none min-h-[100px] font-medium" />
-                      </div>
+                      <Switch checked={isNotificationActive} onCheckedChange={setIsNotificationActive} />
+                  </div>
+                  <div className="space-y-4">
+                    <Input placeholder="Judul Pengumuman" value={notificationTitle} onChange={e => setNotificationTitle(e.target.value)} className="h-11 rounded-xl bg-muted/30 shadow-none font-bold" />
+                    <Textarea placeholder="Tuliskan isi pesan atau kutipan motivasi di sini..." value={notificationContent} onChange={e => setNotificationContent(e.target.value)} className="rounded-xl bg-muted/30 shadow-none min-h-[100px] font-medium" />
                   </div>
 
-                  <div className="pt-8 border-t mt-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                          <div className="flex items-center gap-3">
-                            <Cpu className="h-5 w-5 text-blue-500" />
-                            <div>
-                                <Label className="font-bold text-xs uppercase tracking-widest">Konfigurasi Gemini API Key</Label>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Atur kunci API Gemini Anda sendiri di sini.</p>
-                            </div>
-                          </div>
+                  <div className="pt-6 border-t">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Cpu className="h-5 w-5 text-blue-500" />
+                        <div>
+                            <Label className="font-bold text-xs uppercase tracking-widest">Konfigurasi Gemini API Key</Label>
+                            <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Atur kunci API Gemini Anda sendiri di sini.</p>
+                        </div>
                       </div>
-                      <div className="space-y-4">
-                        <div className="relative">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
                           <Input 
                             type={showApiKey ? "text" : "password"} 
                             placeholder="Tempel Gemini API Key di sini..." 
@@ -568,54 +596,33 @@ export default function PengaturanPage() {
                             {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
-                        <p className="text-[10px] text-muted-foreground font-bold italic">
-                          Jika diisi, sistem akan menggunakan API Key ini untuk menghasilkan kutipan motivasi. Jika kosong, sistem menggunakan kunci bawaan server.
-                        </p>
+                        <Button 
+                          type="button" 
+                          onClick={handleUpdateApiKey} 
+                          disabled={isApiKeyUpdating || !geminiApiKey}
+                          className="h-11 rounded-xl font-black bg-blue-600 hover:bg-blue-700 text-white shrink-0 px-6 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
+                        >
+                          {isApiKeyUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                          {isApiKeyUpdating ? "MEMPROSES" : "PERBARUI"}
+                        </Button>
                       </div>
-                  </div>
-
-                  <div className="pt-8 border-t mt-6">
-                      <div className="flex items-center gap-3 mb-4">
-                          <Volume2 className="h-5 w-5 text-primary" />
-                          <div>
-                              <Label className="font-bold text-xs uppercase tracking-widest">Nada Konfirmasi Absensi</Label>
-                              <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Unggah suara kustom (Maks 1MB).</p>
-                          </div>
-                      </div>
-                      <div className="flex flex-col gap-4 bg-muted/30 p-4 rounded-2xl border border-muted-foreground/10">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-1 gap-4">
-                              <div className="flex items-center gap-2 min-w-0">
-                                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0">Nada Aktif:</span>
-                                  <span className="text-[10px] font-bold text-primary truncate">{successSoundName || 'Default (Tinggggg)'}</span>
-                              </div>
-                              <div className="flex gap-2 shrink-0">
-                                  {successSoundBase64 && (
-                                      <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg shadow-none flex items-center gap-2 font-bold text-[10px]" onClick={playTestAudio}>
-                                          <Play className="h-3 w-3 fill-primary text-primary" /> TEST
-                                      </Button>
-                                  )}
-                                  <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg shadow-none border-primary/20 hover:bg-primary/5 font-bold text-[10px] uppercase" onClick={() => successSoundBase64 ? setIsAudioConfirmOpen(true) : audioInputRef.current?.click()}>
-                                      Ganti nada
-                                  </Button>
-                              </div>
-                          </div>
-                          <input 
-                              type="file" 
-                              ref={audioInputRef}
-                              accept="audio/mp3,audio/wav,audio/ogg" 
-                              className="hidden" 
-                              onChange={handleAudioFileChange}
-                          />
-                      </div>
+                      <p className="text-[10px] text-muted-foreground font-bold italic mt-3">
+                        *Klik tombol <strong>PERBARUI</strong> untuk langsung mengaktifkan kunci API yang baru ditempel.
+                      </p>
                   </div>
               </CardContent>
               <CardFooter className="border-t px-6 py-5 bg-muted/5 flex flex-wrap gap-3">
-                  <Button onClick={handleReportSettingsSave} disabled={isReportSaving} className="font-bold rounded-xl h-11 px-6 shadow-none">SIMPAN DATA PDF</Button>
-                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-6 shadow-none border-muted-foreground/20">UPDATE PENGUMUMAN & API KEY</Button>
-                  <Button onClick={handleAudioSettingsSave} disabled={isAudioSaving} variant="secondary" className="font-bold rounded-xl h-11 px-6 shadow-none bg-primary/10 text-primary hover:bg-primary/20">SIMPAN NADA</Button>
+                  <Button onClick={handleNotificationSettingsSave} disabled={isNotificationSaving} variant="outline" className="font-bold rounded-xl h-11 px-8 shadow-none border-muted-foreground/20">
+                    {isNotificationSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    SIMPAN PENGUMUMAN
+                  </Button>
+                  <Button onClick={handleAudioSettingsSave} disabled={isAudioSaving} variant="secondary" className="font-bold rounded-xl h-11 px-8 shadow-none bg-primary/10 text-primary hover:bg-primary/20">
+                    {isAudioSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    SIMPAN NADA ABSENSI
+                  </Button>
               </CardFooter>
           </Card>
+          </>
         )}
 
         <Card className="overflow-hidden border border-muted-foreground/10 shadow-none rounded-xl">
@@ -629,13 +636,13 @@ export default function PengaturanPage() {
             <CardContent className="grid gap-5 pt-8">
                 <div className="relative">
                   <Input type={showNewPass ? "text" : "password"} className="h-12 rounded-xl bg-muted/30 pr-12 font-bold shadow-none border-muted-foreground/10" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password Baru" />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none" onClick={() => setShowNewPass(!showNewPass)}>
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 text-muted-foreground/30 hover:bg-transparent shadow-none" onClick={() => setShowNewPass(!showNewPass)}>
                     {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
                 <div className="relative">
                   <Input type={showConfirmPass ? "text" : "password"} className="h-12 rounded-xl bg-muted/30 pr-12 font-bold shadow-none border-muted-foreground/10" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Konfirmasi Password Baru" />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:bg-transparent shadow-none" onClick={() => setShowConfirmPass(!showConfirmPass)}>
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 text-muted-foreground/30 hover:bg-transparent shadow-none" onClick={() => setShowConfirmPass(!showConfirmPass)}>
                     {showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
