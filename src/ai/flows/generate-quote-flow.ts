@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI Flow untuk menyajikan kutipan humor dari tokoh dunia atau realita sekolah.
@@ -59,7 +60,7 @@ const fallbacks = [
   { quote: "Gantungkan cita-citamu setinggi langit, tapi kaki tetap di tanah. Jangan melayang, nanti repot turunnya.", author: "Saran Gravitasi" },
   { quote: "Jangan bandingkan dirimu dengan orang lain. Bandingkan saldo ATM-mu bulan lalu dengan bulan sekarang.", author: "Manajemen Keuangan" },
   { quote: "Hargailah waktu, karena waktu tidak bisa diputar balik, kecuali jam dinding di kelas yang mati.", author: "Logika Waktu" },
-  { quote: "Hadirmu sangat dinanti, absenmu sangat dicari, tapi gajimu sangat cepat sekali pergi.", author: "Sajak Bendahara" },
+  { quote: "Hargailah gaji yang lewat, karena dia cuma mampir sebentar lalu pergi lagi.", author: "Sajak Bendahara" },
   
   // --- HUMOR TEKNOLOGI & ABSENSI ---
   { quote: "Keberhasilan dimulai dari niat, dan diakhiri dengan scan QR code yang bunyi 'Bip'.", author: "Digitalisasi Iman" },
@@ -113,7 +114,7 @@ const fallbacks = [
   { quote: "Jangan marah kalau dikritik, marah itu kalau gaji dipotong.", author: "Prioritas Marah" },
   { quote: "Jadilah terang di kegelapan, tapi jangan jadi lampu pijar yang gampang putus.", author: "Pesan Cahaya" },
   { quote: "Kesabaran adalah kunci kesuksesan, tapi jangan sabar terus kalau dihina.", author: "Batas Sabar" },
-  { quote: "Pekerjaan yang paling menyenangkan adalah hobi yang dibayar, tapi guru itu panggilan jiwa yang dibayar.", author: "Panggilan Jiwa" },
+  { quote: "Pekerjaan paling menyenangkan adalah hobi yang dibayar, tapi guru itu panggilan jiwa yang dibayar.", author: "Panggilan Jiwa" },
   { quote: "Jangan menunggu waktu yang tepat, karena waktu yang tepat adalah ketika kamu sudah siap.", author: "Filosofi Waktu" },
   { quote: "Masa depan itu misteri, tapi kalau tidak absen masuk, masa depan jadi suram.", author: "Ramalan Absen" },
   { quote: "Jadilah diri sendiri, kecuali kalau kamu bisa jadi Superman, jadilah Superman.", author: "Tips Heroik" },
@@ -146,7 +147,7 @@ const fallbacks = [
   { quote: "Jangan pernah lupa akar asalnya, agar tidak tersesat saat sudah di atas.", author: "Pesan Moral" },
   { quote: "Kesabaran guru setipis tisu, tapi kalau digabung bisa jadi buku tebal.", author: "Analogi Tisu" },
   { quote: "Masa depan bangsa ada di tangan guru, jadi pastikan tanganmu tidak gemetar pas gajian.", author: "Pesan Kebangsaan" },
-  { quote: "Jadilah cahaya bagi kegelapan, bukan malah menambah kegelapan.", author: "Visi Terang" },
+  { quote: "Jadilah terang di kegelapan, bukan malah menambah kegelapan.", author: "Visi Terang" },
   { quote: "Pekerjaan itu amanah, jadi kerjakan dengan penuh rasa tanggung jawab.", author: "Pesan Etika" },
   { quote: "Hidup itu penuh pilihan, pilihlah yang membuatmu bahagia bukan yang membuatmu menderita.", author: "Tips Memilih" },
   { quote: "Jangan biarkan masa lalumu menghambat masa depanmu, kecuali kalau kamu belum bayar hutang.", author: "Logika Tagihan" },
@@ -201,7 +202,6 @@ const generateQuoteFlow = ai.defineFlow(
         }
 
         // Inisialisasi genkit lokal dengan kunci API yang dipilih secara eksplisit
-        // Ini menjamin tombol "PERBARUI" di pengaturan berfungsi instan
         const dynamicAi = genkit({
             plugins: [googleAI({ apiKey: effectiveApiKey })],
         });
@@ -210,7 +210,7 @@ const generateQuoteFlow = ai.defineFlow(
         const response = await dynamicAi.generate({
             model: 'googleai/gemini-1.5-flash',
             config: { 
-                temperature: 1.2, // Menaikkan kreativitas untuk humor
+                temperature: 1.2, 
                 topP: 0.95, 
                 maxOutputTokens: 300 
             },
@@ -230,7 +230,7 @@ const generateQuoteFlow = ai.defineFlow(
         return {
             quote: response.output.quote,
             author: response.output.author,
-            isAi: true // Flag untuk menampilkan label "Kutipan AI"
+            isAi: true 
         };
 
     } catch (err: any) {
