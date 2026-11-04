@@ -29,8 +29,8 @@ const headmasterNavItems = [
 ];
 
 /**
- * Komponen Navigasi Bawah dengan desain Floating Bar yang sejajar presisi.
- * Lebar maksimal 416px (448px - 32px padding) agar rata dengan kartu konten di atasnya.
+ * Komponen Navigasi Bawah dengan desain Bounded Full Bottom.
+ * Menempel di bawah dengan lengkungan atas yang menyerupai bentuk segitiga/tab.
  */
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -57,9 +57,9 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-1 px-4">
-        {/* Kontainer melayang sejajar sempurna dengan batas kartu konten dashboard */}
-        <div className="w-full max-w-[416px] h-16 bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl flex items-stretch shadow-[0_8px_32px_rgba(0,0,0,0.15)] pointer-events-auto overflow-hidden">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
+        {/* Kontainer menempel bawah penuh, lebar max-md, lengkungan atas tajam */}
+        <div className="w-full max-w-md h-[72px] bg-background border-t border-border/30 rounded-t-[2.5rem] flex items-stretch shadow-[0_-10px_30px_rgba(0,0,0,0.1)] pointer-events-auto overflow-hidden">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 
@@ -70,17 +70,21 @@ export function BottomNavigation() {
                         key={item.label}
                         href={item.href}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 text-xs transition-all duration-300 active:scale-90',
-                            isActive ? 'text-primary' : 'text-muted-foreground/70 hover:text-primary'
+                            'flex flex-1 flex-col items-center justify-center gap-1.5 transition-all duration-300 active:scale-90',
+                            isActive ? 'text-primary' : 'text-muted-foreground/60'
                         )}
                     >
-                        <item.icon className={cn("h-5 w-5 transition-transform", isActive ? "stroke-[2.5px] scale-105" : "stroke-2")} />
+                        <item.icon className={cn("h-6 w-6 transition-all", isActive ? "stroke-[2.5px] scale-110" : "stroke-2")} />
                         <span className={cn(
-                            "text-center text-[10px] tracking-tight font-bold",
-                            isActive ? "opacity-100" : "opacity-80"
+                            "text-center text-[10px] tracking-tight font-black uppercase",
+                            isActive ? "opacity-100" : "opacity-60"
                         )}>
                             {item.label}
                         </span>
+                        {/* Dot indicator for active item */}
+                        {isActive && (
+                            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary animate-in fade-in zoom-in duration-500" />
+                        )}
                     </Link>
                 );
             })}
