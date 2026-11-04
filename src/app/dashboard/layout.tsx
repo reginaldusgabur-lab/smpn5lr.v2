@@ -53,7 +53,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   // Optimasi: Jika user belum ada di state (baru login), biarkan NextJS loading.tsx menangani transisi.
-  // Jangan me-render apa pun untuk mencegah flash blank screen putih yang dipaksakan.
   if (!user) return null;
 
   return (

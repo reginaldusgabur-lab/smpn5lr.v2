@@ -29,8 +29,7 @@ const headmasterNavItems = [
 ];
 
 /**
- * Komponen Navigasi Bawah dengan desain Bounded Full Bottom.
- * Menempel di bawah dengan lengkungan atas yang menyerupai bentuk segitiga/tab.
+ * Komponen Navigasi Bawah ramping (Slim) dengan desain Bounded Full Bottom.
  */
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -58,8 +57,8 @@ export function BottomNavigation() {
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
-        {/* Kontainer menempel bawah penuh, lebar max-md, lengkungan atas tajam */}
-        <div className="w-full max-w-md h-[72px] bg-background border-t border-border/30 rounded-t-[2.5rem] flex items-stretch shadow-[0_-10px_30px_rgba(0,0,0,0.1)] pointer-events-auto overflow-hidden">
+        {/* Kontainer lebih ramping (h-14), lengkungan disesuaikan agar tidak terlalu dominan tapi tetap berkarakter */}
+        <div className="w-full max-w-md h-14 bg-background border-t border-border/20 rounded-t-[1.8rem] flex items-stretch shadow-[0_-8px_20px_rgba(0,0,0,0.08)] pointer-events-auto overflow-hidden">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 
@@ -70,20 +69,21 @@ export function BottomNavigation() {
                         key={item.label}
                         href={item.href}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1.5 transition-all duration-300 active:scale-90',
-                            isActive ? 'text-primary' : 'text-muted-foreground/60'
+                            'flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-300 active:scale-90 relative',
+                            isActive ? 'text-primary' : 'text-muted-foreground/50'
                         )}
                     >
-                        <item.icon className={cn("h-6 w-6 transition-all", isActive ? "stroke-[2.5px] scale-110" : "stroke-2")} />
+                        <item.icon className={cn("h-5 w-5 transition-all", isActive ? "stroke-[2.5px]" : "stroke-2")} />
                         <span className={cn(
-                            "text-center text-[10px] tracking-tight font-black uppercase",
-                            isActive ? "opacity-100" : "opacity-60"
+                            "text-center text-[9px] tracking-tight font-black uppercase",
+                            isActive ? "opacity-100" : "opacity-70"
                         )}>
                             {item.label}
                         </span>
-                        {/* Dot indicator for active item */}
+                        
+                        {/* Indikator titik aktif yang lebih halus */}
                         {isActive && (
-                            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary animate-in fade-in zoom-in duration-500" />
+                            <div className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-primary animate-in fade-in zoom-in duration-500" />
                         )}
                     </Link>
                 );

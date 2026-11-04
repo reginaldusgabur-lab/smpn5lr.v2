@@ -14,7 +14,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
         <Header />
         <main className="flex-1 overflow-y-auto w-full bg-background scroll-smooth no-scrollbar">
           {/* Padding bawah disesuaikan untuk BottomNavigation menempel penuh */}
-          <div className="w-full px-4 pt-4 pb-24 flex flex-col items-stretch bg-background">
+          <div className="w-full px-4 pt-4 pb-20 flex flex-col items-stretch bg-background">
               {children}
           </div>
         </main>
