@@ -51,7 +51,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
       setIsLoading(true);
       isFetched.current = true;
 
-      // Jalur Normal: Fetch dari AI Flow (Alur ini otomatis memprioritaskan API Key dari DB)
+      // Jalur Normal: Fetch dari AI Flow
       const now = new Date();
       const dateStr = format(now, 'yyyy-MM-dd');
       const dayStr = format(now, 'EEEE', { locale: id });
@@ -82,11 +82,11 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
           throw new Error('AI_FAILURE');
         }
       } catch (e: any) {
-        // Fallback statis jika sistem benar-benar gagal
+        // Fallback statis humoris jika sistem gagal
         setQuote({
           quote: attendanceType === 'in' 
-            ? "Awali hari dengan niat baik untuk melayani di lingkungan SMPN 5 Langke Rembong." 
-            : "Tugas tuntas, dedikasi terbayar. Selamat beristirahat bersama keluarga tercinta.",
+            ? "Mulai hari dengan niat melayani, tapi jangan lupa absen pagi agar dompet tidak menangis di akhir bulan." 
+            : "Tugas tuntas, pintu kelas tertutup rapat. Selamat pulang, kasur sudah rindu berat.",
           author: "Sistem E-SPENLI",
           isAi: false
         });
@@ -118,7 +118,7 @@ const QuoteOfTheDay = ({ category, attendanceType }: QuoteOfTheDayProps) => {
               "{quote?.quote}"
             </blockquote>
             <p className="text-[8px] font-black uppercase text-muted-foreground/30 tracking-widest">
-              — {quote?.isAi ? "Kutipan AI" : (quote?.author || "AI E-SPENLI")}
+              — {quote?.isAi ? "Kutipan AI" : (quote?.author || "Humor E-SPENLI")}
             </p>
           </div>
         )}
