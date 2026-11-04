@@ -45,7 +45,7 @@ const cleanDesc = (desc: any) => {
 
 /**
  * Logika Poin Profesional E-SPENLI.
- * Cuti Resmi: 0.8 Poin. Lupa Absen (Tidak Absen Masuk/Pulang): 0.5 Poin.
+ * Progresif: Baru Masuk = 0.5 Poin. Selesai Pulang = 1.0 Poin.
  */
 export const calculatePoints = (
     status: string, 
@@ -57,18 +57,23 @@ export const calculatePoints = (
     const s = (status || '').toLowerCase();
     const d = (description || '').toLowerCase();
     
+    // Status Prioritas Tinggi (Tetap 1.0 atau nilai tetap lainnya)
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
     if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
 
+    // Logika Kehadiran Mandiri Berjenjang (Update Real-time)
     if (hasIn && hasOut) {
+        // Sudah melakukan siklus lengkap (Masuk & Pulang)
         if (d.includes('terlambat') || d.includes('cepat')) return 0.95;
         return 1.0;
     }
     
     if (hasIn || hasOut) {
-        return checkOutExpired ? 0.5 : 1.0;
+        // Baru melakukan salah satu (biasanya baru absen masuk saja)
+        // Diberikan 0.5 poin agar persentase tidak langsung loncat ke 100% sebelum pulang.
+        return 0.5;
     }
     
     return 0.0;
