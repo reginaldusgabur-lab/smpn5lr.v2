@@ -2,6 +2,7 @@
 /**
  * @fileOverview AI Flow untuk menyajikan kutipan humor dari internet dan realita sekolah.
  * Mendukung penggunaan Kunci API dinamis dari database (Prioritas 1) atau Vercel (Prioritas 2).
+ * Sistem cadangan menggunakan rotasi berurutan berbasis tanggal untuk mencegah duplikasi mingguan.
  */
 
 import { ai } from '../genkit';
@@ -29,7 +30,7 @@ export type QuoteInput = z.infer<typeof QuoteInputSchema>;
 export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
 /**
- * Database 1000 Kutipan Cadangan Humor (Kombinasi Humor Sekolah, Kopi, & Motivasi Santai)
+ * Database Kutipan Cadangan Humor (Kombinasi Humor Sekolah, Kopi, & Motivasi Santai)
  */
 const fallbacks = [
   { quote: "Guru itu pahlawan tanpa tanda jasa, tapi tetap butuh tanda transferan di akhir bulan.", author: "Fakta Bendahara" },
@@ -74,16 +75,6 @@ const fallbacks = [
   { quote: "Jangan biarkan masa lalumu menghambat masa depanmu, kecuali kalau kamu belum bayar hutang kantin.", author: "Logika Tagihan" }
 ];
 
-function getHash(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0; 
-  }
-  return Math.abs(hash);
-}
-
 export async function generateQuote(input: QuoteInput): Promise<QuoteOutput> {
   return generateQuoteFlow(input);
 }
@@ -95,9 +86,15 @@ const generateQuoteFlow = ai.defineFlow(
     outputSchema: QuoteOutputSchema,
   },
   async (input) => {
-    const uniqueSeed = `${input.userId}|${input.role}|${input.date}|${input.creativeSeed}`;
-    const hash = getHash(uniqueSeed);
-    const selectedFallback = { ...fallbacks[hash % fallbacks.length], isAi: false };
+    // LOGIKA SEQUENTIAL (Berurutan): Menggunakan jumlah hari sejak Epoch (1970)
+    // tujuannya agar setiap hari memiliki kutipan berbeda dan tidak berulang dalam seminggu
+    const now = new Date();
+    const daysSinceEpoch = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
+    
+    // Indeks stabil per hari. Jika ingin per user berbeda namun tetap berurutan per hari, 
+    // kita bisa menambahkan hash userId, tapi permintaan user adalah rotasi stabil.
+    const stableIndex = daysSinceEpoch % fallbacks.length;
+    const selectedFallback = { ...fallbacks[stableIndex], isAi: false };
 
     try {
         const configSnap = await adminDb.collection('schoolConfig').doc('default').get();
@@ -122,6 +119,7 @@ const generateQuoteFlow = ai.defineFlow(
         if (!response.output || !response.output.quote) throw new Error('EMPTY');
         return { quote: response.output.quote, author: response.output.author, isAi: true };
     } catch (err) {
+        // Jika AI gagal, gunakan kutipan berurutan dari database cadangan
         return selectedFallback;
     }
   }
