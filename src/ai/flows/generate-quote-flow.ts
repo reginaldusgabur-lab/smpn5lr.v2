@@ -2,7 +2,7 @@
 /**
  * @fileOverview AI Flow untuk menyajikan kutipan humor dari internet dan realita sekolah.
  * Mendukung penggunaan Kunci API dinamis dari database (Prioritas 1) atau Vercel (Prioritas 2).
- * Sistem cadangan menggunakan rotasi berurutan berbasis tanggal untuk mencegah duplikasi mingguan.
+ * Sistem cadangan menggunakan rotasi berurutan berbasis tanggal untuk mencegah duplikasi.
  */
 
 import { ai } from '../genkit';
@@ -30,7 +30,8 @@ export type QuoteInput = z.infer<typeof QuoteInputSchema>;
 export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
 /**
- * Database Kutipan Cadangan Humor (Kombinasi Humor Sekolah, Kopi, & Motivasi Santai)
+ * Database Kutipan Cadangan (Humor Sekolah, Kopi, Motivasi Santai & Realita Staf)
+ * Dirancang untuk rotasi harian yang sangat panjang.
  */
 const fallbacks = [
   { quote: "Guru itu pahlawan tanpa tanda jasa, tapi tetap butuh tanda transferan di akhir bulan.", author: "Fakta Bendahara" },
@@ -72,7 +73,29 @@ const fallbacks = [
   { quote: "Hargailah gaji yang lewat, karena dia cuma mampir sebentar lalu pergi lagi tanpa pamit.", author: "Sajak Bendahara" },
   { quote: "Masa depan bangsa ada di tangan guru, jadi pastikan tanganmu tidak gemetar pas gajian.", author: "Pesan Kebangsaan" },
   { quote: "Pekerjaan berat akan terasa ringan jika kita tidak mengerjakannya sama sekali.", author: "Sesat Pikir" },
-  { quote: "Jangan biarkan masa lalumu menghambat masa depanmu, kecuali kalau kamu belum bayar hutang kantin.", author: "Logika Tagihan" }
+  { quote: "Jangan biarkan masa lalumu menghambat masa depanmu, kecuali kalau kamu belum bayar hutang kantin.", author: "Logika Tagihan" },
+  { quote: "Sarapan pagi itu penting, tapi lebih penting lagi memastikan sinyal HP lancar buat absen.", author: "Stabilitas Digital" },
+  { quote: "Mengajar itu seni, tapi menagih janji murid yang katanya mau belajar itu ujian nyali.", author: "Seni Sekolah" },
+  { quote: "Ing ngarsa sung tuladha, ing madya mangun karsa, tut wuri nyruput kopi.", author: "Pepatah Ngopi" },
+  { quote: "Keberhasilan dimulai dari kemauan untuk memulai, kegagalan dimulai dari kemauan untuk mengeluh terus.", author: "Inspirasi Pagi" },
+  { quote: "Jangan pernah berhenti belajar, karena kurikulum sering berubah tanpa permisi.", author: "Realita Pendidikan" },
+  { quote: "Satu buku dapat mengubah dunia, satu lembar laporan yang salah dapat mengubah hari jadi lembur.", author: "Pesan Administrasi" },
+  { quote: "Jadilah seperti padi, kian berisi kian merunduk, jangan seperti kaktus, baru berisi sedikit sudah berduri.", author: "Filosofi Tanaman" },
+  { quote: "Kesabaran adalah kunci, tapi kunci pintu ruang guru jangan sampai dibawa pulang.", author: "Pesan Logistik" },
+  { quote: "Hidup bukan tentang menunggu badai berlalu, tapi tentang belajar cara absen saat hujan deras.", author: "Tekad Baja" },
+  { quote: "Teruslah berlari mengejar mimpi, kalau capek ya jalan kaki, kalau lapar ya ke kantin Bu Kepsek.", author: "Saran Kesehatan" },
+  { quote: "Orang rajin pangkal pandai, orang malas pangkal ketinggalan info rapat di grup WA.", author: "Pepatah Modern" },
+  { quote: "Kegagalan adalah sukses yang tertunda, tapi kalau absen gagal terus itu gaji yang tertunda.", author: "Audit Ekonomi" },
+  { quote: "Dibalik siswa yang pintar, ada guru yang sering begadang bikin modul ajar.", author: "Dedikasi Tanpa Batas" },
+  { quote: "Masa depan adalah milik mereka yang percaya pada keindahan mimpi, dan ketepatan waktu absen masuk.", author: "Visi Masa Depan" },
+  { quote: "Jangan bandingkan hidupmu dengan orang lain, bandingkan saja nilai poin kehadiranmu bulan lalu.", author: "Self Improvement" },
+  { quote: "Guru yang sabar disayang Tuhan, guru yang telat diabsen sistem merah.", author: "Hukum Alam Digital" },
+  { quote: "Waktu adalah uang, tapi bagi guru, waktu istirahat adalah kemewahan yang tak ternilai.", author: "Relativitas Guru" },
+  { quote: "Jadilah perubahan yang ingin kamu lihat di dunia, mulai dari merubah status 'Alpa' jadi 'Hadir'.", author: "Pesan Transformasi" },
+  { quote: "Senyummu mengalihkan duniaku, tapi pertanyaan murid 'Pak, boleh pulang cepat?' merusak konsentrasiku.", author: "Lirik Modifikasi" },
+  { quote: "Tetaplah membumi sampai orang tidak bisa lagi meremehkanmu, tetaplah absen sampai admin tidak bisa lagi menegurmu.", author: "Pesan Integritas" },
+  { quote: "Bekerjalah dengan cinta, karena cinta tidak butuh fingerprint, tapi aplikasi E-SPENLI tetap butuh.", author: "Romantika Kerja" }
+  // Database dapat terus diperluas hingga 1000 item dengan menambahkan objek {quote, author} baru di sini.
 ];
 
 export async function generateQuote(input: QuoteInput): Promise<QuoteOutput> {
@@ -87,12 +110,11 @@ const generateQuoteFlow = ai.defineFlow(
   },
   async (input) => {
     // LOGIKA SEQUENTIAL (Berurutan): Menggunakan jumlah hari sejak Epoch (1970)
-    // tujuannya agar setiap hari memiliki kutipan berbeda dan tidak berulang dalam seminggu
+    // tujuannya agar setiap hari memiliki kutipan berbeda dan tidak berulang dalam periode panjang.
     const now = new Date();
     const daysSinceEpoch = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
     
-    // Indeks stabil per hari. Jika ingin per user berbeda namun tetap berurutan per hari, 
-    // kita bisa menambahkan hash userId, tapi permintaan user adalah rotasi stabil.
+    // Indeks stabil per hari berdasarkan kalender.
     const stableIndex = daysSinceEpoch % fallbacks.length;
     const selectedFallback = { ...fallbacks[stableIndex], isAi: false };
 
@@ -111,7 +133,7 @@ const generateQuoteFlow = ai.defineFlow(
         const response = await dynamicAi.generate({
             model: 'googleai/gemini-1.5-flash',
             config: { temperature: 1.3, topP: 0.95, maxOutputTokens: 250 },
-            system: `Anda adalah "E-SPENLI Muse", komedian cerdas bagi warga SMPN 5 Langke Rembong. TUGAS: Berikan SATU kutipan pendek (15-20 kata) yang SANGAT LUCU, relevan dengan guru/staf. Gunakan gaya bahasa Indonesia santai, humor receh tapi sopan. WAJIB sertakan nama penulisnya.`,
+            system: `Anda adalah "E-SPENLI Muse", komedian cerdas bagi warga SMPN 5 Langke Rembong. TUGAS: Berikan SATU kutipan pendek (15-20 kata) yang SANGAT LUCU, relevan dengan guru/staf sekolah. Gunakan gaya bahasa Indonesia santai, humor receh tapi sopan. WAJIB sertakan nama penulisnya (nama samaran lucu).`,
             prompt: `Buat kutipan humor untuk ${input.userName} (${input.role}) pada sesi ${input.attendanceType === 'in' ? 'absen masuk pagi' : 'absen pulang sore'}. Benih acak: ${input.creativeSeed}`,
             output: { schema: z.object({ quote: z.string(), author: z.string() }) },
         });
@@ -119,7 +141,7 @@ const generateQuoteFlow = ai.defineFlow(
         if (!response.output || !response.output.quote) throw new Error('EMPTY');
         return { quote: response.output.quote, author: response.output.author, isAi: true };
     } catch (err) {
-        // Jika AI gagal, gunakan kutipan berurutan dari database cadangan
+        // Jika AI gagal, gunakan kutipan berurutan dari database cadangan untuk kepuasan variasi.
         return selectedFallback;
     }
   }
