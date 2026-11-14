@@ -24,6 +24,7 @@ import { signOut } from 'firebase/auth';
 import { ModeToggle } from '@/components/theme-toggle';
 import { NetworkStatusDot } from './NetworkStatusDot';
 import { cn } from '@/lib/utils';
+import { invalidateCache } from '@/lib/cache';
 
 export function Header({ isTransparent }: { isTransparent?: boolean }) {
   const firestore = useFirestore();
@@ -38,14 +39,24 @@ export function Header({ isTransparent }: { isTransparent?: boolean }) {
 
   const { data: userData, isLoading: isUserDataLoading } = useDoc<{ name: string, role: string, photoURL?: string }>(user, userDocRef);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (!auth) return;
-    signOut(auth).then(() => {
+    try {
+      // Bersihkan cache sebelum logout untuk integritas data antar akun
+      invalidateCache();
+      Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('espenli_')) localStorage.removeItem(key);
+      });
+      Object.keys(sessionStorage).forEach(key => {
+          if (key.startsWith('espenli_')) sessionStorage.removeItem(key);
+      });
+
+      await signOut(auth);
       router.push('/');
-    }).catch((error) => {
+    } catch (error) {
       console.error("Gagal melakukan logout:", error);
       router.push('/');
-    });
+    }
   };
 
   const getInitials = (name: string | undefined | null) => {

@@ -41,17 +41,27 @@ export function useCollection<T = any>(
   });
 
   const lastQueryKey = useRef<string | null>(null);
+  const lastUserUid = useRef<string | null>(null);
+
+  // Reset state jika user berganti secara instan
+  useEffect(() => {
+    const currentUid = userForSubscription?.uid || null;
+    if (currentUid !== lastUserUid.current) {
+      setResult({ data: null, isLoading: !!memoizedTargetRefOrQuery, error: null });
+      lastUserUid.current = currentUid;
+      lastQueryKey.current = null;
+    }
+  }, [userForSubscription?.uid, memoizedTargetRefOrQuery]);
 
   useEffect(() => {
     let isMounted = true;
 
-    if (!memoizedTargetRefOrQuery) {
+    if (!memoizedTargetRefOrQuery || !userForSubscription) {
       setResult({ data: null, isLoading: false, error: null });
       lastQueryKey.current = null;
       return;
     }
 
-    // Hindari reset loading jika kueri sama (mencegah flickering)
     let currentKey: string;
     if (memoizedTargetRefOrQuery.type === 'collection') {
         currentKey = (memoizedTargetRefOrQuery as CollectionReference).path;
@@ -64,14 +74,13 @@ export function useCollection<T = any>(
         lastQueryKey.current = currentKey;
     }
     
-    const subscriptionUid = userForSubscription?.uid;
+    const subscriptionUid = userForSubscription.uid;
 
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
         if (!isMounted) return;
 
-        // Validasi sesi: Abaikan jika user sudah berganti/logout
         const currentAuthUser = getAuth().currentUser;
         if (currentAuthUser?.uid !== subscriptionUid) return;
         
@@ -84,7 +93,6 @@ export function useCollection<T = any>(
         const currentAuthUser = getAuth().currentUser;
         if (currentAuthUser?.uid !== subscriptionUid) return;
 
-        // Abaikan error jaringan sementara agar tidak crash saat sleep/bangun
         if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
             return;
         }

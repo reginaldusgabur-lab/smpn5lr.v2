@@ -30,12 +30,23 @@ export function useDoc<T = any>(
   });
 
   const lastPath = useRef<string | null>(null);
+  const lastUserUid = useRef<string | null>(null);
+
+  // Reset state jika user berganti secara instan
+  useEffect(() => {
+    const currentUid = userForSubscription?.uid || null;
+    if (currentUid !== lastUserUid.current) {
+      setResult({ data: null, isLoading: !!memoizedDocRef, error: null });
+      lastUserUid.current = currentUid;
+      lastPath.current = null;
+    }
+  }, [userForSubscription?.uid, memoizedDocRef]);
 
   useEffect(() => {
     let isMounted = true;
     const currentPath = memoizedDocRef?.path || null;
 
-    if (!memoizedDocRef) {
+    if (!memoizedDocRef || !userForSubscription) {
       setResult({ data: null, isLoading: false, error: null });
       lastPath.current = null;
       return;
@@ -46,7 +57,7 @@ export function useDoc<T = any>(
         lastPath.current = currentPath;
     }
     
-    const subscriptionUid = userForSubscription?.uid;
+    const subscriptionUid = userForSubscription.uid;
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,

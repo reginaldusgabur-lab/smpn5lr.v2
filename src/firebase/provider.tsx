@@ -60,7 +60,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         if (cached) {
             try {
                 return { user: JSON.parse(cached), isUserLoading: false, userError: null };
-            } catch (e) {}
+            } catch (e) {
+                localStorage.removeItem('espenli_user_profile_v2');
+            }
         }
     }
     return { user: null, isUserLoading: true, userError: null };
@@ -93,11 +95,24 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
               setUserAuthState({ user: null, isUserLoading: false, userError: null });
             }
           } catch (error) {
-            // Jika error (misal offline), gunakan data cache yang sudah ada di state jika tersedia
-            setUserAuthState(prev => prev.user ? { ...prev, isUserLoading: false } : { user: null, isUserLoading: false, userError: error as Error });
+            // Jika offline, pertahankan data cache jika UID cocok
+            setUserAuthState(prev => {
+              if (prev.user && prev.user.uid === firebaseUser.uid) {
+                return { ...prev, isUserLoading: false };
+              }
+              return { user: null, isUserLoading: false, userError: error as Error };
+            });
           }
         } else {
-          localStorage.removeItem('espenli_user_profile_v2');
+          // Bersihkan seluruh data espenli saat logout
+          if (typeof window !== 'undefined') {
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('espenli_')) localStorage.removeItem(key);
+            });
+            Object.keys(sessionStorage).forEach(key => {
+              if (key.startsWith('espenli_')) sessionStorage.removeItem(key);
+            });
+          }
           setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },
