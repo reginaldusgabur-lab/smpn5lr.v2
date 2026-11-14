@@ -1,9 +1,8 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
-import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes, isValid } from 'date-fns';
+import { format, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay, isBefore, isSameDay, setHours, setMinutes, isValid, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { getFromCache, setInCache } from './cache';
 
@@ -20,12 +19,18 @@ export interface MonthlyReportData {
 
 /**
  * Parsing aman untuk data tanggal dari Firestore.
+ * Mendukung format Timestamp, ISO String, atau Date object.
  */
 const parseFirestoreDate = (input: any): Date | null => {
     if (!input) return null;
-    if (typeof input.toDate === 'function') return input.toDate();
-    const date = new Date(input);
-    return isValid(date) ? date : null;
+    try {
+        if (typeof input.toDate === 'function') return input.toDate();
+        if (input instanceof Date) return input;
+        const date = typeof input === 'string' ? parseISO(input) : new Date(input);
+        return isValid(date) ? date : null;
+    } catch (e) {
+        return null;
+    }
 };
 
 const cleanDesc = (desc: any) => {
@@ -57,22 +62,19 @@ export const calculatePoints = (
     const s = (status || '').toLowerCase();
     const d = (description || '').toLowerCase();
     
-    // Status Prioritas Tinggi (Tetap 1.0 atau nilai tetap lainnya)
+    // Status Prioritas Tinggi
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
-    if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 0.8;
+    if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
 
-    // Logika Kehadiran Mandiri Berjenjang (Update Real-time)
+    // Logika Kehadiran Mandiri Berjenjang
     if (hasIn && hasOut) {
-        // Sudah melakukan siklus lengkap (Masuk & Pulang)
         if (d.includes('terlambat') || d.includes('cepat')) return 0.95;
         return 1.0;
     }
     
     if (hasIn || hasOut) {
-        // Baru melakukan salah satu (biasanya baru absen masuk saja)
-        // Diberikan 0.5 poin agar persentase tidak langsung loncat ke 100% sebelum pulang.
         return 0.5;
     }
     
@@ -104,7 +106,7 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const usersSnap = await getDocs(qUsers);
         const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
-        // GLOBAL PENDING COUNT (INBOX STYLE)
+        // GLOBAL PENDING COUNT
         const qAllPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
         const allPendingSnap = await getDocs(qAllPending);
         const pendingCount = allPendingSnap.size;
@@ -188,7 +190,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    const cacheKey = `stats_v2004_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    // CACHE VERSION BUMP TO v230
+    const cacheKey = `stats_v230_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {

@@ -84,7 +84,8 @@ export default function LaporanPage() {
     }
   }, [schoolConfig, academicYear]);
 
-  const cacheKey = useMemo(() => user ? `user_report_v221_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
+  // CACHE VERSION BUMP TO v230
+  const cacheKey = useMemo(() => user ? `user_report_v230_${user.uid}_${format(currentMonth, 'yyyyMM')}` : null, [user, currentMonth]);
 
   const fetchReport = useCallback(async (forceRefresh = false) => {
     if (!user || !firestore || !schoolConfig || !cacheKey) return;
@@ -339,8 +340,7 @@ export default function LaporanPage() {
                             </div>
                             <div className="p-5 flex flex-col items-center justify-center text-center">
                                 <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em] mb-2 leading-none">Persentase Kehadiran</p>
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
+                                <div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600 opacity-30 shrink-0" />
                                     <span className="text-3xl font-black text-green-600 mt-1.5 tabular-nums leading-none">
                                         {stats?.persentase || "0.0%"}
                                     </span>
