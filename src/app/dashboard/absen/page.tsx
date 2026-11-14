@@ -159,22 +159,65 @@ export default function AbsenPage() {
     setStatus('processing');
     try {
         let latitude: number | null = null, longitude: number | null = null;
+        
         if (schoolConfig.useLocationValidation) {
             setStatus('locating');
-            try {
-                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-                latitude = pos.coords.latitude; longitude = pos.coords.longitude;
-                if (schoolConfig.radius && (schoolConfig as any).latitude && (schoolConfig as any).longitude) {
-                    if (getDistance(latitude, longitude, (schoolConfig as any).latitude, (schoolConfig as any).longitude) > schoolConfig.radius) return setStatus('error_radius');
+            
+            // SMART LOCATION LOGIC: Gunakan memori sesi jika baru saja terdeteksi di lokasi sekolah
+            const smartLocCache = sessionStorage.getItem('espenli_smart_loc_v2');
+            let isCacheValid = false;
+            
+            if (smartLocCache) {
+                try {
+                    const parsed = JSON.parse(smartLocCache);
+                    const now = Date.now();
+                    const age = (now - parsed.timestamp) / (1000 * 60); // dalam menit
+                    
+                    if (age < 5 && schoolConfig.latitude && schoolConfig.longitude && schoolConfig.radius) {
+                        const dist = getDistance(parsed.lat, parsed.lng, schoolConfig.latitude, schoolConfig.longitude);
+                        if (dist <= schoolConfig.radius) {
+                            latitude = parsed.lat;
+                            longitude = parsed.lng;
+                            isCacheValid = true;
+                            console.log("[SMART_LOC]: Menggunakan data lokasi cepat dari memori.");
+                        }
+                    }
+                } catch (e) {
+                    sessionStorage.removeItem('espenli_smart_loc_v2');
                 }
-            } catch (error: any) {
-                let specificError = 'Gagal mendapatkan lokasi.';
-                if (error.code === 1) specificError = 'Akses lokasi ditolak.';
-                setLocationError(specificError); return setStatus('error_location');
+            }
+
+            if (!isCacheValid) {
+                try {
+                    // Gunakan maximumAge: 5000 agar browser mengambil data OS jika tersedia dalam 5 detik terakhir
+                    const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 });
+                    latitude = pos.coords.latitude; 
+                    longitude = pos.coords.longitude;
+                    
+                    if (schoolConfig.radius && (schoolConfig as any).latitude && (schoolConfig as any).longitude) {
+                        if (getDistance(latitude, longitude, (schoolConfig as any).latitude, (schoolConfig as any).longitude) > schoolConfig.radius) {
+                            return setStatus('error_radius');
+                        }
+                    }
+                    
+                    // Simpan koordinat valid ke cache agar scan berikutnya (misal absen pulang) bisa instan
+                    sessionStorage.setItem('espenli_smart_loc_v2', JSON.stringify({
+                        lat: latitude,
+                        lng: longitude,
+                        timestamp: Date.now()
+                    }));
+                } catch (error: any) {
+                    let specificError = 'Gagal mendapatkan lokasi.';
+                    if (error.code === 1) specificError = 'Akses lokasi ditolak.';
+                    setLocationError(specificError); 
+                    return setStatus('error_location');
+                }
             }
         }
+        
         const now = new Date();
         const todayStr = format(now, 'yyyy-MM-dd');
+        
         if (windowStatus === 'CHECK_IN_OPEN') {
             if (todaysRecord?.checkInTime) return setStatus('error_already_in');
             if (todaysRecord) {

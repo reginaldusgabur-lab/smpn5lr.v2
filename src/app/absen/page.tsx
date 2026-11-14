@@ -158,22 +158,66 @@ export default function AbsenPage() {
     setStatus('processing');
     try {
         let latitude: number | null = null, longitude: number | null = null;
+        
         if (schoolConfig.useLocationValidation) {
             setStatus('locating');
-            try {
-                const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-                latitude = pos.coords.latitude; longitude = pos.coords.longitude;
-                if (schoolConfig.radius && schoolConfig.latitude && schoolConfig.longitude) {
-                    if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) return setStatus('error_radius');
+            
+            // SMART LOCATION LOGIC: Cek cache valid dalam 5 menit terakhir
+            const smartLocCache = sessionStorage.getItem('espenli_smart_loc_v2');
+            let isCacheValid = false;
+            
+            if (smartLocCache) {
+                try {
+                    const parsedCache = JSON.parse(smartLocCache);
+                    const now = Date.now();
+                    const cacheAgeMinutes = (now - parsedCache.timestamp) / (1000 * 60);
+                    
+                    // Jika data kurang dari 5 menit, verifikasi radiusnya terhadap config sekolah saat ini
+                    if (cacheAgeMinutes < 5 && schoolConfig.latitude && schoolConfig.longitude && schoolConfig.radius) {
+                        const dist = getDistance(parsedCache.lat, parsedCache.lng, schoolConfig.latitude, schoolConfig.longitude);
+                        if (dist <= schoolConfig.radius) {
+                            latitude = parsedCache.lat;
+                            longitude = parsedCache.lng;
+                            isCacheValid = true;
+                            console.log("[SMART_LOC]: Menggunakan lokasi cepat dari memori.");
+                        }
+                    }
+                } catch (e) {
+                    sessionStorage.removeItem('espenli_smart_loc_v2');
                 }
-            } catch (error: any) {
-                let specificError = 'Gagal mendapatkan lokasi.';
-                if (error.code === 1) specificError = 'Akses lokasi ditolak.';
-                setLocationError(specificError); return setStatus('error_location');
+            }
+
+            if (!isCacheValid) {
+                try {
+                    // Gunakan maximumAge: 5000 agar browser bisa ambil lokasi dari OS jika tersedia sangat baru
+                    const pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 });
+                    latitude = pos.coords.latitude; 
+                    longitude = pos.coords.longitude;
+                    
+                    if (schoolConfig.radius && schoolConfig.latitude && schoolConfig.longitude) {
+                        if (getDistance(latitude, longitude, schoolConfig.latitude, schoolConfig.longitude) > schoolConfig.radius) {
+                            return setStatus('error_radius');
+                        }
+                    }
+                    
+                    // Simpan ke cache smart location karena terbukti valid di dalam radius
+                    sessionStorage.setItem('espenli_smart_loc_v2', JSON.stringify({
+                        lat: latitude,
+                        lng: longitude,
+                        timestamp: Date.now()
+                    }));
+                } catch (error: any) {
+                    let specificError = 'Gagal mendapatkan lokasi.';
+                    if (error.code === 1) specificError = 'Akses lokasi ditolak.';
+                    setLocationError(specificError); 
+                    return setStatus('error_location');
+                }
             }
         }
+        
         const now = new Date();
         const todayStr = format(now, 'yyyy-MM-dd');
+        
         if (windowStatus === 'CHECK_IN_OPEN') {
             if (todaysRecord?.checkInTime) return setStatus('error_already_in');
             if (todaysRecord) {
