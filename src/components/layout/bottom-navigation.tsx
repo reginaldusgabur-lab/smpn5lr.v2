@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -29,10 +28,6 @@ const headmasterNavItems = [
   { href: '/dashboard/laporan-sekolah', icon: BookCheck, label: 'Laporan' }, 
 ];
 
-/**
- * Komponen Navigasi Bawah dengan transisi gaya ikon dari Outline ke Solid Blue.
- * Menempel penuh di bawah layar (Full Width) dengan indikator aktif yang tegas.
- */
 export function BottomNavigation() {
   const pathname = usePathname();
   const { user } = useUser();
@@ -58,8 +53,8 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border/40 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
-        <div className="flex h-16 items-stretch w-full max-w-full">
+    <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-card border-t shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
+        <div className="flex h-full items-stretch">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 
@@ -70,28 +65,12 @@ export function BottomNavigation() {
                         key={item.label}
                         href={item.href}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-300 relative',
-                            isActive ? 'text-primary' : 'text-muted-foreground/40'
+                            'flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors',
+                            isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary/90'
                         )}
                     >
-                        <item.icon 
-                            className={cn(
-                                "h-6 w-6 transition-all duration-300 ease-in-out transform", 
-                                isActive ? "fill-primary stroke-primary scale-110" : "fill-none stroke-current"
-                            )} 
-                            strokeWidth={isActive ? 2.5 : 1.5}
-                        />
-                        <span className={cn(
-                            "text-center text-[10px] font-black tracking-tight transition-all duration-300",
-                            isActive ? "opacity-100 translate-y-0" : "opacity-60 translate-y-0.5"
-                        )}>
-                            {item.label}
-                        </span>
-                        
-                        {/* Indikator titik aktif di bawah teks */}
-                        {isActive && (
-                            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary animate-in fade-in zoom-in duration-500" />
-                        )}
+                        <item.icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-[1.5px]")} />
+                        <span className="text-center">{item.label}</span>
                     </Link>
                 );
             })}
