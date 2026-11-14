@@ -30,7 +30,7 @@ const headmasterNavItems = [
 
 /**
  * Komponen Navigasi Bawah standar (Flat) yang mengisi penuh lebar layar.
- * Menggunakan ikon SOLID (Full) saat aktif sesuai permintaan user.
+ * Ikon standar berupa outline, ikon aktif berupa solid/full blue.
  */
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -70,16 +70,16 @@ export function BottomNavigation() {
                         href={item.href}
                         className={cn(
                             'flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-300 relative',
-                            isActive ? 'text-primary' : 'text-muted-foreground/30'
+                            isActive ? 'text-primary' : 'text-muted-foreground/40'
                         )}
                     >
                         <item.icon className={cn(
                             "h-6 w-6 transition-all duration-300", 
-                            isActive ? "fill-primary stroke-primary stroke-[1px]" : "fill-none stroke-[2px]"
+                            isActive ? "fill-primary stroke-primary stroke-[1px]" : "fill-none stroke-[1.5px]"
                         )} />
                         <span className={cn(
                             "text-center text-[10px] font-bold tracking-tight transition-opacity duration-300",
-                            isActive ? "opacity-100" : "opacity-60"
+                            isActive ? "opacity-100" : "opacity-70"
                         )}>
                             {item.label}
                         </span>
