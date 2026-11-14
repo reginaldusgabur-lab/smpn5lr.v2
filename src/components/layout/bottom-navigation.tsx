@@ -30,7 +30,7 @@ const headmasterNavItems = [
 
 /**
  * Komponen Navigasi Bawah standar (Flat) yang mengisi penuh lebar layar.
- * Menggunakan indikator biru dan titik penanda di bawah ikon aktif.
+ * Menggunakan ikon SOLID (Full) saat aktif sesuai permintaan user.
  */
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -69,16 +69,16 @@ export function BottomNavigation() {
                         key={item.label}
                         href={item.href}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-200 relative',
+                            'flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-300 relative',
                             isActive ? 'text-primary' : 'text-muted-foreground/30'
                         )}
                     >
                         <item.icon className={cn(
-                            "h-6 w-6 transition-all", 
-                            isActive ? "stroke-[2.5px] fill-primary/5" : "stroke-[2px]"
+                            "h-6 w-6 transition-all duration-300", 
+                            isActive ? "fill-primary stroke-primary stroke-[1px]" : "fill-none stroke-[2px]"
                         )} />
                         <span className={cn(
-                            "text-center text-[10px] font-bold tracking-tight",
+                            "text-center text-[10px] font-bold tracking-tight transition-opacity duration-300",
                             isActive ? "opacity-100" : "opacity-60"
                         )}>
                             {item.label}
@@ -86,7 +86,7 @@ export function BottomNavigation() {
                         
                         {/* Indikator titik aktif di bawah ikon sesuai referensi */}
                         {isActive && (
-                            <div className="absolute bottom-1 w-1.5 h-0.5 rounded-full bg-primary animate-in fade-in zoom-in duration-300" />
+                            <div className="absolute bottom-1 w-1.5 h-0.5 rounded-full bg-primary animate-in fade-in zoom-in duration-500" />
                         )}
                     </Link>
                 );
