@@ -20,45 +20,40 @@ export function CacheProvider({ children }: { children: ReactNode }) {
   const [mConfig, setMConfig] = useState<DocumentData | null>(null);
   const [monthId, setMonthId] = useState<string | null>(null);
 
-  // Set monthId on client only to prevent hydration mismatch
   useEffect(() => {
     setMonthId(format(new Date(), 'yyyy-MM'));
   }, []);
 
-  // Load school config in real-time
   const schoolConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'schoolConfig', 'default') : null, [firestore]);
   const { data: fetchedConfig, isLoading: isConfigLoading } = useDoc(user, schoolConfigRef);
 
-  // Load monthly config (holidays)
   const monthlyConfigRef = useMemoFirebase(() => (firestore && monthId) ? doc(firestore, 'monthlyConfigs', monthId) : null, [firestore, monthId]);
   const { data: fetchedMonthlyConfig, isLoading: isMonthlyLoading } = useDoc(user, monthlyConfigRef);
 
-  // Recovery from sessionStorage after mount
   useEffect(() => {
     if (typeof window !== 'undefined' && !config) {
-      const backup = sessionStorage.getItem('espenli_config_backup');
+      const backup = sessionStorage.getItem('espenli_config_v250');
       if (backup) {
         try { setConfig(JSON.parse(backup)); } catch (e) {}
       }
-      const mBackup = sessionStorage.getItem('espenli_mconfig_backup');
+      const mBackup = sessionStorage.getItem('espenli_mconfig_v250');
       if (mBackup) {
         try { setMConfig(JSON.parse(mBackup)); } catch (e) {}
       }
     }
   }, [config]);
 
-  // Sync fetched data
   useEffect(() => {
     if (fetchedConfig) {
       setConfig(fetchedConfig);
-      sessionStorage.setItem('espenli_config_backup', JSON.stringify(fetchedConfig));
+      sessionStorage.setItem('espenli_config_v250', JSON.stringify(fetchedConfig));
     }
   }, [fetchedConfig]);
 
   useEffect(() => {
     if (fetchedMonthlyConfig) {
       setMConfig(fetchedMonthlyConfig);
-      sessionStorage.setItem('espenli_mconfig_backup', JSON.stringify(fetchedMonthlyConfig));
+      sessionStorage.setItem('espenli_mconfig_v250', JSON.stringify(fetchedMonthlyConfig));
     }
   }, [fetchedMonthlyConfig]);
 

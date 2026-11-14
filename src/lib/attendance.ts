@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -53,7 +52,6 @@ export const cleanDesc = (desc: any) => {
 
 /**
  * LOGIKA POIN PUSAT (Master Logic)
- * Digunakan oleh semua komponen laporan untuk menjamin akurasi data.
  */
 export const calculatePoints = (
     status: string, 
@@ -65,7 +63,6 @@ export const calculatePoints = (
     const s = (status || '').toLowerCase();
     const d = (description || '').toLowerCase();
     
-    // Status Prioritas Tinggi (1.0 Poin)
     if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah') || d.includes('cuti') || s.includes('cuti')) {
         return 1.0;
     }
@@ -73,13 +70,11 @@ export const calculatePoints = (
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
 
-    // Logika Kehadiran Mandiri
     if (hasIn && hasOut) {
         if (d.includes('terlambat') || d.includes('cepat')) return 0.95;
         return 1.0;
     }
     
-    // Progresif: Baru masuk atau hanya pulang saja (Lupa absen salah satu)
     if (hasIn || hasOut) {
         return 0.5;
     }
@@ -195,8 +190,6 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    
-    // CACHE VERSION BUMP TO v250
     const cacheKey = `stats_v250_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
@@ -204,13 +197,12 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const [configSnap, monthlyConfigSnap, attendanceSnap, leaveSnap] = await Promise.all([
             getDoc(doc(firestore, 'schoolConfig', 'default')),
             getDoc(doc(firestore, 'monthlyConfigs', format(start, 'yyyy-MM'))),
-            getDocs(collection(firestore, 'users', userId, 'attendanceRecords')),
+            getDocs(query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')))),
             getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
         ]);
         
         const config = configSnap.data() || {};
         const mConfig = monthlyConfigSnap.data() || {};
-        
         const holidays = Array.isArray(mConfig.holidays) ? mConfig.holidays : [];
         const offDays = Array.isArray(config.offDays) ? config.offDays : [0, 6];
 
@@ -228,10 +220,9 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         const attMap = new Map();
         attendanceSnap.docs.forEach(d => {
             const data = d.data();
-            const dStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
+            const dStr = data.date;
             if (dStr) {
                 const existing = attMap.get(dStr);
-                // Prefer complete records (those with checkOutTime) when merging duplicates
                 if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
                     attMap.set(dStr, data);
                 }
@@ -318,7 +309,7 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
     try {
         const [mConfigSnap, attSnap, leaveSnap] = await Promise.all([
             getDoc(doc(firestore, 'monthlyConfigs', format(currentMonth, 'yyyy-MM'))),
-            getDocs(collection(firestore, 'users', userId, 'attendanceRecords')),
+            getDocs(query(collection(firestore, 'users', userId, 'attendanceRecords'), where('date', '>=', format(start, 'yyyy-MM-dd')), where('date', '<=', format(end, 'yyyy-MM-dd')))),
             getDocs(query(collection(firestore, 'users', userId, 'leaveRequests'), where('status', '==', 'approved')))
         ]);
         const mConfig = mConfigSnap.data() || {};
@@ -328,10 +319,9 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         const attMap = new Map();
         attSnap.docs.forEach(d => {
             const data = d.data();
-            const dayStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
+            const dayStr = data.date;
             if (dayStr) {
                 const existing = attMap.get(dayStr);
-                // Unified Merge Logic: Prefer complete records
                 if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
                     attMap.set(dayStr, { id: d.id, ...data });
                 }

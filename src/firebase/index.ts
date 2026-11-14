@@ -11,16 +11,13 @@ import {
 
 /**
  * Inisialisasi Firebase App secara idempotent.
- * Penting untuk lingkungan Next.js agar tidak terjadi error re-initialization.
  */
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /**
  * Inisialisasi Firestore dengan Offline Persistence dan Long Polling.
- * localCache: persistentLocalCache menghemat kuota "Read" Firestore dengan menyimpan data secara lokal.
- * experimentalForceLongPolling dipaksa aktif untuk stabilitas di lingkungan studio/proxy/workstation.
- * Ini mencegah error "Backend didn't respond within 10 seconds".
+ * experimentalForceLongPolling dipaksa aktif untuk stabilitas di lingkungan studio/workstation/lingkungan sinyal lemah.
  */
 const firestore = (() => {
   if (typeof window !== 'undefined') {
@@ -30,7 +27,6 @@ const firestore = (() => {
         experimentalForceLongPolling: true,
       });
     } catch (e) {
-      // Jika sudah diinisialisasi (misal saat HMR), ambil instance yang ada
       return getFirestore(app);
     }
   }
