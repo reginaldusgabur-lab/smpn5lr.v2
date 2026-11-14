@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -29,8 +30,8 @@ const headmasterNavItems = [
 ];
 
 /**
- * Komponen Navigasi Bawah standar (Flat) yang mengisi penuh lebar layar.
- * Ikon standar berupa outline, ikon aktif berupa solid/full blue.
+ * Komponen Navigasi Bawah dengan transisi gaya ikon dari Outline ke Solid Blue.
+ * Menempel penuh di bawah layar (Full Width) dengan indikator aktif yang tegas.
  */
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -57,8 +58,8 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border/40">
-        <div className="flex h-16 items-stretch w-full">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border/40 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+        <div className="flex h-16 items-stretch w-full max-w-full">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 
@@ -73,20 +74,23 @@ export function BottomNavigation() {
                             isActive ? 'text-primary' : 'text-muted-foreground/40'
                         )}
                     >
-                        <item.icon className={cn(
-                            "h-6 w-6 transition-all duration-300", 
-                            isActive ? "fill-primary stroke-primary stroke-[1px]" : "fill-none stroke-[1.5px]"
-                        )} />
+                        <item.icon 
+                            className={cn(
+                                "h-6 w-6 transition-all duration-300 ease-in-out transform", 
+                                isActive ? "fill-primary stroke-primary scale-110" : "fill-none stroke-current"
+                            )} 
+                            strokeWidth={isActive ? 2.5 : 1.5}
+                        />
                         <span className={cn(
-                            "text-center text-[10px] font-bold tracking-tight transition-opacity duration-300",
-                            isActive ? "opacity-100" : "opacity-70"
+                            "text-center text-[10px] font-black tracking-tight transition-all duration-300",
+                            isActive ? "opacity-100 translate-y-0" : "opacity-60 translate-y-0.5"
                         )}>
                             {item.label}
                         </span>
                         
-                        {/* Indikator titik aktif di bawah ikon sesuai referensi */}
+                        {/* Indikator titik aktif di bawah teks */}
                         {isActive && (
-                            <div className="absolute bottom-1 w-1.5 h-0.5 rounded-full bg-primary animate-in fade-in zoom-in duration-500" />
+                            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary animate-in fade-in zoom-in duration-500" />
                         )}
                     </Link>
                 );
