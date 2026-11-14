@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -136,6 +137,18 @@ export default function SchoolReportPage() {
                 const userAtts = attendanceByUserId[u.id] || [];
                 const userLeaves = leaveByUserId[u.id] || [];
 
+                // Group and Merge user attendance by date to avoid duplicate overcounting
+                const mergedAtts = new Map();
+                userAtts.forEach(att => {
+                    const dStr = att.date || (att.checkInTime ? format(parseFirestoreDate(att.checkInTime)!, 'yyyy-MM-dd') : '');
+                    if (dStr && workingDaysSet.has(dStr)) {
+                        const existing = mergedAtts.get(dStr);
+                        if (!existing || (!existing.checkOutTime && att.checkOutTime)) {
+                            mergedAtts.set(dStr, att);
+                        }
+                    }
+                });
+
                 allWorkingDays.forEach(day => {
                     const dStr = format(day, 'yyyy-MM-dd');
                     if (dStr > todayStr) return;
@@ -163,14 +176,14 @@ export default function SchoolReportPage() {
                         const type = (leave.type || '').toLowerCase();
                         const reason = (leave.reason || '').toLowerCase();
                         if (type.includes('sakit')) sakitCount++; 
-                        else if (type.includes('cuti')) izinCount++; // Cuti treated as 1.0 point but grouped under izin/dinas for summary
+                        else if (type.includes('cuti')) izinCount++; 
                         else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                         else if (type.includes('dinas')) hadirCount++;
                         else izinCount++;
                         return;
                     }
 
-                    const att = userAtts.find(a => (a.date || (a.checkInTime ? format(parseFirestoreDate(a.checkInTime)!, 'yyyy-MM-dd') : '')) === dStr);
+                    const att = mergedAtts.get(dStr);
                     if (att) {
                         const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
                         const p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, checkOutExpired);

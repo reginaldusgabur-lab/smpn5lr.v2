@@ -1,3 +1,4 @@
+
 'use client';
 
 import { doc, getDoc, collection, getDocs, query, where, collectionGroup } from 'firebase/firestore';
@@ -195,8 +196,8 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
     
-    // CACHE VERSION BUMP TO v241
-    const cacheKey = `stats_v241_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    // CACHE VERSION BUMP TO v250
+    const cacheKey = `stats_v250_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -228,7 +229,13 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
         attendanceSnap.docs.forEach(d => {
             const data = d.data();
             const dStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
-            if (dStr) attMap.set(dStr, data);
+            if (dStr) {
+                const existing = attMap.get(dStr);
+                // Prefer complete records (those with checkOutTime) when merging duplicates
+                if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
+                    attMap.set(dStr, data);
+                }
+            }
         });
 
         allWorkingDays.forEach((day) => {
@@ -322,7 +329,13 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
         attSnap.docs.forEach(d => {
             const data = d.data();
             const dayStr = data.date || (data.checkInTime ? format(parseFirestoreDate(data.checkInTime)!, 'yyyy-MM-dd') : '');
-            if (dayStr) attMap.set(dayStr, { id: d.id, ...data });
+            if (dayStr) {
+                const existing = attMap.get(dayStr);
+                // Unified Merge Logic: Prefer complete records
+                if (!existing || (!existing.checkOutTime && data.checkOutTime)) {
+                    attMap.set(dayStr, { id: d.id, ...data });
+                }
+            }
         });
 
         const leaveMap = new Map();
