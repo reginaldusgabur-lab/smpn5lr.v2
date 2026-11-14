@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -35,7 +34,7 @@ import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToExcel, exportToPdf } from '@/lib/export';
-import { calculatePoints } from '@/lib/attendance';
+import { calculatePoints, parseFirestoreDate, cleanDesc } from '@/lib/attendance';
 
 function useStaffAttendanceSummary(currentMonth: Date) {
     const { user } = useUser();
@@ -92,7 +91,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
             const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
 
             const userSummary = users.map((u: any) => {
-                let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
+                let totalPointsAccumulated = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
                 const processedDates = new Set<string>();
                 const userAtts = allAttendance.filter(att => att.userId === u.id);
                 const userLeaves = allLeave.filter(l => l.userId === u.id);
@@ -118,7 +117,7 @@ function useStaffAttendanceSummary(currentMonth: Date) {
 
                     if (leave) {
                         const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
-                        points += p;
+                        totalPointsAccumulated += p;
                         processedDates.add(dStr);
                         
                         const type = (leave.type || '').toLowerCase();
@@ -131,9 +130,9 @@ function useStaffAttendanceSummary(currentMonth: Date) {
 
                     const att = userAtts.find(a => (a.date || (a.checkInTime ? format(a.checkInTime.toDate(), 'yyyy-MM-dd') : '')) === dStr);
                     if (att) {
-                        const desc = (att.reasonForUpdate || '').toLowerCase();
+                        const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
                         const p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, checkOutExpired);
-                        points += p;
+                        totalPointsAccumulated += p;
                         processedDates.add(dStr);
                         
                         if (desc.includes('luar sekolah')) {
@@ -144,11 +143,10 @@ function useStaffAttendanceSummary(currentMonth: Date) {
                     }
                 });
 
-                // Denominator uses total monthly working days (monthly target)
                 const denominator = Math.max(1, allWorkingDays.length);
                 const workingDaysElapsed = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
-                const totalAlpa = workingDaysElapsed.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const presentasi = (Math.min((points / denominator) * 100, 100).toFixed(1) + '%');
+                const totalAlpa = workingDaysElapsed.length - processedDates.size;
+                const presentasi = (Math.min((totalPointsAccumulated / denominator) * 100, 100).toFixed(1) + '%');
                 
                 return { ...u, hadir: hadirCount, izin: izinCount, sakit: sakitCount, alpa: totalAlpa, terlambat: 0, presentasi };
             });

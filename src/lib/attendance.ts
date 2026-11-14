@@ -19,9 +19,8 @@ export interface MonthlyReportData {
 
 /**
  * Parsing aman untuk data tanggal dari Firestore.
- * Mendukung format Timestamp, ISO String, atau Date object.
  */
-const parseFirestoreDate = (input: any): Date | null => {
+export const parseFirestoreDate = (input: any): Date | null => {
     if (!input) return null;
     try {
         if (typeof input.toDate === 'function') return input.toDate();
@@ -33,7 +32,10 @@ const parseFirestoreDate = (input: any): Date | null => {
     }
 };
 
-const cleanDesc = (desc: any) => {
+/**
+ * Pembersihan deskripsi status untuk konsistensi poin.
+ */
+export const cleanDesc = (desc: any) => {
     if (!desc || typeof desc !== 'string') return 'Kehadiran penuh';
     const d = desc.toLowerCase();
     if (d === 'terlambat') return 'Terlambat';
@@ -49,8 +51,8 @@ const cleanDesc = (desc: any) => {
 };
 
 /**
- * Logika Poin Profesional E-SPENLI.
- * Progresif: Baru Masuk = 0.5 Poin. Selesai Pulang = 1.0 Poin.
+ * LOGIKA POIN PUSAT (Master Logic)
+ * Digunakan oleh semua komponen laporan untuk menjamin akurasi data.
  */
 export const calculatePoints = (
     status: string, 
@@ -62,18 +64,21 @@ export const calculatePoints = (
     const s = (status || '').toLowerCase();
     const d = (description || '').toLowerCase();
     
-    // Status Prioritas Tinggi
-    if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah')) return 1.0;
-    if (s === 'cuti' || d.includes('cuti') || s.includes('cuti')) return 1.0;
+    // Status Prioritas Tinggi (1.0 Poin)
+    if (d.includes('dinas') || d.includes('luar sekolah') || s.includes('luar sekolah') || d.includes('cuti') || s.includes('cuti')) {
+        return 1.0;
+    }
+
     if (s === 'sakit') return 0.9;
     if (s.includes('izin')) return 0.7;
 
-    // Logika Kehadiran Mandiri Berjenjang
+    // Logika Kehadiran Mandiri
     if (hasIn && hasOut) {
         if (d.includes('terlambat') || d.includes('cepat')) return 0.95;
         return 1.0;
     }
     
+    // Progresif: Baru masuk atau hanya pulang saja (Lupa absen salah satu)
     if (hasIn || hasOut) {
         return 0.5;
     }
@@ -106,7 +111,6 @@ export async function getDailyStaffAttendanceStats(firestore: Firestore) {
         const usersSnap = await getDocs(qUsers);
         const allStaff = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
-        // GLOBAL PENDING COUNT
         const qAllPending = query(collectionGroup(firestore, 'leaveRequests'), where('status', '==', 'pending'));
         const allPendingSnap = await getDocs(qAllPending);
         const pendingCount = allPendingSnap.size;
@@ -190,8 +194,9 @@ export async function calculateAttendanceStats(firestore: Firestore, userId: str
     const { start, end } = dateRange;
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
-    // CACHE VERSION BUMP TO v230
-    const cacheKey = `stats_v230_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
+    
+    // CACHE VERSION BUMP TO v241
+    const cacheKey = `stats_v241_${userId}_${format(start, 'yyyyMM')}_${todayStr}`;
     const cached = getFromCache(cacheKey); if (cached) return cached;
     
     try {
@@ -372,8 +377,9 @@ export async function fetchUserMonthlyReportData(firestore: Firestore, userId: s
                 const type = (leave.type === 'Cuti' || leave.type === 'Cuti Resmi') ? 'Cuti' : leave.type;
                 const pts = calculatePoints(type, leave.reason || type, false, false, false);
                 const lowerT = type.toLowerCase();
+                const reasonLower = (leave.reason || '').toLowerCase();
                 let statusLabel = (type === 'Cuti') ? 'Cuti' : (pts >= 0.95 ? 'Hadir' : type);
-                if (lowerT.includes('luar sekolah')) statusLabel = 'Izin';
+                if (lowerT.includes('luar sekolah') || reasonLower.includes('luar sekolah')) statusLabel = 'Izin';
                 return { id: `${leave.id}-${dayStr}`, date: dayStr, status: statusLabel, description: cleanDesc(leave.reason) || type, points: pts, manualEntry: false };
             }
             

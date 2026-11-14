@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
-import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, endOfDay, isWithinInterval, setHours, setMinutes, isSameMonth } from 'date-fns';
+import { format, isBefore, isSameDay, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, setHours, setMinutes, isSameMonth, isWithinInterval, endOfDay } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { calculatePoints } from '@/lib/attendance';
+import { calculatePoints, parseFirestoreDate, cleanDesc } from '@/lib/attendance';
 import { cn } from '@/lib/utils';
 import { invalidateCache } from '@/lib/cache';
 
@@ -132,7 +131,7 @@ export default function SchoolReportPage() {
             const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
 
             const results = allUsers.map(u => {
-                let points = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
+                let totalPointsAccumulated = 0; let hadirCount = 0; let izinCount = 0; let sakitCount = 0;
                 const processedDates = new Set<string>();
                 const userAtts = attendanceByUserId[u.id] || [];
                 const userLeaves = leaveByUserId[u.id] || [];
@@ -151,29 +150,31 @@ export default function SchoolReportPage() {
                     const checkOutExpired = !isToday || (currentTimeMinutes > outEndMinutes);
 
                     const leave = userLeaves.find(l => {
-                        const lS = startOfDay(l.startDate.toDate());
-                        const lE = endOfDay(l.endDate.toDate());
+                        const lS = startOfDay(parseFirestoreDate(l.startDate)!);
+                        const lE = endOfDay(parseFirestoreDate(l.endDate)!);
                         return isWithinInterval(day, { start: lS, end: lE });
                     });
 
                     if (leave) {
                         const p = calculatePoints(leave.type, leave.reason || leave.type, false, false, false);
-                        points += p;
+                        totalPointsAccumulated += p;
                         processedDates.add(dStr);
                         
                         const type = (leave.type || '').toLowerCase();
+                        const reason = (leave.reason || '').toLowerCase();
                         if (type.includes('sakit')) sakitCount++; 
-                        else if (type.includes('cuti')) izinCount++;
+                        else if (type.includes('cuti')) izinCount++; // Cuti treated as 1.0 point but grouped under izin/dinas for summary
+                        else if (type.includes('luar sekolah') || reason.includes('luar sekolah')) izinCount++;
                         else if (type.includes('dinas')) hadirCount++;
                         else izinCount++;
                         return;
                     }
 
-                    const att = userAtts.find(a => (a.date || (a.checkInTime ? format(a.checkInTime.toDate(), 'yyyy-MM-dd') : '')) === dStr);
+                    const att = userAtts.find(a => (a.date || (a.checkInTime ? format(parseFirestoreDate(a.checkInTime)!, 'yyyy-MM-dd') : '')) === dStr);
                     if (att) {
-                        const desc = (att.reasonForUpdate || '').toLowerCase();
+                        const desc = cleanDesc(att.reasonForUpdate).toLowerCase();
                         const p = calculatePoints('hadir', desc, !!att.checkInTime, !!att.checkOutTime, checkOutExpired);
-                        points += p;
+                        totalPointsAccumulated += p;
                         processedDates.add(dStr);
                         
                         if (desc.includes('luar sekolah')) {
@@ -184,10 +185,10 @@ export default function SchoolReportPage() {
                     }
                 });
 
-                // Denominator uses total monthly working days (monthly target)
                 const denominator = Math.max(1, allWorkingDays.length);
-                const totalAlpa = pastWorkingDays.filter(day => !processedDates.has(format(day, 'yyyy-MM-dd'))).length;
-                const persentase = Math.min((points / denominator) * 100, 100).toFixed(1) + '%';
+                const workingDaysElapsed = allWorkingDays.filter(day => format(day, 'yyyy-MM-dd') <= todayStr);
+                const totalAlpa = workingDaysElapsed.length - processedDates.size;
+                const persentase = Math.min((totalPointsAccumulated / denominator) * 100, 100).toFixed(1) + '%';
 
                 return {
                     uid: u.id, name: u.name, nip: u.nip || '-',
