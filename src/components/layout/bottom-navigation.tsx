@@ -29,7 +29,8 @@ const headmasterNavItems = [
 ];
 
 /**
- * Komponen Navigasi Bawah standar (Flat) dengan indikator biru sesuai gambar.
+ * Komponen Navigasi Bawah standar (Flat) yang mengisi penuh lebar layar.
+ * Menggunakan indikator biru dan titik penanda di bawah ikon aktif.
  */
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -56,8 +57,8 @@ export function BottomNavigation() {
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-background border-t border-border/40">
-        <div className="w-full max-w-md h-16 flex items-stretch px-2">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border/40">
+        <div className="flex h-16 items-stretch w-full">
             {navItems.map((item) => {
                 const isActive = item.href === '/dashboard' 
                     ? pathname === item.href 
@@ -68,21 +69,24 @@ export function BottomNavigation() {
                         key={item.label}
                         href={item.href}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-300 relative',
-                            isActive ? 'text-primary' : 'text-muted-foreground/40'
+                            'flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-200 relative',
+                            isActive ? 'text-primary' : 'text-muted-foreground/30'
                         )}
                     >
-                        <item.icon className={cn("h-6 w-6 transition-all", isActive ? "stroke-[2.5px] fill-primary/10" : "stroke-[2px]")} />
+                        <item.icon className={cn(
+                            "h-6 w-6 transition-all", 
+                            isActive ? "stroke-[2.5px] fill-primary/5" : "stroke-[2px]"
+                        )} />
                         <span className={cn(
                             "text-center text-[10px] font-bold tracking-tight",
-                            isActive ? "opacity-100" : "opacity-70"
+                            isActive ? "opacity-100" : "opacity-60"
                         )}>
                             {item.label}
                         </span>
                         
-                        {/* Indikator titik aktif di bawah ikon sesuai gambar */}
+                        {/* Indikator titik aktif di bawah ikon sesuai referensi */}
                         {isActive && (
-                            <div className="absolute bottom-1 w-1.5 h-0.5 rounded-full bg-primary animate-in fade-in zoom-in duration-500" />
+                            <div className="absolute bottom-1 w-1.5 h-0.5 rounded-full bg-primary animate-in fade-in zoom-in duration-300" />
                         )}
                     </Link>
                 );
