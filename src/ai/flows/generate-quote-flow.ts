@@ -30,10 +30,8 @@ export type QuoteOutput = z.infer<typeof QuoteOutputSchema>;
 
 /**
  * Database 1000 Kutipan Cadangan Humor (Kombinasi Humor Sekolah, Kopi, & Motivasi Santai)
- * Menggunakan algoritma hash agar setiap user dapat kutipan berbeda setiap hari.
  */
 const fallbacks = [
-  // --- HUMOR GURU & STAF ---
   { quote: "Guru itu pahlawan tanpa tanda jasa, tapi tetap butuh tanda transferan di akhir bulan.", author: "Fakta Bendahara" },
   { quote: "Ruang guru: Tempat di mana semua masalah dunia selesai dalam 15 menit jam istirahat.", author: "Realita Sekolah" },
   { quote: "Kopi guru: 70% kafein, 30% doa agar murid hari ini tidak terlalu ajaib.", author: "Ramuan Rahasia" },
@@ -74,7 +72,6 @@ const fallbacks = [
   { quote: "Masa depan bangsa ada di tangan guru, jadi pastikan tanganmu tidak gemetar pas gajian.", author: "Pesan Kebangsaan" },
   { quote: "Pekerjaan berat akan terasa ringan jika kita tidak mengerjakannya sama sekali.", author: "Sesat Pikir" },
   { quote: "Jangan biarkan masa lalumu menghambat masa depanmu, kecuali kalau kamu belum bayar hutang kantin.", author: "Logika Tagihan" }
-  // ... (Database diperluas secara algoritmik hingga 1000 item di memori server)
 ];
 
 function getHash(str: string): number {
@@ -100,57 +97,31 @@ const generateQuoteFlow = ai.defineFlow(
   async (input) => {
     const uniqueSeed = `${input.userId}|${input.role}|${input.date}|${input.creativeSeed}`;
     const hash = getHash(uniqueSeed);
-    
-    // Gunakan modulo 1000 (disimulasikan dari database besar di atas)
     const selectedFallback = { ...fallbacks[hash % fallbacks.length], isAi: false };
 
     try {
-        // AMBIL API KEY DARI FIRESTORE DENGAN PRIORITAS TERTINGGI
         const configSnap = await adminDb.collection('schoolConfig').doc('default').get();
         const configData = configSnap.data();
         const customApiKey = configData?.geminiApiKey?.trim();
-        
-        // Gunakan Custom API Key jika tersedia, jika tidak gunakan Env Variable (Vercel)
         const effectiveApiKey = customApiKey || process.env.GEMINI_API_KEY;
 
-        if (!effectiveApiKey) {
-            console.warn("[AI_FLOW_NOTICE]: Tidak ada API Key ditemukan di Database maupun Vercel.");
-            return selectedFallback;
-        }
+        if (!effectiveApiKey) return selectedFallback;
 
-        // Inisialisasi genkit secara dinamis setiap kali panggil agar perubahan API Key langsung terasa
         const dynamicAi = genkit({
             plugins: [googleAI({ apiKey: effectiveApiKey })],
         });
 
         const response = await dynamicAi.generate({
             model: 'googleai/gemini-1.5-flash',
-            config: { 
-                temperature: 1.3, // Lebih tinggi agar lebih kreatif/lucu
-                topP: 0.95, 
-                maxOutputTokens: 250 
-            },
-            system: `Anda adalah "E-SPENLI Muse", komedian cerdas bagi warga SMPN 5 Langke Rembong. 
-            TUGAS: Berikan SATU kutipan pendek (15-20 kata) yang SANGAT LUCU, relevan dengan guru/staf, dan sedikit memotivasi. 
-            Gunakan gaya bahasa Indonesia santai, humor receh tapi sopan. 
-            WAJIB sertakan nama penulisnya (nama samaran lucu diperbolehkan).`,
-            prompt: `Buat kutipan humor untuk ${input.userName} (${input.role}) pada sesi ${input.attendanceType === 'in' ? 'absen masuk pagi' : 'absen pulang sore'}. 
-            Benih acak harian: ${input.creativeSeed}`,
+            config: { temperature: 1.3, topP: 0.95, maxOutputTokens: 250 },
+            system: `Anda adalah "E-SPENLI Muse", komedian cerdas bagi warga SMPN 5 Langke Rembong. TUGAS: Berikan SATU kutipan pendek (15-20 kata) yang SANGAT LUCU, relevan dengan guru/staf. Gunakan gaya bahasa Indonesia santai, humor receh tapi sopan. WAJIB sertakan nama penulisnya.`,
+            prompt: `Buat kutipan humor untuk ${input.userName} (${input.role}) pada sesi ${input.attendanceType === 'in' ? 'absen masuk pagi' : 'absen pulang sore'}. Benih acak: ${input.creativeSeed}`,
             output: { schema: z.object({ quote: z.string(), author: z.string() }) },
         });
 
-        if (!response.output || !response.output.quote) {
-            throw new Error('EMPTY_AI_RESPONSE');
-        }
-
-        return {
-            quote: response.output.quote,
-            author: response.output.author,
-            isAi: true 
-        };
-
-    } catch (err: any) {
-        console.error(`[AI_FLOW_ERROR]: Mencoba beralih ke database cadangan. (Pesan: ${err.message})`);
+        if (!response.output || !response.output.quote) throw new Error('EMPTY');
+        return { quote: response.output.quote, author: response.output.author, isAi: true };
+    } catch (err) {
         return selectedFallback;
     }
   }
